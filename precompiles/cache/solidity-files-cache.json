@@ -1,0 +1,48 @@
+{
+  "_format": "hh-sol-cache-2",
+  "files": {
+    "/home/lior/work/fheos/precompiles/contracts/FheOps.sol": {
+      "lastModificationDate": 1693924747142,
+      "contentHash": "35ff7e8210ab77325784b5c207f9da53",
+      "sourceName": "contracts/FheOps.sol",
+      "solcConfig": {
+        "version": "0.8.17",
+        "settings": {
+          "metadata": {
+            "bytecodeHash": "none",
+            "useLiteralContent": true
+          },
+          "optimizer": {
+            "enabled": false,
+            "runs": 800
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "devdoc",
+                "userdoc",
+                "storageLayout",
+                "evm.gasEstimates"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.4.21 <0.9.0"
+      ],
+      "artifacts": [
+        "FheOps"
+      ]
+    }
+  }
+}
