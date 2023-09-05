@@ -15,7 +15,7 @@ type Precompile struct {
 	Address  addr
 }
 
-func getPrecompilesList() []Precompile {
+func GetPrecompilesList() []Precompile {
 	precompiles := []Precompile{}
 	append := func(metadata *bind.MetaData, a addr) {
 		var precompile Precompile
