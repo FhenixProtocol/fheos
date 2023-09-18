@@ -1,8 +1,11 @@
-module github.com/FhenixProtocol/fheos
+module github.com/fhenixprotocol/fheos
 
 go 1.19
 
-require github.com/ethereum/go-ethereum v1.10.26
+require (
+	github.com/FhenixProtocol/fheos v0.0.2
+	github.com/ethereum/go-ethereum v1.10.26
+)
 
 require (
 	github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6 // indirect
