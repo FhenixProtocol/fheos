@@ -1,0 +1,6 @@
+[submodule "go-tfhe"]
+	path = go-tfhe
+	url = https://github.com/fhenixprotocol/go-tfhe
+[submodule "go-ethereum"]
+	path = go-ethereum
+	url = https://github.com/ethereum/go-ethereum
