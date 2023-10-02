@@ -23,14 +23,19 @@ import type {
 } from "ethers";
 
 export interface FheOpsInterface extends Interface {
-  getFunction(nameOrSignature: "lior"): FunctionFragment;
+  getFunction(nameOrSignature: "lior" | "moshe"): FunctionFragment;
 
   encodeFunctionData(
     functionFragment: "lior",
     values: [BigNumberish, BigNumberish]
   ): string;
+  encodeFunctionData(
+    functionFragment: "moshe",
+    values: [BytesLike, BigNumberish]
+  ): string;
 
   decodeFunctionResult(functionFragment: "lior", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "moshe", data: BytesLike): Result;
 }
 
 export interface FheOps extends BaseContract {
@@ -82,6 +87,12 @@ export interface FheOps extends BaseContract {
     "view"
   >;
 
+  moshe: TypedContractMethod<
+    [input: BytesLike, inputLen: BigNumberish],
+    [string],
+    "view"
+  >;
+
   getFunction<T extends ContractMethod = ContractMethod>(
     key: string | FunctionFragment
   ): T;
@@ -89,6 +100,13 @@ export interface FheOps extends BaseContract {
   getFunction(
     nameOrSignature: "lior"
   ): TypedContractMethod<[a: BigNumberish, b: BigNumberish], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "moshe"
+  ): TypedContractMethod<
+    [input: BytesLike, inputLen: BigNumberish],
+    [string],
+    "view"
+  >;
 
   filters: {};
 }

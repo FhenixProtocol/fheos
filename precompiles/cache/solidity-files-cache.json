@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "/home/lior/work/fheos/precompiles/contracts/FheOps.sol": {
-      "lastModificationDate": 1693924747142,
-      "contentHash": "35ff7e8210ab77325784b5c207f9da53",
+      "lastModificationDate": 1696238382861,
+      "contentHash": "02f0424ad15f4fa478cd46183e8f1d4f",
       "sourceName": "contracts/FheOps.sol",
       "solcConfig": {
         "version": "0.8.17",

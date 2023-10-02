@@ -31,6 +31,30 @@ const _abi = [
     stateMutability: "view",
     type: "function",
   },
+  {
+    inputs: [
+      {
+        internalType: "bytes",
+        name: "input",
+        type: "bytes",
+      },
+      {
+        internalType: "uint32",
+        name: "inputLen",
+        type: "uint32",
+      },
+    ],
+    name: "moshe",
+    outputs: [
+      {
+        internalType: "bytes32",
+        name: "",
+        type: "bytes32",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
 ] as const;
 
 export class FheOps__factory {

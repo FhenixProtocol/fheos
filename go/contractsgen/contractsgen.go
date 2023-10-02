@@ -30,7 +30,7 @@ var (
 
 // FheOpsMetaData contains all meta data concerning the FheOps contract.
 var FheOpsMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[{\"internalType\":\"uint32\",\"name\":\"a\",\"type\":\"uint32\"},{\"internalType\":\"uint32\",\"name\":\"b\",\"type\":\"uint32\"}],\"name\":\"lior\",\"outputs\":[{\"internalType\":\"uint32\",\"name\":\"\",\"type\":\"uint32\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
+	ABI: "[{\"inputs\":[{\"internalType\":\"uint32\",\"name\":\"a\",\"type\":\"uint32\"},{\"internalType\":\"uint32\",\"name\":\"b\",\"type\":\"uint32\"}],\"name\":\"lior\",\"outputs\":[{\"internalType\":\"uint32\",\"name\":\"\",\"type\":\"uint32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"input\",\"type\":\"bytes\"},{\"internalType\":\"uint32\",\"name\":\"inputLen\",\"type\":\"uint32\"}],\"name\":\"moshe\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
 }
 
 // FheOpsABI is the input ABI used to generate the binding from.
@@ -208,4 +208,35 @@ func (_FheOps *FheOpsSession) Lior(a uint32, b uint32) (uint32, error) {
 // Solidity: function lior(uint32 a, uint32 b) view returns(uint32)
 func (_FheOps *FheOpsCallerSession) Lior(a uint32, b uint32) (uint32, error) {
 	return _FheOps.Contract.Lior(&_FheOps.CallOpts, a, b)
+}
+
+// Moshe is a free data retrieval call binding the contract method 0xf52fd1d2.
+//
+// Solidity: function moshe(bytes input, uint32 inputLen) view returns(bytes32)
+func (_FheOps *FheOpsCaller) Moshe(opts *bind.CallOpts, input []byte, inputLen uint32) ([32]byte, error) {
+	var out []interface{}
+	err := _FheOps.contract.Call(opts, &out, "moshe", input, inputLen)
+
+	if err != nil {
+		return *new([32]byte), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+
+	return out0, err
+
+}
+
+// Moshe is a free data retrieval call binding the contract method 0xf52fd1d2.
+//
+// Solidity: function moshe(bytes input, uint32 inputLen) view returns(bytes32)
+func (_FheOps *FheOpsSession) Moshe(input []byte, inputLen uint32) ([32]byte, error) {
+	return _FheOps.Contract.Moshe(&_FheOps.CallOpts, input, inputLen)
+}
+
+// Moshe is a free data retrieval call binding the contract method 0xf52fd1d2.
+//
+// Solidity: function moshe(bytes input, uint32 inputLen) view returns(bytes32)
+func (_FheOps *FheOpsCallerSession) Moshe(input []byte, inputLen uint32) ([32]byte, error) {
+	return _FheOps.Contract.Moshe(&_FheOps.CallOpts, input, inputLen)
 }
