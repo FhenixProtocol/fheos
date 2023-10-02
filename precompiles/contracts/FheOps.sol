@@ -6,5 +6,5 @@ interface FheOps {
     function moshe(
         bytes memory input,
         uint32 inputLen
-    ) external view returns (bytes32);
+    ) external view returns (bytes32[1] memory);
 }

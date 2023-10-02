@@ -47,9 +47,9 @@ const _abi = [
     name: "moshe",
     outputs: [
       {
-        internalType: "bytes32",
+        internalType: "bytes32[1]",
         name: "",
-        type: "bytes32",
+        type: "bytes32[1]",
       },
     ],
     stateMutability: "view",

@@ -89,7 +89,7 @@ export interface FheOps extends BaseContract {
 
   moshe: TypedContractMethod<
     [input: BytesLike, inputLen: BigNumberish],
-    [string],
+    [[string]],
     "view"
   >;
 
@@ -104,7 +104,7 @@ export interface FheOps extends BaseContract {
     nameOrSignature: "moshe"
   ): TypedContractMethod<
     [input: BytesLike, inputLen: BigNumberish],
-    [string],
+    [[string]],
     "view"
   >;
 
