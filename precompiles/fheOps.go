@@ -4,7 +4,7 @@ func Lior(a uint32, b uint32) (uint32, error) {
 	return a * b, nil
 }
 
-func Moshe(intput []byte, inputLen uint32) ([]byte, error) {
+func Moshe(intput []byte, inputLen uint32) ([1][32]byte, error) {
 	var byteArray [16]byte
 
 	// Assign values to individual elements
