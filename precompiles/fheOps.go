@@ -110,6 +110,7 @@ func Moshe(input []byte, inputLen uint32) ([1][32]byte, error) {
 	}
 
 	logger := interpreter.GetEVM().Logger
+	fmt.Printf("LIORRRR input %+v", input)
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
 		logger.Error("fheAdd inputs not verified", "err", err, "input", hex.EncodeToString(input))
