@@ -131,7 +131,6 @@ func Reencrypt(input []byte, inputLen uint32) ([]byte, error) {
 		logger.Error(msg, "input", hex.EncodeToString(input), "len", len(input))
 		return nil, errors.New(msg)
 	}
-	fmt.Printf("LIORRRRRRRR my_reencrypt %+v %+v", interpreter, verifiedCiphertexts)
 	ct := getVerifiedCiphertext(tfhe.BytesToHash(input[0:32]))
 	if ct != nil {
 		decryptedValue, err := ct.ciphertext.Decrypt()

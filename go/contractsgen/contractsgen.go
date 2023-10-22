@@ -31,7 +31,7 @@ var (
 
 // FheOpsMetaData contains all meta data concerning the FheOps contract.
 var FheOpsMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"input\",\"type\":\"bytes\"},{\"internalType\":\"uint32\",\"name\":\"inputLen\",\"type\":\"uint32\"}],\"name\":\"add\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint32\",\"name\":\"a\",\"type\":\"uint32\"},{\"internalType\":\"uint32\",\"name\":\"b\",\"type\":\"uint32\"}],\"name\":\"lior\",\"outputs\":[{\"internalType\":\"uint32\",\"name\":\"\",\"type\":\"uint32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"input\",\"type\":\"bytes\"},{\"internalType\":\"uint32\",\"name\":\"inputLen\",\"type\":\"uint32\"}],\"name\":\"reencrypt\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"input\",\"type\":\"bytes\"}],\"name\":\"trivialEncrypt\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
+	ABI: "[{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"input\",\"type\":\"bytes\"},{\"internalType\":\"uint32\",\"name\":\"inputLen\",\"type\":\"uint32\"}],\"name\":\"add\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"input\",\"type\":\"bytes\"},{\"internalType\":\"uint32\",\"name\":\"inputLen\",\"type\":\"uint32\"}],\"name\":\"reencrypt\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"input\",\"type\":\"bytes\"}],\"name\":\"trivialEncrypt\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
 }
 
 // FheOpsABI is the input ABI used to generate the binding from.
@@ -209,37 +209,6 @@ func (_FheOps *FheOpsSession) Add(input []byte, inputLen uint32) ([]byte, error)
 // Solidity: function add(bytes input, uint32 inputLen) view returns(bytes)
 func (_FheOps *FheOpsCallerSession) Add(input []byte, inputLen uint32) ([]byte, error) {
 	return _FheOps.Contract.Add(&_FheOps.CallOpts, input, inputLen)
-}
-
-// Lior is a free data retrieval call binding the contract method 0x9fe53a98.
-//
-// Solidity: function lior(uint32 a, uint32 b) view returns(uint32)
-func (_FheOps *FheOpsCaller) Lior(opts *bind.CallOpts, a uint32, b uint32) (uint32, error) {
-	var out []interface{}
-	err := _FheOps.contract.Call(opts, &out, "lior", a, b)
-
-	if err != nil {
-		return *new(uint32), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(uint32)).(*uint32)
-
-	return out0, err
-
-}
-
-// Lior is a free data retrieval call binding the contract method 0x9fe53a98.
-//
-// Solidity: function lior(uint32 a, uint32 b) view returns(uint32)
-func (_FheOps *FheOpsSession) Lior(a uint32, b uint32) (uint32, error) {
-	return _FheOps.Contract.Lior(&_FheOps.CallOpts, a, b)
-}
-
-// Lior is a free data retrieval call binding the contract method 0x9fe53a98.
-//
-// Solidity: function lior(uint32 a, uint32 b) view returns(uint32)
-func (_FheOps *FheOpsCallerSession) Lior(a uint32, b uint32) (uint32, error) {
-	return _FheOps.Contract.Lior(&_FheOps.CallOpts, a, b)
 }
 
 // Reencrypt is a free data retrieval call binding the contract method 0x441a9c62.

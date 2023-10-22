@@ -24,16 +24,12 @@ import type {
 
 export interface FheOpsInterface extends Interface {
   getFunction(
-    nameOrSignature: "add" | "lior" | "reencrypt" | "trivialEncrypt"
+    nameOrSignature: "add" | "reencrypt" | "trivialEncrypt"
   ): FunctionFragment;
 
   encodeFunctionData(
     functionFragment: "add",
     values: [BytesLike, BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "lior",
-    values: [BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "reencrypt",
@@ -45,7 +41,6 @@ export interface FheOpsInterface extends Interface {
   ): string;
 
   decodeFunctionResult(functionFragment: "add", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "lior", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "reencrypt", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "trivialEncrypt",
@@ -102,12 +97,6 @@ export interface FheOps extends BaseContract {
     "view"
   >;
 
-  lior: TypedContractMethod<
-    [a: BigNumberish, b: BigNumberish],
-    [bigint],
-    "view"
-  >;
-
   reencrypt: TypedContractMethod<
     [input: BytesLike, inputLen: BigNumberish],
     [string],
@@ -127,9 +116,6 @@ export interface FheOps extends BaseContract {
     [string],
     "view"
   >;
-  getFunction(
-    nameOrSignature: "lior"
-  ): TypedContractMethod<[a: BigNumberish, b: BigNumberish], [bigint], "view">;
   getFunction(
     nameOrSignature: "reencrypt"
   ): TypedContractMethod<

@@ -34,30 +34,6 @@ const _abi = [
   {
     inputs: [
       {
-        internalType: "uint32",
-        name: "a",
-        type: "uint32",
-      },
-      {
-        internalType: "uint32",
-        name: "b",
-        type: "uint32",
-      },
-    ],
-    name: "lior",
-    outputs: [
-      {
-        internalType: "uint32",
-        name: "",
-        type: "uint32",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
         internalType: "bytes",
         name: "input",
         type: "bytes",
