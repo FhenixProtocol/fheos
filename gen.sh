@@ -3,6 +3,6 @@
 set -e
 
 cd precompiles
-yarn build
+yarn
 cd ../
 go run gen.go
