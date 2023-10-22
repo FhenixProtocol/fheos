@@ -23,19 +23,34 @@ import type {
 } from "ethers";
 
 export interface FheOpsInterface extends Interface {
-  getFunction(nameOrSignature: "lior" | "moshe"): FunctionFragment;
+  getFunction(
+    nameOrSignature: "add" | "lior" | "reencrypt" | "trivialEncrypt"
+  ): FunctionFragment;
 
+  encodeFunctionData(
+    functionFragment: "add",
+    values: [BytesLike, BigNumberish]
+  ): string;
   encodeFunctionData(
     functionFragment: "lior",
     values: [BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "moshe",
+    functionFragment: "reencrypt",
     values: [BytesLike, BigNumberish]
   ): string;
+  encodeFunctionData(
+    functionFragment: "trivialEncrypt",
+    values: [BytesLike]
+  ): string;
 
+  decodeFunctionResult(functionFragment: "add", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "lior", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "moshe", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "reencrypt", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "trivialEncrypt",
+    data: BytesLike
+  ): Result;
 }
 
 export interface FheOps extends BaseContract {
@@ -81,32 +96,50 @@ export interface FheOps extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
+  add: TypedContractMethod<
+    [input: BytesLike, inputLen: BigNumberish],
+    [string],
+    "view"
+  >;
+
   lior: TypedContractMethod<
     [a: BigNumberish, b: BigNumberish],
     [bigint],
     "view"
   >;
 
-  moshe: TypedContractMethod<
+  reencrypt: TypedContractMethod<
     [input: BytesLike, inputLen: BigNumberish],
-    [[string]],
+    [string],
     "view"
   >;
+
+  trivialEncrypt: TypedContractMethod<[input: BytesLike], [string], "view">;
 
   getFunction<T extends ContractMethod = ContractMethod>(
     key: string | FunctionFragment
   ): T;
 
   getFunction(
+    nameOrSignature: "add"
+  ): TypedContractMethod<
+    [input: BytesLike, inputLen: BigNumberish],
+    [string],
+    "view"
+  >;
+  getFunction(
     nameOrSignature: "lior"
   ): TypedContractMethod<[a: BigNumberish, b: BigNumberish], [bigint], "view">;
   getFunction(
-    nameOrSignature: "moshe"
+    nameOrSignature: "reencrypt"
   ): TypedContractMethod<
     [input: BytesLike, inputLen: BigNumberish],
-    [[string]],
+    [string],
     "view"
   >;
+  getFunction(
+    nameOrSignature: "trivialEncrypt"
+  ): TypedContractMethod<[input: BytesLike], [string], "view">;
 
   filters: {};
 }

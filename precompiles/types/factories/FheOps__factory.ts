@@ -10,6 +10,30 @@ const _abi = [
   {
     inputs: [
       {
+        internalType: "bytes",
+        name: "input",
+        type: "bytes",
+      },
+      {
+        internalType: "uint32",
+        name: "inputLen",
+        type: "uint32",
+      },
+    ],
+    name: "add",
+    outputs: [
+      {
+        internalType: "bytes",
+        name: "",
+        type: "bytes",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
         internalType: "uint32",
         name: "a",
         type: "uint32",
@@ -44,12 +68,31 @@ const _abi = [
         type: "uint32",
       },
     ],
-    name: "moshe",
+    name: "reencrypt",
     outputs: [
       {
-        internalType: "bytes32[1]",
+        internalType: "bytes",
         name: "",
-        type: "bytes32[1]",
+        type: "bytes",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "bytes",
+        name: "input",
+        type: "bytes",
+      },
+    ],
+    name: "trivialEncrypt",
+    outputs: [
+      {
+        internalType: "bytes",
+        name: "",
+        type: "bytes",
       },
     ],
     stateMutability: "view",
