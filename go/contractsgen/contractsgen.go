@@ -26,11 +26,12 @@ var (
 	_ = common.Big1
 	_ = types.BloomLookup
 	_ = event.NewSubscription
+	_ = abi.ConvertType
 )
 
 // FheOpsMetaData contains all meta data concerning the FheOps contract.
 var FheOpsMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[{\"internalType\":\"uint32\",\"name\":\"a\",\"type\":\"uint32\"},{\"internalType\":\"uint32\",\"name\":\"b\",\"type\":\"uint32\"}],\"name\":\"lior\",\"outputs\":[{\"internalType\":\"uint32\",\"name\":\"\",\"type\":\"uint32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"input\",\"type\":\"bytes\"},{\"internalType\":\"uint32\",\"name\":\"inputLen\",\"type\":\"uint32\"}],\"name\":\"moshe\",\"outputs\":[{\"internalType\":\"bytes32[1]\",\"name\":\"\",\"type\":\"bytes32[1]\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
+	ABI: "[{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"input\",\"type\":\"bytes\"},{\"internalType\":\"uint32\",\"name\":\"inputLen\",\"type\":\"uint32\"}],\"name\":\"add\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint32\",\"name\":\"a\",\"type\":\"uint32\"},{\"internalType\":\"uint32\",\"name\":\"b\",\"type\":\"uint32\"}],\"name\":\"lior\",\"outputs\":[{\"internalType\":\"uint32\",\"name\":\"\",\"type\":\"uint32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"input\",\"type\":\"bytes\"},{\"internalType\":\"uint32\",\"name\":\"inputLen\",\"type\":\"uint32\"}],\"name\":\"reencrypt\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"input\",\"type\":\"bytes\"}],\"name\":\"trivialEncrypt\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
 }
 
 // FheOpsABI is the input ABI used to generate the binding from.
@@ -134,11 +135,11 @@ func NewFheOpsFilterer(address common.Address, filterer bind.ContractFilterer) (
 
 // bindFheOps binds a generic wrapper to an already deployed contract.
 func bindFheOps(address common.Address, caller bind.ContractCaller, transactor bind.ContractTransactor, filterer bind.ContractFilterer) (*bind.BoundContract, error) {
-	parsed, err := abi.JSON(strings.NewReader(FheOpsABI))
+	parsed, err := FheOpsMetaData.GetAbi()
 	if err != nil {
 		return nil, err
 	}
-	return bind.NewBoundContract(address, parsed, caller, transactor, filterer), nil
+	return bind.NewBoundContract(address, *parsed, caller, transactor, filterer), nil
 }
 
 // Call invokes the (constant) contract method with params as input values and
@@ -179,6 +180,37 @@ func (_FheOps *FheOpsTransactorRaw) Transact(opts *bind.TransactOpts, method str
 	return _FheOps.Contract.contract.Transact(opts, method, params...)
 }
 
+// Add is a free data retrieval call binding the contract method 0x0512ae91.
+//
+// Solidity: function add(bytes input, uint32 inputLen) view returns(bytes)
+func (_FheOps *FheOpsCaller) Add(opts *bind.CallOpts, input []byte, inputLen uint32) ([]byte, error) {
+	var out []interface{}
+	err := _FheOps.contract.Call(opts, &out, "add", input, inputLen)
+
+	if err != nil {
+		return *new([]byte), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([]byte)).(*[]byte)
+
+	return out0, err
+
+}
+
+// Add is a free data retrieval call binding the contract method 0x0512ae91.
+//
+// Solidity: function add(bytes input, uint32 inputLen) view returns(bytes)
+func (_FheOps *FheOpsSession) Add(input []byte, inputLen uint32) ([]byte, error) {
+	return _FheOps.Contract.Add(&_FheOps.CallOpts, input, inputLen)
+}
+
+// Add is a free data retrieval call binding the contract method 0x0512ae91.
+//
+// Solidity: function add(bytes input, uint32 inputLen) view returns(bytes)
+func (_FheOps *FheOpsCallerSession) Add(input []byte, inputLen uint32) ([]byte, error) {
+	return _FheOps.Contract.Add(&_FheOps.CallOpts, input, inputLen)
+}
+
 // Lior is a free data retrieval call binding the contract method 0x9fe53a98.
 //
 // Solidity: function lior(uint32 a, uint32 b) view returns(uint32)
@@ -210,33 +242,64 @@ func (_FheOps *FheOpsCallerSession) Lior(a uint32, b uint32) (uint32, error) {
 	return _FheOps.Contract.Lior(&_FheOps.CallOpts, a, b)
 }
 
-// Moshe is a free data retrieval call binding the contract method 0xf52fd1d2.
+// Reencrypt is a free data retrieval call binding the contract method 0x441a9c62.
 //
-// Solidity: function moshe(bytes input, uint32 inputLen) view returns(bytes32[1])
-func (_FheOps *FheOpsCaller) Moshe(opts *bind.CallOpts, input []byte, inputLen uint32) ([1][32]byte, error) {
+// Solidity: function reencrypt(bytes input, uint32 inputLen) view returns(bytes)
+func (_FheOps *FheOpsCaller) Reencrypt(opts *bind.CallOpts, input []byte, inputLen uint32) ([]byte, error) {
 	var out []interface{}
-	err := _FheOps.contract.Call(opts, &out, "moshe", input, inputLen)
+	err := _FheOps.contract.Call(opts, &out, "reencrypt", input, inputLen)
 
 	if err != nil {
-		return *new([1][32]byte), err
+		return *new([]byte), err
 	}
 
-	out0 := *abi.ConvertType(out[0], new([1][32]byte)).(*[1][32]byte)
+	out0 := *abi.ConvertType(out[0], new([]byte)).(*[]byte)
 
 	return out0, err
 
 }
 
-// Moshe is a free data retrieval call binding the contract method 0xf52fd1d2.
+// Reencrypt is a free data retrieval call binding the contract method 0x441a9c62.
 //
-// Solidity: function moshe(bytes input, uint32 inputLen) view returns(bytes32[1])
-func (_FheOps *FheOpsSession) Moshe(input []byte, inputLen uint32) ([1][32]byte, error) {
-	return _FheOps.Contract.Moshe(&_FheOps.CallOpts, input, inputLen)
+// Solidity: function reencrypt(bytes input, uint32 inputLen) view returns(bytes)
+func (_FheOps *FheOpsSession) Reencrypt(input []byte, inputLen uint32) ([]byte, error) {
+	return _FheOps.Contract.Reencrypt(&_FheOps.CallOpts, input, inputLen)
 }
 
-// Moshe is a free data retrieval call binding the contract method 0xf52fd1d2.
+// Reencrypt is a free data retrieval call binding the contract method 0x441a9c62.
 //
-// Solidity: function moshe(bytes input, uint32 inputLen) view returns(bytes32[1])
-func (_FheOps *FheOpsCallerSession) Moshe(input []byte, inputLen uint32) ([1][32]byte, error) {
-	return _FheOps.Contract.Moshe(&_FheOps.CallOpts, input, inputLen)
+// Solidity: function reencrypt(bytes input, uint32 inputLen) view returns(bytes)
+func (_FheOps *FheOpsCallerSession) Reencrypt(input []byte, inputLen uint32) ([]byte, error) {
+	return _FheOps.Contract.Reencrypt(&_FheOps.CallOpts, input, inputLen)
+}
+
+// TrivialEncrypt is a free data retrieval call binding the contract method 0x8a52c8c7.
+//
+// Solidity: function trivialEncrypt(bytes input) view returns(bytes)
+func (_FheOps *FheOpsCaller) TrivialEncrypt(opts *bind.CallOpts, input []byte) ([]byte, error) {
+	var out []interface{}
+	err := _FheOps.contract.Call(opts, &out, "trivialEncrypt", input)
+
+	if err != nil {
+		return *new([]byte), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([]byte)).(*[]byte)
+
+	return out0, err
+
+}
+
+// TrivialEncrypt is a free data retrieval call binding the contract method 0x8a52c8c7.
+//
+// Solidity: function trivialEncrypt(bytes input) view returns(bytes)
+func (_FheOps *FheOpsSession) TrivialEncrypt(input []byte) ([]byte, error) {
+	return _FheOps.Contract.TrivialEncrypt(&_FheOps.CallOpts, input)
+}
+
+// TrivialEncrypt is a free data retrieval call binding the contract method 0x8a52c8c7.
+//
+// Solidity: function trivialEncrypt(bytes input) view returns(bytes)
+func (_FheOps *FheOpsCallerSession) TrivialEncrypt(input []byte) ([]byte, error) {
+	return _FheOps.Contract.TrivialEncrypt(&_FheOps.CallOpts, input)
 }
