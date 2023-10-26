@@ -73,6 +73,11 @@ func Add(input []byte, inputLen uint32) ([]byte, error) {
 		return nil, errors.New(msg)
 	}
 
+	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
+	if interpreter.GetEVM().GasEstimation {
+		return importRandomCiphertext(lhs.ciphertext.UintType), nil
+	}
+
 	result, err := lhs.ciphertext.Add(rhs.ciphertext)
 	if err != nil {
 		logger.Error("fheAdd failed", "err", err)
@@ -133,6 +138,12 @@ func Reencrypt(input []byte, inputLen uint32) ([]byte, error) {
 		return nil, err
 	}
 
+	if !interpreter.GetEVM().EthCall {
+		msg := "reencrypt only supported on EthCall"
+		logger.Error(msg)
+		return nil, errors.New(msg)
+	}
+
 	if len(input) != 64 {
 		msg := "reencrypt input len must be 64 bytes"
 		logger.Error(msg, "input", hex.EncodeToString(input), "len", len(input))
@@ -179,9 +190,9 @@ func Lte(input []byte, inputLen uint32) ([]byte, error) {
 	}
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	// if !interpreter.GetEVM().Commit && !interpreter.GetEVM().EthCall {
-	// 	return importRandomCiphertext(lhs.ciphertext.UintType), nil
-	// }
+	if !interpreter.GetEVM().GasEstimation {
+		return importRandomCiphertext(lhs.ciphertext.UintType), nil
+	}
 
 	result, err := lhs.ciphertext.Lte(rhs.ciphertext)
 	if err != nil {
@@ -221,9 +232,9 @@ func Sub(input []byte, inputLen uint32) ([]byte, error) {
 	}
 
 	// // If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	// if !interpreter.GetEVM().Commit && !interpreter.GetEVM().EthCall {
-	// 	return importRandomCiphertext(lhs.ciphertext.UintType), nil
-	// }
+	if !interpreter.GetEVM().GasEstimation {
+		return importRandomCiphertext(lhs.ciphertext.UintType), nil
+	}
 
 	result, err := lhs.ciphertext.Sub(rhs.ciphertext)
 	if err != nil {
@@ -262,10 +273,10 @@ func Mul(input []byte, inputLen uint32) ([]byte, error) {
 		return nil, errors.New(msg)
 	}
 
-	// // If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	// if !interpreter.GetEVM().Commit && !interpreter.GetEVM().EthCall {
-	// 	return importRandomCiphertext(lhs.ciphertext.UintType), nil
-	// }
+	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
+	if !interpreter.GetEVM().GasEstimation {
+		return importRandomCiphertext(lhs.ciphertext.UintType), nil
+	}
 
 	result, err := lhs.ciphertext.Mul(rhs.ciphertext)
 	if err != nil {
@@ -305,9 +316,9 @@ func Lt(input []byte, inputLen uint32) ([]byte, error) {
 	}
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	// if !interpreter.GetEVM().Commit && !interpreter.GetEVM().EthCall {
-	// 	return importRandomCiphertext(lhs.ciphertext.UintType), nil
-	// }
+	if !interpreter.GetEVM().GasEstimation {
+		return importRandomCiphertext(lhs.ciphertext.UintType), nil
+	}
 
 	result, err := lhs.ciphertext.Lt(rhs.ciphertext)
 	if err != nil {
@@ -339,6 +350,7 @@ func OptReq(input []byte, inputLen uint32) ([]byte, error) {
 		logger.Error(msg)
 		return nil, errors.New(msg)
 	}
+
 	if len(input) != 32 {
 		msg := "optimisticRequire input len must be 32 bytes"
 		logger.Error(msg, "input", hex.EncodeToString(input), "len", len(input))
@@ -353,9 +365,9 @@ func OptReq(input []byte, inputLen uint32) ([]byte, error) {
 	}
 	// If we are not committing to state, assume the require is true, avoiding any side effects
 	// (i.e. mutatiting the oracle DB).
-	// if !interpreter.GetEVM().Commit {
-	// 	return nil, nil
-	// }
+	if !interpreter.GetEVM().Commit {
+		return nil, nil
+	}
 	if ct.ciphertext.UintType != tfhe.Uint32 {
 		msg := "optimisticRequire ciphertext type is not FheUint32"
 		logger.Error(msg, "type", ct.ciphertext.UintType)
@@ -407,10 +419,10 @@ func TrivialEncrypt(input []byte) ([]byte, error) {
 	ctHash := ct.Hash()
 	importCiphertext(ct)
 
-	// if interpreter.GetEVM().Commit {
-	logger.Info("trivialEncrypt success",
-		"ctHash", ctHash.Hex(),
-		"valueToEncrypt", valueToEncrypt.Uint64())
-	// }
+	if interpreter.GetEVM().Commit {
+		logger.Info("trivialEncrypt success",
+			"ctHash", ctHash.Hex(),
+			"valueToEncrypt", valueToEncrypt.Uint64())
+	}
 	return ctHash[:], nil
 }
