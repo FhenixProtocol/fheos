@@ -44,7 +44,151 @@ const _abi = [
         type: "uint32",
       },
     ],
+    name: "cast",
+    outputs: [
+      {
+        internalType: "bytes",
+        name: "",
+        type: "bytes",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "bytes",
+        name: "input",
+        type: "bytes",
+      },
+      {
+        internalType: "uint32",
+        name: "inputLen",
+        type: "uint32",
+      },
+    ],
+    name: "lt",
+    outputs: [
+      {
+        internalType: "bytes",
+        name: "",
+        type: "bytes",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "bytes",
+        name: "input",
+        type: "bytes",
+      },
+      {
+        internalType: "uint32",
+        name: "inputLen",
+        type: "uint32",
+      },
+    ],
+    name: "lte",
+    outputs: [
+      {
+        internalType: "bytes",
+        name: "",
+        type: "bytes",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "bytes",
+        name: "input",
+        type: "bytes",
+      },
+      {
+        internalType: "uint32",
+        name: "inputLen",
+        type: "uint32",
+      },
+    ],
+    name: "mul",
+    outputs: [
+      {
+        internalType: "bytes",
+        name: "",
+        type: "bytes",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "bytes",
+        name: "input",
+        type: "bytes",
+      },
+      {
+        internalType: "uint32",
+        name: "inputLen",
+        type: "uint32",
+      },
+    ],
+    name: "optReq",
+    outputs: [
+      {
+        internalType: "bytes",
+        name: "",
+        type: "bytes",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "bytes",
+        name: "input",
+        type: "bytes",
+      },
+      {
+        internalType: "uint32",
+        name: "inputLen",
+        type: "uint32",
+      },
+    ],
     name: "reencrypt",
+    outputs: [
+      {
+        internalType: "bytes",
+        name: "",
+        type: "bytes",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "bytes",
+        name: "input",
+        type: "bytes",
+      },
+      {
+        internalType: "uint32",
+        name: "inputLen",
+        type: "uint32",
+      },
+    ],
+    name: "sub",
     outputs: [
       {
         internalType: "bytes",
@@ -64,6 +208,30 @@ const _abi = [
       },
     ],
     name: "trivialEncrypt",
+    outputs: [
+      {
+        internalType: "bytes",
+        name: "",
+        type: "bytes",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "bytes",
+        name: "input",
+        type: "bytes",
+      },
+      {
+        internalType: "uint32",
+        name: "inputLen",
+        type: "uint32",
+      },
+    ],
+    name: "verify",
     outputs: [
       {
         internalType: "bytes",

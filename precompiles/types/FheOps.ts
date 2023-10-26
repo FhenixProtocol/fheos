@@ -24,7 +24,17 @@ import type {
 
 export interface FheOpsInterface extends Interface {
   getFunction(
-    nameOrSignature: "add" | "reencrypt" | "trivialEncrypt"
+    nameOrSignature:
+      | "add"
+      | "cast"
+      | "lt"
+      | "lte"
+      | "mul"
+      | "optReq"
+      | "reencrypt"
+      | "sub"
+      | "trivialEncrypt"
+      | "verify"
   ): FunctionFragment;
 
   encodeFunctionData(
@@ -32,20 +42,55 @@ export interface FheOpsInterface extends Interface {
     values: [BytesLike, BigNumberish]
   ): string;
   encodeFunctionData(
+    functionFragment: "cast",
+    values: [BytesLike, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "lt",
+    values: [BytesLike, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "lte",
+    values: [BytesLike, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "mul",
+    values: [BytesLike, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "optReq",
+    values: [BytesLike, BigNumberish]
+  ): string;
+  encodeFunctionData(
     functionFragment: "reencrypt",
+    values: [BytesLike, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "sub",
     values: [BytesLike, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "trivialEncrypt",
     values: [BytesLike]
   ): string;
+  encodeFunctionData(
+    functionFragment: "verify",
+    values: [BytesLike, BigNumberish]
+  ): string;
 
   decodeFunctionResult(functionFragment: "add", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "cast", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "lt", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "lte", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "mul", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "optReq", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "reencrypt", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "sub", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "trivialEncrypt",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "verify", data: BytesLike): Result;
 }
 
 export interface FheOps extends BaseContract {
@@ -97,13 +142,55 @@ export interface FheOps extends BaseContract {
     "view"
   >;
 
+  cast: TypedContractMethod<
+    [input: BytesLike, inputLen: BigNumberish],
+    [string],
+    "view"
+  >;
+
+  lt: TypedContractMethod<
+    [input: BytesLike, inputLen: BigNumberish],
+    [string],
+    "view"
+  >;
+
+  lte: TypedContractMethod<
+    [input: BytesLike, inputLen: BigNumberish],
+    [string],
+    "view"
+  >;
+
+  mul: TypedContractMethod<
+    [input: BytesLike, inputLen: BigNumberish],
+    [string],
+    "view"
+  >;
+
+  optReq: TypedContractMethod<
+    [input: BytesLike, inputLen: BigNumberish],
+    [string],
+    "view"
+  >;
+
   reencrypt: TypedContractMethod<
     [input: BytesLike, inputLen: BigNumberish],
     [string],
     "view"
   >;
 
+  sub: TypedContractMethod<
+    [input: BytesLike, inputLen: BigNumberish],
+    [string],
+    "view"
+  >;
+
   trivialEncrypt: TypedContractMethod<[input: BytesLike], [string], "view">;
+
+  verify: TypedContractMethod<
+    [input: BytesLike, inputLen: BigNumberish],
+    [string],
+    "view"
+  >;
 
   getFunction<T extends ContractMethod = ContractMethod>(
     key: string | FunctionFragment
@@ -117,7 +204,49 @@ export interface FheOps extends BaseContract {
     "view"
   >;
   getFunction(
+    nameOrSignature: "cast"
+  ): TypedContractMethod<
+    [input: BytesLike, inputLen: BigNumberish],
+    [string],
+    "view"
+  >;
+  getFunction(
+    nameOrSignature: "lt"
+  ): TypedContractMethod<
+    [input: BytesLike, inputLen: BigNumberish],
+    [string],
+    "view"
+  >;
+  getFunction(
+    nameOrSignature: "lte"
+  ): TypedContractMethod<
+    [input: BytesLike, inputLen: BigNumberish],
+    [string],
+    "view"
+  >;
+  getFunction(
+    nameOrSignature: "mul"
+  ): TypedContractMethod<
+    [input: BytesLike, inputLen: BigNumberish],
+    [string],
+    "view"
+  >;
+  getFunction(
+    nameOrSignature: "optReq"
+  ): TypedContractMethod<
+    [input: BytesLike, inputLen: BigNumberish],
+    [string],
+    "view"
+  >;
+  getFunction(
     nameOrSignature: "reencrypt"
+  ): TypedContractMethod<
+    [input: BytesLike, inputLen: BigNumberish],
+    [string],
+    "view"
+  >;
+  getFunction(
+    nameOrSignature: "sub"
   ): TypedContractMethod<
     [input: BytesLike, inputLen: BigNumberish],
     [string],
@@ -126,6 +255,13 @@ export interface FheOps extends BaseContract {
   getFunction(
     nameOrSignature: "trivialEncrypt"
   ): TypedContractMethod<[input: BytesLike], [string], "view">;
+  getFunction(
+    nameOrSignature: "verify"
+  ): TypedContractMethod<
+    [input: BytesLike, inputLen: BigNumberish],
+    [string],
+    "view"
+  >;
 
   filters: {};
 }
