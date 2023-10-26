@@ -12,17 +12,16 @@ import (
 )
 
 var interpreter *vm.EVMInterpreter
-var verifiedCiphertexts map[tfhe.Hash]*verifiedCiphertext
 
-func SetEvmInterpreter(i *vm.EVMInterpreter) {
+// FHENIX: TODO - persist it somehow
+var verifiedCiphertexts map[tfhe.Hash]*verifiedCiphertext
+var optimisticRequire *tfhe.Ciphertext
+
+func SetEvmInterpreter(i *vm.EVMInterpreter) error {
 	if verifiedCiphertexts == nil {
 		verifiedCiphertexts = make(map[tfhe.Hash]*verifiedCiphertext)
 	}
 
-	interpreter = i
-}
-
-func TrivialEncrypt(input []byte) ([]byte, error) {
 	tfheConfig := tfhe.Config{
 		IsOracle:             true,
 		OracleType:           "local",
@@ -37,10 +36,359 @@ func TrivialEncrypt(input []byte) ([]byte, error) {
 
 	err := tfhe.InitTfhe(&tfheConfig)
 	if err != nil {
+		return err
+	}
+
+	interpreter = i
+	return nil
+}
+
+func getLogger(funcName string) (vm.Logger, error) {
+	fmt.Printf("Starting new precompiled contract function %s\n", funcName)
+	if interpreter == nil {
+		msg := funcName + " no evm interpreter"
+		// logger.Error(msg, "lhs", lhs.ciphertext.UintType, "rhs", rhs.ciphertext.UintType)
+		return nil, errors.New(msg)
+	}
+
+	return interpreter.GetEVM().Logger, nil
+}
+
+// ============================
+func Add(input []byte, inputLen uint32) ([]byte, error) {
+	logger, err := getLogger("Add")
+	if err != nil {
 		return nil, err
 	}
 
-	logger := interpreter.GetEVM().Logger
+	lhs, rhs, err := get2VerifiedOperands(input)
+	if err != nil {
+		logger.Error("fheAdd inputs not verified", "err", err, "input", hex.EncodeToString(input))
+		return nil, err
+	}
+
+	if lhs.ciphertext.UintType != rhs.ciphertext.UintType {
+		msg := "fheAdd operand type mismatch"
+		logger.Error(msg, "lhs", lhs.ciphertext.UintType, "rhs", rhs.ciphertext.UintType)
+		return nil, errors.New(msg)
+	}
+
+	result, err := lhs.ciphertext.Add(rhs.ciphertext)
+	if err != nil {
+		logger.Error("fheAdd failed", "err", err)
+		return nil, err
+	}
+
+	importCiphertext(result)
+
+	// TODO: for testing
+	err = os.WriteFile("/tmp/add_result", result.Serialization, 0644)
+	if err != nil {
+		logger.Error("fheAdd failed to write /tmp/add_result", "err", err)
+		return nil, err
+	}
+
+	resultHash := result.Hash()
+	logger.Info("fheAdd success", "lhs", lhs.ciphertext.Hash().Hex(), "rhs", rhs.ciphertext.Hash().Hex(), "result", resultHash.Hex())
+	return resultHash[:], nil
+}
+
+func Verify(input []byte, inputLen uint32) ([]byte, error) {
+	logger, err := getLogger("Verify")
+	if err != nil {
+		return nil, err
+	}
+
+	if len(input) <= 1 {
+		msg := "verifyCiphertext RequiredGas() input needs to contain a ciphertext and one byte for its type"
+		logger.Error(msg, "len", len(input))
+		return nil, errors.New(msg)
+	}
+
+	ctBytes := input[:len(input)-1]
+	ctType := tfhe.UintType(input[len(input)-1])
+
+	ct, err := tfhe.NewCipherTextFromBytes(ctBytes, ctType, true /* TODO: not sure + shouldn't be hardcoded */)
+	if err != nil {
+		logger.Error("verifyCiphertext failed to deserialize input ciphertext",
+			"err", err,
+			"len", len(ctBytes),
+			"ctBytes64", hex.EncodeToString(ctBytes[:minInt(len(ctBytes), 64)]))
+		return nil, err
+	}
+	ctHash := ct.Hash()
+	importCiphertext(ct)
+
+	if interpreter.GetEVM().Commit {
+		logger.Info("verifyCiphertext success",
+			"ctHash", ctHash.Hex(),
+			"ctBytes64", hex.EncodeToString(ctBytes[:minInt(len(ctBytes), 64)]))
+	}
+	return ctHash[:], nil
+}
+
+func Reencrypt(input []byte, inputLen uint32) ([]byte, error) {
+	logger, err := getLogger("Reencrypt")
+	if err != nil {
+		return nil, err
+	}
+
+	if len(input) != 64 {
+		msg := "reencrypt input len must be 64 bytes"
+		logger.Error(msg, "input", hex.EncodeToString(input), "len", len(input))
+		return nil, errors.New(msg)
+	}
+	ct := getVerifiedCiphertext(tfhe.BytesToHash(input[0:32]))
+	if ct != nil {
+		decryptedValue, err := ct.ciphertext.Decrypt()
+		if err != nil {
+			panic(fmt.Sprintf("Failed to decrypt ciphertext: %+v", err))
+		}
+
+		pubKey := input[32:64]
+		reencryptedValue, err := encryptToUserKey(decryptedValue, pubKey)
+		if err != nil {
+			logger.Error("reencrypt failed to encrypt to user key", "err", err)
+			return nil, err
+		}
+		logger.Info("reencrypt success", "input", hex.EncodeToString(input))
+		// FHENIX: Previously it was "return toEVMBytes(reencryptedValue), nil" but the decrypt function in Fhevm din't support it so we removed the the toEVMBytes
+		return reencryptedValue, nil
+	}
+	msg := "reencrypt unverified ciphertext handle"
+	logger.Error(msg, "input", hex.EncodeToString(input))
+	return nil, errors.New(msg)
+}
+
+func Lte(input []byte, inputLen uint32) ([]byte, error) {
+	logger, err := getLogger("Lte")
+	if err != nil {
+		return nil, err
+	}
+
+	lhs, rhs, err := get2VerifiedOperands(input)
+	if err != nil {
+		logger.Error("fheLte inputs not verified", "err", err)
+		return nil, err
+	}
+
+	if lhs.ciphertext.UintType != rhs.ciphertext.UintType {
+		msg := "fheLte operand type mismatch"
+		logger.Error(msg, "lhs", lhs.ciphertext.UintType, "rhs", rhs.ciphertext.UintType)
+		return nil, errors.New(msg)
+	}
+
+	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
+	// if !interpreter.GetEVM().Commit && !interpreter.GetEVM().EthCall {
+	// 	return importRandomCiphertext(lhs.ciphertext.UintType), nil
+	// }
+
+	result, err := lhs.ciphertext.Lte(rhs.ciphertext)
+	if err != nil {
+		logger.Error("fheLte failed", "err", err)
+		return nil, err
+	}
+	importCiphertext(result)
+
+	// TODO: for testing
+	err = os.WriteFile("/tmp/lte_result", result.Serialization, 0644)
+	if err != nil {
+		logger.Error("fheAdd failed to write /tmp/lte_result", "err", err)
+		return nil, err
+	}
+
+	resultHash := result.Hash()
+	logger.Info("fheLte success", "lhs", lhs.ciphertext.Hash().Hex(), "rhs", rhs.ciphertext.Hash().Hex(), "result", resultHash.Hex())
+	return resultHash[:], nil
+}
+
+func Sub(input []byte, inputLen uint32) ([]byte, error) {
+	logger, err := getLogger("Sub")
+	if err != nil {
+		return nil, err
+	}
+
+	lhs, rhs, err := get2VerifiedOperands(input)
+	if err != nil {
+		logger.Error("fheSub inputs not verified", "err", err)
+		return nil, err
+	}
+
+	if lhs.ciphertext.UintType != rhs.ciphertext.UintType {
+		msg := "fheSub operand type mismatch"
+		logger.Error(msg, "lhs", lhs.ciphertext.UintType, "rhs", rhs.ciphertext.UintType)
+		return nil, errors.New(msg)
+	}
+
+	// // If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
+	// if !interpreter.GetEVM().Commit && !interpreter.GetEVM().EthCall {
+	// 	return importRandomCiphertext(lhs.ciphertext.UintType), nil
+	// }
+
+	result, err := lhs.ciphertext.Sub(rhs.ciphertext)
+	if err != nil {
+		logger.Error("fheSub failed", "err", err)
+		return nil, err
+	}
+	importCiphertext(result)
+
+	// TODO: for testing
+	err = os.WriteFile("/tmp/sub_result", result.Serialization, 0644)
+	if err != nil {
+		logger.Error("fheSub failed to write /tmp/sub_result", "err", err)
+		return nil, err
+	}
+
+	resultHash := result.Hash()
+	logger.Info("fheSub success", "lhs", lhs.ciphertext.Hash().Hex(), "rhs", rhs.ciphertext.Hash().Hex(), "result", resultHash.Hex())
+	return resultHash[:], nil
+}
+
+func Mul(input []byte, inputLen uint32) ([]byte, error) {
+	logger, err := getLogger("Mul")
+	if err != nil {
+		return nil, err
+	}
+
+	lhs, rhs, err := get2VerifiedOperands(input)
+	if err != nil {
+		logger.Error("fheMul inputs not verified", "err", err)
+		return nil, err
+	}
+
+	if lhs.ciphertext.UintType != rhs.ciphertext.UintType {
+		msg := "fheMul operand type mismatch"
+		logger.Error(msg, "lhs", lhs.ciphertext.UintType, "rhs", rhs.ciphertext.UintType)
+		return nil, errors.New(msg)
+	}
+
+	// // If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
+	// if !interpreter.GetEVM().Commit && !interpreter.GetEVM().EthCall {
+	// 	return importRandomCiphertext(lhs.ciphertext.UintType), nil
+	// }
+
+	result, err := lhs.ciphertext.Mul(rhs.ciphertext)
+	if err != nil {
+		logger.Error("fheMul failed", "err", err)
+		return nil, err
+	}
+	importCiphertext(result)
+
+	// TODO: for testing
+	err = os.WriteFile("/tmp/mul_result", result.Serialization, 0644)
+	if err != nil {
+		logger.Error("fheMul failed to write /tmp/mul_result", "err", err)
+		return nil, err
+	}
+
+	ctHash := result.Hash()
+
+	return ctHash[:], nil
+}
+
+func Lt(input []byte, inputLen uint32) ([]byte, error) {
+	logger, err := getLogger("Lt")
+	if err != nil {
+		return nil, err
+	}
+
+	lhs, rhs, err := get2VerifiedOperands(input)
+	if err != nil {
+		logger.Error("fheLt inputs not verified", "err", err)
+		return nil, err
+	}
+
+	if lhs.ciphertext.UintType != rhs.ciphertext.UintType {
+		msg := "fheLt operand type mismatch"
+		logger.Error(msg, "lhs", lhs.ciphertext.UintType, "rhs", rhs.ciphertext.UintType)
+		return nil, errors.New(msg)
+	}
+
+	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
+	// if !interpreter.GetEVM().Commit && !interpreter.GetEVM().EthCall {
+	// 	return importRandomCiphertext(lhs.ciphertext.UintType), nil
+	// }
+
+	result, err := lhs.ciphertext.Lt(rhs.ciphertext)
+	if err != nil {
+		logger.Error("fheLt failed", "err", err)
+		return nil, err
+	}
+	importCiphertext(result)
+
+	// TODO: for testing
+	err = os.WriteFile("/tmp/lt_result", result.Serialization, 0644)
+	if err != nil {
+		logger.Error("fheLt failed to write /tmp/lt_result", "err", err)
+		return nil, err
+	}
+
+	resultHash := result.Hash()
+	logger.Info("fheLt success", "lhs", lhs.ciphertext.Hash().Hex(), "rhs", rhs.ciphertext.Hash().Hex(), "result", resultHash.Hex())
+	return resultHash[:], nil
+}
+
+func OptReq(input []byte, inputLen uint32) ([]byte, error) {
+	logger, err := getLogger("OptReq")
+	if err != nil {
+		return nil, err
+	}
+
+	if interpreter.GetEVM().EthCall {
+		msg := "optimisticRequire not supported on EthCall"
+		logger.Error(msg)
+		return nil, errors.New(msg)
+	}
+	if len(input) != 32 {
+		msg := "optimisticRequire input len must be 32 bytes"
+		logger.Error(msg, "input", hex.EncodeToString(input), "len", len(input))
+		return nil, errors.New(msg)
+	}
+
+	ct := getVerifiedCiphertext(tfhe.BytesToHash(input))
+	if ct == nil {
+		msg := "optimisticRequire unverified handle"
+		logger.Error(msg, "input", hex.EncodeToString(input))
+		return nil, errors.New(msg)
+	}
+	// If we are not committing to state, assume the require is true, avoiding any side effects
+	// (i.e. mutatiting the oracle DB).
+	// if !interpreter.GetEVM().Commit {
+	// 	return nil, nil
+	// }
+	if ct.ciphertext.UintType != tfhe.Uint32 {
+		msg := "optimisticRequire ciphertext type is not FheUint32"
+		logger.Error(msg, "type", ct.ciphertext.UintType)
+		return nil, errors.New(msg)
+	}
+	// If this is the first optimistic require, just assign it.
+	// If there is already an optimistic one, just multiply it with the incoming one. Here, we assume
+	// that ciphertexts have value of either 0 or 1. Thus, multiplying all optimistic requires leads to
+	// one optimistic require at the end that we decrypt when we are about to finish execution.
+	if optimisticRequire == nil {
+		optimisticRequire = ct.ciphertext
+	} else {
+		op, err := optimisticRequire.Mul(ct.ciphertext)
+		if err != nil {
+			logger.Error("optimisticRequire mul failed", "err", err)
+			return nil, err
+		}
+		optimisticRequire = op
+	}
+	return nil, nil
+}
+
+// Implementation of the following is pending and will be completed once TFHE-rs add type casts to their high-level C API.
+func Cast(input []byte, inputLen uint32) ([]byte, error) {
+	return nil, nil
+}
+
+func TrivialEncrypt(input []byte) ([]byte, error) {
+	logger, err := getLogger("Reencrypt")
+	if err != nil {
+		return nil, err
+	}
+
 	if len(input) != 33 {
 		msg := "trivialEncrypt input len must be 33 bytes"
 		logger.Error(msg, "input", hex.EncodeToString(input), "len", len(input))
@@ -59,96 +407,10 @@ func TrivialEncrypt(input []byte) ([]byte, error) {
 	ctHash := ct.Hash()
 	importCiphertext(ct)
 
-	if interpreter.GetEVM().Commit {
-		logger.Info("trivialEncrypt success",
-			"ctHash", ctHash.Hex(),
-			"valueToEncrypt", valueToEncrypt.Uint64())
-	}
+	// if interpreter.GetEVM().Commit {
+	logger.Info("trivialEncrypt success",
+		"ctHash", ctHash.Hex(),
+		"valueToEncrypt", valueToEncrypt.Uint64())
+	// }
 	return ctHash[:], nil
-}
-
-func Add(input []byte, inputLen uint32) ([]byte, error) {
-	if interpreter == nil {
-		msg := "fheAdd no evm interpreter"
-		// logger.Error(msg, "lhs", lhs.ciphertext.UintType, "rhs", rhs.ciphertext.UintType)
-		return []byte{}, errors.New(msg)
-	}
-
-	tfheConfig := tfhe.Config{
-		IsOracle:             true,
-		OracleType:           "local",
-		OracleDbPath:         "data/oracle.db",
-		OracleAddress:        "http://127.0.0.1:9001",
-		ServerKeyPath:        "keys/tfhe/sks",
-		ClientKeyPath:        "keys/tfhe/cks",
-		PublicKeyPath:        "keys/tfhe/pks",
-		OraclePrivateKeyPath: "keys/oracle/private-oracle.key",
-		OraclePublicKeyPath:  "keys/oracle/public-oracle.key",
-	}
-
-	err := tfhe.InitTfhe(&tfheConfig)
-	if err != nil {
-		return []byte{}, err
-	}
-
-	logger := interpreter.GetEVM().Logger
-	lhs, rhs, err := get2VerifiedOperands(input)
-	if err != nil {
-		logger.Error("fheAdd inputs not verified", "err", err, "input", hex.EncodeToString(input))
-		return []byte{}, err
-	}
-
-	if lhs.ciphertext.UintType != rhs.ciphertext.UintType {
-		msg := "fheAdd operand type mismatch"
-		logger.Error(msg, "lhs", lhs.ciphertext.UintType, "rhs", rhs.ciphertext.UintType)
-		return []byte{}, errors.New(msg)
-	}
-
-	result, err := lhs.ciphertext.Add(rhs.ciphertext)
-	if err != nil {
-		logger.Error("fheAdd failed", "err", err)
-		return []byte{}, err
-	}
-
-	importCiphertext(result)
-
-	// TODO: for testing
-	err = os.WriteFile("/tmp/add_result", result.Serialization, 0644)
-	if err != nil {
-		logger.Error("fheAdd failed to write /tmp/add_result", "err", err)
-		return []byte{}, err
-	}
-
-	resultHash := result.Hash()
-	logger.Info("fheAdd success", "lhs", lhs.ciphertext.Hash().Hex(), "rhs", rhs.ciphertext.Hash().Hex(), "result", resultHash.Hex())
-	return resultHash[:], nil
-}
-
-func Reencrypt(input []byte, inputLen uint32) ([]byte, error) {
-	logger := interpreter.GetEVM().Logger
-	if len(input) != 64 {
-		msg := "reencrypt input len must be 64 bytes"
-		logger.Error(msg, "input", hex.EncodeToString(input), "len", len(input))
-		return nil, errors.New(msg)
-	}
-	ct := getVerifiedCiphertext(tfhe.BytesToHash(input[0:32]))
-	if ct != nil {
-		decryptedValue, err := ct.ciphertext.Decrypt()
-		if err != nil {
-			panic("Failed to decrypt ciphertext during Run")
-		}
-
-		pubKey := input[32:64]
-		reencryptedValue, err := encryptToUserKey(decryptedValue, pubKey)
-		if err != nil {
-			logger.Error("reencrypt failed to encrypt to user key", "err", err)
-			return nil, err
-		}
-		logger.Info("reencrypt success", "input", hex.EncodeToString(input))
-		// FHENIX - Previously it was return toEVMBytes(reencryptedValue), nil but the decrypt function in Fhevm din't support it so we removed the the toEVMBytes
-		return reencryptedValue, nil
-	}
-	msg := "reencrypt unverified ciphertext handle"
-	logger.Error(msg, "input", hex.EncodeToString(input))
-	return nil, errors.New(msg)
 }

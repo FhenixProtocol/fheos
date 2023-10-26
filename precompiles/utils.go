@@ -3,6 +3,7 @@ package precompiles
 import (
 	"crypto/rand"
 	"errors"
+	"fmt"
 	"math/big"
 	"os"
 
@@ -146,4 +147,24 @@ func importCiphertextToEVM(ct *tfhe.Ciphertext) *verifiedCiphertext {
 
 func importCiphertext(ct *tfhe.Ciphertext) *verifiedCiphertext {
 	return importCiphertextToEVM(ct)
+}
+
+func importRandomCiphertext(t tfhe.UintType) []byte {
+	//ct := new(tfhe.Ciphertext)
+	//ct.MakeRandom(t)
+	ct, err := tfhe.NewRandomCipherText(t)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create random ciphertext of size: %d", t))
+	}
+
+	importCiphertext(ct)
+	ctHash := ct.Hash()
+	return ctHash[:]
+}
+
+func minInt(a int, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
