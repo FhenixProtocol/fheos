@@ -30,8 +30,8 @@ export interface FheOpsInterface extends Interface {
       | "lt"
       | "lte"
       | "mul"
-      | "optReq"
       | "reencrypt"
+      | "req"
       | "sub"
       | "trivialEncrypt"
       | "verify"
@@ -58,11 +58,11 @@ export interface FheOpsInterface extends Interface {
     values: [BytesLike, BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "optReq",
+    functionFragment: "reencrypt",
     values: [BytesLike, BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "reencrypt",
+    functionFragment: "req",
     values: [BytesLike, BigNumberish]
   ): string;
   encodeFunctionData(
@@ -83,8 +83,8 @@ export interface FheOpsInterface extends Interface {
   decodeFunctionResult(functionFragment: "lt", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "lte", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "mul", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "optReq", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "reencrypt", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "req", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "sub", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "trivialEncrypt",
@@ -166,13 +166,13 @@ export interface FheOps extends BaseContract {
     "view"
   >;
 
-  optReq: TypedContractMethod<
+  reencrypt: TypedContractMethod<
     [input: BytesLike, inputLen: BigNumberish],
     [string],
     "view"
   >;
 
-  reencrypt: TypedContractMethod<
+  req: TypedContractMethod<
     [input: BytesLike, inputLen: BigNumberish],
     [string],
     "view"
@@ -232,14 +232,14 @@ export interface FheOps extends BaseContract {
     "view"
   >;
   getFunction(
-    nameOrSignature: "optReq"
+    nameOrSignature: "reencrypt"
   ): TypedContractMethod<
     [input: BytesLike, inputLen: BigNumberish],
     [string],
     "view"
   >;
   getFunction(
-    nameOrSignature: "reencrypt"
+    nameOrSignature: "req"
   ): TypedContractMethod<
     [input: BytesLike, inputLen: BigNumberish],
     [string],

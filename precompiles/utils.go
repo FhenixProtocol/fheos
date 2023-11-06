@@ -6,11 +6,28 @@ import (
 	"fmt"
 	"math/big"
 	"os"
+	"strings"
 
+	"github.com/ethereum/go-ethereum/core/vm"
 	tfhe "github.com/fhenixprotocol/go-tfhe"
 	"github.com/holiman/uint256"
 	"golang.org/x/crypto/nacl/box"
 )
+
+type tomlConfigOptions struct {
+	Oracle struct {
+		Mode              string
+		OracleDBAddress   string
+		RequireRetryCount uint8
+	}
+
+	Tfhe struct {
+		CiphertextsToGarbageCollect           uint64
+		CiphertextsGarbageCollectIntervalSecs uint64
+	}
+}
+
+var tomlConfig tomlConfigOptions
 
 type DepthSet struct {
 	m map[int]struct{}
@@ -55,11 +72,6 @@ func (from *DepthSet) clone() (to *DepthSet) {
 	return
 }
 
-type verifiedCiphertext struct {
-	verifiedDepths *DepthSet
-	ciphertext     *tfhe.Ciphertext
-}
-
 func toEVMBytes(input []byte) []byte {
 	len := uint64(len(input))
 	lenBytes32 := uint256.NewInt(len).Bytes32()
@@ -92,31 +104,23 @@ func encryptToUserKey(value *big.Int, pubKey []byte) ([]byte, error) {
 	return ct, nil
 }
 
-func isVerifiedAtCurrentDepth(ct *verifiedCiphertext) bool {
-	return ct.verifiedDepths.Has(interpreter.GetEVM().GetDepth())
-}
-
-func getVerifiedCiphertextFromEVM(ciphertextHash tfhe.Hash) *verifiedCiphertext {
-	ct, ok := verifiedCiphertexts[ciphertextHash]
-	if ok && isVerifiedAtCurrentDepth(ct) {
+func getCiphertext(ciphertextHash tfhe.Hash) *tfhe.Ciphertext {
+	ct, ok := ctHashMap[ciphertextHash]
+	if ok {
 		return ct
 	}
 	return nil
 }
 
-func getVerifiedCiphertext(ciphertextHash tfhe.Hash) *verifiedCiphertext {
-	return getVerifiedCiphertextFromEVM(ciphertextHash)
-}
-
-func get2VerifiedOperands(input []byte) (lhs *verifiedCiphertext, rhs *verifiedCiphertext, err error) {
+func get2VerifiedOperands(input []byte) (lhs *tfhe.Ciphertext, rhs *tfhe.Ciphertext, err error) {
 	if len(input) != 65 {
 		return nil, nil, errors.New("input needs to contain two 256-bit sized values and 1 8-bit value")
 	}
-	lhs = getVerifiedCiphertext(tfhe.BytesToHash(input[0:32]))
+	lhs = getCiphertext(tfhe.BytesToHash(input[0:32]))
 	if lhs == nil {
 		return nil, nil, errors.New("unverified ciphertext handle")
 	}
-	rhs = getVerifiedCiphertext(tfhe.BytesToHash(input[32:64]))
+	rhs = getCiphertext(tfhe.BytesToHash(input[32:64]))
 	if rhs == nil {
 		return nil, nil, errors.New("unverified ciphertext handle")
 	}
@@ -124,29 +128,14 @@ func get2VerifiedOperands(input []byte) (lhs *verifiedCiphertext, rhs *verifiedC
 	return
 }
 
-func importCiphertextToEVMAtDepth(ct *tfhe.Ciphertext, depth int) *verifiedCiphertext {
-	existing, ok := verifiedCiphertexts[ct.Hash()]
+func importCiphertext(ct *tfhe.Ciphertext) *tfhe.Ciphertext {
+	existing, ok := ctHashMap[ct.Hash()]
 	if ok {
-		existing.verifiedDepths.add(depth)
 		return existing
 	} else {
-		verifiedDepths := newDepthSet()
-		verifiedDepths.add(depth)
-		new := &verifiedCiphertext{
-			verifiedDepths,
-			ct,
-		}
-		verifiedCiphertexts[ct.Hash()] = new
-		return new
+		ctHashMap[ct.Hash()] = ct
+		return ct
 	}
-}
-
-func importCiphertextToEVM(ct *tfhe.Ciphertext) *verifiedCiphertext {
-	return importCiphertextToEVMAtDepth(ct, interpreter.GetEVM().GetDepth())
-}
-
-func importCiphertext(ct *tfhe.Ciphertext) *verifiedCiphertext {
-	return importCiphertextToEVM(ct)
 }
 
 func importRandomCiphertext(t tfhe.UintType) []byte {
@@ -167,4 +156,49 @@ func minInt(a int, b int) int {
 		return a
 	}
 	return b
+}
+
+// Puts the given ciphertext as a require to the oracle DB or exits the process on errors.
+// Returns the require value.
+func putRequire(ct *tfhe.Ciphertext, interpreter *vm.EVMInterpreter) bool {
+	logger := interpreter.GetEVM().Logger
+
+	plaintext, err := tfhe.Decrypt(*ct)
+	if err != nil {
+		logger.Error(fmt.Sprintf("Failed to decrypt value: %s", err))
+		panic(err)
+	}
+
+	result, err := tfhe.StoreRequire(ct, plaintext)
+	if err != nil {
+		logger.Error("Failed to store require in DB")
+		panic("Failed to decrypt value")
+	}
+
+	return result
+}
+
+// Gets the given require from the oracle DB and returns its value.
+// Exits the process on errors or signature verification failure.
+func getRequire(ct *tfhe.Ciphertext, interpreter *vm.EVMInterpreter) bool {
+	result, err := tfhe.CheckRequire(ct)
+	if err != nil {
+		interpreter.GetEVM().Logger.Error("Error verifying require", err)
+		return false
+	}
+
+	return result
+}
+
+func evaluateRequire(ct *tfhe.Ciphertext, interpreter *vm.EVMInterpreter) bool {
+	mode := strings.ToLower(tomlConfig.Oracle.Mode)
+	switch mode {
+	case "oracle":
+		return putRequire(ct, interpreter)
+	case "node":
+		return getRequire(ct, interpreter)
+	}
+	interpreter.GetEVM().Logger.Error("evaluateRequire invalid mode", "mode", mode)
+	// exitProcess()
+	return false
 }

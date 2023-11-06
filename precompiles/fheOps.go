@@ -14,12 +14,11 @@ import (
 var interpreter *vm.EVMInterpreter
 
 // FHENIX: TODO - persist it somehow
-var verifiedCiphertexts map[tfhe.Hash]*verifiedCiphertext
-var optimisticRequire *tfhe.Ciphertext
+var ctHashMap map[tfhe.Hash]*tfhe.Ciphertext
 
 func SetEvmInterpreter(i *vm.EVMInterpreter) error {
-	if verifiedCiphertexts == nil {
-		verifiedCiphertexts = make(map[tfhe.Hash]*verifiedCiphertext)
+	if ctHashMap == nil {
+		ctHashMap = make(map[tfhe.Hash]*tfhe.Ciphertext)
 	}
 
 	tfheConfig := tfhe.Config{
@@ -47,7 +46,7 @@ func getLogger(funcName string) (vm.Logger, error) {
 	fmt.Printf("Starting new precompiled contract function %s\n", funcName)
 	if interpreter == nil {
 		msg := funcName + " no evm interpreter"
-		// logger.Error(msg, "lhs", lhs.ciphertext.UintType, "rhs", rhs.ciphertext.UintType)
+		// logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
 		return nil, errors.New(msg)
 	}
 
@@ -67,18 +66,18 @@ func Add(input []byte, inputLen uint32) ([]byte, error) {
 		return nil, err
 	}
 
-	if lhs.ciphertext.UintType != rhs.ciphertext.UintType {
+	if lhs.UintType != rhs.UintType {
 		msg := "fheAdd operand type mismatch"
-		logger.Error(msg, "lhs", lhs.ciphertext.UintType, "rhs", rhs.ciphertext.UintType)
+		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
 		return nil, errors.New(msg)
 	}
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if interpreter.GetEVM().GasEstimation {
-		return importRandomCiphertext(lhs.ciphertext.UintType), nil
+		return importRandomCiphertext(lhs.UintType), nil
 	}
 
-	result, err := lhs.ciphertext.Add(rhs.ciphertext)
+	result, err := lhs.Add(rhs)
 	if err != nil {
 		logger.Error("fheAdd failed", "err", err)
 		return nil, err
@@ -94,7 +93,7 @@ func Add(input []byte, inputLen uint32) ([]byte, error) {
 	}
 
 	resultHash := result.Hash()
-	logger.Info("fheAdd success", "lhs", lhs.ciphertext.Hash().Hex(), "rhs", rhs.ciphertext.Hash().Hex(), "result", resultHash.Hex())
+	logger.Info("fheAdd success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
 	return resultHash[:], nil
 }
 
@@ -149,9 +148,10 @@ func Reencrypt(input []byte, inputLen uint32) ([]byte, error) {
 		logger.Error(msg, "input", hex.EncodeToString(input), "len", len(input))
 		return nil, errors.New(msg)
 	}
-	ct := getVerifiedCiphertext(tfhe.BytesToHash(input[0:32]))
+
+	ct := getCiphertext(tfhe.BytesToHash(input[0:32]))
 	if ct != nil {
-		decryptedValue, err := ct.ciphertext.Decrypt()
+		decryptedValue, err := ct.Decrypt()
 		if err != nil {
 			panic(fmt.Sprintf("Failed to decrypt ciphertext: %+v", err))
 		}
@@ -183,18 +183,18 @@ func Lte(input []byte, inputLen uint32) ([]byte, error) {
 		return nil, err
 	}
 
-	if lhs.ciphertext.UintType != rhs.ciphertext.UintType {
+	if lhs.UintType != rhs.UintType {
 		msg := "fheLte operand type mismatch"
-		logger.Error(msg, "lhs", lhs.ciphertext.UintType, "rhs", rhs.ciphertext.UintType)
+		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
 		return nil, errors.New(msg)
 	}
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	if !interpreter.GetEVM().GasEstimation {
-		return importRandomCiphertext(lhs.ciphertext.UintType), nil
+	if interpreter.GetEVM().GasEstimation {
+		return importRandomCiphertext(lhs.UintType), nil
 	}
 
-	result, err := lhs.ciphertext.Lte(rhs.ciphertext)
+	result, err := lhs.Lte(rhs)
 	if err != nil {
 		logger.Error("fheLte failed", "err", err)
 		return nil, err
@@ -209,7 +209,7 @@ func Lte(input []byte, inputLen uint32) ([]byte, error) {
 	}
 
 	resultHash := result.Hash()
-	logger.Info("fheLte success", "lhs", lhs.ciphertext.Hash().Hex(), "rhs", rhs.ciphertext.Hash().Hex(), "result", resultHash.Hex())
+	logger.Info("fheLte success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
 	return resultHash[:], nil
 }
 
@@ -225,18 +225,18 @@ func Sub(input []byte, inputLen uint32) ([]byte, error) {
 		return nil, err
 	}
 
-	if lhs.ciphertext.UintType != rhs.ciphertext.UintType {
+	if lhs.UintType != rhs.UintType {
 		msg := "fheSub operand type mismatch"
-		logger.Error(msg, "lhs", lhs.ciphertext.UintType, "rhs", rhs.ciphertext.UintType)
+		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
 		return nil, errors.New(msg)
 	}
 
 	// // If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	if !interpreter.GetEVM().GasEstimation {
-		return importRandomCiphertext(lhs.ciphertext.UintType), nil
+	if interpreter.GetEVM().GasEstimation {
+		return importRandomCiphertext(lhs.UintType), nil
 	}
 
-	result, err := lhs.ciphertext.Sub(rhs.ciphertext)
+	result, err := lhs.Sub(rhs)
 	if err != nil {
 		logger.Error("fheSub failed", "err", err)
 		return nil, err
@@ -251,7 +251,7 @@ func Sub(input []byte, inputLen uint32) ([]byte, error) {
 	}
 
 	resultHash := result.Hash()
-	logger.Info("fheSub success", "lhs", lhs.ciphertext.Hash().Hex(), "rhs", rhs.ciphertext.Hash().Hex(), "result", resultHash.Hex())
+	logger.Info("fheSub success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
 	return resultHash[:], nil
 }
 
@@ -267,18 +267,18 @@ func Mul(input []byte, inputLen uint32) ([]byte, error) {
 		return nil, err
 	}
 
-	if lhs.ciphertext.UintType != rhs.ciphertext.UintType {
+	if lhs.UintType != rhs.UintType {
 		msg := "fheMul operand type mismatch"
-		logger.Error(msg, "lhs", lhs.ciphertext.UintType, "rhs", rhs.ciphertext.UintType)
+		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
 		return nil, errors.New(msg)
 	}
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	if !interpreter.GetEVM().GasEstimation {
-		return importRandomCiphertext(lhs.ciphertext.UintType), nil
+	if interpreter.GetEVM().GasEstimation {
+		return importRandomCiphertext(lhs.UintType), nil
 	}
 
-	result, err := lhs.ciphertext.Mul(rhs.ciphertext)
+	result, err := lhs.Mul(rhs)
 	if err != nil {
 		logger.Error("fheMul failed", "err", err)
 		return nil, err
@@ -309,18 +309,18 @@ func Lt(input []byte, inputLen uint32) ([]byte, error) {
 		return nil, err
 	}
 
-	if lhs.ciphertext.UintType != rhs.ciphertext.UintType {
+	if lhs.UintType != rhs.UintType {
 		msg := "fheLt operand type mismatch"
-		logger.Error(msg, "lhs", lhs.ciphertext.UintType, "rhs", rhs.ciphertext.UintType)
+		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
 		return nil, errors.New(msg)
 	}
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	if !interpreter.GetEVM().GasEstimation {
-		return importRandomCiphertext(lhs.ciphertext.UintType), nil
+	if interpreter.GetEVM().GasEstimation {
+		return importRandomCiphertext(lhs.UintType), nil
 	}
 
-	result, err := lhs.ciphertext.Lt(rhs.ciphertext)
+	result, err := lhs.Lt(rhs)
 	if err != nil {
 		logger.Error("fheLt failed", "err", err)
 		return nil, err
@@ -335,29 +335,29 @@ func Lt(input []byte, inputLen uint32) ([]byte, error) {
 	}
 
 	resultHash := result.Hash()
-	logger.Info("fheLt success", "lhs", lhs.ciphertext.Hash().Hex(), "rhs", rhs.ciphertext.Hash().Hex(), "result", resultHash.Hex())
+	logger.Info("fheLt success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
 	return resultHash[:], nil
 }
 
-func OptReq(input []byte, inputLen uint32) ([]byte, error) {
-	logger, err := getLogger("OptReq")
+func Req(input []byte, inputLen uint32) ([]byte, error) {
+	logger, err := getLogger("Require")
 	if err != nil {
 		return nil, err
 	}
 
 	if interpreter.GetEVM().EthCall {
-		msg := "optimisticRequire not supported on EthCall"
+		msg := "require not supported on EthCall"
 		logger.Error(msg)
 		return nil, errors.New(msg)
 	}
 
 	if len(input) != 32 {
-		msg := "optimisticRequire input len must be 32 bytes"
+		msg := "require input len must be 32 bytes"
 		logger.Error(msg, "input", hex.EncodeToString(input), "len", len(input))
 		return nil, errors.New(msg)
 	}
 
-	ct := getVerifiedCiphertext(tfhe.BytesToHash(input))
+	ct := getCiphertext(tfhe.BytesToHash(input))
 	if ct == nil {
 		msg := "optimisticRequire unverified handle"
 		logger.Error(msg, "input", hex.EncodeToString(input))
@@ -368,25 +368,17 @@ func OptReq(input []byte, inputLen uint32) ([]byte, error) {
 	if !interpreter.GetEVM().Commit {
 		return nil, nil
 	}
-	if ct.ciphertext.UintType != tfhe.Uint32 {
-		msg := "optimisticRequire ciphertext type is not FheUint32"
-		logger.Error(msg, "type", ct.ciphertext.UintType)
+	if ct.UintType != tfhe.Uint32 {
+		msg := "require ciphertext type is not euint32"
+		logger.Error(msg, "type", ct.UintType)
 		return nil, errors.New(msg)
 	}
-	// If this is the first optimistic require, just assign it.
-	// If there is already an optimistic one, just multiply it with the incoming one. Here, we assume
-	// that ciphertexts have value of either 0 or 1. Thus, multiplying all optimistic requires leads to
-	// one optimistic require at the end that we decrypt when we are about to finish execution.
-	if optimisticRequire == nil {
-		optimisticRequire = ct.ciphertext
-	} else {
-		op, err := optimisticRequire.Mul(ct.ciphertext)
-		if err != nil {
-			logger.Error("optimisticRequire mul failed", "err", err)
-			return nil, err
-		}
-		optimisticRequire = op
+
+	if !evaluateRequire(ct, interpreter) {
+		logger.Error("require failed to evaluate, reverting")
+		return nil, vm.ErrExecutionReverted
 	}
+
 	return nil, nil
 }
 

@@ -140,7 +140,7 @@ const _abi = [
         type: "uint32",
       },
     ],
-    name: "optReq",
+    name: "reencrypt",
     outputs: [
       {
         internalType: "bytes",
@@ -164,7 +164,7 @@ const _abi = [
         type: "uint32",
       },
     ],
-    name: "reencrypt",
+    name: "req",
     outputs: [
       {
         internalType: "bytes",
