@@ -43,10 +43,6 @@ func (s *DepthSet) add(v int) {
 	s.m[v] = struct{}{}
 }
 
-func (s *DepthSet) Add(v int) {
-	s.add(v)
-}
-
 func (s *DepthSet) del(v int) {
 	delete(s.m, v)
 }
