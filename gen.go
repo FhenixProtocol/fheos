@@ -291,7 +291,7 @@ func main() {
 
 		abi = info.abis[0]
 
-		folder := filepath.Join(parent, "go", module)
+		folder := filepath.Join(parent, module)
 
 		err = os.MkdirAll(folder, 0o755)
 		if err != nil {
