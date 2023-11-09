@@ -42,23 +42,30 @@ func SetEvmInterpreter(i *vm.EVMInterpreter) error {
 	return nil
 }
 
-func getLogger(funcName string) (vm.Logger, error) {
-	fmt.Printf("Starting new precompiled contract function %s\n", funcName)
+func validatedInterpreter() error {
 	if interpreter == nil {
-		msg := funcName + " no evm interpreter"
+		msg := "no evm interpreter"
 		// logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
-		return nil, errors.New(msg)
+		return errors.New(msg)
 	}
 
-	return interpreter.GetEVM().Logger, nil
+	return nil
+}
+
+func getLogger() vm.Logger {
+	return interpreter.GetEVM().Logger
 }
 
 // ============================
 func Add(input []byte, inputLen uint32) ([]byte, error) {
-	logger, err := getLogger("Add")
+	funcName := "Add"
+	fmt.Printf("Starting new precompiled contract function %s\n", funcName)
+	err := validatedInterpreter()
 	if err != nil {
 		return nil, err
 	}
+
+	logger := getLogger()
 
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
@@ -98,10 +105,14 @@ func Add(input []byte, inputLen uint32) ([]byte, error) {
 }
 
 func Verify(input []byte, inputLen uint32) ([]byte, error) {
-	logger, err := getLogger("Verify")
+	funcName := "Verify"
+	fmt.Printf("Starting new precompiled contract function %s\n", funcName)
+	err := validatedInterpreter()
 	if err != nil {
 		return nil, err
 	}
+
+	logger := getLogger()
 
 	if len(input) <= 1 {
 		msg := "verifyCiphertext RequiredGas() input needs to contain a ciphertext and one byte for its type"
@@ -132,10 +143,14 @@ func Verify(input []byte, inputLen uint32) ([]byte, error) {
 }
 
 func Reencrypt(input []byte, inputLen uint32) ([]byte, error) {
-	logger, err := getLogger("Reencrypt")
+	funcName := "Reencrypt"
+	fmt.Printf("Starting new precompiled contract function %s\n", funcName)
+	err := validatedInterpreter()
 	if err != nil {
 		return nil, err
 	}
+
+	logger := getLogger()
 
 	if !interpreter.GetEVM().EthCall {
 		msg := "reencrypt only supported on EthCall"
@@ -172,10 +187,14 @@ func Reencrypt(input []byte, inputLen uint32) ([]byte, error) {
 }
 
 func Lte(input []byte, inputLen uint32) ([]byte, error) {
-	logger, err := getLogger("Lte")
+	funcName := "Lte"
+	fmt.Printf("Starting new precompiled contract function %s\n", funcName)
+	err := validatedInterpreter()
 	if err != nil {
 		return nil, err
 	}
+
+	logger := getLogger()
 
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
@@ -214,10 +233,14 @@ func Lte(input []byte, inputLen uint32) ([]byte, error) {
 }
 
 func Sub(input []byte, inputLen uint32) ([]byte, error) {
-	logger, err := getLogger("Sub")
+	funcName := "Sub"
+	fmt.Printf("Starting new precompiled contract function %s\n", funcName)
+	err := validatedInterpreter()
 	if err != nil {
 		return nil, err
 	}
+
+	logger := getLogger()
 
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
@@ -256,10 +279,14 @@ func Sub(input []byte, inputLen uint32) ([]byte, error) {
 }
 
 func Mul(input []byte, inputLen uint32) ([]byte, error) {
-	logger, err := getLogger("Mul")
+	funcName := "Mul"
+	fmt.Printf("Starting new precompiled contract function %s\n", funcName)
+	err := validatedInterpreter()
 	if err != nil {
 		return nil, err
 	}
+
+	logger := getLogger()
 
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
@@ -298,10 +325,14 @@ func Mul(input []byte, inputLen uint32) ([]byte, error) {
 }
 
 func Lt(input []byte, inputLen uint32) ([]byte, error) {
-	logger, err := getLogger("Lt")
+	funcName := "Lt"
+	fmt.Printf("Starting new precompiled contract function %s\n", funcName)
+	err := validatedInterpreter()
 	if err != nil {
 		return nil, err
 	}
+
+	logger := getLogger()
 
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
@@ -340,10 +371,14 @@ func Lt(input []byte, inputLen uint32) ([]byte, error) {
 }
 
 func Req(input []byte, inputLen uint32) ([]byte, error) {
-	logger, err := getLogger("Require")
+	funcName := "Require"
+	fmt.Printf("Starting new precompiled contract function %s\n", funcName)
+	err := validatedInterpreter()
 	if err != nil {
 		return nil, err
 	}
+
+	logger := getLogger()
 
 	if interpreter.GetEVM().EthCall {
 		msg := "require not supported on EthCall"
@@ -388,10 +423,14 @@ func Cast(input []byte, inputLen uint32) ([]byte, error) {
 }
 
 func TrivialEncrypt(input []byte) ([]byte, error) {
-	logger, err := getLogger("Reencrypt")
+	funcName := "TrivialEncrypt"
+	fmt.Printf("Starting new precompiled contract function %s\n", funcName)
+	err := validatedInterpreter()
 	if err != nil {
 		return nil, err
 	}
+
+	logger := getLogger()
 
 	if len(input) != 33 {
 		msg := "trivialEncrypt input len must be 33 bytes"

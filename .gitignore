@@ -1,1 +1,5 @@
 precompiles/node_modules/*
+precompiles/cache/*
+precompiles/types/*
+precompiles/artifacts/*
+build/
