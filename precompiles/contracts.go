@@ -16,24 +16,12 @@ var interpreter *vm.EVMInterpreter
 // FHENIX: TODO - persist it somehow
 var ctHashMap map[tfhe.Hash]*tfhe.Ciphertext
 
-func SetEvmInterpreter(i *vm.EVMInterpreter) error {
+func SetEvmInterpreter(i *vm.EVMInterpreter, tfheConfig *tfhe.Config) error {
 	if ctHashMap == nil {
 		ctHashMap = make(map[tfhe.Hash]*tfhe.Ciphertext)
 	}
 
-	tfheConfig := tfhe.Config{
-		IsOracle:             true,
-		OracleType:           "local",
-		OracleDbPath:         "data/oracle.db",
-		OracleAddress:        "http://127.0.0.1:9001",
-		ServerKeyPath:        "keys/tfhe/sks",
-		ClientKeyPath:        "keys/tfhe/cks",
-		PublicKeyPath:        "keys/tfhe/pks",
-		OraclePrivateKeyPath: "keys/oracle/private-oracle.key",
-		OraclePublicKeyPath:  "keys/oracle/public-oracle.key",
-	}
-
-	err := tfhe.InitTfhe(&tfheConfig)
+	err := tfhe.InitTfhe(tfheConfig)
 	if err != nil {
 		return err
 	}
