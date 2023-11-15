@@ -510,7 +510,6 @@ func TrivialEncrypt(input []byte) ([]byte, error) {
 
 	ctHash := ct.Hash()
 	importCiphertext(ct)
-
 	if shouldPrintPrecompileInfo() {
 		logger.Info("trivialEncrypt success",
 			"ctHash", ctHash.Hex(),
