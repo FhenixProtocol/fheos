@@ -8,7 +8,7 @@ require (
 )
 
 require (
-	github.com/deckarep/golang-set/v2 v2.1.0 // indirect
+	github.com/deckarep/golang-set/v2 v2.3.1 // indirect
 	github.com/fhenixprotocol/decryption-oracle v0.0.0-20231026124808-5b99acac9a8d // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gammazero/deque v0.2.1 // indirect

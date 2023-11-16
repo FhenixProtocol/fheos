@@ -12,5 +12,6 @@ interface FheOps {
 	function lt(bytes memory input, uint32 inputLen) external view returns (bytes memory);
 	function req(bytes memory input, uint32 inputLen) external view returns (bytes memory);
 	function cast(bytes memory input, uint32 inputLen) external view returns (bytes memory);
+	function yONATHAN(bytes memory input, uint32 inputLen) external view returns (bytes memory);
 	function trivialEncrypt(bytes memory input) external view returns (bytes memory);
 }

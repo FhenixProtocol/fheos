@@ -44,7 +44,7 @@ func SetEvmInterpreter(i *vm.EVMInterpreter) error {
 }
 
 func shouldPrintPrecompileInfo() bool {
-	return interpreter.GetEVM().Commit
+	return interpreter.GetEVM().Commit && !interpreter.GetEVM().GasEstimation
 }
 
 func validateInterpreter() error {
@@ -77,7 +77,7 @@ func Add(input []byte, inputLen uint32) ([]byte, error) {
 	logger := getLogger()
 
 	if shouldPrintPrecompileInfo() {
-		logger.Info("Starting new precompiled contract function %s\n", getFunctionName())
+		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(input)
@@ -125,7 +125,7 @@ func Verify(input []byte, inputLen uint32) ([]byte, error) {
 
 	logger := getLogger()
 	if shouldPrintPrecompileInfo() {
-		logger.Info("Starting new precompiled contract function %s\n", getFunctionName())
+		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
 
 	if len(input) <= 1 {
@@ -164,7 +164,7 @@ func Reencrypt(input []byte, inputLen uint32) ([]byte, error) {
 
 	logger := getLogger()
 	if shouldPrintPrecompileInfo() {
-		logger.Info("Starting new precompiled contract function %s\n", getFunctionName())
+		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
 
 	if !interpreter.GetEVM().EthCall {
@@ -209,7 +209,7 @@ func Lte(input []byte, inputLen uint32) ([]byte, error) {
 
 	logger := getLogger()
 	if shouldPrintPrecompileInfo() {
-		logger.Info("Starting new precompiled contract function %s\n", getFunctionName())
+		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(input)
@@ -256,7 +256,7 @@ func Sub(input []byte, inputLen uint32) ([]byte, error) {
 
 	logger := getLogger()
 	if shouldPrintPrecompileInfo() {
-		logger.Info("Starting new precompiled contract function %s\n", getFunctionName())
+		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(input)
@@ -303,7 +303,7 @@ func Mul(input []byte, inputLen uint32) ([]byte, error) {
 
 	logger := getLogger()
 	if shouldPrintPrecompileInfo() {
-		logger.Info("Starting new precompiled contract function %s\n", getFunctionName())
+		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(input)
@@ -350,7 +350,7 @@ func Lt(input []byte, inputLen uint32) ([]byte, error) {
 
 	logger := getLogger()
 	if shouldPrintPrecompileInfo() {
-		logger.Info("Starting new precompiled contract function %s\n", getFunctionName())
+		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(input)
@@ -397,7 +397,7 @@ func Req(input []byte, inputLen uint32) ([]byte, error) {
 
 	logger := getLogger()
 	if shouldPrintPrecompileInfo() {
-		logger.Info("Starting new precompiled contract function %s\n", getFunctionName())
+		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
 
 	if interpreter.GetEVM().EthCall {
@@ -445,7 +445,7 @@ func Cast(input []byte, inputLen uint32) ([]byte, error) {
 
 	logger := getLogger()
 	if shouldPrintPrecompileInfo() {
-		logger.Info("Starting new precompiled contract function %s\n", getFunctionName())
+		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
 
 	if !isValidType(input[32]) {
@@ -484,8 +484,12 @@ func Cast(input []byte, inputLen uint32) ([]byte, error) {
 	return resHash[:], nil
 }
 
+func YONATHAN(input []byte, inputLen uint32) ([]byte, error) {
+	return nil, nil
+}
+
 func TrivialEncrypt(input []byte) ([]byte, error) {
-	fmt.Printf("Starting new precompiled contract function %s\n", getFunctionName())
+	fmt.Printf("Starting new precompiled contract function ", getFunctionName())
 	err := validateInterpreter()
 	if err != nil {
 		return nil, err
