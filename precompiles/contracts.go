@@ -484,10 +484,6 @@ func Cast(input []byte, inputLen uint32) ([]byte, error) {
 	return resHash[:], nil
 }
 
-func YONATHAN(input []byte, inputLen uint32) ([]byte, error) {
-	return nil, nil
-}
-
 func TrivialEncrypt(input []byte) ([]byte, error) {
 	fmt.Printf("Starting new precompiled contract function ", getFunctionName())
 	err := validateInterpreter()
