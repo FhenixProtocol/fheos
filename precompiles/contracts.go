@@ -517,3 +517,50 @@ func TrivialEncrypt(input []byte) ([]byte, error) {
 	}
 	return ctHash[:], nil
 }
+
+func Div(input []byte, inputLen uint32) ([]byte, error) {
+	err := validateInterpreter()
+	if err != nil {
+		return nil, err
+	}
+
+	logger := getLogger()
+	if shouldPrintPrecompileInfo() {
+		logger.Info("Starting new precompiled contract function ", getFunctionName())
+	}
+
+	lhs, rhs, err := get2VerifiedOperands(input)
+	if err != nil {
+		logger.Error("fheMul inputs not verified", "err", err)
+		return nil, err
+	}
+
+	if lhs.UintType != rhs.UintType {
+		msg := "fheMul operand type mismatch"
+		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
+		return nil, errors.New(msg)
+	}
+
+	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
+	if interpreter.GetEVM().GasEstimation {
+		return importRandomCiphertext(lhs.UintType), nil
+	}
+
+	result, err := lhs.Div(rhs)
+	if err != nil {
+		logger.Error("fheDiv failed", "err", err)
+		return nil, err
+	}
+	importCiphertext(result)
+
+	// TODO: for testing
+	err = os.WriteFile("/tmp/mul_result", result.Serialization, 0644)
+	if err != nil {
+		logger.Error("fheMul failed to write /tmp/mul_result", "err", err)
+		return nil, err
+	}
+
+	ctHash := result.Hash()
+
+	return ctHash[:], nil
+}
