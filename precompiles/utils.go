@@ -134,17 +134,15 @@ func importCiphertext(ct *tfhe.Ciphertext) *tfhe.Ciphertext {
 	}
 }
 
-func importRandomCiphertext(t tfhe.UintType) []byte {
-	//ct := new(tfhe.Ciphertext)
-	//ct.MakeRandom(t)
+func importRandomCiphertext(t tfhe.UintType) ([]byte, error) {
 	ct, err := tfhe.NewRandomCipherText(t)
 	if err != nil {
-		panic(fmt.Sprintf("Failed to create random ciphertext of size: %d", t))
+		return nil, errors.New(fmt.Sprintf("failed creating random ciphertext of size: %d", t))
 	}
 
 	importCiphertext(ct)
 	ctHash := ct.Hash()
-	return ctHash[:]
+	return ctHash[:], nil
 }
 
 func minInt(a int, b int) int {
@@ -156,37 +154,32 @@ func minInt(a int, b int) int {
 
 // Puts the given ciphertext as a require to the oracle DB or exits the process on errors.
 // Returns the require value.
-func putRequire(ct *tfhe.Ciphertext, interpreter *vm.EVMInterpreter) bool {
-	logger := interpreter.GetEVM().Logger
-
+func putRequire(ct *tfhe.Ciphertext, interpreter *vm.EVMInterpreter) (bool, error) {
 	plaintext, err := tfhe.Decrypt(*ct)
 	if err != nil {
-		logger.Error(fmt.Sprintf("Failed to decrypt value: %s", err))
-		panic(err)
+		return false, errors.New(fmt.Sprintf("Failed to decrypt value: %s", err))
 	}
 
 	result, err := tfhe.StoreRequire(ct, plaintext)
 	if err != nil {
-		logger.Error("Failed to store require in DB")
-		panic("Failed to decrypt value")
+		return false, errors.New("Failed to store require in DB")
 	}
 
-	return result
+	return result, nil
 }
 
 // Gets the given require from the oracle DB and returns its value.
 // Exits the process on errors or signature verification failure.
-func getRequire(ct *tfhe.Ciphertext, interpreter *vm.EVMInterpreter) bool {
+func getRequire(ct *tfhe.Ciphertext, interpreter *vm.EVMInterpreter) (bool, error) {
 	result, err := tfhe.CheckRequire(ct)
 	if err != nil {
-		interpreter.GetEVM().Logger.Error("Error verifying require", err)
-		return false
+		return false, errors.New(fmt.Sprintf("Error verifying require", err))
 	}
 
-	return result
+	return result, nil
 }
 
-func evaluateRequire(ct *tfhe.Ciphertext, interpreter *vm.EVMInterpreter) bool {
+func evaluateRequire(ct *tfhe.Ciphertext, interpreter *vm.EVMInterpreter) (bool, error) {
 	mode := strings.ToLower(tomlConfig.Oracle.Mode)
 	switch mode {
 	case "oracle":
@@ -194,9 +187,8 @@ func evaluateRequire(ct *tfhe.Ciphertext, interpreter *vm.EVMInterpreter) bool {
 	case "node":
 		return getRequire(ct, interpreter)
 	}
-	interpreter.GetEVM().Logger.Error("evaluateRequire invalid mode", "mode", mode)
-	// exitProcess()
-	return false
+
+	return false, errors.New(fmt.Sprintf("evaluateRequire invalid mode: %s", mode))
 }
 
 type fheUintType uint8

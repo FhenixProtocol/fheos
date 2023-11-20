@@ -3,7 +3,6 @@ package precompiles
 import (
 	"encoding/hex"
 	"errors"
-	"fmt"
 	"math/big"
 	"os"
 	"runtime"
@@ -77,7 +76,7 @@ func Add(input []byte, inputLen uint32) ([]byte, error) {
 	logger := getLogger()
 
 	if shouldPrintPrecompileInfo() {
-		logger.Info("Starting new precompiled contract function ", getFunctionName())
+		logger.Debug("starting new precompiled contract function ", getFunctionName())
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(input)
@@ -94,7 +93,7 @@ func Add(input []byte, inputLen uint32) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if interpreter.GetEVM().GasEstimation {
-		return importRandomCiphertext(lhs.UintType), nil
+		return importRandomCiphertext(lhs.UintType)
 	}
 
 	result, err := lhs.Add(rhs)
@@ -113,7 +112,7 @@ func Add(input []byte, inputLen uint32) ([]byte, error) {
 	}
 
 	resultHash := result.Hash()
-	logger.Info("fheAdd success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
+	logger.Debug("fheAdd success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
 	return resultHash[:], nil
 }
 
@@ -125,7 +124,7 @@ func Verify(input []byte, inputLen uint32) ([]byte, error) {
 
 	logger := getLogger()
 	if shouldPrintPrecompileInfo() {
-		logger.Info("Starting new precompiled contract function ", getFunctionName())
+		logger.Debug("starting new precompiled contract function ", getFunctionName())
 	}
 
 	if len(input) <= 1 {
@@ -149,7 +148,7 @@ func Verify(input []byte, inputLen uint32) ([]byte, error) {
 	importCiphertext(ct)
 
 	if interpreter.GetEVM().Commit {
-		logger.Info("verifyCiphertext success",
+		logger.Debug("verifyCiphertext success",
 			"ctHash", ctHash.Hex(),
 			"ctBytes64", hex.EncodeToString(ctBytes[:minInt(len(ctBytes), 64)]))
 	}
@@ -164,7 +163,7 @@ func Reencrypt(input []byte, inputLen uint32) ([]byte, error) {
 
 	logger := getLogger()
 	if shouldPrintPrecompileInfo() {
-		logger.Info("Starting new precompiled contract function ", getFunctionName())
+		logger.Debug("starting new precompiled contract function ", getFunctionName())
 	}
 
 	if !interpreter.GetEVM().EthCall {
@@ -183,7 +182,8 @@ func Reencrypt(input []byte, inputLen uint32) ([]byte, error) {
 	if ct != nil {
 		decryptedValue, err := ct.Decrypt()
 		if err != nil {
-			panic(fmt.Sprintf("Failed to decrypt ciphertext: %+v", err))
+			logger.Error("failed decrypting ciphertext", "error", err)
+			return nil, err
 		}
 
 		pubKey := input[32:64]
@@ -192,7 +192,7 @@ func Reencrypt(input []byte, inputLen uint32) ([]byte, error) {
 			logger.Error("reencrypt failed to encrypt to user key", "err", err)
 			return nil, err
 		}
-		logger.Info("reencrypt success", "input", hex.EncodeToString(input))
+		logger.Debug("reencrypt success", "input", hex.EncodeToString(input))
 		// FHENIX: Previously it was "return toEVMBytes(reencryptedValue), nil" but the decrypt function in Fhevm din't support it so we removed the the toEVMBytes
 		return reencryptedValue, nil
 	}
@@ -209,7 +209,7 @@ func Lte(input []byte, inputLen uint32) ([]byte, error) {
 
 	logger := getLogger()
 	if shouldPrintPrecompileInfo() {
-		logger.Info("Starting new precompiled contract function ", getFunctionName())
+		logger.Debug("starting new precompiled contract function ", getFunctionName())
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(input)
@@ -226,7 +226,8 @@ func Lte(input []byte, inputLen uint32) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if interpreter.GetEVM().GasEstimation {
-		return importRandomCiphertext(lhs.UintType), nil
+		return importRandomCiphertext(lhs.UintType)
+
 	}
 
 	result, err := lhs.Lte(rhs)
@@ -244,7 +245,7 @@ func Lte(input []byte, inputLen uint32) ([]byte, error) {
 	}
 
 	resultHash := result.Hash()
-	logger.Info("fheLte success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
+	logger.Debug("fheLte success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
 	return resultHash[:], nil
 }
 
@@ -256,7 +257,7 @@ func Sub(input []byte, inputLen uint32) ([]byte, error) {
 
 	logger := getLogger()
 	if shouldPrintPrecompileInfo() {
-		logger.Info("Starting new precompiled contract function ", getFunctionName())
+		logger.Debug("starting new precompiled contract function ", getFunctionName())
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(input)
@@ -273,7 +274,7 @@ func Sub(input []byte, inputLen uint32) ([]byte, error) {
 
 	// // If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if interpreter.GetEVM().GasEstimation {
-		return importRandomCiphertext(lhs.UintType), nil
+		return importRandomCiphertext(lhs.UintType)
 	}
 
 	result, err := lhs.Sub(rhs)
@@ -291,7 +292,7 @@ func Sub(input []byte, inputLen uint32) ([]byte, error) {
 	}
 
 	resultHash := result.Hash()
-	logger.Info("fheSub success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
+	logger.Debug("fheSub success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
 	return resultHash[:], nil
 }
 
@@ -303,7 +304,7 @@ func Mul(input []byte, inputLen uint32) ([]byte, error) {
 
 	logger := getLogger()
 	if shouldPrintPrecompileInfo() {
-		logger.Info("Starting new precompiled contract function ", getFunctionName())
+		logger.Debug("starting new precompiled contract function ", getFunctionName())
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(input)
@@ -320,7 +321,7 @@ func Mul(input []byte, inputLen uint32) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if interpreter.GetEVM().GasEstimation {
-		return importRandomCiphertext(lhs.UintType), nil
+		return importRandomCiphertext(lhs.UintType)
 	}
 
 	result, err := lhs.Mul(rhs)
@@ -350,7 +351,7 @@ func Lt(input []byte, inputLen uint32) ([]byte, error) {
 
 	logger := getLogger()
 	if shouldPrintPrecompileInfo() {
-		logger.Info("Starting new precompiled contract function ", getFunctionName())
+		logger.Debug("starting new precompiled contract function ", getFunctionName())
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(input)
@@ -367,7 +368,7 @@ func Lt(input []byte, inputLen uint32) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if interpreter.GetEVM().GasEstimation {
-		return importRandomCiphertext(lhs.UintType), nil
+		return importRandomCiphertext(lhs.UintType)
 	}
 
 	result, err := lhs.Lt(rhs)
@@ -385,7 +386,7 @@ func Lt(input []byte, inputLen uint32) ([]byte, error) {
 	}
 
 	resultHash := result.Hash()
-	logger.Info("fheLt success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
+	logger.Debug("fheLt success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
 	return resultHash[:], nil
 }
 
@@ -397,7 +398,7 @@ func Req(input []byte, inputLen uint32) ([]byte, error) {
 
 	logger := getLogger()
 	if shouldPrintPrecompileInfo() {
-		logger.Info("Starting new precompiled contract function ", getFunctionName())
+		logger.Debug("starting new precompiled contract function ", getFunctionName())
 	}
 
 	if interpreter.GetEVM().EthCall {
@@ -429,7 +430,12 @@ func Req(input []byte, inputLen uint32) ([]byte, error) {
 		return nil, errors.New(msg)
 	}
 
-	if !evaluateRequire(ct, interpreter) {
+	ev, err := evaluateRequire(ct, interpreter)
+	if err != nil {
+		logger.Error("failed evaluating the require", "error", err)
+	}
+
+	if !ev {
 		logger.Error("require failed to evaluate, reverting")
 		return nil, vm.ErrExecutionReverted
 	}
@@ -445,7 +451,7 @@ func Cast(input []byte, inputLen uint32) ([]byte, error) {
 
 	logger := getLogger()
 	if shouldPrintPrecompileInfo() {
-		logger.Info("Starting new precompiled contract function ", getFunctionName())
+		logger.Debug("starting new precompiled contract function ", getFunctionName())
 	}
 
 	if !isValidType(input[32]) {
@@ -462,7 +468,7 @@ func Cast(input []byte, inputLen uint32) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if interpreter.GetEVM().GasEstimation {
-		return importRandomCiphertext(castToType), nil
+		return importRandomCiphertext(castToType)
 	}
 
 	res, err := ct.Cast(castToType)
@@ -476,7 +482,7 @@ func Cast(input []byte, inputLen uint32) ([]byte, error) {
 
 	importCiphertext(res)
 	if shouldPrintPrecompileInfo() {
-		logger.Info("cast success",
+		logger.Debug("cast success",
 			"ctHash", resHash.Hex(),
 		)
 	}
@@ -485,13 +491,13 @@ func Cast(input []byte, inputLen uint32) ([]byte, error) {
 }
 
 func TrivialEncrypt(input []byte) ([]byte, error) {
-	fmt.Printf("Starting new precompiled contract function ", getFunctionName())
 	err := validateInterpreter()
 	if err != nil {
 		return nil, err
 	}
 
 	logger := getLogger()
+	logger.Debug("starting new precompiled contract function ", getFunctionName())
 
 	if len(input) != 33 {
 		msg := "trivialEncrypt input len must be 33 bytes"
@@ -504,14 +510,14 @@ func TrivialEncrypt(input []byte) ([]byte, error) {
 
 	ct, err := tfhe.NewCipherTextTrivial(valueToEncrypt, encryptToType)
 	if err != nil {
-		logger.Error("Failed to create trivial encrypted value")
+		logger.Error("failed to create trivial encrypted value")
 		return nil, err
 	}
 
 	ctHash := ct.Hash()
 	importCiphertext(ct)
 	if shouldPrintPrecompileInfo() {
-		logger.Info("trivialEncrypt success",
+		logger.Debug("trivialEncrypt success",
 			"ctHash", ctHash.Hex(),
 			"valueToEncrypt", valueToEncrypt.Uint64())
 	}
