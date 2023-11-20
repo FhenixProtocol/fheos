@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/big"
 	"os"
+	"runtime"
 
 	"github.com/ethereum/go-ethereum/core/vm"
 	tfhe "github.com/fhenixprotocol/go-tfhe"
@@ -42,7 +43,11 @@ func SetEvmInterpreter(i *vm.EVMInterpreter) error {
 	return nil
 }
 
-func validatedInterpreter() error {
+func shouldPrintPrecompileInfo() bool {
+	return interpreter.GetEVM().Commit && !interpreter.GetEVM().GasEstimation
+}
+
+func validateInterpreter() error {
 	if interpreter == nil {
 		msg := "no evm interpreter"
 		// logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
@@ -56,16 +61,24 @@ func getLogger() vm.Logger {
 	return interpreter.GetEVM().Logger
 }
 
+func getFunctionName() string {
+	pc, _, _, _ := runtime.Caller(1)
+	funcName := runtime.FuncForPC(pc).Name()
+	return funcName
+}
+
 // ============================
 func Add(input []byte, inputLen uint32) ([]byte, error) {
-	funcName := "Add"
-	fmt.Printf("Starting new precompiled contract function %s\n", funcName)
-	err := validatedInterpreter()
+	err := validateInterpreter()
 	if err != nil {
 		return nil, err
 	}
 
 	logger := getLogger()
+
+	if shouldPrintPrecompileInfo() {
+		logger.Info("Starting new precompiled contract function ", getFunctionName())
+	}
 
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
@@ -105,14 +118,15 @@ func Add(input []byte, inputLen uint32) ([]byte, error) {
 }
 
 func Verify(input []byte, inputLen uint32) ([]byte, error) {
-	funcName := "Verify"
-	fmt.Printf("Starting new precompiled contract function %s\n", funcName)
-	err := validatedInterpreter()
+	err := validateInterpreter()
 	if err != nil {
 		return nil, err
 	}
 
 	logger := getLogger()
+	if shouldPrintPrecompileInfo() {
+		logger.Info("Starting new precompiled contract function ", getFunctionName())
+	}
 
 	if len(input) <= 1 {
 		msg := "verifyCiphertext RequiredGas() input needs to contain a ciphertext and one byte for its type"
@@ -143,14 +157,15 @@ func Verify(input []byte, inputLen uint32) ([]byte, error) {
 }
 
 func Reencrypt(input []byte, inputLen uint32) ([]byte, error) {
-	funcName := "Reencrypt"
-	fmt.Printf("Starting new precompiled contract function %s\n", funcName)
-	err := validatedInterpreter()
+	err := validateInterpreter()
 	if err != nil {
 		return nil, err
 	}
 
 	logger := getLogger()
+	if shouldPrintPrecompileInfo() {
+		logger.Info("Starting new precompiled contract function ", getFunctionName())
+	}
 
 	if !interpreter.GetEVM().EthCall {
 		msg := "reencrypt only supported on EthCall"
@@ -187,14 +202,15 @@ func Reencrypt(input []byte, inputLen uint32) ([]byte, error) {
 }
 
 func Lte(input []byte, inputLen uint32) ([]byte, error) {
-	funcName := "Lte"
-	fmt.Printf("Starting new precompiled contract function %s\n", funcName)
-	err := validatedInterpreter()
+	err := validateInterpreter()
 	if err != nil {
 		return nil, err
 	}
 
 	logger := getLogger()
+	if shouldPrintPrecompileInfo() {
+		logger.Info("Starting new precompiled contract function ", getFunctionName())
+	}
 
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
@@ -233,14 +249,15 @@ func Lte(input []byte, inputLen uint32) ([]byte, error) {
 }
 
 func Sub(input []byte, inputLen uint32) ([]byte, error) {
-	funcName := "Sub"
-	fmt.Printf("Starting new precompiled contract function %s\n", funcName)
-	err := validatedInterpreter()
+	err := validateInterpreter()
 	if err != nil {
 		return nil, err
 	}
 
 	logger := getLogger()
+	if shouldPrintPrecompileInfo() {
+		logger.Info("Starting new precompiled contract function ", getFunctionName())
+	}
 
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
@@ -279,14 +296,15 @@ func Sub(input []byte, inputLen uint32) ([]byte, error) {
 }
 
 func Mul(input []byte, inputLen uint32) ([]byte, error) {
-	funcName := "Mul"
-	fmt.Printf("Starting new precompiled contract function %s\n", funcName)
-	err := validatedInterpreter()
+	err := validateInterpreter()
 	if err != nil {
 		return nil, err
 	}
 
 	logger := getLogger()
+	if shouldPrintPrecompileInfo() {
+		logger.Info("Starting new precompiled contract function ", getFunctionName())
+	}
 
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
@@ -325,14 +343,15 @@ func Mul(input []byte, inputLen uint32) ([]byte, error) {
 }
 
 func Lt(input []byte, inputLen uint32) ([]byte, error) {
-	funcName := "Lt"
-	fmt.Printf("Starting new precompiled contract function %s\n", funcName)
-	err := validatedInterpreter()
+	err := validateInterpreter()
 	if err != nil {
 		return nil, err
 	}
 
 	logger := getLogger()
+	if shouldPrintPrecompileInfo() {
+		logger.Info("Starting new precompiled contract function ", getFunctionName())
+	}
 
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
@@ -371,14 +390,15 @@ func Lt(input []byte, inputLen uint32) ([]byte, error) {
 }
 
 func Req(input []byte, inputLen uint32) ([]byte, error) {
-	funcName := "Require"
-	fmt.Printf("Starting new precompiled contract function %s\n", funcName)
-	err := validatedInterpreter()
+	err := validateInterpreter()
 	if err != nil {
 		return nil, err
 	}
 
 	logger := getLogger()
+	if shouldPrintPrecompileInfo() {
+		logger.Info("Starting new precompiled contract function ", getFunctionName())
+	}
 
 	if interpreter.GetEVM().EthCall {
 		msg := "require not supported on EthCall"
@@ -417,15 +437,56 @@ func Req(input []byte, inputLen uint32) ([]byte, error) {
 	return nil, nil
 }
 
-// Implementation of the following is pending and will be completed once TFHE-rs add type casts to their high-level C API.
 func Cast(input []byte, inputLen uint32) ([]byte, error) {
-	return nil, nil
+	err := validateInterpreter()
+	if err != nil {
+		return nil, err
+	}
+
+	logger := getLogger()
+	if shouldPrintPrecompileInfo() {
+		logger.Info("Starting new precompiled contract function ", getFunctionName())
+	}
+
+	if !isValidType(input[32]) {
+		logger.Error("invalid type to cast to")
+		return nil, errors.New("invalid type provided")
+	}
+	castToType := tfhe.UintType(input[32])
+
+	ct := getCiphertext(tfhe.BytesToHash(input[0:32]))
+	if ct == nil {
+		logger.Error("cast input not verified")
+		return nil, errors.New("unverified ciphertext handle")
+	}
+
+	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
+	if interpreter.GetEVM().GasEstimation {
+		return importRandomCiphertext(castToType), nil
+	}
+
+	res, err := ct.Cast(castToType)
+	if err != nil {
+		msg := "cast Run() error casting ciphertext to"
+		logger.Error(msg, "type", castToType)
+		return nil, errors.New(msg)
+	}
+
+	resHash := res.Hash()
+
+	importCiphertext(res)
+	if shouldPrintPrecompileInfo() {
+		logger.Info("cast success",
+			"ctHash", resHash.Hex(),
+		)
+	}
+
+	return resHash[:], nil
 }
 
 func TrivialEncrypt(input []byte) ([]byte, error) {
-	funcName := "TrivialEncrypt"
-	fmt.Printf("Starting new precompiled contract function %s\n", funcName)
-	err := validatedInterpreter()
+	fmt.Printf("Starting new precompiled contract function ", getFunctionName())
+	err := validateInterpreter()
 	if err != nil {
 		return nil, err
 	}
@@ -449,8 +510,7 @@ func TrivialEncrypt(input []byte) ([]byte, error) {
 
 	ctHash := ct.Hash()
 	importCiphertext(ct)
-
-	if interpreter.GetEVM().Commit {
+	if shouldPrintPrecompileInfo() {
 		logger.Info("trivialEncrypt success",
 			"ctHash", ctHash.Hex(),
 			"valueToEncrypt", valueToEncrypt.Uint64())

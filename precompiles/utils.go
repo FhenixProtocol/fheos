@@ -198,3 +198,18 @@ func evaluateRequire(ct *tfhe.Ciphertext, interpreter *vm.EVMInterpreter) bool {
 	// exitProcess()
 	return false
 }
+
+type fheUintType uint8
+
+const (
+	FheUint8  fheUintType = 0
+	FheUint16 fheUintType = 1
+	FheUint32 fheUintType = 2
+)
+
+func isValidType(t byte) bool {
+	if uint8(t) < uint8(FheUint8) || uint8(t) > uint8(FheUint32) {
+		return false
+	}
+	return true
+}
