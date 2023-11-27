@@ -401,10 +401,12 @@ func main() {
 
 import (
 	fheos "github.com/fhenixprotocol/fheos/precompiles"
+	"github.com/fhenixprotocol/go-tfhe"
 )
 
 type FheOps struct {
 	Address addr // 0x80
+	TfheConfig *tfhe.Config
 }
 `)
 	defer file.Close()
@@ -443,7 +445,7 @@ type Argument struct {
 func GenerateFHEOperationTemplate(returnType string) *template.Template {
 	templateText := `
 func (con FheOps) {{.Name}}(c ctx, evm mech, {{.Inputs}}) ({{.ReturnType}}, error) {
-    err := fheos.SetEvmInterpreter(evm.Interpreter())
+    err := fheos.SetEvmInterpreter(evm.Interpreter(), con.TfheConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -455,7 +457,7 @@ func (con FheOps) {{.Name}}(c ctx, evm mech, {{.Inputs}}) ({{.ReturnType}}, erro
 	if returnType == "void" {
 		templateText = `
 func (con FheOps) {{.Name}}(c ctx, evm mech, {{.Inputs}}) error {
-	err := fheos.SetEvmInterpreter(evm.Interpreter())
+	err := fheos.SetEvmInterpreter(evm.Interpreter(), con.TfheConfig)
 	if err != nil {
 		return err
 	}
