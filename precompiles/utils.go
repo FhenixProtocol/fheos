@@ -108,6 +108,26 @@ func get2VerifiedOperands(input []byte) (lhs *tfhe.Ciphertext, rhs *tfhe.Ciphert
 	return
 }
 
+func get3VerifiedOperands(input []byte) (control *tfhe.Ciphertext, ifTrue *tfhe.Ciphertext, ifFalse *tfhe.Ciphertext, err error) {
+	if len(input) != 97 {
+		return nil, nil, nil, errors.New("input needs to contain three 256-bit sized values and 1 8-bit value")
+	}
+	control = getCiphertext(tfhe.BytesToHash(input[0:32]))
+	if control == nil {
+		return nil, nil, nil, errors.New("unverified ciphertext handle")
+	}
+	ifTrue = getCiphertext(tfhe.BytesToHash(input[32:64]))
+	if ifTrue == nil {
+		return nil, nil, nil, errors.New("unverified ciphertext handle")
+	}
+	ifFalse = getCiphertext(tfhe.BytesToHash(input[64:96]))
+	if ifFalse == nil {
+		return nil, nil, nil, errors.New("unverified ciphertext handle")
+	}
+	err = nil
+	return
+}
+
 func importCiphertext(ct *tfhe.Ciphertext) *tfhe.Ciphertext {
 	existing, ok := ctHashMap[ct.Hash()]
 	if ok {
