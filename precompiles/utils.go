@@ -6,28 +6,12 @@ import (
 	"fmt"
 	"math/big"
 	"os"
-	"strings"
 
 	"github.com/ethereum/go-ethereum/core/vm"
 	tfhe "github.com/fhenixprotocol/go-tfhe"
 	"github.com/holiman/uint256"
 	"golang.org/x/crypto/nacl/box"
 )
-
-type tomlConfigOptions struct {
-	Oracle struct {
-		Mode              string
-		OracleDBAddress   string
-		RequireRetryCount uint8
-	}
-
-	Tfhe struct {
-		CiphertextsToGarbageCollect           uint64
-		CiphertextsGarbageCollectIntervalSecs uint64
-	}
-}
-
-var tomlConfig tomlConfigOptions
 
 type DepthSet struct {
 	m map[int]struct{}
@@ -92,7 +76,7 @@ func encryptToUserKey(value *big.Int, pubKey []byte) ([]byte, error) {
 	}
 
 	// TODO: for testing
-	err = os.WriteFile("/tmp/public_encrypt_result", ct, 0644)
+	err = os.WriteFile("/tmp/public_encrypt_result", ct, 0o644)
 	if err != nil {
 		return nil, err
 	}
@@ -179,16 +163,8 @@ func getRequire(ct *tfhe.Ciphertext, interpreter *vm.EVMInterpreter) (bool, erro
 	return result, nil
 }
 
-func evaluateRequire(ct *tfhe.Ciphertext, interpreter *vm.EVMInterpreter) (bool, error) {
-	mode := strings.ToLower(tomlConfig.Oracle.Mode)
-	switch mode {
-	case "oracle":
-		return putRequire(ct, interpreter)
-	case "node":
-		return getRequire(ct, interpreter)
-	}
-
-	return false, errors.New(fmt.Sprintf("evaluateRequire invalid mode: %s", mode))
+func evaluateRequire(ct *tfhe.Ciphertext, interpreter *vm.EVMInterpreter) bool {
+	return tfhe.Require(ct)
 }
 
 type fheUintType uint8
