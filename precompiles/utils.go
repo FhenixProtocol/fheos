@@ -118,17 +118,15 @@ func importCiphertext(ct *tfhe.Ciphertext) *tfhe.Ciphertext {
 	}
 }
 
-func importRandomCiphertext(t tfhe.UintType) []byte {
-	// ct := new(tfhe.Ciphertext)
-	// ct.MakeRandom(t)
+func importRandomCiphertext(t tfhe.UintType) ([]byte, error) {
 	ct, err := tfhe.NewRandomCipherText(t)
 	if err != nil {
-		panic(fmt.Sprintf("Failed to create random ciphertext of size: %d", t))
+		return nil, errors.New(fmt.Sprintf("failed creating random ciphertext of size: %d", t))
 	}
 
 	importCiphertext(ct)
 	ctHash := ct.Hash()
-	return ctHash[:]
+	return ctHash[:], nil
 }
 
 func minInt(a int, b int) int {
@@ -136,6 +134,33 @@ func minInt(a int, b int) int {
 		return a
 	}
 	return b
+}
+
+// Puts the given ciphertext as a require to the oracle DB or exits the process on errors.
+// Returns the require value.
+func putRequire(ct *tfhe.Ciphertext, interpreter *vm.EVMInterpreter) (bool, error) {
+	plaintext, err := tfhe.Decrypt(*ct)
+	if err != nil {
+		return false, errors.New(fmt.Sprintf("Failed to decrypt value: %s", err))
+	}
+
+	result, err := tfhe.StoreRequire(ct, plaintext)
+	if err != nil {
+		return false, errors.New("Failed to store require in DB")
+	}
+
+	return result, nil
+}
+
+// Gets the given require from the oracle DB and returns its value.
+// Exits the process on errors or signature verification failure.
+func getRequire(ct *tfhe.Ciphertext, interpreter *vm.EVMInterpreter) (bool, error) {
+	result, err := tfhe.CheckRequire(ct)
+	if err != nil {
+		return false, errors.New(fmt.Sprintf("Error verifying require", err))
+	}
+
+	return result, nil
 }
 
 func evaluateRequire(ct *tfhe.Ciphertext, interpreter *vm.EVMInterpreter) bool {

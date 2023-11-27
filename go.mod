@@ -5,12 +5,12 @@ go 1.20
 require (
 	github.com/ethereum/go-ethereum v1.10.26
 	github.com/holiman/uint256 v1.2.3
+	github.com/sirupsen/logrus v1.9.3
 )
 
 require (
 	github.com/deckarep/golang-set/v2 v2.3.1 // indirect
 	github.com/fhenixprotocol/decryption-oracle v0.0.0-20231026124808-5b99acac9a8d // indirect
-	github.com/holiman/uint256 v1.2.3
 )
 
 replace github.com/ethereum/go-ethereum => ./go-ethereum
@@ -46,6 +46,6 @@ require (
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
 	golang.org/x/crypto v0.14.0
-	golang.org/x/sys v0.13.0 // indirect
+	golang.org/x/sys v0.14.0 // indirect
 
 )
