@@ -367,6 +367,51 @@ func Lt(input []byte, inputLen uint32) ([]byte, error) {
 	return resultHash[:], nil
 }
 
+func Cmux(input []byte, inputLen uint32) ([]byte, error) {
+	err := validateInterpreter()
+	if err != nil {
+		return nil, err
+	}
+	if shouldPrintPrecompileInfo() {
+		logger.Debug("starting new precompiled contract function ", getFunctionName())
+	}
+
+	control, ifTrue, ifFalse, err := get3VerifiedOperands(input)
+	if err != nil {
+		logger.Error("selector inputs not verified", "err", err)
+		return nil, err
+	}
+
+	if (ifTrue.UintType != ifFalse.UintType) || (control.UintType != ifTrue.UintType) {
+		msg := "selector operands type mismatch"
+		logger.Error(msg, "control", control.UintType, "ifTrue", ifTrue.UintType, "ifFalse", ifFalse.UintType)
+		return nil, errors.New(msg)
+	}
+
+	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
+	if interpreter.GetEVM().GasEstimation {
+		return importRandomCiphertext(ifTrue.UintType)
+	}
+
+	result, err := control.Cmux(ifTrue, ifFalse)
+	if err != nil {
+		logger.Error("selector failed", "err", err)
+		return nil, err
+	}
+	importCiphertext(result)
+
+	// TODO: for testing
+	err = os.WriteFile("/tmp/selector_result", result.Serialization, 0644)
+	if err != nil {
+		logger.Error("selector failed to write /tmp/selector_result", "err", err)
+		return nil, err
+	}
+
+	resultHash := result.Hash()
+	logger.Debug("selector success", "control", control.Hash().Hex(), "ifTrue", ifTrue.Hash().Hex(), "ifFalse", ifTrue.Hash().Hex(), "result", resultHash.Hex())
+	return resultHash[:], nil
+}
+
 func Req(input []byte, inputLen uint32) ([]byte, error) {
 	err := validateInterpreter()
 	if err != nil {
