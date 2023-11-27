@@ -30,6 +30,7 @@ func SetEvmInterpreter(i *vm.EVMInterpreter, tfheConfig *tfhe.Config) error {
 
 	err := tfhe.InitTfhe(tfheConfig)
 	if err != nil {
+		logger.Error("Failed to init tfhe config with error: ", err)
 		return err
 	}
 
@@ -44,7 +45,6 @@ func shouldPrintPrecompileInfo() bool {
 func validateInterpreter() error {
 	if interpreter == nil {
 		msg := "no evm interpreter"
-		// logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
 		return errors.New(msg)
 	}
 
@@ -61,11 +61,12 @@ func getFunctionName() string {
 func Add(input []byte, inputLen uint32) ([]byte, error) {
 	err := validateInterpreter()
 	if err != nil {
+		logger.Error("failed validating evm interpreter for function ", getFunctionName())
 		return nil, err
 	}
 
 	if shouldPrintPrecompileInfo() {
-		logger.Debug("starting new precompiled contract function ", getFunctionName())
+		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(input)
@@ -108,10 +109,11 @@ func Add(input []byte, inputLen uint32) ([]byte, error) {
 func Verify(input []byte, inputLen uint32) ([]byte, error) {
 	err := validateInterpreter()
 	if err != nil {
+		logger.Error("failed validating evm interpreter for function ", getFunctionName())
 		return nil, err
 	}
 	if shouldPrintPrecompileInfo() {
-		logger.Debug("starting new precompiled contract function ", getFunctionName())
+		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
 	if len(input) <= 1 {
@@ -145,10 +147,11 @@ func Verify(input []byte, inputLen uint32) ([]byte, error) {
 func Reencrypt(input []byte, inputLen uint32) ([]byte, error) {
 	err := validateInterpreter()
 	if err != nil {
+		logger.Error("failed validating evm interpreter for function ", getFunctionName())
 		return nil, err
 	}
 	if shouldPrintPrecompileInfo() {
-		logger.Debug("starting new precompiled contract function ", getFunctionName())
+		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
 	if !interpreter.GetEVM().EthCall {
@@ -189,10 +192,11 @@ func Reencrypt(input []byte, inputLen uint32) ([]byte, error) {
 func Lte(input []byte, inputLen uint32) ([]byte, error) {
 	err := validateInterpreter()
 	if err != nil {
+		logger.Error("failed validating evm interpreter for function ", getFunctionName())
 		return nil, err
 	}
 	if shouldPrintPrecompileInfo() {
-		logger.Debug("starting new precompiled contract function ", getFunctionName())
+		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(input)
@@ -235,10 +239,11 @@ func Lte(input []byte, inputLen uint32) ([]byte, error) {
 func Sub(input []byte, inputLen uint32) ([]byte, error) {
 	err := validateInterpreter()
 	if err != nil {
+		logger.Error("failed validating evm interpreter for function ", getFunctionName())
 		return nil, err
 	}
 	if shouldPrintPrecompileInfo() {
-		logger.Debug("starting new precompiled contract function ", getFunctionName())
+		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(input)
@@ -280,10 +285,11 @@ func Sub(input []byte, inputLen uint32) ([]byte, error) {
 func Mul(input []byte, inputLen uint32) ([]byte, error) {
 	err := validateInterpreter()
 	if err != nil {
+		logger.Error("failed validating evm interpreter for function ", getFunctionName())
 		return nil, err
 	}
 	if shouldPrintPrecompileInfo() {
-		logger.Debug("starting new precompiled contract function ", getFunctionName())
+		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(input)
@@ -325,10 +331,11 @@ func Mul(input []byte, inputLen uint32) ([]byte, error) {
 func Lt(input []byte, inputLen uint32) ([]byte, error) {
 	err := validateInterpreter()
 	if err != nil {
+		logger.Error("failed validating evm interpreter for function ", getFunctionName())
 		return nil, err
 	}
 	if shouldPrintPrecompileInfo() {
-		logger.Debug("starting new precompiled contract function ", getFunctionName())
+		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(input)
@@ -370,15 +377,16 @@ func Lt(input []byte, inputLen uint32) ([]byte, error) {
 func Cmux(input []byte, inputLen uint32) ([]byte, error) {
 	err := validateInterpreter()
 	if err != nil {
+		logger.Error("failed validating evm interpreter for function ", getFunctionName())
 		return nil, err
 	}
 	if shouldPrintPrecompileInfo() {
-		logger.Debug("starting new precompiled contract function ", getFunctionName())
+		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
 	control, ifTrue, ifFalse, err := get3VerifiedOperands(input)
 	if err != nil {
-		logger.Error("selector inputs not verified", "err", err)
+		logger.Error("selector inputs not verified input len:", len(input), " err: ", err)
 		return nil, err
 	}
 
@@ -415,10 +423,12 @@ func Cmux(input []byte, inputLen uint32) ([]byte, error) {
 func Req(input []byte, inputLen uint32) ([]byte, error) {
 	err := validateInterpreter()
 	if err != nil {
+		logger.Error("failed validating evm interpreter for function ", getFunctionName())
 		return nil, err
 	}
+
 	if shouldPrintPrecompileInfo() {
-		logger.Debug("starting new precompiled contract function ", getFunctionName())
+		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
 	if interpreter.GetEVM().EthCall {
@@ -463,10 +473,12 @@ func Req(input []byte, inputLen uint32) ([]byte, error) {
 func Cast(input []byte, inputLen uint32) ([]byte, error) {
 	err := validateInterpreter()
 	if err != nil {
+		logger.Error("failed validating evm interpreter for function ", getFunctionName())
 		return nil, err
 	}
+
 	if shouldPrintPrecompileInfo() {
-		logger.Debug("starting new precompiled contract function ", getFunctionName())
+		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
 	if !isValidType(input[32]) {
@@ -508,11 +520,12 @@ func Cast(input []byte, inputLen uint32) ([]byte, error) {
 func TrivialEncrypt(input []byte) ([]byte, error) {
 	err := validateInterpreter()
 	if err != nil {
+		logger.Error("failed validating evm interpreter for function ", getFunctionName())
 		return nil, err
 	}
 
 	if shouldPrintPrecompileInfo() {
-		logger.Debug("starting new precompiled contract function ", getFunctionName())
+		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
 	if len(input) != 33 {
