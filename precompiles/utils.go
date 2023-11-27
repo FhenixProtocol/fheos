@@ -109,7 +109,7 @@ func get2VerifiedOperands(input []byte) (lhs *tfhe.Ciphertext, rhs *tfhe.Ciphert
 }
 
 func get3VerifiedOperands(input []byte) (control *tfhe.Ciphertext, ifTrue *tfhe.Ciphertext, ifFalse *tfhe.Ciphertext, err error) {
-	if len(input) != 97 {
+	if len(input) != 96 {
 		return nil, nil, nil, errors.New("input needs to contain three 256-bit sized values and 1 8-bit value")
 	}
 	control = getCiphertext(tfhe.BytesToHash(input[0:32]))
