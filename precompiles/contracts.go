@@ -405,10 +405,7 @@ func Req(input []byte, inputLen uint32) ([]byte, error) {
 		return nil, errors.New(msg)
 	}
 
-	ev, err := evaluateRequire(ct, interpreter)
-	if err != nil {
-		logger.Error("failed evaluating the require", "error", err)
-	}
+	ev := evaluateRequire(ct, interpreter)
 
 	if !ev {
 		logger.Error("require failed to evaluate, reverting")
