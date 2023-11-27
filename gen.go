@@ -92,7 +92,7 @@ type Param struct {
 }
 
 func createTemplate(dirPath string) {
-	path := filepath.Join(dirPath, "precompiles", "fheOps.go")
+	path := filepath.Join(dirPath, "precompiles", "contracts.go")
 	outPath := filepath.Join(dirPath, "FheOps_gen.sol")
 	file, err := os.Open(path)
 	if err != nil {
