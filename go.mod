@@ -1,14 +1,20 @@
 module github.com/fhenixprotocol/fheos
 
-go 1.20
+go 1.19
 
 require (
 	github.com/ethereum/go-ethereum v1.10.26
 	github.com/holiman/uint256 v1.2.3
 )
 
+replace github.com/ethereum/go-ethereum => ./go-ethereum
+
+replace github.com/fhenixprotocol/go-tfhe => ./go-tfhe
+
+replace github.com/fhenixprotocol/decryption-oracle => ./go-tfhe/decryption-oracle
+
 require (
-	github.com/deckarep/golang-set/v2 v2.3.1 // indirect
+	github.com/deckarep/golang-set/v2 v2.1.0 // indirect
 	github.com/fhenixprotocol/decryption-oracle v0.0.0-20231026124808-5b99acac9a8d // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gammazero/deque v0.2.1 // indirect
@@ -22,10 +28,6 @@ require (
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 )
-
-replace github.com/fhenixprotocol/go-tfhe => ./go-tfhe
-
-replace github.com/ethereum/go-ethereum => ./go-ethereum
 
 require (
 	github.com/StackExchange/wmi v1.2.1 // indirect
