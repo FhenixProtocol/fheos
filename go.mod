@@ -4,14 +4,10 @@ go 1.20
 
 require (
 	github.com/ethereum/go-ethereum v1.10.26
-	github.com/holiman/uint256 v1.2.3
 	github.com/sirupsen/logrus v1.9.3
 )
 
-require (
-	github.com/deckarep/golang-set/v2 v2.3.1 // indirect
-	github.com/fhenixprotocol/decryption-oracle v0.0.0-20231026124808-5b99acac9a8d // indirect
-)
+require github.com/deckarep/golang-set/v2 v2.3.1 // indirect
 
 replace github.com/ethereum/go-ethereum => ./go-ethereum
 
@@ -20,9 +16,11 @@ replace github.com/fhenixprotocol/go-tfhe => ./go-tfhe
 replace github.com/fhenixprotocol/decryption-oracle => ./go-tfhe/decryption-oracle
 
 require (
+	github.com/fhenixprotocol/decryption-oracle-proto v0.0.0-20231127135430-74f6a7e6df5c // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gammazero/deque v0.2.1 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
+	github.com/holiman/uint256 v1.2.3 // indirect
 	github.com/stretchr/testify v1.8.1 // indirect
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
 	golang.org/x/net v0.15.0 // indirect
