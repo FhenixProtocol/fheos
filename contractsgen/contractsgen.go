@@ -31,7 +31,7 @@ var (
 
 // FheOpsMetaData contains all meta data concerning the FheOps contract.
 var FheOpsMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"input\",\"type\":\"bytes\"},{\"internalType\":\"uint32\",\"name\":\"inputLen\",\"type\":\"uint32\"}],\"name\":\"add\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"input\",\"type\":\"bytes\"},{\"internalType\":\"uint32\",\"name\":\"inputLen\",\"type\":\"uint32\"}],\"name\":\"cast\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"input\",\"type\":\"bytes\"},{\"internalType\":\"uint32\",\"name\":\"inputLen\",\"type\":\"uint32\"}],\"name\":\"cmux\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"input\",\"type\":\"bytes\"},{\"internalType\":\"uint32\",\"name\":\"inputLen\",\"type\":\"uint32\"}],\"name\":\"lt\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"input\",\"type\":\"bytes\"},{\"internalType\":\"uint32\",\"name\":\"inputLen\",\"type\":\"uint32\"}],\"name\":\"lte\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"input\",\"type\":\"bytes\"},{\"internalType\":\"uint32\",\"name\":\"inputLen\",\"type\":\"uint32\"}],\"name\":\"mul\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"input\",\"type\":\"bytes\"},{\"internalType\":\"uint32\",\"name\":\"inputLen\",\"type\":\"uint32\"}],\"name\":\"reencrypt\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"input\",\"type\":\"bytes\"},{\"internalType\":\"uint32\",\"name\":\"inputLen\",\"type\":\"uint32\"}],\"name\":\"req\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"input\",\"type\":\"bytes\"},{\"internalType\":\"uint32\",\"name\":\"inputLen\",\"type\":\"uint32\"}],\"name\":\"sub\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"input\",\"type\":\"bytes\"}],\"name\":\"trivialEncrypt\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"input\",\"type\":\"bytes\"},{\"internalType\":\"uint32\",\"name\":\"inputLen\",\"type\":\"uint32\"}],\"name\":\"verify\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
+	ABI: "[{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"input\",\"type\":\"bytes\"}],\"name\":\"add\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"input\",\"type\":\"bytes\"}],\"name\":\"cast\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"input\",\"type\":\"bytes\"}],\"name\":\"cmux\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"input\",\"type\":\"bytes\"}],\"name\":\"lt\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"input\",\"type\":\"bytes\"}],\"name\":\"lte\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"input\",\"type\":\"bytes\"}],\"name\":\"mul\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"input\",\"type\":\"bytes\"}],\"name\":\"reencrypt\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"input\",\"type\":\"bytes\"}],\"name\":\"req\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"input\",\"type\":\"bytes\"}],\"name\":\"sub\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"input\",\"type\":\"bytes\"}],\"name\":\"trivialEncrypt\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"input\",\"type\":\"bytes\"}],\"name\":\"verify\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
 }
 
 // FheOpsABI is the input ABI used to generate the binding from.
@@ -180,12 +180,12 @@ func (_FheOps *FheOpsTransactorRaw) Transact(opts *bind.TransactOpts, method str
 	return _FheOps.Contract.contract.Transact(opts, method, params...)
 }
 
-// Add is a free data retrieval call binding the contract method 0x0512ae91.
+// Add is a free data retrieval call binding the contract method 0xba658111.
 //
-// Solidity: function add(bytes input, uint32 inputLen) view returns(bytes)
-func (_FheOps *FheOpsCaller) Add(opts *bind.CallOpts, input []byte, inputLen uint32) ([]byte, error) {
+// Solidity: function add(bytes input) view returns(bytes)
+func (_FheOps *FheOpsCaller) Add(opts *bind.CallOpts, input []byte) ([]byte, error) {
 	var out []interface{}
-	err := _FheOps.contract.Call(opts, &out, "add", input, inputLen)
+	err := _FheOps.contract.Call(opts, &out, "add", input)
 
 	if err != nil {
 		return *new([]byte), err
@@ -197,26 +197,26 @@ func (_FheOps *FheOpsCaller) Add(opts *bind.CallOpts, input []byte, inputLen uin
 
 }
 
-// Add is a free data retrieval call binding the contract method 0x0512ae91.
+// Add is a free data retrieval call binding the contract method 0xba658111.
 //
-// Solidity: function add(bytes input, uint32 inputLen) view returns(bytes)
-func (_FheOps *FheOpsSession) Add(input []byte, inputLen uint32) ([]byte, error) {
-	return _FheOps.Contract.Add(&_FheOps.CallOpts, input, inputLen)
+// Solidity: function add(bytes input) view returns(bytes)
+func (_FheOps *FheOpsSession) Add(input []byte) ([]byte, error) {
+	return _FheOps.Contract.Add(&_FheOps.CallOpts, input)
 }
 
-// Add is a free data retrieval call binding the contract method 0x0512ae91.
+// Add is a free data retrieval call binding the contract method 0xba658111.
 //
-// Solidity: function add(bytes input, uint32 inputLen) view returns(bytes)
-func (_FheOps *FheOpsCallerSession) Add(input []byte, inputLen uint32) ([]byte, error) {
-	return _FheOps.Contract.Add(&_FheOps.CallOpts, input, inputLen)
+// Solidity: function add(bytes input) view returns(bytes)
+func (_FheOps *FheOpsCallerSession) Add(input []byte) ([]byte, error) {
+	return _FheOps.Contract.Add(&_FheOps.CallOpts, input)
 }
 
-// Cast is a free data retrieval call binding the contract method 0xc3bedc57.
+// Cast is a free data retrieval call binding the contract method 0x756a210d.
 //
-// Solidity: function cast(bytes input, uint32 inputLen) view returns(bytes)
-func (_FheOps *FheOpsCaller) Cast(opts *bind.CallOpts, input []byte, inputLen uint32) ([]byte, error) {
+// Solidity: function cast(bytes input) view returns(bytes)
+func (_FheOps *FheOpsCaller) Cast(opts *bind.CallOpts, input []byte) ([]byte, error) {
 	var out []interface{}
-	err := _FheOps.contract.Call(opts, &out, "cast", input, inputLen)
+	err := _FheOps.contract.Call(opts, &out, "cast", input)
 
 	if err != nil {
 		return *new([]byte), err
@@ -228,26 +228,26 @@ func (_FheOps *FheOpsCaller) Cast(opts *bind.CallOpts, input []byte, inputLen ui
 
 }
 
-// Cast is a free data retrieval call binding the contract method 0xc3bedc57.
+// Cast is a free data retrieval call binding the contract method 0x756a210d.
 //
-// Solidity: function cast(bytes input, uint32 inputLen) view returns(bytes)
-func (_FheOps *FheOpsSession) Cast(input []byte, inputLen uint32) ([]byte, error) {
-	return _FheOps.Contract.Cast(&_FheOps.CallOpts, input, inputLen)
+// Solidity: function cast(bytes input) view returns(bytes)
+func (_FheOps *FheOpsSession) Cast(input []byte) ([]byte, error) {
+	return _FheOps.Contract.Cast(&_FheOps.CallOpts, input)
 }
 
-// Cast is a free data retrieval call binding the contract method 0xc3bedc57.
+// Cast is a free data retrieval call binding the contract method 0x756a210d.
 //
-// Solidity: function cast(bytes input, uint32 inputLen) view returns(bytes)
-func (_FheOps *FheOpsCallerSession) Cast(input []byte, inputLen uint32) ([]byte, error) {
-	return _FheOps.Contract.Cast(&_FheOps.CallOpts, input, inputLen)
+// Solidity: function cast(bytes input) view returns(bytes)
+func (_FheOps *FheOpsCallerSession) Cast(input []byte) ([]byte, error) {
+	return _FheOps.Contract.Cast(&_FheOps.CallOpts, input)
 }
 
-// Cmux is a free data retrieval call binding the contract method 0x45849cb7.
+// Cmux is a free data retrieval call binding the contract method 0xe70cc6df.
 //
-// Solidity: function cmux(bytes input, uint32 inputLen) view returns(bytes)
-func (_FheOps *FheOpsCaller) Cmux(opts *bind.CallOpts, input []byte, inputLen uint32) ([]byte, error) {
+// Solidity: function cmux(bytes input) view returns(bytes)
+func (_FheOps *FheOpsCaller) Cmux(opts *bind.CallOpts, input []byte) ([]byte, error) {
 	var out []interface{}
-	err := _FheOps.contract.Call(opts, &out, "cmux", input, inputLen)
+	err := _FheOps.contract.Call(opts, &out, "cmux", input)
 
 	if err != nil {
 		return *new([]byte), err
@@ -259,26 +259,26 @@ func (_FheOps *FheOpsCaller) Cmux(opts *bind.CallOpts, input []byte, inputLen ui
 
 }
 
-// Cmux is a free data retrieval call binding the contract method 0x45849cb7.
+// Cmux is a free data retrieval call binding the contract method 0xe70cc6df.
 //
-// Solidity: function cmux(bytes input, uint32 inputLen) view returns(bytes)
-func (_FheOps *FheOpsSession) Cmux(input []byte, inputLen uint32) ([]byte, error) {
-	return _FheOps.Contract.Cmux(&_FheOps.CallOpts, input, inputLen)
+// Solidity: function cmux(bytes input) view returns(bytes)
+func (_FheOps *FheOpsSession) Cmux(input []byte) ([]byte, error) {
+	return _FheOps.Contract.Cmux(&_FheOps.CallOpts, input)
 }
 
-// Cmux is a free data retrieval call binding the contract method 0x45849cb7.
+// Cmux is a free data retrieval call binding the contract method 0xe70cc6df.
 //
-// Solidity: function cmux(bytes input, uint32 inputLen) view returns(bytes)
-func (_FheOps *FheOpsCallerSession) Cmux(input []byte, inputLen uint32) ([]byte, error) {
-	return _FheOps.Contract.Cmux(&_FheOps.CallOpts, input, inputLen)
+// Solidity: function cmux(bytes input) view returns(bytes)
+func (_FheOps *FheOpsCallerSession) Cmux(input []byte) ([]byte, error) {
+	return _FheOps.Contract.Cmux(&_FheOps.CallOpts, input)
 }
 
-// Lt is a free data retrieval call binding the contract method 0x9fcad060.
+// Lt is a free data retrieval call binding the contract method 0x9d8a3b5a.
 //
-// Solidity: function lt(bytes input, uint32 inputLen) view returns(bytes)
-func (_FheOps *FheOpsCaller) Lt(opts *bind.CallOpts, input []byte, inputLen uint32) ([]byte, error) {
+// Solidity: function lt(bytes input) view returns(bytes)
+func (_FheOps *FheOpsCaller) Lt(opts *bind.CallOpts, input []byte) ([]byte, error) {
 	var out []interface{}
-	err := _FheOps.contract.Call(opts, &out, "lt", input, inputLen)
+	err := _FheOps.contract.Call(opts, &out, "lt", input)
 
 	if err != nil {
 		return *new([]byte), err
@@ -290,26 +290,26 @@ func (_FheOps *FheOpsCaller) Lt(opts *bind.CallOpts, input []byte, inputLen uint
 
 }
 
-// Lt is a free data retrieval call binding the contract method 0x9fcad060.
+// Lt is a free data retrieval call binding the contract method 0x9d8a3b5a.
 //
-// Solidity: function lt(bytes input, uint32 inputLen) view returns(bytes)
-func (_FheOps *FheOpsSession) Lt(input []byte, inputLen uint32) ([]byte, error) {
-	return _FheOps.Contract.Lt(&_FheOps.CallOpts, input, inputLen)
+// Solidity: function lt(bytes input) view returns(bytes)
+func (_FheOps *FheOpsSession) Lt(input []byte) ([]byte, error) {
+	return _FheOps.Contract.Lt(&_FheOps.CallOpts, input)
 }
 
-// Lt is a free data retrieval call binding the contract method 0x9fcad060.
+// Lt is a free data retrieval call binding the contract method 0x9d8a3b5a.
 //
-// Solidity: function lt(bytes input, uint32 inputLen) view returns(bytes)
-func (_FheOps *FheOpsCallerSession) Lt(input []byte, inputLen uint32) ([]byte, error) {
-	return _FheOps.Contract.Lt(&_FheOps.CallOpts, input, inputLen)
+// Solidity: function lt(bytes input) view returns(bytes)
+func (_FheOps *FheOpsCallerSession) Lt(input []byte) ([]byte, error) {
+	return _FheOps.Contract.Lt(&_FheOps.CallOpts, input)
 }
 
-// Lte is a free data retrieval call binding the contract method 0x406a119f.
+// Lte is a free data retrieval call binding the contract method 0xb3dfb138.
 //
-// Solidity: function lte(bytes input, uint32 inputLen) view returns(bytes)
-func (_FheOps *FheOpsCaller) Lte(opts *bind.CallOpts, input []byte, inputLen uint32) ([]byte, error) {
+// Solidity: function lte(bytes input) view returns(bytes)
+func (_FheOps *FheOpsCaller) Lte(opts *bind.CallOpts, input []byte) ([]byte, error) {
 	var out []interface{}
-	err := _FheOps.contract.Call(opts, &out, "lte", input, inputLen)
+	err := _FheOps.contract.Call(opts, &out, "lte", input)
 
 	if err != nil {
 		return *new([]byte), err
@@ -321,26 +321,26 @@ func (_FheOps *FheOpsCaller) Lte(opts *bind.CallOpts, input []byte, inputLen uin
 
 }
 
-// Lte is a free data retrieval call binding the contract method 0x406a119f.
+// Lte is a free data retrieval call binding the contract method 0xb3dfb138.
 //
-// Solidity: function lte(bytes input, uint32 inputLen) view returns(bytes)
-func (_FheOps *FheOpsSession) Lte(input []byte, inputLen uint32) ([]byte, error) {
-	return _FheOps.Contract.Lte(&_FheOps.CallOpts, input, inputLen)
+// Solidity: function lte(bytes input) view returns(bytes)
+func (_FheOps *FheOpsSession) Lte(input []byte) ([]byte, error) {
+	return _FheOps.Contract.Lte(&_FheOps.CallOpts, input)
 }
 
-// Lte is a free data retrieval call binding the contract method 0x406a119f.
+// Lte is a free data retrieval call binding the contract method 0xb3dfb138.
 //
-// Solidity: function lte(bytes input, uint32 inputLen) view returns(bytes)
-func (_FheOps *FheOpsCallerSession) Lte(input []byte, inputLen uint32) ([]byte, error) {
-	return _FheOps.Contract.Lte(&_FheOps.CallOpts, input, inputLen)
+// Solidity: function lte(bytes input) view returns(bytes)
+func (_FheOps *FheOpsCallerSession) Lte(input []byte) ([]byte, error) {
+	return _FheOps.Contract.Lte(&_FheOps.CallOpts, input)
 }
 
-// Mul is a free data retrieval call binding the contract method 0x4aea45a8.
+// Mul is a free data retrieval call binding the contract method 0x036ad00f.
 //
-// Solidity: function mul(bytes input, uint32 inputLen) view returns(bytes)
-func (_FheOps *FheOpsCaller) Mul(opts *bind.CallOpts, input []byte, inputLen uint32) ([]byte, error) {
+// Solidity: function mul(bytes input) view returns(bytes)
+func (_FheOps *FheOpsCaller) Mul(opts *bind.CallOpts, input []byte) ([]byte, error) {
 	var out []interface{}
-	err := _FheOps.contract.Call(opts, &out, "mul", input, inputLen)
+	err := _FheOps.contract.Call(opts, &out, "mul", input)
 
 	if err != nil {
 		return *new([]byte), err
@@ -352,26 +352,26 @@ func (_FheOps *FheOpsCaller) Mul(opts *bind.CallOpts, input []byte, inputLen uin
 
 }
 
-// Mul is a free data retrieval call binding the contract method 0x4aea45a8.
+// Mul is a free data retrieval call binding the contract method 0x036ad00f.
 //
-// Solidity: function mul(bytes input, uint32 inputLen) view returns(bytes)
-func (_FheOps *FheOpsSession) Mul(input []byte, inputLen uint32) ([]byte, error) {
-	return _FheOps.Contract.Mul(&_FheOps.CallOpts, input, inputLen)
+// Solidity: function mul(bytes input) view returns(bytes)
+func (_FheOps *FheOpsSession) Mul(input []byte) ([]byte, error) {
+	return _FheOps.Contract.Mul(&_FheOps.CallOpts, input)
 }
 
-// Mul is a free data retrieval call binding the contract method 0x4aea45a8.
+// Mul is a free data retrieval call binding the contract method 0x036ad00f.
 //
-// Solidity: function mul(bytes input, uint32 inputLen) view returns(bytes)
-func (_FheOps *FheOpsCallerSession) Mul(input []byte, inputLen uint32) ([]byte, error) {
-	return _FheOps.Contract.Mul(&_FheOps.CallOpts, input, inputLen)
+// Solidity: function mul(bytes input) view returns(bytes)
+func (_FheOps *FheOpsCallerSession) Mul(input []byte) ([]byte, error) {
+	return _FheOps.Contract.Mul(&_FheOps.CallOpts, input)
 }
 
-// Reencrypt is a free data retrieval call binding the contract method 0x441a9c62.
+// Reencrypt is a free data retrieval call binding the contract method 0xd77357e1.
 //
-// Solidity: function reencrypt(bytes input, uint32 inputLen) view returns(bytes)
-func (_FheOps *FheOpsCaller) Reencrypt(opts *bind.CallOpts, input []byte, inputLen uint32) ([]byte, error) {
+// Solidity: function reencrypt(bytes input) view returns(bytes)
+func (_FheOps *FheOpsCaller) Reencrypt(opts *bind.CallOpts, input []byte) ([]byte, error) {
 	var out []interface{}
-	err := _FheOps.contract.Call(opts, &out, "reencrypt", input, inputLen)
+	err := _FheOps.contract.Call(opts, &out, "reencrypt", input)
 
 	if err != nil {
 		return *new([]byte), err
@@ -383,26 +383,26 @@ func (_FheOps *FheOpsCaller) Reencrypt(opts *bind.CallOpts, input []byte, inputL
 
 }
 
-// Reencrypt is a free data retrieval call binding the contract method 0x441a9c62.
+// Reencrypt is a free data retrieval call binding the contract method 0xd77357e1.
 //
-// Solidity: function reencrypt(bytes input, uint32 inputLen) view returns(bytes)
-func (_FheOps *FheOpsSession) Reencrypt(input []byte, inputLen uint32) ([]byte, error) {
-	return _FheOps.Contract.Reencrypt(&_FheOps.CallOpts, input, inputLen)
+// Solidity: function reencrypt(bytes input) view returns(bytes)
+func (_FheOps *FheOpsSession) Reencrypt(input []byte) ([]byte, error) {
+	return _FheOps.Contract.Reencrypt(&_FheOps.CallOpts, input)
 }
 
-// Reencrypt is a free data retrieval call binding the contract method 0x441a9c62.
+// Reencrypt is a free data retrieval call binding the contract method 0xd77357e1.
 //
-// Solidity: function reencrypt(bytes input, uint32 inputLen) view returns(bytes)
-func (_FheOps *FheOpsCallerSession) Reencrypt(input []byte, inputLen uint32) ([]byte, error) {
-	return _FheOps.Contract.Reencrypt(&_FheOps.CallOpts, input, inputLen)
+// Solidity: function reencrypt(bytes input) view returns(bytes)
+func (_FheOps *FheOpsCallerSession) Reencrypt(input []byte) ([]byte, error) {
+	return _FheOps.Contract.Reencrypt(&_FheOps.CallOpts, input)
 }
 
-// Req is a free data retrieval call binding the contract method 0x1bed84bf.
+// Req is a free data retrieval call binding the contract method 0xac6c08dd.
 //
-// Solidity: function req(bytes input, uint32 inputLen) view returns(bytes)
-func (_FheOps *FheOpsCaller) Req(opts *bind.CallOpts, input []byte, inputLen uint32) ([]byte, error) {
+// Solidity: function req(bytes input) view returns(bytes)
+func (_FheOps *FheOpsCaller) Req(opts *bind.CallOpts, input []byte) ([]byte, error) {
 	var out []interface{}
-	err := _FheOps.contract.Call(opts, &out, "req", input, inputLen)
+	err := _FheOps.contract.Call(opts, &out, "req", input)
 
 	if err != nil {
 		return *new([]byte), err
@@ -414,26 +414,26 @@ func (_FheOps *FheOpsCaller) Req(opts *bind.CallOpts, input []byte, inputLen uin
 
 }
 
-// Req is a free data retrieval call binding the contract method 0x1bed84bf.
+// Req is a free data retrieval call binding the contract method 0xac6c08dd.
 //
-// Solidity: function req(bytes input, uint32 inputLen) view returns(bytes)
-func (_FheOps *FheOpsSession) Req(input []byte, inputLen uint32) ([]byte, error) {
-	return _FheOps.Contract.Req(&_FheOps.CallOpts, input, inputLen)
+// Solidity: function req(bytes input) view returns(bytes)
+func (_FheOps *FheOpsSession) Req(input []byte) ([]byte, error) {
+	return _FheOps.Contract.Req(&_FheOps.CallOpts, input)
 }
 
-// Req is a free data retrieval call binding the contract method 0x1bed84bf.
+// Req is a free data retrieval call binding the contract method 0xac6c08dd.
 //
-// Solidity: function req(bytes input, uint32 inputLen) view returns(bytes)
-func (_FheOps *FheOpsCallerSession) Req(input []byte, inputLen uint32) ([]byte, error) {
-	return _FheOps.Contract.Req(&_FheOps.CallOpts, input, inputLen)
+// Solidity: function req(bytes input) view returns(bytes)
+func (_FheOps *FheOpsCallerSession) Req(input []byte) ([]byte, error) {
+	return _FheOps.Contract.Req(&_FheOps.CallOpts, input)
 }
 
-// Sub is a free data retrieval call binding the contract method 0x255eeeaf.
+// Sub is a free data retrieval call binding the contract method 0x67d1438e.
 //
-// Solidity: function sub(bytes input, uint32 inputLen) view returns(bytes)
-func (_FheOps *FheOpsCaller) Sub(opts *bind.CallOpts, input []byte, inputLen uint32) ([]byte, error) {
+// Solidity: function sub(bytes input) view returns(bytes)
+func (_FheOps *FheOpsCaller) Sub(opts *bind.CallOpts, input []byte) ([]byte, error) {
 	var out []interface{}
-	err := _FheOps.contract.Call(opts, &out, "sub", input, inputLen)
+	err := _FheOps.contract.Call(opts, &out, "sub", input)
 
 	if err != nil {
 		return *new([]byte), err
@@ -445,18 +445,18 @@ func (_FheOps *FheOpsCaller) Sub(opts *bind.CallOpts, input []byte, inputLen uin
 
 }
 
-// Sub is a free data retrieval call binding the contract method 0x255eeeaf.
+// Sub is a free data retrieval call binding the contract method 0x67d1438e.
 //
-// Solidity: function sub(bytes input, uint32 inputLen) view returns(bytes)
-func (_FheOps *FheOpsSession) Sub(input []byte, inputLen uint32) ([]byte, error) {
-	return _FheOps.Contract.Sub(&_FheOps.CallOpts, input, inputLen)
+// Solidity: function sub(bytes input) view returns(bytes)
+func (_FheOps *FheOpsSession) Sub(input []byte) ([]byte, error) {
+	return _FheOps.Contract.Sub(&_FheOps.CallOpts, input)
 }
 
-// Sub is a free data retrieval call binding the contract method 0x255eeeaf.
+// Sub is a free data retrieval call binding the contract method 0x67d1438e.
 //
-// Solidity: function sub(bytes input, uint32 inputLen) view returns(bytes)
-func (_FheOps *FheOpsCallerSession) Sub(input []byte, inputLen uint32) ([]byte, error) {
-	return _FheOps.Contract.Sub(&_FheOps.CallOpts, input, inputLen)
+// Solidity: function sub(bytes input) view returns(bytes)
+func (_FheOps *FheOpsCallerSession) Sub(input []byte) ([]byte, error) {
+	return _FheOps.Contract.Sub(&_FheOps.CallOpts, input)
 }
 
 // TrivialEncrypt is a free data retrieval call binding the contract method 0x8a52c8c7.
@@ -490,12 +490,12 @@ func (_FheOps *FheOpsCallerSession) TrivialEncrypt(input []byte) ([]byte, error)
 	return _FheOps.Contract.TrivialEncrypt(&_FheOps.CallOpts, input)
 }
 
-// Verify is a free data retrieval call binding the contract method 0xf9229595.
+// Verify is a free data retrieval call binding the contract method 0x8e760afe.
 //
-// Solidity: function verify(bytes input, uint32 inputLen) view returns(bytes)
-func (_FheOps *FheOpsCaller) Verify(opts *bind.CallOpts, input []byte, inputLen uint32) ([]byte, error) {
+// Solidity: function verify(bytes input) view returns(bytes)
+func (_FheOps *FheOpsCaller) Verify(opts *bind.CallOpts, input []byte) ([]byte, error) {
 	var out []interface{}
-	err := _FheOps.contract.Call(opts, &out, "verify", input, inputLen)
+	err := _FheOps.contract.Call(opts, &out, "verify", input)
 
 	if err != nil {
 		return *new([]byte), err
@@ -507,16 +507,16 @@ func (_FheOps *FheOpsCaller) Verify(opts *bind.CallOpts, input []byte, inputLen 
 
 }
 
-// Verify is a free data retrieval call binding the contract method 0xf9229595.
+// Verify is a free data retrieval call binding the contract method 0x8e760afe.
 //
-// Solidity: function verify(bytes input, uint32 inputLen) view returns(bytes)
-func (_FheOps *FheOpsSession) Verify(input []byte, inputLen uint32) ([]byte, error) {
-	return _FheOps.Contract.Verify(&_FheOps.CallOpts, input, inputLen)
+// Solidity: function verify(bytes input) view returns(bytes)
+func (_FheOps *FheOpsSession) Verify(input []byte) ([]byte, error) {
+	return _FheOps.Contract.Verify(&_FheOps.CallOpts, input)
 }
 
-// Verify is a free data retrieval call binding the contract method 0xf9229595.
+// Verify is a free data retrieval call binding the contract method 0x8e760afe.
 //
-// Solidity: function verify(bytes input, uint32 inputLen) view returns(bytes)
-func (_FheOps *FheOpsCallerSession) Verify(input []byte, inputLen uint32) ([]byte, error) {
-	return _FheOps.Contract.Verify(&_FheOps.CallOpts, input, inputLen)
+// Solidity: function verify(bytes input) view returns(bytes)
+func (_FheOps *FheOpsCallerSession) Verify(input []byte) ([]byte, error) {
+	return _FheOps.Contract.Verify(&_FheOps.CallOpts, input)
 }
