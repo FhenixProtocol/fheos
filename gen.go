@@ -371,34 +371,6 @@ func main() {
 		})
 	}
 
-	// operations := []Operation{
-	// 	{"Add", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Verify", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Reencrypt", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Lte", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Sub", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Mul", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Lt", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"OptReq", "input []byte, inputLen uint32", "input, inputLen", "void"},
-	// 	{"Cast", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"TrivialEncrypt", "input []byte", "input", "[]byte"},
-	// 	{"And", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Or", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Xor", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Eq", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Gte", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Gt", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Shl", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Shr", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Ne", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Min", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Max", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Neg", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Not", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Decrypt", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Div", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// }
-
 	f := "FheOps_gen.go"
 	file, err := os.Create(f)
 	if err != nil {
@@ -413,7 +385,7 @@ import (
 )
 
 type FheOps struct {
-	Address addr // 0x80
+	Address    addr // 0x80
 	TfheConfig *tfhe.Config
 }
 `)
@@ -452,17 +424,17 @@ type Argument struct {
 
 func GenerateFHEOperationTemplate(returnType string) *template.Template {
 	templateText := `
-func (con FheOps) {{.Name}}(c ctx, evm mech, {{.Inputs}}) ({{.ReturnType}}, error) {
-    var tp fheos.TxParams
+func (con FheOps) {{.Name}}(ctx, evm mech, {{.Inputs}}) ({{.ReturnType}}, error) {
+	var tp fheos.TxParams
 	tp.SetTxParams(evm)
 
-    return fheos.{{.Name}}({{.InnerInputs}}, &tp)
-} 
+	return fheos.{{.Name}}({{.InnerInputs}}, &tp)
+}
 `
 
 	if returnType == "void" {
 		templateText = `
-func (con FheOps) {{.Name}}(c ctx, evm mech, {{.Inputs}}) error {
+func (con FheOps) {{.Name}}(ctx, evm mech, {{.Inputs}}) error {
 	var tp fheos.TxParams
 	tp.SetTxParams(evm)
 
