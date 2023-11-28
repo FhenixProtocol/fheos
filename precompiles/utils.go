@@ -13,6 +13,18 @@ import (
 	"golang.org/x/crypto/nacl/box"
 )
 
+type TxParams struct {
+	IsCommit        bool
+	IsGasEstimation bool
+	IsEthCall       bool
+}
+
+func (tp *TxParams) SetTxParams(evm *vm.EVM) {
+	tp.IsCommit = evm.Commit
+	tp.IsGasEstimation = evm.GasEstimation
+	tp.IsEthCall = evm.EthCall
+}
+
 type DepthSet struct {
 	m map[int]struct{}
 }
@@ -174,7 +186,7 @@ func putRequire(ct *tfhe.Ciphertext, interpreter *vm.EVMInterpreter) (bool, erro
 
 // Gets the given require from the oracle DB and returns its value.
 // Exits the process on errors or signature verification failure.
-func getRequire(ct *tfhe.Ciphertext, interpreter *vm.EVMInterpreter) (bool, error) {
+func getRequire(ct *tfhe.Ciphertext) (bool, error) {
 	result, err := tfhe.CheckRequire(ct)
 	if err != nil {
 		return false, errors.New(fmt.Sprintf("Error verifying require", err))
@@ -183,7 +195,7 @@ func getRequire(ct *tfhe.Ciphertext, interpreter *vm.EVMInterpreter) (bool, erro
 	return result, nil
 }
 
-func evaluateRequire(ct *tfhe.Ciphertext, interpreter *vm.EVMInterpreter) bool {
+func evaluateRequire(ct *tfhe.Ciphertext) bool {
 	return tfhe.Require(ct)
 }
 

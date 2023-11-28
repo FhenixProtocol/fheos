@@ -182,8 +182,12 @@ interface FheOps {
 					param.Type = "bytes memory"
 				}
 
+				if param.Type == "*TxParams" {
+					continue
+				}
+
 				outLine += param.Type + " " + param.Name
-				if count < len(params)-1 {
+				if count < len(params)-2 {
 					outLine += ", "
 				}
 			}
@@ -339,9 +343,13 @@ func main() {
 				t = "[]byte"
 			}
 
+			if t == "*TxParams" {
+				continue
+			}
+
 			parameters += fmt.Sprintf("%s %s", arg.Name, t)
 			innerParameters += arg.Name
-			if count < (len(f.Inputs) - 1) {
+			if count < (len(f.Inputs) - 2) {
 				parameters += ", "
 				innerParameters += ", "
 			}
@@ -445,24 +453,20 @@ type Argument struct {
 func GenerateFHEOperationTemplate(returnType string) *template.Template {
 	templateText := `
 func (con FheOps) {{.Name}}(c ctx, evm mech, {{.Inputs}}) ({{.ReturnType}}, error) {
-    err := fheos.SetEvmInterpreter(evm.Interpreter())
-	if err != nil {
-		return nil, err
-	}
+    var tp fheos.TxParams
+	tp.SetTxParams(evm)
 
-    return fheos.{{.Name}}({{.InnerInputs}})
+    return fheos.{{.Name}}({{.InnerInputs}}, &tp)
 } 
 `
 
 	if returnType == "void" {
 		templateText = `
 func (con FheOps) {{.Name}}(c ctx, evm mech, {{.Inputs}}) error {
-	err := fheos.SetEvmInterpreter(evm.Interpreter())
-	if err != nil {
-		return err
-	}
+	var tp fheos.TxParams
+	tp.SetTxParams(evm)
 
-	fheos.{{.Name}}({{.InnerInputs}})
+	fheos.{{.Name}}({{.InnerInputs}}, &tp)
 	return nil
 }
 `
