@@ -22,15 +22,21 @@ func InitLogger() {
 	tfhe.InitLogger(getDefaultLogLevel())
 }
 
-func SetEvmInterpreter(i *vm.EVMInterpreter, tfheConfig *tfhe.Config) error {
-	if ctHashMap == nil {
-		ctHashMap = make(map[tfhe.Hash]*tfhe.Ciphertext)
-	}
-
+func InitTfheConfig(tfheConfig *tfhe.Config) error {
 	err := tfhe.InitTfhe(tfheConfig)
 	if err != nil {
 		logger.Error("Failed to init tfhe config with error: ", err)
 		return err
+	}
+
+	logger.Info("Successfully initialized tfhe config to be: ", tfheConfig)
+
+	return nil
+}
+
+func SetEvmInterpreter(i *vm.EVMInterpreter) error {
+	if ctHashMap == nil {
+		ctHashMap = make(map[tfhe.Hash]*tfhe.Ciphertext)
 	}
 
 	interpreter = i

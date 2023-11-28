@@ -445,7 +445,7 @@ type Argument struct {
 func GenerateFHEOperationTemplate(returnType string) *template.Template {
 	templateText := `
 func (con FheOps) {{.Name}}(c ctx, evm mech, {{.Inputs}}) ({{.ReturnType}}, error) {
-    err := fheos.SetEvmInterpreter(evm.Interpreter(), con.TfheConfig)
+    err := fheos.SetEvmInterpreter(evm.Interpreter())
 	if err != nil {
 		return nil, err
 	}
@@ -457,7 +457,7 @@ func (con FheOps) {{.Name}}(c ctx, evm mech, {{.Inputs}}) ({{.ReturnType}}, erro
 	if returnType == "void" {
 		templateText = `
 func (con FheOps) {{.Name}}(c ctx, evm mech, {{.Inputs}}) error {
-	err := fheos.SetEvmInterpreter(evm.Interpreter(), con.TfheConfig)
+	err := fheos.SetEvmInterpreter(evm.Interpreter())
 	if err != nil {
 		return err
 	}
