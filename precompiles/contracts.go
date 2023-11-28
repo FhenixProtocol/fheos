@@ -5,7 +5,6 @@ import (
 	"errors"
 	"github.com/sirupsen/logrus"
 	"math/big"
-	"os"
 	"runtime"
 
 	"github.com/ethereum/go-ethereum/core/vm"
@@ -93,13 +92,6 @@ func Add(input []byte, inputLen uint32) ([]byte, error) {
 	}
 
 	importCiphertext(result)
-
-	// TODO: for testing
-	err = os.WriteFile("/tmp/add_result", result.Serialization, 0644)
-	if err != nil {
-		logger.Error("fheAdd failed to write /tmp/add_result", "err", err)
-		return nil, err
-	}
 
 	resultHash := result.Hash()
 	logger.Debug("fheAdd success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
@@ -224,13 +216,6 @@ func Lte(input []byte, inputLen uint32) ([]byte, error) {
 	}
 	importCiphertext(result)
 
-	// TODO: for testing
-	err = os.WriteFile("/tmp/lte_result", result.Serialization, 0644)
-	if err != nil {
-		logger.Error("fheAdd failed to write /tmp/lte_result", "err", err)
-		return nil, err
-	}
-
 	resultHash := result.Hash()
 	logger.Debug("fheLte success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
 	return resultHash[:], nil
@@ -269,13 +254,6 @@ func Sub(input []byte, inputLen uint32) ([]byte, error) {
 		return nil, err
 	}
 	importCiphertext(result)
-
-	// TODO: for testing
-	err = os.WriteFile("/tmp/sub_result", result.Serialization, 0644)
-	if err != nil {
-		logger.Error("fheSub failed to write /tmp/sub_result", "err", err)
-		return nil, err
-	}
 
 	resultHash := result.Hash()
 	logger.Debug("fheSub success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
@@ -316,13 +294,6 @@ func Mul(input []byte, inputLen uint32) ([]byte, error) {
 	}
 	importCiphertext(result)
 
-	// TODO: for testing
-	err = os.WriteFile("/tmp/mul_result", result.Serialization, 0644)
-	if err != nil {
-		logger.Error("fheMul failed to write /tmp/mul_result", "err", err)
-		return nil, err
-	}
-
 	ctHash := result.Hash()
 
 	return ctHash[:], nil
@@ -362,13 +333,6 @@ func Lt(input []byte, inputLen uint32) ([]byte, error) {
 	}
 	importCiphertext(result)
 
-	// TODO: for testing
-	err = os.WriteFile("/tmp/lt_result", result.Serialization, 0644)
-	if err != nil {
-		logger.Error("fheLt failed to write /tmp/lt_result", "err", err)
-		return nil, err
-	}
-
 	resultHash := result.Hash()
 	logger.Debug("fheLt success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
 	return resultHash[:], nil
@@ -407,13 +371,6 @@ func Cmux(input []byte, inputLen uint32) ([]byte, error) {
 		return nil, err
 	}
 	importCiphertext(result)
-
-	// TODO: for testing
-	err = os.WriteFile("/tmp/selector_result", result.Serialization, 0644)
-	if err != nil {
-		logger.Error("selector failed to write /tmp/selector_result", "err", err)
-		return nil, err
-	}
 
 	resultHash := result.Hash()
 	logger.Debug("selector success", "control", control.Hash().Hex(), "ifTrue", ifTrue.Hash().Hex(), "ifFalse", ifTrue.Hash().Hex(), "result", resultHash.Hex())
