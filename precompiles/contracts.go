@@ -57,7 +57,7 @@ func getFunctionName() string {
 }
 
 // ============================
-func Add(input []byte, inputLen uint32) ([]byte, error) {
+func Add(input []byte) ([]byte, error) {
 	err := validateInterpreter()
 	if err != nil {
 		logger.Error("failed validating evm interpreter for function ", getFunctionName())
@@ -98,7 +98,7 @@ func Add(input []byte, inputLen uint32) ([]byte, error) {
 	return resultHash[:], nil
 }
 
-func Verify(input []byte, inputLen uint32) ([]byte, error) {
+func Verify(input []byte) ([]byte, error) {
 	err := validateInterpreter()
 	if err != nil {
 		logger.Error("failed validating evm interpreter for function ", getFunctionName())
@@ -136,7 +136,7 @@ func Verify(input []byte, inputLen uint32) ([]byte, error) {
 	return ctHash[:], nil
 }
 
-func Reencrypt(input []byte, inputLen uint32) ([]byte, error) {
+func Reencrypt(input []byte) ([]byte, error) {
 	err := validateInterpreter()
 	if err != nil {
 		logger.Error("failed validating evm interpreter for function ", getFunctionName())
@@ -181,7 +181,7 @@ func Reencrypt(input []byte, inputLen uint32) ([]byte, error) {
 	return nil, errors.New(msg)
 }
 
-func Lte(input []byte, inputLen uint32) ([]byte, error) {
+func Lte(input []byte) ([]byte, error) {
 	err := validateInterpreter()
 	if err != nil {
 		logger.Error("failed validating evm interpreter for function ", getFunctionName())
@@ -221,7 +221,7 @@ func Lte(input []byte, inputLen uint32) ([]byte, error) {
 	return resultHash[:], nil
 }
 
-func Sub(input []byte, inputLen uint32) ([]byte, error) {
+func Sub(input []byte) ([]byte, error) {
 	err := validateInterpreter()
 	if err != nil {
 		logger.Error("failed validating evm interpreter for function ", getFunctionName())
@@ -260,7 +260,7 @@ func Sub(input []byte, inputLen uint32) ([]byte, error) {
 	return resultHash[:], nil
 }
 
-func Mul(input []byte, inputLen uint32) ([]byte, error) {
+func Mul(input []byte) ([]byte, error) {
 	err := validateInterpreter()
 	if err != nil {
 		logger.Error("failed validating evm interpreter for function ", getFunctionName())
@@ -299,7 +299,7 @@ func Mul(input []byte, inputLen uint32) ([]byte, error) {
 	return ctHash[:], nil
 }
 
-func Lt(input []byte, inputLen uint32) ([]byte, error) {
+func Lt(input []byte) ([]byte, error) {
 	err := validateInterpreter()
 	if err != nil {
 		logger.Error("failed validating evm interpreter for function ", getFunctionName())
@@ -338,7 +338,7 @@ func Lt(input []byte, inputLen uint32) ([]byte, error) {
 	return resultHash[:], nil
 }
 
-func Cmux(input []byte, inputLen uint32) ([]byte, error) {
+func Cmux(input []byte) ([]byte, error) {
 	err := validateInterpreter()
 	if err != nil {
 		logger.Error("failed validating evm interpreter for function ", getFunctionName())
@@ -377,7 +377,7 @@ func Cmux(input []byte, inputLen uint32) ([]byte, error) {
 	return resultHash[:], nil
 }
 
-func Req(input []byte, inputLen uint32) ([]byte, error) {
+func Req(input []byte) ([]byte, error) {
 	err := validateInterpreter()
 	if err != nil {
 		logger.Error("failed validating evm interpreter for function ", getFunctionName())
@@ -427,7 +427,7 @@ func Req(input []byte, inputLen uint32) ([]byte, error) {
 	return nil, nil
 }
 
-func Cast(input []byte, inputLen uint32) ([]byte, error) {
+func Cast(input []byte) ([]byte, error) {
 	err := validateInterpreter()
 	if err != nil {
 		logger.Error("failed validating evm interpreter for function ", getFunctionName())
