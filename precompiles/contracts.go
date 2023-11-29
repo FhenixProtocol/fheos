@@ -3,7 +3,7 @@ package precompiles
 import (
 	"encoding/hex"
 	"errors"
-	"fmt"
+	"github.com/sirupsen/logrus"
 	"math/big"
 	"os"
 	"runtime"
@@ -13,29 +13,24 @@ import (
 )
 
 var interpreter *vm.EVMInterpreter
+var logger *logrus.Logger
 
 // FHENIX: TODO - persist it somehow
 var ctHashMap map[tfhe.Hash]*tfhe.Ciphertext
 
-func SetEvmInterpreter(i *vm.EVMInterpreter) error {
+func InitLogger() {
+	logger = newLogger()
+	tfhe.InitLogger(getDefaultLogLevel())
+}
+
+func SetEvmInterpreter(i *vm.EVMInterpreter, tfheConfig *tfhe.Config) error {
 	if ctHashMap == nil {
 		ctHashMap = make(map[tfhe.Hash]*tfhe.Ciphertext)
 	}
 
-	tfheConfig := tfhe.Config{
-		IsOracle:             true,
-		OracleType:           "local",
-		OracleDbPath:         "data/oracle.db",
-		OracleAddress:        "http://127.0.0.1:9001",
-		ServerKeyPath:        "keys/tfhe/sks",
-		ClientKeyPath:        "keys/tfhe/cks",
-		PublicKeyPath:        "keys/tfhe/pks",
-		OraclePrivateKeyPath: "keys/oracle/private-oracle.key",
-		OraclePublicKeyPath:  "keys/oracle/public-oracle.key",
-	}
-
-	err := tfhe.InitTfhe(&tfheConfig)
+	err := tfhe.InitTfhe(tfheConfig)
 	if err != nil {
+		logger.Error("Failed to init tfhe config with error: ", err)
 		return err
 	}
 
@@ -50,15 +45,10 @@ func shouldPrintPrecompileInfo() bool {
 func validateInterpreter() error {
 	if interpreter == nil {
 		msg := "no evm interpreter"
-		// logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
 		return errors.New(msg)
 	}
 
 	return nil
-}
-
-func getLogger() vm.Logger {
-	return interpreter.GetEVM().Logger
 }
 
 func getFunctionName() string {
@@ -71,13 +61,12 @@ func getFunctionName() string {
 func Add(input []byte, inputLen uint32) ([]byte, error) {
 	err := validateInterpreter()
 	if err != nil {
+		logger.Error("failed validating evm interpreter for function ", getFunctionName())
 		return nil, err
 	}
 
-	logger := getLogger()
-
 	if shouldPrintPrecompileInfo() {
-		logger.Info("Starting new precompiled contract function ", getFunctionName())
+		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(input)
@@ -94,7 +83,7 @@ func Add(input []byte, inputLen uint32) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if interpreter.GetEVM().GasEstimation {
-		return importRandomCiphertext(lhs.UintType), nil
+		return importRandomCiphertext(lhs.UintType)
 	}
 
 	result, err := lhs.Add(rhs)
@@ -113,19 +102,18 @@ func Add(input []byte, inputLen uint32) ([]byte, error) {
 	}
 
 	resultHash := result.Hash()
-	logger.Info("fheAdd success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
+	logger.Debug("fheAdd success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
 	return resultHash[:], nil
 }
 
 func Verify(input []byte, inputLen uint32) ([]byte, error) {
 	err := validateInterpreter()
 	if err != nil {
+		logger.Error("failed validating evm interpreter for function ", getFunctionName())
 		return nil, err
 	}
-
-	logger := getLogger()
 	if shouldPrintPrecompileInfo() {
-		logger.Info("Starting new precompiled contract function ", getFunctionName())
+		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
 	if len(input) <= 1 {
@@ -149,7 +137,7 @@ func Verify(input []byte, inputLen uint32) ([]byte, error) {
 	importCiphertext(ct)
 
 	if interpreter.GetEVM().Commit {
-		logger.Info("verifyCiphertext success",
+		logger.Debug("verifyCiphertext success",
 			"ctHash", ctHash.Hex(),
 			"ctBytes64", hex.EncodeToString(ctBytes[:minInt(len(ctBytes), 64)]))
 	}
@@ -159,12 +147,11 @@ func Verify(input []byte, inputLen uint32) ([]byte, error) {
 func Reencrypt(input []byte, inputLen uint32) ([]byte, error) {
 	err := validateInterpreter()
 	if err != nil {
+		logger.Error("failed validating evm interpreter for function ", getFunctionName())
 		return nil, err
 	}
-
-	logger := getLogger()
 	if shouldPrintPrecompileInfo() {
-		logger.Info("Starting new precompiled contract function ", getFunctionName())
+		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
 	if !interpreter.GetEVM().EthCall {
@@ -183,7 +170,8 @@ func Reencrypt(input []byte, inputLen uint32) ([]byte, error) {
 	if ct != nil {
 		decryptedValue, err := ct.Decrypt()
 		if err != nil {
-			panic(fmt.Sprintf("Failed to decrypt ciphertext: %+v", err))
+			logger.Error("failed decrypting ciphertext", "error", err)
+			return nil, err
 		}
 
 		pubKey := input[32:64]
@@ -192,7 +180,7 @@ func Reencrypt(input []byte, inputLen uint32) ([]byte, error) {
 			logger.Error("reencrypt failed to encrypt to user key", "err", err)
 			return nil, err
 		}
-		logger.Info("reencrypt success", "input", hex.EncodeToString(input))
+		logger.Debug("reencrypt success", "input", hex.EncodeToString(input))
 		// FHENIX: Previously it was "return toEVMBytes(reencryptedValue), nil" but the decrypt function in Fhevm din't support it so we removed the the toEVMBytes
 		return reencryptedValue, nil
 	}
@@ -204,12 +192,11 @@ func Reencrypt(input []byte, inputLen uint32) ([]byte, error) {
 func Lte(input []byte, inputLen uint32) ([]byte, error) {
 	err := validateInterpreter()
 	if err != nil {
+		logger.Error("failed validating evm interpreter for function ", getFunctionName())
 		return nil, err
 	}
-
-	logger := getLogger()
 	if shouldPrintPrecompileInfo() {
-		logger.Info("Starting new precompiled contract function ", getFunctionName())
+		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(input)
@@ -226,7 +213,8 @@ func Lte(input []byte, inputLen uint32) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if interpreter.GetEVM().GasEstimation {
-		return importRandomCiphertext(lhs.UintType), nil
+		return importRandomCiphertext(lhs.UintType)
+
 	}
 
 	result, err := lhs.Lte(rhs)
@@ -244,19 +232,18 @@ func Lte(input []byte, inputLen uint32) ([]byte, error) {
 	}
 
 	resultHash := result.Hash()
-	logger.Info("fheLte success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
+	logger.Debug("fheLte success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
 	return resultHash[:], nil
 }
 
 func Sub(input []byte, inputLen uint32) ([]byte, error) {
 	err := validateInterpreter()
 	if err != nil {
+		logger.Error("failed validating evm interpreter for function ", getFunctionName())
 		return nil, err
 	}
-
-	logger := getLogger()
 	if shouldPrintPrecompileInfo() {
-		logger.Info("Starting new precompiled contract function ", getFunctionName())
+		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(input)
@@ -273,7 +260,7 @@ func Sub(input []byte, inputLen uint32) ([]byte, error) {
 
 	// // If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if interpreter.GetEVM().GasEstimation {
-		return importRandomCiphertext(lhs.UintType), nil
+		return importRandomCiphertext(lhs.UintType)
 	}
 
 	result, err := lhs.Sub(rhs)
@@ -291,19 +278,18 @@ func Sub(input []byte, inputLen uint32) ([]byte, error) {
 	}
 
 	resultHash := result.Hash()
-	logger.Info("fheSub success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
+	logger.Debug("fheSub success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
 	return resultHash[:], nil
 }
 
 func Mul(input []byte, inputLen uint32) ([]byte, error) {
 	err := validateInterpreter()
 	if err != nil {
+		logger.Error("failed validating evm interpreter for function ", getFunctionName())
 		return nil, err
 	}
-
-	logger := getLogger()
 	if shouldPrintPrecompileInfo() {
-		logger.Info("Starting new precompiled contract function ", getFunctionName())
+		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(input)
@@ -320,7 +306,7 @@ func Mul(input []byte, inputLen uint32) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if interpreter.GetEVM().GasEstimation {
-		return importRandomCiphertext(lhs.UintType), nil
+		return importRandomCiphertext(lhs.UintType)
 	}
 
 	result, err := lhs.Mul(rhs)
@@ -345,12 +331,11 @@ func Mul(input []byte, inputLen uint32) ([]byte, error) {
 func Lt(input []byte, inputLen uint32) ([]byte, error) {
 	err := validateInterpreter()
 	if err != nil {
+		logger.Error("failed validating evm interpreter for function ", getFunctionName())
 		return nil, err
 	}
-
-	logger := getLogger()
 	if shouldPrintPrecompileInfo() {
-		logger.Info("Starting new precompiled contract function ", getFunctionName())
+		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(input)
@@ -367,7 +352,7 @@ func Lt(input []byte, inputLen uint32) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if interpreter.GetEVM().GasEstimation {
-		return importRandomCiphertext(lhs.UintType), nil
+		return importRandomCiphertext(lhs.UintType)
 	}
 
 	result, err := lhs.Lt(rhs)
@@ -385,19 +370,65 @@ func Lt(input []byte, inputLen uint32) ([]byte, error) {
 	}
 
 	resultHash := result.Hash()
-	logger.Info("fheLt success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
+	logger.Debug("fheLt success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
+	return resultHash[:], nil
+}
+
+func Cmux(input []byte, inputLen uint32) ([]byte, error) {
+	err := validateInterpreter()
+	if err != nil {
+		logger.Error("failed validating evm interpreter for function ", getFunctionName())
+		return nil, err
+	}
+	if shouldPrintPrecompileInfo() {
+		logger.Info("starting new precompiled contract function ", getFunctionName())
+	}
+
+	control, ifTrue, ifFalse, err := get3VerifiedOperands(input)
+	if err != nil {
+		logger.Error("selector inputs not verified input len:", len(input), " err: ", err)
+		return nil, err
+	}
+
+	if (ifTrue.UintType != ifFalse.UintType) || (control.UintType != ifTrue.UintType) {
+		msg := "selector operands type mismatch"
+		logger.Error(msg, "control", control.UintType, "ifTrue", ifTrue.UintType, "ifFalse", ifFalse.UintType)
+		return nil, errors.New(msg)
+	}
+
+	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
+	if interpreter.GetEVM().GasEstimation {
+		return importRandomCiphertext(ifTrue.UintType)
+	}
+
+	result, err := control.Cmux(ifTrue, ifFalse)
+	if err != nil {
+		logger.Error("selector failed", "err", err)
+		return nil, err
+	}
+	importCiphertext(result)
+
+	// TODO: for testing
+	err = os.WriteFile("/tmp/selector_result", result.Serialization, 0644)
+	if err != nil {
+		logger.Error("selector failed to write /tmp/selector_result", "err", err)
+		return nil, err
+	}
+
+	resultHash := result.Hash()
+	logger.Debug("selector success", "control", control.Hash().Hex(), "ifTrue", ifTrue.Hash().Hex(), "ifFalse", ifTrue.Hash().Hex(), "result", resultHash.Hex())
 	return resultHash[:], nil
 }
 
 func Req(input []byte, inputLen uint32) ([]byte, error) {
 	err := validateInterpreter()
 	if err != nil {
+		logger.Error("failed validating evm interpreter for function ", getFunctionName())
 		return nil, err
 	}
 
-	logger := getLogger()
 	if shouldPrintPrecompileInfo() {
-		logger.Info("Starting new precompiled contract function ", getFunctionName())
+		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
 	if interpreter.GetEVM().EthCall {
@@ -429,7 +460,9 @@ func Req(input []byte, inputLen uint32) ([]byte, error) {
 		return nil, errors.New(msg)
 	}
 
-	if !evaluateRequire(ct, interpreter) {
+	ev := evaluateRequire(ct, interpreter)
+
+	if !ev {
 		logger.Error("require failed to evaluate, reverting")
 		return nil, vm.ErrExecutionReverted
 	}
@@ -440,12 +473,12 @@ func Req(input []byte, inputLen uint32) ([]byte, error) {
 func Cast(input []byte, inputLen uint32) ([]byte, error) {
 	err := validateInterpreter()
 	if err != nil {
+		logger.Error("failed validating evm interpreter for function ", getFunctionName())
 		return nil, err
 	}
 
-	logger := getLogger()
 	if shouldPrintPrecompileInfo() {
-		logger.Info("Starting new precompiled contract function ", getFunctionName())
+		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
 	if !isValidType(input[32]) {
@@ -454,15 +487,15 @@ func Cast(input []byte, inputLen uint32) ([]byte, error) {
 	}
 	castToType := tfhe.UintType(input[32])
 
+	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
+	if interpreter.GetEVM().GasEstimation {
+		return importRandomCiphertext(castToType)
+	}
+
 	ct := getCiphertext(tfhe.BytesToHash(input[0:32]))
 	if ct == nil {
 		logger.Error("cast input not verified")
 		return nil, errors.New("unverified ciphertext handle")
-	}
-
-	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	if interpreter.GetEVM().GasEstimation {
-		return importRandomCiphertext(castToType), nil
 	}
 
 	res, err := ct.Cast(castToType)
@@ -476,7 +509,7 @@ func Cast(input []byte, inputLen uint32) ([]byte, error) {
 
 	importCiphertext(res)
 	if shouldPrintPrecompileInfo() {
-		logger.Info("cast success",
+		logger.Debug("cast success",
 			"ctHash", resHash.Hex(),
 		)
 	}
@@ -485,13 +518,15 @@ func Cast(input []byte, inputLen uint32) ([]byte, error) {
 }
 
 func TrivialEncrypt(input []byte) ([]byte, error) {
-	fmt.Printf("Starting new precompiled contract function ", getFunctionName())
 	err := validateInterpreter()
 	if err != nil {
+		logger.Error("failed validating evm interpreter for function ", getFunctionName())
 		return nil, err
 	}
 
-	logger := getLogger()
+	if shouldPrintPrecompileInfo() {
+		logger.Info("starting new precompiled contract function ", getFunctionName())
+	}
 
 	if len(input) != 33 {
 		msg := "trivialEncrypt input len must be 33 bytes"
@@ -502,16 +537,21 @@ func TrivialEncrypt(input []byte) ([]byte, error) {
 	valueToEncrypt := *new(big.Int).SetBytes(input[0:32])
 	encryptToType := tfhe.UintType(input[32])
 
+	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
+	if interpreter.GetEVM().GasEstimation {
+		return importRandomCiphertext(encryptToType)
+	}
+
 	ct, err := tfhe.NewCipherTextTrivial(valueToEncrypt, encryptToType)
 	if err != nil {
-		logger.Error("Failed to create trivial encrypted value")
+		logger.Error("failed to create trivial encrypted value")
 		return nil, err
 	}
 
 	ctHash := ct.Hash()
 	importCiphertext(ct)
 	if shouldPrintPrecompileInfo() {
-		logger.Info("trivialEncrypt success",
+		logger.Debug("trivialEncrypt success",
 			"ctHash", ctHash.Hex(),
 			"valueToEncrypt", valueToEncrypt.Uint64())
 	}
