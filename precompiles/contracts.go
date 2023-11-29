@@ -564,7 +564,6 @@ func Div(input []byte, inputLen uint32) ([]byte, error) {
 		return nil, err
 	}
 
-	logger := getLogger()
 	if shouldPrintPrecompileInfo() {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
@@ -583,7 +582,7 @@ func Div(input []byte, inputLen uint32) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if interpreter.GetEVM().GasEstimation {
-		return importRandomCiphertext(lhs.UintType), nil
+		return importRandomCiphertext(lhs.UintType)
 	}
 
 	result, err := lhs.Div(rhs)
@@ -611,7 +610,6 @@ func Gt(input []byte, inputLen uint32) ([]byte, error) {
 		return nil, err
 	}
 
-	logger := getLogger()
 	if shouldPrintPrecompileInfo() {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
@@ -630,7 +628,7 @@ func Gt(input []byte, inputLen uint32) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if interpreter.GetEVM().GasEstimation {
-		return importRandomCiphertext(lhs.UintType), nil
+		return importRandomCiphertext(lhs.UintType)
 	}
 
 	result, err := lhs.Gt(rhs)
@@ -658,7 +656,6 @@ func Gte(input []byte, inputLen uint32) ([]byte, error) {
 		return nil, err
 	}
 
-	logger := getLogger()
 	if shouldPrintPrecompileInfo() {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
@@ -677,7 +674,7 @@ func Gte(input []byte, inputLen uint32) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if interpreter.GetEVM().GasEstimation {
-		return importRandomCiphertext(lhs.UintType), nil
+		return importRandomCiphertext(lhs.UintType)
 	}
 
 	result, err := lhs.Gte(rhs)
@@ -705,7 +702,6 @@ func Rem(input []byte, inputLen uint32) ([]byte, error) {
 		return nil, err
 	}
 
-	logger := getLogger()
 	if shouldPrintPrecompileInfo() {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
@@ -724,7 +720,7 @@ func Rem(input []byte, inputLen uint32) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if interpreter.GetEVM().GasEstimation {
-		return importRandomCiphertext(lhs.UintType), nil
+		return importRandomCiphertext(lhs.UintType)
 	}
 
 	result, err := lhs.Rem(rhs)
@@ -753,7 +749,6 @@ func And(input []byte, inputLen uint32) ([]byte, error) {
 		return nil, err
 	}
 
-	logger := getLogger()
 	if shouldPrintPrecompileInfo() {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
@@ -772,7 +767,7 @@ func And(input []byte, inputLen uint32) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if interpreter.GetEVM().GasEstimation {
-		return importRandomCiphertext(lhs.UintType), nil
+		return importRandomCiphertext(lhs.UintType)
 	}
 
 	result, err := lhs.And(rhs)
@@ -801,7 +796,6 @@ func Or(input []byte, inputLen uint32) ([]byte, error) {
 		return nil, err
 	}
 
-	logger := getLogger()
 	if shouldPrintPrecompileInfo() {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
@@ -820,7 +814,7 @@ func Or(input []byte, inputLen uint32) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if interpreter.GetEVM().GasEstimation {
-		return importRandomCiphertext(lhs.UintType), nil
+		return importRandomCiphertext(lhs.UintType)
 	}
 
 	result, err := lhs.Or(rhs)
@@ -849,7 +843,6 @@ func Xor(input []byte, inputLen uint32) ([]byte, error) {
 		return nil, err
 	}
 
-	logger := getLogger()
 	if shouldPrintPrecompileInfo() {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
@@ -868,7 +861,7 @@ func Xor(input []byte, inputLen uint32) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if interpreter.GetEVM().GasEstimation {
-		return importRandomCiphertext(lhs.UintType), nil
+		return importRandomCiphertext(lhs.UintType)
 	}
 
 	result, err := lhs.Xor(rhs)
@@ -897,7 +890,6 @@ func Eq(input []byte, inputLen uint32) ([]byte, error) {
 		return nil, err
 	}
 
-	logger := getLogger()
 	if shouldPrintPrecompileInfo() {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
@@ -916,7 +908,7 @@ func Eq(input []byte, inputLen uint32) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if interpreter.GetEVM().GasEstimation {
-		return importRandomCiphertext(lhs.UintType), nil
+		return importRandomCiphertext(lhs.UintType)
 	}
 
 	result, err := lhs.Eq(rhs)
@@ -945,7 +937,6 @@ func Ne(input []byte, inputLen uint32) ([]byte, error) {
 		return nil, err
 	}
 
-	logger := getLogger()
 	if shouldPrintPrecompileInfo() {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
@@ -964,7 +955,7 @@ func Ne(input []byte, inputLen uint32) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if interpreter.GetEVM().GasEstimation {
-		return importRandomCiphertext(lhs.UintType), nil
+		return importRandomCiphertext(lhs.UintType)
 	}
 
 	result, err := lhs.Ne(rhs)
@@ -993,7 +984,6 @@ func Min(input []byte, inputLen uint32) ([]byte, error) {
 		return nil, err
 	}
 
-	logger := getLogger()
 	if shouldPrintPrecompileInfo() {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
@@ -1012,7 +1002,7 @@ func Min(input []byte, inputLen uint32) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if interpreter.GetEVM().GasEstimation {
-		return importRandomCiphertext(lhs.UintType), nil
+		return importRandomCiphertext(lhs.UintType)
 	}
 
 	result, err := lhs.Min(rhs)
@@ -1041,7 +1031,6 @@ func Max(input []byte, inputLen uint32) ([]byte, error) {
 		return nil, err
 	}
 
-	logger := getLogger()
 	if shouldPrintPrecompileInfo() {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
@@ -1060,7 +1049,7 @@ func Max(input []byte, inputLen uint32) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if interpreter.GetEVM().GasEstimation {
-		return importRandomCiphertext(lhs.UintType), nil
+		return importRandomCiphertext(lhs.UintType)
 	}
 
 	result, err := lhs.Max(rhs)
@@ -1089,7 +1078,6 @@ func Shl(input []byte, inputLen uint32) ([]byte, error) {
 		return nil, err
 	}
 
-	logger := getLogger()
 	if shouldPrintPrecompileInfo() {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
@@ -1108,7 +1096,7 @@ func Shl(input []byte, inputLen uint32) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if interpreter.GetEVM().GasEstimation {
-		return importRandomCiphertext(lhs.UintType), nil
+		return importRandomCiphertext(lhs.UintType)
 	}
 
 	result, err := lhs.Shl(rhs)
@@ -1137,7 +1125,6 @@ func Shr(input []byte, inputLen uint32) ([]byte, error) {
 		return nil, err
 	}
 
-	logger := getLogger()
 	if shouldPrintPrecompileInfo() {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
@@ -1156,7 +1143,7 @@ func Shr(input []byte, inputLen uint32) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if interpreter.GetEVM().GasEstimation {
-		return importRandomCiphertext(lhs.UintType), nil
+		return importRandomCiphertext(lhs.UintType)
 	}
 
 	result, err := lhs.Shr(rhs)
