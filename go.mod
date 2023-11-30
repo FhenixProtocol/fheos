@@ -13,8 +13,6 @@ replace github.com/ethereum/go-ethereum => ./go-ethereum
 
 replace github.com/fhenixprotocol/go-tfhe => ./go-tfhe
 
-replace github.com/fhenixprotocol/decryption-oracle => ./go-tfhe/decryption-oracle
-
 require (
 	github.com/fhenixprotocol/decryption-oracle-proto v0.0.0-20231127135430-74f6a7e6df5c // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
