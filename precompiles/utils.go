@@ -13,16 +13,16 @@ import (
 )
 
 type TxParams struct {
-	Commit          bool
-	IsGasEstimation bool
-	IsEthCall       bool
+	Commit        bool
+	GasEstimation bool
+	EthCall       bool
 }
 
 func TxParamsFromEVM(evm *vm.EVM) TxParams {
 	var tp TxParams
 	tp.Commit = evm.Commit
-	tp.IsGasEstimation = evm.GasEstimation
-	tp.IsEthCall = evm.EthCall
+	tp.GasEstimation = evm.GasEstimation
+	tp.EthCall = evm.EthCall
 
 	return tp
 }

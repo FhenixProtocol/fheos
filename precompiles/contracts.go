@@ -38,7 +38,7 @@ func InitTfheConfig(tfheConfig *tfhe.Config) error {
 }
 
 func shouldPrintPrecompileInfo(tp *TxParams) bool {
-	return tp.Commit && !tp.IsGasEstimation
+	return tp.Commit && !tp.GasEstimation
 }
 
 func getFunctionName() string {
@@ -66,7 +66,7 @@ func Add(input []byte, tp *TxParams) ([]byte, error) {
 	}
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	if tp.IsGasEstimation {
+	if tp.GasEstimation {
 		return importRandomCiphertext(lhs.UintType)
 	}
 
@@ -121,7 +121,7 @@ func Reencrypt(input []byte, tp *TxParams) ([]byte, error) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
-	if !tp.IsEthCall {
+	if !tp.EthCall {
 		msg := "reencrypt only supported on EthCall"
 		logger.Error(msg)
 		return nil, errors.New(msg)
@@ -174,7 +174,7 @@ func Lte(input []byte, tp *TxParams) ([]byte, error) {
 	}
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	if tp.IsGasEstimation {
+	if tp.GasEstimation {
 		return importRandomCiphertext(lhs.UintType)
 
 	}
@@ -209,7 +209,7 @@ func Sub(input []byte, tp *TxParams) ([]byte, error) {
 	}
 
 	// // If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	if tp.IsGasEstimation {
+	if tp.GasEstimation {
 		return importRandomCiphertext(lhs.UintType)
 	}
 
@@ -243,7 +243,7 @@ func Mul(input []byte, tp *TxParams) ([]byte, error) {
 	}
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	if tp.IsGasEstimation {
+	if tp.GasEstimation {
 		return importRandomCiphertext(lhs.UintType)
 	}
 
@@ -277,7 +277,7 @@ func Lt(input []byte, tp *TxParams) ([]byte, error) {
 	}
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	if tp.IsGasEstimation {
+	if tp.GasEstimation {
 		return importRandomCiphertext(lhs.UintType)
 	}
 
@@ -311,7 +311,7 @@ func Cmux(input []byte, tp *TxParams) ([]byte, error) {
 	}
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	if tp.IsGasEstimation {
+	if tp.GasEstimation {
 		return importRandomCiphertext(ifTrue.UintType)
 	}
 
@@ -332,7 +332,7 @@ func Req(input []byte, tp *TxParams) ([]byte, error) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
-	if tp.IsEthCall {
+	if tp.EthCall {
 		msg := "require not supported on EthCall"
 		logger.Error(msg)
 		return nil, errors.New(msg)
@@ -383,7 +383,7 @@ func Cast(input []byte, tp *TxParams) ([]byte, error) {
 	castToType := tfhe.UintType(input[32])
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	if tp.IsGasEstimation {
+	if tp.GasEstimation {
 		return importRandomCiphertext(castToType)
 	}
 
@@ -427,7 +427,7 @@ func TrivialEncrypt(input []byte, tp *TxParams) ([]byte, error) {
 	encryptToType := tfhe.UintType(input[32])
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	if tp.IsGasEstimation {
+	if tp.GasEstimation {
 		return importRandomCiphertext(encryptToType)
 	}
 
