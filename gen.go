@@ -187,6 +187,8 @@ interface FheOps {
 				}
 
 				outLine += param.Type + " " + param.Name
+
+				// Is it the last (Ignoring the TxParams)
 				if count < len(params)-2 {
 					outLine += ", "
 				}
@@ -349,6 +351,7 @@ func main() {
 
 			parameters += fmt.Sprintf("%s %s", arg.Name, t)
 			innerParameters += arg.Name
+			// Is it the last (Ignoring the TxParams)
 			if count < (len(f.Inputs) - 2) {
 				parameters += ", "
 				innerParameters += ", "
@@ -381,12 +384,10 @@ func main() {
 
 import (
 	fheos "github.com/fhenixprotocol/fheos/precompiles"
-	"github.com/fhenixprotocol/go-tfhe"
 )
 
 type FheOps struct {
 	Address    addr // 0x80
-	TfheConfig *tfhe.Config
 }
 `)
 	defer file.Close()
@@ -424,20 +425,16 @@ type Argument struct {
 
 func GenerateFHEOperationTemplate(returnType string) *template.Template {
 	templateText := `
-func (con FheOps) {{.Name}}(ctx, evm mech, {{.Inputs}}) ({{.ReturnType}}, error) {
-	var tp fheos.TxParams
-	tp.SetTxParams(evm)
-
+func (con FheOps) {{.Name}}(c ctx, evm mech, {{.Inputs}}) ({{.ReturnType}}, error) {
+	tp := fheos.TxParamsFromEVM(evm)
 	return fheos.{{.Name}}({{.InnerInputs}}, &tp)
 }
 `
 
 	if returnType == "void" {
 		templateText = `
-func (con FheOps) {{.Name}}(ctx, evm mech, {{.Inputs}}) error {
-	var tp fheos.TxParams
-	tp.SetTxParams(evm)
-
+func (con FheOps) {{.Name}}(c ctx, evm mech, {{.Inputs}}) error {
+	tp := fheos.TxParamsFromEVM(evm)
 	fheos.{{.Name}}({{.InnerInputs}}, &tp)
 	return nil
 }

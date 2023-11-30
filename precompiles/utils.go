@@ -13,15 +13,18 @@ import (
 )
 
 type TxParams struct {
-	IsCommit        bool
+	Commit          bool
 	IsGasEstimation bool
 	IsEthCall       bool
 }
 
-func (tp *TxParams) SetTxParams(evm *vm.EVM) {
-	tp.IsCommit = evm.Commit
+func TxParamsFromEVM(evm *vm.EVM) TxParams {
+	var tp TxParams
+	tp.Commit = evm.Commit
 	tp.IsGasEstimation = evm.GasEstimation
 	tp.IsEthCall = evm.EthCall
+
+	return tp
 }
 
 type DepthSet struct {

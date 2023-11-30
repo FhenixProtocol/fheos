@@ -38,7 +38,7 @@ func InitTfheConfig(tfheConfig *tfhe.Config) error {
 }
 
 func shouldPrintPrecompileInfo(tp *TxParams) bool {
-	return tp.IsCommit && !tp.IsGasEstimation
+	return tp.Commit && !tp.IsGasEstimation
 }
 
 func getFunctionName() string {
@@ -108,7 +108,7 @@ func Verify(input []byte, tp *TxParams) ([]byte, error) {
 	ctHash := ct.Hash()
 	importCiphertext(ct)
 
-	if tp.IsCommit {
+	if tp.Commit {
 		logger.Debug("verifyCiphertext success",
 			"ctHash", ctHash.Hex(),
 			"ctBytes64", hex.EncodeToString(ctBytes[:minInt(len(ctBytes), 64)]))
@@ -352,7 +352,7 @@ func Req(input []byte, tp *TxParams) ([]byte, error) {
 	}
 	// If we are not committing to state, assume the require is true, avoiding any side effects
 	// (i.e. mutatiting the oracle DB).
-	if !tp.IsCommit {
+	if !tp.Commit {
 		return nil, nil
 	}
 	if ct.UintType != tfhe.Uint32 {
