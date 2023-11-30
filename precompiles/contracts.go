@@ -592,13 +592,6 @@ func Div(input []byte, inputLen uint32) ([]byte, error) {
 	}
 	importCiphertext(result)
 
-	// TODO: for testing
-	err = os.WriteFile("/tmp/div_result", result.Serialization, 0644)
-	if err != nil {
-		logger.Error("fheDiv failed to write /tmp/div_result", "err", err)
-		return nil, err
-	}
-
 	ctHash := result.Hash()
 
 	return ctHash[:], nil
@@ -637,13 +630,6 @@ func Gt(input []byte, inputLen uint32) ([]byte, error) {
 		return nil, err
 	}
 	importCiphertext(result)
-
-	// TODO: for testing
-	err = os.WriteFile("/tmp/gt_result", result.Serialization, 0644)
-	if err != nil {
-		logger.Error("fheGt failed to write /tmp/gt_result", "err", err)
-		return nil, err
-	}
 
 	ctHash := result.Hash()
 
@@ -684,13 +670,6 @@ func Gte(input []byte, inputLen uint32) ([]byte, error) {
 	}
 	importCiphertext(result)
 
-	// TODO: for testing
-	err = os.WriteFile("/tmp/gte_result", result.Serialization, 0644)
-	if err != nil {
-		logger.Error("fheGt failed to write /tmp/gte_result", "err", err)
-		return nil, err
-	}
-
 	ctHash := result.Hash()
 
 	return ctHash[:], nil
@@ -729,14 +708,6 @@ func Rem(input []byte, inputLen uint32) ([]byte, error) {
 		return nil, err
 	}
 	importCiphertext(result)
-
-	// TODO: for testing
-	filename := "/tmp/rem_result"
-	err = os.WriteFile(filename, result.Serialization, 0644)
-	if err != nil {
-		logger.Error("failed to write to", filename, "err", err)
-		return nil, err
-	}
 
 	ctHash := result.Hash()
 
@@ -777,14 +748,6 @@ func And(input []byte, inputLen uint32) ([]byte, error) {
 	}
 	importCiphertext(result)
 
-	// TODO: for testing
-	filename := "/tmp/and_result"
-	err = os.WriteFile(filename, result.Serialization, 0644)
-	if err != nil {
-		logger.Error("failed to write to", filename, "err", err)
-		return nil, err
-	}
-
 	ctHash := result.Hash()
 
 	return ctHash[:], nil
@@ -823,14 +786,6 @@ func Or(input []byte, inputLen uint32) ([]byte, error) {
 		return nil, err
 	}
 	importCiphertext(result)
-
-	// TODO: for testing
-	filename := "/tmp/or_result"
-	err = os.WriteFile(filename, result.Serialization, 0644)
-	if err != nil {
-		logger.Error("failed to write to", filename, "err", err)
-		return nil, err
-	}
 
 	ctHash := result.Hash()
 
@@ -871,14 +826,6 @@ func Xor(input []byte, inputLen uint32) ([]byte, error) {
 	}
 	importCiphertext(result)
 
-	// TODO: for testing
-	filename := "/tmp/xor_result"
-	err = os.WriteFile(filename, result.Serialization, 0644)
-	if err != nil {
-		logger.Error("failed to write to", filename, "err", err)
-		return nil, err
-	}
-
 	ctHash := result.Hash()
 
 	return ctHash[:], nil
@@ -917,14 +864,6 @@ func Eq(input []byte, inputLen uint32) ([]byte, error) {
 		return nil, err
 	}
 	importCiphertext(result)
-
-	// TODO: for testing
-	filename := "/tmp/eq_result"
-	err = os.WriteFile(filename, result.Serialization, 0644)
-	if err != nil {
-		logger.Error("failed to write to", filename, "err", err)
-		return nil, err
-	}
 
 	ctHash := result.Hash()
 
@@ -965,14 +904,6 @@ func Ne(input []byte, inputLen uint32) ([]byte, error) {
 	}
 	importCiphertext(result)
 
-	// TODO: for testing
-	filename := "/tmp/ne_result"
-	err = os.WriteFile(filename, result.Serialization, 0644)
-	if err != nil {
-		logger.Error("failed to write to", filename, "err", err)
-		return nil, err
-	}
-
 	ctHash := result.Hash()
 
 	return ctHash[:], nil
@@ -1011,14 +942,6 @@ func Min(input []byte, inputLen uint32) ([]byte, error) {
 		return nil, err
 	}
 	importCiphertext(result)
-
-	// TODO: for testing
-	filename := "/tmp/min_result"
-	err = os.WriteFile(filename, result.Serialization, 0644)
-	if err != nil {
-		logger.Error("failed to write to", filename, "err", err)
-		return nil, err
-	}
 
 	ctHash := result.Hash()
 
@@ -1059,14 +982,6 @@ func Max(input []byte, inputLen uint32) ([]byte, error) {
 	}
 	importCiphertext(result)
 
-	// TODO: for testing
-	filename := "/tmp/max_result"
-	err = os.WriteFile(filename, result.Serialization, 0644)
-	if err != nil {
-		logger.Error("failed to write to", filename, "err", err)
-		return nil, err
-	}
-
 	ctHash := result.Hash()
 
 	return ctHash[:], nil
@@ -1106,14 +1021,6 @@ func Shl(input []byte, inputLen uint32) ([]byte, error) {
 	}
 	importCiphertext(result)
 
-	// TODO: for testing
-	filename := "/tmp/shl_result"
-	err = os.WriteFile(filename, result.Serialization, 0644)
-	if err != nil {
-		logger.Error("failed to write to", filename, "err", err)
-		return nil, err
-	}
-
 	ctHash := result.Hash()
 
 	return ctHash[:], nil
@@ -1152,14 +1059,6 @@ func Shr(input []byte, inputLen uint32) ([]byte, error) {
 		return nil, err
 	}
 	importCiphertext(result)
-
-	// TODO: for testing
-	filename := "/tmp/shr_result"
-	err = os.WriteFile(filename, result.Serialization, 0644)
-	if err != nil {
-		logger.Error("failed to write to", filename, "err", err)
-		return nil, err
-	}
 
 	ctHash := result.Hash()
 
