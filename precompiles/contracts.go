@@ -594,6 +594,7 @@ func Div(input []byte, inputLen uint32) ([]byte, error) {
 
 	ctHash := result.Hash()
 
+	logger.Debug("fheDiv success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], nil
 }
 
@@ -633,6 +634,7 @@ func Gt(input []byte, inputLen uint32) ([]byte, error) {
 
 	ctHash := result.Hash()
 
+	logger.Debug("fheGt success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], nil
 }
 
@@ -672,6 +674,7 @@ func Gte(input []byte, inputLen uint32) ([]byte, error) {
 
 	ctHash := result.Hash()
 
+	logger.Debug("fheGte success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], nil
 }
 
@@ -711,6 +714,7 @@ func Rem(input []byte, inputLen uint32) ([]byte, error) {
 
 	ctHash := result.Hash()
 
+	logger.Debug("fheRem success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], nil
 }
 
@@ -750,6 +754,7 @@ func And(input []byte, inputLen uint32) ([]byte, error) {
 
 	ctHash := result.Hash()
 
+	logger.Debug("fheAnd success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], nil
 }
 
@@ -789,6 +794,7 @@ func Or(input []byte, inputLen uint32) ([]byte, error) {
 
 	ctHash := result.Hash()
 
+	logger.Debug("fheOr success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], nil
 }
 
@@ -828,6 +834,7 @@ func Xor(input []byte, inputLen uint32) ([]byte, error) {
 
 	ctHash := result.Hash()
 
+	logger.Debug("fheXor success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], nil
 }
 
@@ -867,6 +874,7 @@ func Eq(input []byte, inputLen uint32) ([]byte, error) {
 
 	ctHash := result.Hash()
 
+	logger.Debug("fheEq success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], nil
 }
 
@@ -906,6 +914,7 @@ func Ne(input []byte, inputLen uint32) ([]byte, error) {
 
 	ctHash := result.Hash()
 
+	logger.Debug("fheNe success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], nil
 }
 
@@ -945,6 +954,7 @@ func Min(input []byte, inputLen uint32) ([]byte, error) {
 
 	ctHash := result.Hash()
 
+	logger.Debug("fheMin success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], nil
 }
 
@@ -984,6 +994,7 @@ func Max(input []byte, inputLen uint32) ([]byte, error) {
 
 	ctHash := result.Hash()
 
+	logger.Debug("fheMax success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], nil
 }
 
@@ -1023,6 +1034,7 @@ func Shl(input []byte, inputLen uint32) ([]byte, error) {
 
 	ctHash := result.Hash()
 
+	logger.Debug("fheShl success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], nil
 }
 
@@ -1062,5 +1074,6 @@ func Shr(input []byte, inputLen uint32) ([]byte, error) {
 
 	ctHash := result.Hash()
 
+	logger.Debug("fheShr success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], nil
 }
