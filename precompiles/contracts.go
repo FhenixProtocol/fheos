@@ -570,7 +570,7 @@ func Rem(input []byte, tp *TxParams) ([]byte, error) {
 	}
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	if interpreter.GetEVM().GasEstimation {
+	if tp.GasEstimation {
 		return importRandomCiphertext(lhs.UintType)
 	}
 
