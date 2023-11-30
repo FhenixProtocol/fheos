@@ -182,8 +182,14 @@ interface FheOps {
 					param.Type = "bytes memory"
 				}
 
+				if param.Type == "*TxParams" {
+					continue
+				}
+
 				outLine += param.Type + " " + param.Name
-				if count < len(params)-1 {
+
+				// Is it the last (Ignoring the TxParams)
+				if count < len(params)-2 {
 					outLine += ", "
 				}
 			}
@@ -339,9 +345,14 @@ func main() {
 				t = "[]byte"
 			}
 
+			if t == "*TxParams" {
+				continue
+			}
+
 			parameters += fmt.Sprintf("%s %s", arg.Name, t)
 			innerParameters += arg.Name
-			if count < (len(f.Inputs) - 1) {
+			// Is it the last (Ignoring the TxParams)
+			if count < (len(f.Inputs) - 2) {
 				parameters += ", "
 				innerParameters += ", "
 			}
@@ -363,34 +374,6 @@ func main() {
 		})
 	}
 
-	// operations := []Operation{
-	// 	{"Add", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Verify", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Reencrypt", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Lte", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Sub", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Mul", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Lt", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"OptReq", "input []byte, inputLen uint32", "input, inputLen", "void"},
-	// 	{"Cast", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"TrivialEncrypt", "input []byte", "input", "[]byte"},
-	// 	{"And", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Or", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Xor", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Eq", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Gte", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Gt", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Shl", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Shr", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Ne", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Min", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Max", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Neg", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Not", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Decrypt", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// 	{"Div", "input []byte, inputLen uint32", "input, inputLen", "[]byte"},
-	// }
-
 	f := "FheOps_gen.go"
 	file, err := os.Create(f)
 	if err != nil {
@@ -401,12 +384,10 @@ func main() {
 
 import (
 	fheos "github.com/fhenixprotocol/fheos/precompiles"
-	"github.com/fhenixprotocol/go-tfhe"
 )
 
 type FheOps struct {
-	Address addr // 0x80
-	TfheConfig *tfhe.Config
+	Address    addr // 0x80
 }
 `)
 	defer file.Close()
@@ -445,24 +426,16 @@ type Argument struct {
 func GenerateFHEOperationTemplate(returnType string) *template.Template {
 	templateText := `
 func (con FheOps) {{.Name}}(c ctx, evm mech, {{.Inputs}}) ({{.ReturnType}}, error) {
-    err := fheos.SetEvmInterpreter(evm.Interpreter(), con.TfheConfig)
-	if err != nil {
-		return nil, err
-	}
-
-    return fheos.{{.Name}}({{.InnerInputs}})
-} 
+	tp := fheos.TxParamsFromEVM(evm)
+	return fheos.{{.Name}}({{.InnerInputs}}, &tp)
+}
 `
 
 	if returnType == "void" {
 		templateText = `
 func (con FheOps) {{.Name}}(c ctx, evm mech, {{.Inputs}}) error {
-	err := fheos.SetEvmInterpreter(evm.Interpreter(), con.TfheConfig)
-	if err != nil {
-		return err
-	}
-
-	fheos.{{.Name}}({{.InnerInputs}})
+	tp := fheos.TxParamsFromEVM(evm)
+	fheos.{{.Name}}({{.InnerInputs}}, &tp)
 	return nil
 }
 `
