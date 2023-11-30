@@ -9,9 +9,23 @@ import (
 
 	"github.com/ethereum/go-ethereum/core/vm"
 	tfhe "github.com/fhenixprotocol/go-tfhe"
-	"github.com/holiman/uint256"
 	"golang.org/x/crypto/nacl/box"
 )
+
+type TxParams struct {
+	Commit        bool
+	GasEstimation bool
+	EthCall       bool
+}
+
+func TxParamsFromEVM(evm *vm.EVM) TxParams {
+	var tp TxParams
+	tp.Commit = evm.Commit
+	tp.GasEstimation = evm.GasEstimation
+	tp.EthCall = evm.EthCall
+
+	return tp
+}
 
 type DepthSet struct {
 	m map[int]struct{}
@@ -51,16 +65,6 @@ func (from *DepthSet) clone() (to *DepthSet) {
 	}
 	return
 }
-
-func toEVMBytes(input []byte) []byte {
-	len := uint64(len(input))
-	lenBytes32 := uint256.NewInt(len).Bytes32()
-	ret := make([]byte, 0, len+32)
-	ret = append(ret, lenBytes32[:]...)
-	ret = append(ret, input...)
-	return ret
-}
-
 func classicalPublicKeyEncrypt(value *big.Int, userPublicKey []byte) ([]byte, error) {
 	encrypted, err := box.SealAnonymous(nil, value.Bytes(), (*[32]byte)(userPublicKey), rand.Reader)
 	if err != nil {
@@ -158,32 +162,32 @@ func minInt(a int, b int) int {
 
 // Puts the given ciphertext as a require to the oracle DB or exits the process on errors.
 // Returns the require value.
-func putRequire(ct *tfhe.Ciphertext, interpreter *vm.EVMInterpreter) (bool, error) {
-	plaintext, err := tfhe.Decrypt(*ct)
-	if err != nil {
-		return false, errors.New(fmt.Sprintf("Failed to decrypt value: %s", err))
-	}
+//func putRequire(ct *tfhe.Ciphertext, interpreter *vm.EVMInterpreter) (bool, error) {
+//	plaintext, err := tfhe.Decrypt(*ct)
+//	if err != nil {
+//		return false, errors.New(fmt.Sprintf("Failed to decrypt value: %s", err))
+//	}
+//
+//	result, err := tfhe.StoreRequire(ct, plaintext)
+//	if err != nil {
+//		return false, errors.New("Failed to store require in DB")
+//	}
+//
+//	return result, nil
+//}
+//
+//// Gets the given require from the oracle DB and returns its value.
+//// Exits the process on errors or signature verification failure.
+//func getRequire(ct *tfhe.Ciphertext) (bool, error) {
+//	result, err := tfhe.CheckRequire(ct)
+//	if err != nil {
+//		return false, errors.New(fmt.Sprintf("Error verifying require", err))
+//	}
+//
+//	return result, nil
+//}
 
-	result, err := tfhe.StoreRequire(ct, plaintext)
-	if err != nil {
-		return false, errors.New("Failed to store require in DB")
-	}
-
-	return result, nil
-}
-
-// Gets the given require from the oracle DB and returns its value.
-// Exits the process on errors or signature verification failure.
-func getRequire(ct *tfhe.Ciphertext, interpreter *vm.EVMInterpreter) (bool, error) {
-	result, err := tfhe.CheckRequire(ct)
-	if err != nil {
-		return false, errors.New(fmt.Sprintf("Error verifying require", err))
-	}
-
-	return result, nil
-}
-
-func evaluateRequire(ct *tfhe.Ciphertext, interpreter *vm.EVMInterpreter) bool {
+func evaluateRequire(ct *tfhe.Ciphertext) bool {
 	return tfhe.Require(ct)
 }
 
