@@ -446,3 +446,458 @@ func TrivialEncrypt(input []byte, tp *TxParams) ([]byte, error) {
 	}
 	return ctHash[:], nil
 }
+
+func Div(input []byte, tp *TxParams) ([]byte, error) {
+	if shouldPrintPrecompileInfo(tp) {
+		logger.Info("Starting new precompiled contract function ", getFunctionName())
+	}
+
+	lhs, rhs, err := get2VerifiedOperands(input)
+	if err != nil {
+		logger.Error("fheMul inputs not verified", "err", err)
+		return nil, err
+	}
+
+	if lhs.UintType != rhs.UintType {
+		msg := "fheMul operand type mismatch"
+		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
+		return nil, errors.New(msg)
+	}
+
+	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
+	if tp.GasEstimation {
+		return importRandomCiphertext(lhs.UintType)
+	}
+
+	result, err := lhs.Div(rhs)
+	if err != nil {
+		logger.Error("fheDiv failed", "err", err)
+		return nil, err
+	}
+	importCiphertext(result)
+
+	ctHash := result.Hash()
+
+	logger.Debug("fheDiv success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	return ctHash[:], nil
+}
+
+func Gt(input []byte, tp *TxParams) ([]byte, error) {
+	if shouldPrintPrecompileInfo(tp) {
+		logger.Info("Starting new precompiled contract function ", getFunctionName())
+	}
+
+	lhs, rhs, err := get2VerifiedOperands(input)
+	if err != nil {
+		logger.Error("fheGt inputs not verified", "err", err)
+		return nil, err
+	}
+
+	if lhs.UintType != rhs.UintType {
+		msg := "fheGt operand type mismatch"
+		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
+		return nil, errors.New(msg)
+	}
+
+	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
+	if tp.GasEstimation {
+		return importRandomCiphertext(lhs.UintType)
+	}
+
+	result, err := lhs.Gt(rhs)
+	if err != nil {
+		logger.Error("fheGt failed", "err", err)
+		return nil, err
+	}
+	importCiphertext(result)
+
+	ctHash := result.Hash()
+
+	logger.Debug("fheGt success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	return ctHash[:], nil
+}
+
+func Gte(input []byte, tp *TxParams) ([]byte, error) {
+	if shouldPrintPrecompileInfo(tp) {
+		logger.Info("Starting new precompiled contract function ", getFunctionName())
+	}
+
+	lhs, rhs, err := get2VerifiedOperands(input)
+	if err != nil {
+		logger.Error("fheGte inputs not verified", "err", err)
+		return nil, err
+	}
+
+	if lhs.UintType != rhs.UintType {
+		msg := "fheGte operand type mismatch"
+		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
+		return nil, errors.New(msg)
+	}
+
+	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
+	if tp.GasEstimation {
+		return importRandomCiphertext(lhs.UintType)
+	}
+
+	result, err := lhs.Gte(rhs)
+	if err != nil {
+		logger.Error("fheGte failed", "err", err)
+		return nil, err
+	}
+	importCiphertext(result)
+
+	ctHash := result.Hash()
+
+	logger.Debug("fheGte success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	return ctHash[:], nil
+}
+
+func Rem(input []byte, tp *TxParams) ([]byte, error) {
+	if shouldPrintPrecompileInfo(tp) {
+		logger.Info("Starting new precompiled contract function ", getFunctionName())
+	}
+
+	lhs, rhs, err := get2VerifiedOperands(input)
+	if err != nil {
+		logger.Error("fheRem inputs not verified", "err", err)
+		return nil, err
+	}
+
+	if lhs.UintType != rhs.UintType {
+		msg := "fheRem operand type mismatch"
+		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
+		return nil, errors.New(msg)
+	}
+
+	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
+	if tp.GasEstimation {
+		return importRandomCiphertext(lhs.UintType)
+	}
+
+	result, err := lhs.Rem(rhs)
+	if err != nil {
+		logger.Error("fheRem failed", "err", err)
+		return nil, err
+	}
+	importCiphertext(result)
+
+	ctHash := result.Hash()
+
+	logger.Debug("fheRem success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	return ctHash[:], nil
+}
+
+func And(input []byte, tp *TxParams) ([]byte, error) {
+	if shouldPrintPrecompileInfo(tp) {
+		logger.Info("Starting new precompiled contract function ", getFunctionName())
+	}
+
+	lhs, rhs, err := get2VerifiedOperands(input)
+	if err != nil {
+		logger.Error("fheAnd inputs not verified", "err", err)
+		return nil, err
+	}
+
+	if lhs.UintType != rhs.UintType {
+		msg := "fheAnd operand type mismatch"
+		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
+		return nil, errors.New(msg)
+	}
+
+	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
+	if tp.GasEstimation {
+		return importRandomCiphertext(lhs.UintType)
+	}
+
+	result, err := lhs.And(rhs)
+	if err != nil {
+		logger.Error("fheAnd failed", "err", err)
+		return nil, err
+	}
+	importCiphertext(result)
+
+	ctHash := result.Hash()
+
+	logger.Debug("fheAnd success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	return ctHash[:], nil
+}
+
+func Or(input []byte, tp *TxParams) ([]byte, error) {
+	if shouldPrintPrecompileInfo(tp) {
+		logger.Info("Starting new precompiled contract function ", getFunctionName())
+	}
+
+	lhs, rhs, err := get2VerifiedOperands(input)
+	if err != nil {
+		logger.Error("fheOr inputs not verified", "err", err)
+		return nil, err
+	}
+
+	if lhs.UintType != rhs.UintType {
+		msg := "fheOr operand type mismatch"
+		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
+		return nil, errors.New(msg)
+	}
+
+	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
+	if tp.GasEstimation {
+		return importRandomCiphertext(lhs.UintType)
+	}
+
+	result, err := lhs.Or(rhs)
+	if err != nil {
+		logger.Error("fheOr failed", "err", err)
+		return nil, err
+	}
+	importCiphertext(result)
+
+	ctHash := result.Hash()
+
+	logger.Debug("fheOr success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	return ctHash[:], nil
+}
+
+func Xor(input []byte, tp *TxParams) ([]byte, error) {
+	if shouldPrintPrecompileInfo(tp) {
+		logger.Info("Starting new precompiled contract function ", getFunctionName())
+	}
+
+	lhs, rhs, err := get2VerifiedOperands(input)
+	if err != nil {
+		logger.Error("fheXor inputs not verified", "err", err)
+		return nil, err
+	}
+
+	if lhs.UintType != rhs.UintType {
+		msg := "fheXor operand type mismatch"
+		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
+		return nil, errors.New(msg)
+	}
+
+	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
+	if tp.GasEstimation {
+		return importRandomCiphertext(lhs.UintType)
+	}
+
+	result, err := lhs.Xor(rhs)
+	if err != nil {
+		logger.Error("fheXor failed", "err", err)
+		return nil, err
+	}
+	importCiphertext(result)
+
+	ctHash := result.Hash()
+
+	logger.Debug("fheXor success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	return ctHash[:], nil
+}
+
+func Eq(input []byte, tp *TxParams) ([]byte, error) {
+	if shouldPrintPrecompileInfo(tp) {
+		logger.Info("Starting new precompiled contract function ", getFunctionName())
+	}
+
+	lhs, rhs, err := get2VerifiedOperands(input)
+	if err != nil {
+		logger.Error("fheEq inputs not verified", "err", err)
+		return nil, err
+	}
+
+	if lhs.UintType != rhs.UintType {
+		msg := "fheEq operand type mismatch"
+		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
+		return nil, errors.New(msg)
+	}
+
+	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
+	if tp.GasEstimation {
+		return importRandomCiphertext(lhs.UintType)
+	}
+
+	result, err := lhs.Eq(rhs)
+	if err != nil {
+		logger.Error("fheEq failed", "err", err)
+		return nil, err
+	}
+	importCiphertext(result)
+
+	ctHash := result.Hash()
+
+	logger.Debug("fheEq success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	return ctHash[:], nil
+}
+
+func Ne(input []byte, tp *TxParams) ([]byte, error) {
+	if shouldPrintPrecompileInfo(tp) {
+		logger.Info("Starting new precompiled contract function ", getFunctionName())
+	}
+
+	lhs, rhs, err := get2VerifiedOperands(input)
+	if err != nil {
+		logger.Error("fheNe inputs not verified", "err", err)
+		return nil, err
+	}
+
+	if lhs.UintType != rhs.UintType {
+		msg := "fheNe operand type mismatch"
+		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
+		return nil, errors.New(msg)
+	}
+
+	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
+	if tp.GasEstimation {
+		return importRandomCiphertext(lhs.UintType)
+	}
+
+	result, err := lhs.Ne(rhs)
+	if err != nil {
+		logger.Error("fheNe failed", "err", err)
+		return nil, err
+	}
+	importCiphertext(result)
+
+	ctHash := result.Hash()
+
+	logger.Debug("fheNe success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	return ctHash[:], nil
+}
+
+func Min(input []byte, tp *TxParams) ([]byte, error) {
+	if shouldPrintPrecompileInfo(tp) {
+		logger.Info("Starting new precompiled contract function ", getFunctionName())
+	}
+
+	lhs, rhs, err := get2VerifiedOperands(input)
+	if err != nil {
+		logger.Error("fheMin inputs not verified", "err", err)
+		return nil, err
+	}
+
+	if lhs.UintType != rhs.UintType {
+		msg := "fheMin operand type mismatch"
+		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
+		return nil, errors.New(msg)
+	}
+
+	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
+	if tp.GasEstimation {
+		return importRandomCiphertext(lhs.UintType)
+	}
+
+	result, err := lhs.Min(rhs)
+	if err != nil {
+		logger.Error("fheMin failed", "err", err)
+		return nil, err
+	}
+	importCiphertext(result)
+
+	ctHash := result.Hash()
+
+	logger.Debug("fheMin success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	return ctHash[:], nil
+}
+
+func Max(input []byte, tp *TxParams) ([]byte, error) {
+	if shouldPrintPrecompileInfo(tp) {
+		logger.Info("Starting new precompiled contract function ", getFunctionName())
+	}
+
+	lhs, rhs, err := get2VerifiedOperands(input)
+	if err != nil {
+		logger.Error("fheMax inputs not verified", "err", err)
+		return nil, err
+	}
+
+	if lhs.UintType != rhs.UintType {
+		msg := "fheMax operand type mismatch"
+		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
+		return nil, errors.New(msg)
+	}
+
+	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
+	if tp.GasEstimation {
+		return importRandomCiphertext(lhs.UintType)
+	}
+
+	result, err := lhs.Max(rhs)
+	if err != nil {
+		logger.Error("fheMax failed", "err", err)
+		return nil, err
+	}
+	importCiphertext(result)
+
+	ctHash := result.Hash()
+
+	logger.Debug("fheMax success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	return ctHash[:], nil
+}
+
+func Shl(input []byte, tp *TxParams) ([]byte, error) {
+	if shouldPrintPrecompileInfo(tp) {
+		logger.Info("Starting new precompiled contract function ", getFunctionName())
+	}
+
+	lhs, rhs, err := get2VerifiedOperands(input)
+	if err != nil {
+		logger.Error("fheShl inputs not verified", "err", err)
+		return nil, err
+	}
+
+	if lhs.UintType != rhs.UintType {
+		msg := "fheShl operand type mismatch"
+		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
+		return nil, errors.New(msg)
+	}
+
+	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
+	if tp.GasEstimation {
+		return importRandomCiphertext(lhs.UintType)
+	}
+
+	result, err := lhs.Shl(rhs)
+	if err != nil {
+		logger.Error("fheShl failed", "err", err)
+		return nil, err
+	}
+	importCiphertext(result)
+
+	ctHash := result.Hash()
+
+	logger.Debug("fheShl success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	return ctHash[:], nil
+}
+
+func Shr(input []byte, tp *TxParams) ([]byte, error) {
+	if shouldPrintPrecompileInfo(tp) {
+		logger.Info("Starting new precompiled contract function ", getFunctionName())
+	}
+
+	lhs, rhs, err := get2VerifiedOperands(input)
+	if err != nil {
+		logger.Error("fheShr inputs not verified", "err", err)
+		return nil, err
+	}
+
+	if lhs.UintType != rhs.UintType {
+		msg := "fheShr operand type mismatch"
+		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
+		return nil, errors.New(msg)
+	}
+
+	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
+	if tp.GasEstimation {
+		return importRandomCiphertext(lhs.UintType)
+	}
+
+	result, err := lhs.Shr(rhs)
+	if err != nil {
+		logger.Error("fheShr failed", "err", err)
+		return nil, err
+	}
+	importCiphertext(result)
+
+	ctHash := result.Hash()
+
+	logger.Debug("fheShr success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	return ctHash[:], nil
+}
