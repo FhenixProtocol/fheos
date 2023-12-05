@@ -134,26 +134,28 @@ func Reencrypt(input []byte, tp *TxParams) ([]byte, error) {
 	}
 
 	ct := getCiphertext(tfhe.BytesToHash(input[0:32]))
-	if ct != nil {
-		decryptedValue, err := ct.Decrypt()
-		if err != nil {
-			logger.Error("failed decrypting ciphertext", "error", err)
-			return nil, err
-		}
-
-		pubKey := input[32:64]
-		reencryptedValue, err := encryptToUserKey(decryptedValue, pubKey)
-		if err != nil {
-			logger.Error("reencrypt failed to encrypt to user key", "err", err)
-			return nil, err
-		}
-		logger.Debug("reencrypt success", "input", hex.EncodeToString(input))
-		// FHENIX: Previously it was "return toEVMBytes(reencryptedValue), nil" but the decrypt function in Fhevm didn't support it so we removed the the toEVMBytes
-		return reencryptedValue, nil
+	if ct == nil {
+		msg := "reencrypt unverified ciphertext handle"
+		logger.Error(msg, "input", hex.EncodeToString(input))
+		return nil, errors.New(msg)
 	}
-	msg := "reencrypt unverified ciphertext handle"
-	logger.Error(msg, "input", hex.EncodeToString(input))
-	return nil, errors.New(msg)
+
+	decryptedValue, err := ct.Decrypt()
+	if err != nil {
+		logger.Error("failed decrypting ciphertext", "error", err)
+		return nil, err
+	}
+
+	pubKey := input[32:64]
+	reencryptedValue, err := encryptToUserKey(decryptedValue, pubKey)
+	if err != nil {
+		logger.Error("reencrypt failed to encrypt to user key", "err", err)
+		return nil, err
+	}
+	logger.Debug("reencrypt success", "input", hex.EncodeToString(input))
+	// FHENIX: Previously it was "return toEVMBytes(reencryptedValue), nil" but the decrypt function in Fhevm didn't support it so we removed the the toEVMBytes
+	return reencryptedValue, nil
+
 }
 
 func Lte(input []byte, tp *TxParams) ([]byte, error) {
@@ -902,4 +904,34 @@ func Shr(input []byte, tp *TxParams) ([]byte, error) {
 
 	logger.Debug("fheShr success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], nil
+}
+
+func Not(input []byte, tp *TxParams) ([]byte, error) {
+	if shouldPrintPrecompileInfo(tp) {
+		logger.Info("starting new precompiled contract function ", getFunctionName())
+	}
+
+	ct := getCiphertext(tfhe.BytesToHash(input[0:32]))
+	if ct == nil {
+		msg := "not unverified ciphertext handle"
+		logger.Error(msg, "input", hex.EncodeToString(input))
+		return nil, errors.New(msg)
+	}
+
+	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
+	if tp.GasEstimation {
+		return importRandomCiphertext(ct.UintType)
+	}
+
+	result, err := ct.Not()
+	if err != nil {
+		logger.Error("not failed", "err", err)
+		return nil, err
+	}
+
+	importCiphertext(result)
+
+	resultHash := result.Hash()
+	logger.Debug("fheNot success", "in", ct.Hash().Hex(), "result", resultHash.Hex())
+	return resultHash[:], nil
 }
