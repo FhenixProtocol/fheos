@@ -3,7 +3,7 @@
 set -e
 
 go run gen.go 1
-cp FheOps_gen.sol ./precompiles/contracts/FheOps.sol
+mv FheOs_gen.sol solidity/FheOS.sol
 cd precompiles
 rm -rf artifacts
 yarn

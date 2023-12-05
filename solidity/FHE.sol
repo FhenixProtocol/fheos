@@ -3544,6 +3544,42 @@ function shr(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
     return euint32.wrap(result);
 
 }
+function not(ebool input1) internal pure  returns (ebool) {
+    if(!isInitialized(input1)) {
+        revert("One or more inputs are not initialized.");
+    }
+    uint256 unwrappedInput1 = ebool.unwrap(input1);
+    uint256 result = FheOps(Precompiles.Fheos).not(unwrappedInput1);
+    return ebool.wrap(result);
+}
+
+function not(euint8 input1) internal pure  returns (euint8) {
+    if(!isInitialized(input1)) {
+        revert("One or more inputs are not initialized.");
+    }
+    uint256 unwrappedInput1 = euint8.unwrap(input1);
+    uint256 result = FheOps(Precompiles.Fheos).not(unwrappedInput1);
+    return euint8.wrap(result);
+}
+
+function not(euint16 input1) internal pure  returns (euint16) {
+    if(!isInitialized(input1)) {
+        revert("One or more inputs are not initialized.");
+    }
+    uint256 unwrappedInput1 = euint16.unwrap(input1);
+    uint256 result = FheOps(Precompiles.Fheos).not(unwrappedInput1);
+    return euint16.wrap(result);
+}
+
+function not(euint32 input1) internal pure  returns (euint32) {
+    if(!isInitialized(input1)) {
+        revert("One or more inputs are not initialized.");
+    }
+    uint256 unwrappedInput1 = euint32.unwrap(input1);
+    uint256 result = FheOps(Precompiles.Fheos).not(unwrappedInput1);
+    return euint32.wrap(result);
+}
+
 // ********** TYPE CASTING ************* //
 function asEbool(ebool value) internal pure returns (ebool) {
         return ebool.wrap(Impl.cast(ebool.unwrap(value), Common.ebool_tfhe_go));

@@ -31,4 +31,5 @@ interface FheOps {
 	function max(bytes memory input) external pure returns (bytes memory);
 	function shl(bytes memory input) external pure returns (bytes memory);
 	function shr(bytes memory input) external pure returns (bytes memory);
+	function not(bytes memory input) external pure returns (bytes memory);
 }
