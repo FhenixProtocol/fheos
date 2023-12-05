@@ -132,7 +132,16 @@ func get3VerifiedOperands(input []byte) (control *tfhe.Ciphertext, ifTrue *tfhe.
 	return
 }
 
-func importCiphertext(ct *tfhe.Ciphertext) *tfhe.Ciphertext {
+func isTxLogic(tp *TxParams) bool {
+	return tp.Commit && !tp.GasEstimation
+}
+
+func importCiphertext(ct *tfhe.Ciphertext, tp *TxParams) *tfhe.Ciphertext {
+	if !isTxLogic(tp) {
+		// When we are in the context of a query we shouldn't write into the state in order to maintain consensus
+		return ct
+	}
+
 	existing, ok := ctHashMap[ct.Hash()]
 	if ok {
 		return existing
@@ -142,13 +151,13 @@ func importCiphertext(ct *tfhe.Ciphertext) *tfhe.Ciphertext {
 	}
 }
 
-func importRandomCiphertext(t tfhe.UintType) ([]byte, error) {
+func importRandomCiphertext(t tfhe.UintType, tp *TxParams) ([]byte, error) {
 	ct, err := tfhe.NewRandomCipherText(t)
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("failed creating random ciphertext of size: %d", t))
 	}
 
-	importCiphertext(ct)
+	importCiphertext(ct, tp)
 	ctHash := ct.Hash()
 	return ctHash[:], nil
 }
