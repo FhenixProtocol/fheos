@@ -135,14 +135,16 @@ func Reencrypt(input []byte, tp *TxParams) ([]byte, error) {
 
 	ct := getCiphertext(tfhe.BytesToHash(input[0:32]))
 	if ct != nil {
-		decryptedValue, err := ct.Decrypt()
+		decryptedValue, err := tfhe.Decrypt(*ct)
 		if err != nil {
-			logger.Error("failed decrypting ciphertext", "error", err)
+			logger.Error("failed decrypting ciphertext ", "error ", err)
 			return nil, err
 		}
 
+		// Cast decrypted value to big.Int
+		bgDecrypted := new(big.Int).SetUint64(decryptedValue)
 		pubKey := input[32:64]
-		reencryptedValue, err := encryptToUserKey(decryptedValue, pubKey)
+		reencryptedValue, err := encryptToUserKey(bgDecrypted, pubKey)
 		if err != nil {
 			logger.Error("reencrypt failed to encrypt to user key", "err", err)
 			return nil, err
