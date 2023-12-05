@@ -110,9 +110,15 @@ func createTemplate(dirPath string) {
 	defer outFile.Close()
 
 	outFile.WriteString(`// SPDX-License-Identifier: BSD-3-Clause-Clear
+pragma solidity >=0.8.13 <0.9.0;
 
-pragma solidity >=0.4.21 <0.9.0;
-			
+library Precompiles {
+   address public constant Fheos = address(128);
+   uint256 public constant FhePubKey = 68;
+}
+`)
+
+	outFile.WriteString(`
 interface FheOps {
 `)
 
@@ -194,7 +200,7 @@ interface FheOps {
 				}
 			}
 
-			outLine += ") external view"
+			outLine += ") external pure"
 			if Ret != "" {
 				if Ret == "[]byte" {
 					Ret = "bytes memory"

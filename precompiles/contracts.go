@@ -328,6 +328,8 @@ func Cmux(input []byte, tp *TxParams) ([]byte, error) {
 }
 
 func Req(input []byte, tp *TxParams) ([]byte, error) {
+	//solgen: input encrypted
+	//solgen: return none
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
