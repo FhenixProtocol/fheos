@@ -8,7 +8,7 @@ import (
 	"math/big"
 	"runtime"
 
-	tfhe "github.com/fhenixprotocol/go-tfhe"
+	"github.com/fhenixprotocol/go-tfhe"
 )
 
 var logger *logrus.Logger
@@ -36,11 +36,6 @@ func InitTfheConfig(tfheConfig *tfhe.Config) error {
 
 	return nil
 }
-
-func shouldPrintPrecompileInfo(tp *TxParams) bool {
-	return tp.Commit && !tp.GasEstimation
-}
-
 func getFunctionName() string {
 	pc, _, _, _ := runtime.Caller(1)
 	funcName := runtime.FuncForPC(pc).Name()
@@ -49,7 +44,7 @@ func getFunctionName() string {
 
 // ============================
 func Add(input []byte, tp *TxParams) ([]byte, error) {
-	if shouldPrintPrecompileInfo(tp) {
+	if isTxLogic(tp) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
@@ -67,7 +62,7 @@ func Add(input []byte, tp *TxParams) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if tp.GasEstimation {
-		return importRandomCiphertext(lhs.UintType)
+		return importRandomCiphertext(lhs.UintType, tp)
 	}
 
 	result, err := lhs.Add(rhs)
@@ -76,7 +71,7 @@ func Add(input []byte, tp *TxParams) ([]byte, error) {
 		return nil, err
 	}
 
-	importCiphertext(result)
+	importCiphertext(result, tp)
 
 	resultHash := result.Hash()
 	logger.Debug("fheAdd success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
@@ -84,7 +79,7 @@ func Add(input []byte, tp *TxParams) ([]byte, error) {
 }
 
 func Verify(input []byte, tp *TxParams) ([]byte, error) {
-	if shouldPrintPrecompileInfo(tp) {
+	if isTxLogic(tp) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
@@ -106,7 +101,7 @@ func Verify(input []byte, tp *TxParams) ([]byte, error) {
 		return nil, err
 	}
 	ctHash := ct.Hash()
-	importCiphertext(ct)
+	importCiphertext(ct, tp)
 
 	if tp.Commit {
 		logger.Debug("verifyCiphertext success",
@@ -117,7 +112,7 @@ func Verify(input []byte, tp *TxParams) ([]byte, error) {
 }
 
 func Reencrypt(input []byte, tp *TxParams) ([]byte, error) {
-	if shouldPrintPrecompileInfo(tp) {
+	if isTxLogic(tp) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
@@ -157,7 +152,7 @@ func Reencrypt(input []byte, tp *TxParams) ([]byte, error) {
 }
 
 func Lte(input []byte, tp *TxParams) ([]byte, error) {
-	if shouldPrintPrecompileInfo(tp) {
+	if isTxLogic(tp) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
@@ -175,7 +170,7 @@ func Lte(input []byte, tp *TxParams) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if tp.GasEstimation {
-		return importRandomCiphertext(lhs.UintType)
+		return importRandomCiphertext(lhs.UintType, tp)
 
 	}
 
@@ -184,7 +179,7 @@ func Lte(input []byte, tp *TxParams) ([]byte, error) {
 		logger.Error("fheLte failed", "err", err)
 		return nil, err
 	}
-	importCiphertext(result)
+	importCiphertext(result, tp)
 
 	resultHash := result.Hash()
 	logger.Debug("fheLte success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
@@ -192,7 +187,7 @@ func Lte(input []byte, tp *TxParams) ([]byte, error) {
 }
 
 func Sub(input []byte, tp *TxParams) ([]byte, error) {
-	if shouldPrintPrecompileInfo(tp) {
+	if isTxLogic(tp) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
@@ -210,7 +205,7 @@ func Sub(input []byte, tp *TxParams) ([]byte, error) {
 
 	// // If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if tp.GasEstimation {
-		return importRandomCiphertext(lhs.UintType)
+		return importRandomCiphertext(lhs.UintType, tp)
 	}
 
 	result, err := lhs.Sub(rhs)
@@ -218,7 +213,7 @@ func Sub(input []byte, tp *TxParams) ([]byte, error) {
 		logger.Error("fheSub failed", "err", err)
 		return nil, err
 	}
-	importCiphertext(result)
+	importCiphertext(result, tp)
 
 	resultHash := result.Hash()
 	logger.Debug("fheSub success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
@@ -226,7 +221,7 @@ func Sub(input []byte, tp *TxParams) ([]byte, error) {
 }
 
 func Mul(input []byte, tp *TxParams) ([]byte, error) {
-	if shouldPrintPrecompileInfo(tp) {
+	if isTxLogic(tp) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
@@ -244,7 +239,7 @@ func Mul(input []byte, tp *TxParams) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if tp.GasEstimation {
-		return importRandomCiphertext(lhs.UintType)
+		return importRandomCiphertext(lhs.UintType, tp)
 	}
 
 	result, err := lhs.Mul(rhs)
@@ -252,7 +247,7 @@ func Mul(input []byte, tp *TxParams) ([]byte, error) {
 		logger.Error("fheMul failed", "err", err)
 		return nil, err
 	}
-	importCiphertext(result)
+	importCiphertext(result, tp)
 
 	ctHash := result.Hash()
 
@@ -260,7 +255,7 @@ func Mul(input []byte, tp *TxParams) ([]byte, error) {
 }
 
 func Lt(input []byte, tp *TxParams) ([]byte, error) {
-	if shouldPrintPrecompileInfo(tp) {
+	if isTxLogic(tp) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
@@ -278,7 +273,7 @@ func Lt(input []byte, tp *TxParams) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if tp.GasEstimation {
-		return importRandomCiphertext(lhs.UintType)
+		return importRandomCiphertext(lhs.UintType, tp)
 	}
 
 	result, err := lhs.Lt(rhs)
@@ -286,7 +281,7 @@ func Lt(input []byte, tp *TxParams) ([]byte, error) {
 		logger.Error("fheLt failed", "err", err)
 		return nil, err
 	}
-	importCiphertext(result)
+	importCiphertext(result, tp)
 
 	resultHash := result.Hash()
 	logger.Debug("fheLt success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
@@ -294,7 +289,7 @@ func Lt(input []byte, tp *TxParams) ([]byte, error) {
 }
 
 func Cmux(input []byte, tp *TxParams) ([]byte, error) {
-	if shouldPrintPrecompileInfo(tp) {
+	if isTxLogic(tp) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
@@ -312,7 +307,7 @@ func Cmux(input []byte, tp *TxParams) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if tp.GasEstimation {
-		return importRandomCiphertext(ifTrue.UintType)
+		return importRandomCiphertext(ifTrue.UintType, tp)
 	}
 
 	result, err := control.Cmux(ifTrue, ifFalse)
@@ -320,7 +315,7 @@ func Cmux(input []byte, tp *TxParams) ([]byte, error) {
 		logger.Error("selector failed", "err", err)
 		return nil, err
 	}
-	importCiphertext(result)
+	importCiphertext(result, tp)
 
 	resultHash := result.Hash()
 	logger.Debug("selector success", "control", control.Hash().Hex(), "ifTrue", ifTrue.Hash().Hex(), "ifFalse", ifTrue.Hash().Hex(), "result", resultHash.Hex())
@@ -330,7 +325,7 @@ func Cmux(input []byte, tp *TxParams) ([]byte, error) {
 func Req(input []byte, tp *TxParams) ([]byte, error) {
 	//solgen: input encrypted
 	//solgen: return none
-	if shouldPrintPrecompileInfo(tp) {
+	if isTxLogic(tp) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
@@ -374,7 +369,7 @@ func Req(input []byte, tp *TxParams) ([]byte, error) {
 }
 
 func Cast(input []byte, tp *TxParams) ([]byte, error) {
-	if shouldPrintPrecompileInfo(tp) {
+	if isTxLogic(tp) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
@@ -386,7 +381,7 @@ func Cast(input []byte, tp *TxParams) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if tp.GasEstimation {
-		return importRandomCiphertext(castToType)
+		return importRandomCiphertext(castToType, tp)
 	}
 
 	ct := getCiphertext(tfhe.BytesToHash(input[0:32]))
@@ -404,8 +399,8 @@ func Cast(input []byte, tp *TxParams) ([]byte, error) {
 
 	resHash := res.Hash()
 
-	importCiphertext(res)
-	if shouldPrintPrecompileInfo(tp) {
+	importCiphertext(res, tp)
+	if isTxLogic(tp) {
 		logger.Debug("cast success",
 			"ctHash", resHash.Hex(),
 		)
@@ -415,7 +410,7 @@ func Cast(input []byte, tp *TxParams) ([]byte, error) {
 }
 
 func TrivialEncrypt(input []byte, tp *TxParams) ([]byte, error) {
-	if shouldPrintPrecompileInfo(tp) {
+	if isTxLogic(tp) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
@@ -430,7 +425,7 @@ func TrivialEncrypt(input []byte, tp *TxParams) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if tp.GasEstimation {
-		return importRandomCiphertext(encryptToType)
+		return importRandomCiphertext(encryptToType, tp)
 	}
 
 	ct, err := tfhe.NewCipherTextTrivial(valueToEncrypt, encryptToType)
@@ -440,8 +435,8 @@ func TrivialEncrypt(input []byte, tp *TxParams) ([]byte, error) {
 	}
 
 	ctHash := ct.Hash()
-	importCiphertext(ct)
-	if shouldPrintPrecompileInfo(tp) {
+	importCiphertext(ct, tp)
+	if isTxLogic(tp) {
 		logger.Debug("trivialEncrypt success",
 			"ctHash", ctHash.Hex(),
 			"valueToEncrypt", valueToEncrypt.Uint64())
@@ -450,7 +445,7 @@ func TrivialEncrypt(input []byte, tp *TxParams) ([]byte, error) {
 }
 
 func Div(input []byte, tp *TxParams) ([]byte, error) {
-	if shouldPrintPrecompileInfo(tp) {
+	if isTxLogic(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
 
@@ -468,7 +463,7 @@ func Div(input []byte, tp *TxParams) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if tp.GasEstimation {
-		return importRandomCiphertext(lhs.UintType)
+		return importRandomCiphertext(lhs.UintType, tp)
 	}
 
 	result, err := lhs.Div(rhs)
@@ -476,7 +471,7 @@ func Div(input []byte, tp *TxParams) ([]byte, error) {
 		logger.Error("fheDiv failed", "err", err)
 		return nil, err
 	}
-	importCiphertext(result)
+	importCiphertext(result, tp)
 
 	ctHash := result.Hash()
 
@@ -485,7 +480,7 @@ func Div(input []byte, tp *TxParams) ([]byte, error) {
 }
 
 func Gt(input []byte, tp *TxParams) ([]byte, error) {
-	if shouldPrintPrecompileInfo(tp) {
+	if isTxLogic(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
 
@@ -503,7 +498,7 @@ func Gt(input []byte, tp *TxParams) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if tp.GasEstimation {
-		return importRandomCiphertext(lhs.UintType)
+		return importRandomCiphertext(lhs.UintType, tp)
 	}
 
 	result, err := lhs.Gt(rhs)
@@ -511,7 +506,7 @@ func Gt(input []byte, tp *TxParams) ([]byte, error) {
 		logger.Error("fheGt failed", "err", err)
 		return nil, err
 	}
-	importCiphertext(result)
+	importCiphertext(result, tp)
 
 	ctHash := result.Hash()
 
@@ -520,7 +515,7 @@ func Gt(input []byte, tp *TxParams) ([]byte, error) {
 }
 
 func Gte(input []byte, tp *TxParams) ([]byte, error) {
-	if shouldPrintPrecompileInfo(tp) {
+	if isTxLogic(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
 
@@ -538,7 +533,7 @@ func Gte(input []byte, tp *TxParams) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if tp.GasEstimation {
-		return importRandomCiphertext(lhs.UintType)
+		return importRandomCiphertext(lhs.UintType, tp)
 	}
 
 	result, err := lhs.Gte(rhs)
@@ -546,7 +541,7 @@ func Gte(input []byte, tp *TxParams) ([]byte, error) {
 		logger.Error("fheGte failed", "err", err)
 		return nil, err
 	}
-	importCiphertext(result)
+	importCiphertext(result, tp)
 
 	ctHash := result.Hash()
 
@@ -555,7 +550,7 @@ func Gte(input []byte, tp *TxParams) ([]byte, error) {
 }
 
 func Rem(input []byte, tp *TxParams) ([]byte, error) {
-	if shouldPrintPrecompileInfo(tp) {
+	if isTxLogic(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
 
@@ -573,7 +568,7 @@ func Rem(input []byte, tp *TxParams) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if tp.GasEstimation {
-		return importRandomCiphertext(lhs.UintType)
+		return importRandomCiphertext(lhs.UintType, tp)
 	}
 
 	result, err := lhs.Rem(rhs)
@@ -581,7 +576,7 @@ func Rem(input []byte, tp *TxParams) ([]byte, error) {
 		logger.Error("fheRem failed", "err", err)
 		return nil, err
 	}
-	importCiphertext(result)
+	importCiphertext(result, tp)
 
 	ctHash := result.Hash()
 
@@ -590,7 +585,7 @@ func Rem(input []byte, tp *TxParams) ([]byte, error) {
 }
 
 func And(input []byte, tp *TxParams) ([]byte, error) {
-	if shouldPrintPrecompileInfo(tp) {
+	if isTxLogic(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
 
@@ -608,7 +603,7 @@ func And(input []byte, tp *TxParams) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if tp.GasEstimation {
-		return importRandomCiphertext(lhs.UintType)
+		return importRandomCiphertext(lhs.UintType, tp)
 	}
 
 	result, err := lhs.And(rhs)
@@ -616,7 +611,7 @@ func And(input []byte, tp *TxParams) ([]byte, error) {
 		logger.Error("fheAnd failed", "err", err)
 		return nil, err
 	}
-	importCiphertext(result)
+	importCiphertext(result, tp)
 
 	ctHash := result.Hash()
 
@@ -625,7 +620,7 @@ func And(input []byte, tp *TxParams) ([]byte, error) {
 }
 
 func Or(input []byte, tp *TxParams) ([]byte, error) {
-	if shouldPrintPrecompileInfo(tp) {
+	if isTxLogic(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
 
@@ -643,7 +638,7 @@ func Or(input []byte, tp *TxParams) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if tp.GasEstimation {
-		return importRandomCiphertext(lhs.UintType)
+		return importRandomCiphertext(lhs.UintType, tp)
 	}
 
 	result, err := lhs.Or(rhs)
@@ -651,7 +646,7 @@ func Or(input []byte, tp *TxParams) ([]byte, error) {
 		logger.Error("fheOr failed", "err", err)
 		return nil, err
 	}
-	importCiphertext(result)
+	importCiphertext(result, tp)
 
 	ctHash := result.Hash()
 
@@ -660,7 +655,7 @@ func Or(input []byte, tp *TxParams) ([]byte, error) {
 }
 
 func Xor(input []byte, tp *TxParams) ([]byte, error) {
-	if shouldPrintPrecompileInfo(tp) {
+	if isTxLogic(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
 
@@ -678,7 +673,7 @@ func Xor(input []byte, tp *TxParams) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if tp.GasEstimation {
-		return importRandomCiphertext(lhs.UintType)
+		return importRandomCiphertext(lhs.UintType, tp)
 	}
 
 	result, err := lhs.Xor(rhs)
@@ -686,7 +681,7 @@ func Xor(input []byte, tp *TxParams) ([]byte, error) {
 		logger.Error("fheXor failed", "err", err)
 		return nil, err
 	}
-	importCiphertext(result)
+	importCiphertext(result, tp)
 
 	ctHash := result.Hash()
 
@@ -695,7 +690,7 @@ func Xor(input []byte, tp *TxParams) ([]byte, error) {
 }
 
 func Eq(input []byte, tp *TxParams) ([]byte, error) {
-	if shouldPrintPrecompileInfo(tp) {
+	if isTxLogic(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
 
@@ -713,7 +708,7 @@ func Eq(input []byte, tp *TxParams) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if tp.GasEstimation {
-		return importRandomCiphertext(lhs.UintType)
+		return importRandomCiphertext(lhs.UintType, tp)
 	}
 
 	result, err := lhs.Eq(rhs)
@@ -721,7 +716,7 @@ func Eq(input []byte, tp *TxParams) ([]byte, error) {
 		logger.Error("fheEq failed", "err", err)
 		return nil, err
 	}
-	importCiphertext(result)
+	importCiphertext(result, tp)
 
 	ctHash := result.Hash()
 
@@ -730,7 +725,7 @@ func Eq(input []byte, tp *TxParams) ([]byte, error) {
 }
 
 func Ne(input []byte, tp *TxParams) ([]byte, error) {
-	if shouldPrintPrecompileInfo(tp) {
+	if isTxLogic(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
 
@@ -748,7 +743,7 @@ func Ne(input []byte, tp *TxParams) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if tp.GasEstimation {
-		return importRandomCiphertext(lhs.UintType)
+		return importRandomCiphertext(lhs.UintType, tp)
 	}
 
 	result, err := lhs.Ne(rhs)
@@ -756,7 +751,7 @@ func Ne(input []byte, tp *TxParams) ([]byte, error) {
 		logger.Error("fheNe failed", "err", err)
 		return nil, err
 	}
-	importCiphertext(result)
+	importCiphertext(result, tp)
 
 	ctHash := result.Hash()
 
@@ -765,7 +760,7 @@ func Ne(input []byte, tp *TxParams) ([]byte, error) {
 }
 
 func Min(input []byte, tp *TxParams) ([]byte, error) {
-	if shouldPrintPrecompileInfo(tp) {
+	if isTxLogic(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
 
@@ -783,7 +778,7 @@ func Min(input []byte, tp *TxParams) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if tp.GasEstimation {
-		return importRandomCiphertext(lhs.UintType)
+		return importRandomCiphertext(lhs.UintType, tp)
 	}
 
 	result, err := lhs.Min(rhs)
@@ -791,7 +786,7 @@ func Min(input []byte, tp *TxParams) ([]byte, error) {
 		logger.Error("fheMin failed", "err", err)
 		return nil, err
 	}
-	importCiphertext(result)
+	importCiphertext(result, tp)
 
 	ctHash := result.Hash()
 
@@ -800,7 +795,7 @@ func Min(input []byte, tp *TxParams) ([]byte, error) {
 }
 
 func Max(input []byte, tp *TxParams) ([]byte, error) {
-	if shouldPrintPrecompileInfo(tp) {
+	if isTxLogic(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
 
@@ -818,7 +813,7 @@ func Max(input []byte, tp *TxParams) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if tp.GasEstimation {
-		return importRandomCiphertext(lhs.UintType)
+		return importRandomCiphertext(lhs.UintType, tp)
 	}
 
 	result, err := lhs.Max(rhs)
@@ -826,7 +821,7 @@ func Max(input []byte, tp *TxParams) ([]byte, error) {
 		logger.Error("fheMax failed", "err", err)
 		return nil, err
 	}
-	importCiphertext(result)
+	importCiphertext(result, tp)
 
 	ctHash := result.Hash()
 
@@ -835,7 +830,7 @@ func Max(input []byte, tp *TxParams) ([]byte, error) {
 }
 
 func Shl(input []byte, tp *TxParams) ([]byte, error) {
-	if shouldPrintPrecompileInfo(tp) {
+	if isTxLogic(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
 
@@ -853,7 +848,7 @@ func Shl(input []byte, tp *TxParams) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if tp.GasEstimation {
-		return importRandomCiphertext(lhs.UintType)
+		return importRandomCiphertext(lhs.UintType, tp)
 	}
 
 	result, err := lhs.Shl(rhs)
@@ -861,7 +856,7 @@ func Shl(input []byte, tp *TxParams) ([]byte, error) {
 		logger.Error("fheShl failed", "err", err)
 		return nil, err
 	}
-	importCiphertext(result)
+	importCiphertext(result, tp)
 
 	ctHash := result.Hash()
 
@@ -870,7 +865,7 @@ func Shl(input []byte, tp *TxParams) ([]byte, error) {
 }
 
 func Shr(input []byte, tp *TxParams) ([]byte, error) {
-	if shouldPrintPrecompileInfo(tp) {
+	if isTxLogic(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
 
@@ -888,7 +883,7 @@ func Shr(input []byte, tp *TxParams) ([]byte, error) {
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 	if tp.GasEstimation {
-		return importRandomCiphertext(lhs.UintType)
+		return importRandomCiphertext(lhs.UintType, tp)
 	}
 
 	result, err := lhs.Shr(rhs)
@@ -896,7 +891,7 @@ func Shr(input []byte, tp *TxParams) ([]byte, error) {
 		logger.Error("fheShr failed", "err", err)
 		return nil, err
 	}
-	importCiphertext(result)
+	importCiphertext(result, tp)
 
 	ctHash := result.Hash()
 
