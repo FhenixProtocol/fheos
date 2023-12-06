@@ -8,7 +8,7 @@ import (
 	"math/big"
 	"runtime"
 
-	tfhe "github.com/fhenixprotocol/go-tfhe"
+	"github.com/fhenixprotocol/go-tfhe"
 )
 
 var logger *logrus.Logger
