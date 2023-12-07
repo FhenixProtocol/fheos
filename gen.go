@@ -188,7 +188,7 @@ interface FheOps {
 					param.Type = "bytes memory"
 				}
 
-				if param.Type == "big.Int" {
+				if param.Type == "*big.Int" {
 					param.Type = "uint256"
 				}
 
@@ -209,7 +209,7 @@ interface FheOps {
 				if Ret == "[]byte" {
 					Ret = "bytes memory"
 				}
-				if Ret == "big.Int" {
+				if Ret == "*big.Int" {
 					Ret = "uint256"
 				}
 				outLine += " returns (" + Ret + ")"
@@ -359,7 +359,7 @@ func main() {
 			}
 
 			if t == "uint256" {
-				t = "big.Int"
+				t = "*big.Int"
 			}
 
 			if t == "*TxParams" {
@@ -383,7 +383,7 @@ func main() {
 			}
 
 			if ret == "uint256" {
-				ret = "big.Int"
+				ret = "*big.Int"
 			}
 		}
 
