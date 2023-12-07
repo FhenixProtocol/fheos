@@ -3,10 +3,10 @@ package precompiles
 import (
 	"encoding/hex"
 	"errors"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/sirupsen/logrus"
 	"math/big"
 	"runtime"
+
+	"github.com/sirupsen/logrus"
 
 	tfhe "github.com/fhenixprotocol/go-tfhe"
 )
@@ -140,14 +140,16 @@ func Reencrypt(input []byte, tp *TxParams) ([]byte, error) {
 		return nil, errors.New(msg)
 	}
 
-	decryptedValue, err := ct.Decrypt()
+	decryptedValue, err := tfhe.Decrypt(*ct)
 	if err != nil {
-		logger.Error("failed decrypting ciphertext", "error", err)
+		logger.Error("failed decrypting ciphertext ", "error ", err)
 		return nil, err
 	}
 
+	// Cast decrypted value to big.Int
+	bgDecrypted := new(big.Int).SetUint64(decryptedValue)
 	pubKey := input[32:64]
-	reencryptedValue, err := encryptToUserKey(decryptedValue, pubKey)
+	reencryptedValue, err := encryptToUserKey(bgDecrypted, pubKey)
 	if err != nil {
 		logger.Error("reencrypt failed to encrypt to user key", "err", err)
 		return nil, err
@@ -403,8 +405,9 @@ func Req(input []byte, tp *TxParams) ([]byte, error) {
 	ev := evaluateRequire(ct)
 
 	if !ev {
-		logger.Error("require failed to evaluate, reverting")
-		return nil, vm.ErrExecutionReverted
+		msg := "require condition not met"
+		logger.Error(msg)
+		return nil, errors.New(msg)
 	}
 
 	return nil, nil
