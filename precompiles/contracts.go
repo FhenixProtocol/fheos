@@ -155,6 +155,41 @@ func Reencrypt(input []byte, tp *TxParams) ([]byte, error) {
 	logger.Debug("reencrypt success", "input", hex.EncodeToString(input))
 	// FHENIX: Previously it was "return toEVMBytes(reencryptedValue), nil" but the decrypt function in Fhevm didn't support it so we removed the the toEVMBytes
 	return reencryptedValue, nil
+}
+
+func Decrypt(input []byte, tp *TxParams) (big.Int, error) {
+	//solgen: output plaintext
+	if shouldPrintPrecompileInfo(tp) {
+		logger.Info("starting new precompiled contract function ", getFunctionName())
+	}
+
+	if !tp.EthCall {
+		msg := "decrypt only supported on EthCall"
+		logger.Error(msg)
+		return *big.NewInt(0), errors.New(msg)
+	}
+
+	if len(input) != 64 {
+		msg := "decrypt input len must be 64 bytes"
+		logger.Error(msg, "input", hex.EncodeToString(input), "len", len(input))
+		return *big.NewInt(0), errors.New(msg)
+	}
+
+	ct := getCiphertext(tfhe.BytesToHash(input[0:32]))
+	if ct == nil {
+		msg := "decrypt unverified ciphertext handle"
+		logger.Error(msg, "input", hex.EncodeToString(input))
+		return *big.NewInt(0), errors.New(msg)
+	}
+
+	decryptedValue, err := ct.Decrypt()
+	if err != nil {
+		logger.Error("failed decrypting ciphertext", "error", err)
+		return *big.NewInt(0), err
+	}
+
+	logger.Debug("decrypt success", "input", hex.EncodeToString(input))
+	return *decryptedValue, nil
 
 }
 

@@ -1,11 +1,19 @@
-import {AllTypes, EInputType, EPlaintextType, EUintType, UnderlyingTypes, valueIsEncrypted} from "./common";
+import {
+    AllTypes,
+    EInputType,
+    EPlaintextType,
+    EUintType,
+    UnderlyingTypes,
+    valueIsEncrypted,
+    valueIsPlaintext
+} from "./common";
 
 export const preamble = () => {
     return `// SPDX-License-Identifier: BSD-3-Clause-Clear
 
 pragma solidity >=0.8.13 <0.9.0;
 
-import "FheOS.sol";
+import "./FheOS.sol";
 
 type ebool is uint256;
 type euint8 is uint256;
@@ -18,6 +26,34 @@ library Common {
     uint8 internal constant euint8_tfhe_go = 0;
     uint8 internal constant euint16_tfhe_go = 1;
     uint8 internal constant euint32_tfhe_go = 2;
+    
+    function bigIntToBool(uint256 i) internal pure returns (bool) {
+        return (i > 0);
+    }
+    
+    function bigIntToUint8(uint256 i) internal pure returns (uint8) {
+        return uint8(i);
+    }
+    
+    function bigIntToUint16(uint256 i) internal pure returns (uint16) {
+        return uint16(i);
+    }
+    
+    function bigIntToUint32(uint256 i) internal pure returns (uint32) {
+        return uint32(i);
+    }
+    
+    function bigIntToUint64(uint256 i) internal pure returns (uint64) {
+        return uint64(i);
+    }
+    
+    function bigIntToUint128(uint256 i) internal pure returns (uint128) {
+        return uint128(i);
+    }
+    
+    function bigIntToUint256(uint256 i) internal pure returns (uint256) {
+        return i;
+    }
 }
 
 library Impl {
@@ -192,7 +228,6 @@ function ${name}(${input1} ${variableName1}, ${input2} ${variableName2}) interna
     ${UnderlyingTypes[input1]} unwrappedInput1 = ${unwrapType(input1, variableName1)};
     ${UnderlyingTypes[input1]} unwrappedInput2 = ${unwrapType(input1, `${input2Cast}`)};
 `;
-            //
             if (valueIsEncrypted(returnType)) {
                 funcBody += `
     ${UnderlyingTypes[returnType]} result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).${name});
@@ -245,7 +280,9 @@ function ${name}(${input1} input1) internal pure ${returnStr}{`;
             // input and return type are encrypted - not/neg other unary functions
             funcBody += `
     ${unwrap}
-    ${UnderlyingTypes[returnType]} result = ${getResult("unwrappedInput1")}
+    bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
+    bytes memory b = ${getResult("inputAsBytes")}
+    uint256 result = Impl.getValue(b);
     return ${wrapType(returnType, "result")};
 }\n`
         } else if (returnType === "none") {
@@ -255,8 +292,15 @@ function ${name}(${input1} input1) internal pure ${returnStr}{`;
     bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
     ${getResult("inputAsBytes")}
 }\n`;
-        } else {
-            // placeholder for decrypt
+        } else if (valueIsPlaintext(returnType)){
+            let returnTypeCamelCase = returnType.charAt(0).toUpperCase() + returnType.slice(1);
+            let outputConvertor = `Common.bigIntTo${returnTypeCamelCase}(result);`
+            funcBody += `
+    ${unwrap}
+    bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
+    uint256 result = ${getResult("inputAsBytes")}
+    return ${outputConvertor}
+}\n`
         }
     } else {
         throw new Error("unsupported function of 1 input that is not encrypted");
