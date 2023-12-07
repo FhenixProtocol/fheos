@@ -3,10 +3,10 @@ package precompiles
 import (
 	"encoding/hex"
 	"errors"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/sirupsen/logrus"
 	"math/big"
 	"runtime"
+
+	"github.com/sirupsen/logrus"
 
 	tfhe "github.com/fhenixprotocol/go-tfhe"
 )
@@ -135,6 +135,7 @@ func Reencrypt(input []byte, tp *TxParams) ([]byte, error) {
 
 	ct := getCiphertext(tfhe.BytesToHash(input[0:32]))
 	if ct != nil {
+		println("TOMMM 1")
 		decryptedValue, err := tfhe.Decrypt(*ct)
 		if err != nil {
 			logger.Error("failed decrypting ciphertext ", "error ", err)
@@ -366,8 +367,9 @@ func Req(input []byte, tp *TxParams) ([]byte, error) {
 	ev := evaluateRequire(ct)
 
 	if !ev {
-		logger.Error("require failed to evaluate, reverting")
-		return nil, vm.ErrExecutionReverted
+		msg := "require condition not met"
+		logger.Error(msg)
+		return nil, errors.New(msg)
 	}
 
 	return nil, nil
