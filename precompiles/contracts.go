@@ -184,14 +184,16 @@ func Decrypt(input []byte, tp *TxParams) (big.Int, error) {
 		return *big.NewInt(0), errors.New(msg)
 	}
 
-	decryptedValue, err := ct.Decrypt()
+	decryptedValue, err := tfhe.Decrypt(*ct)
 	if err != nil {
 		logger.Error("failed decrypting ciphertext", "error", err)
 		return *big.NewInt(0), err
 	}
 
+	bgDecrypted := new(big.Int).SetUint64(decryptedValue)
+
 	logger.Debug("decrypt success", "input", hex.EncodeToString(input))
-	return *decryptedValue, nil
+	return *bgDecrypted, nil
 
 }
 
