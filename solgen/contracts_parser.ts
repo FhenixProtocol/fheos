@@ -9,6 +9,7 @@ interface FunctionAnalysis {
     needsSameType: boolean;
     inputTypes: ParamTypes[],
     returnType?: string;
+    isComparisonMathOp: boolean;
 }
 
 // helps us know how many input parameters there are
@@ -29,9 +30,11 @@ async function analyzeGoFile(filePath: string): Promise<FunctionAnalysis[] | nul
     const solgenInputPlaintextComment = /input plaintext/;
     const solgenOutputPlaintextComment = /output plaintext/;
     const solgenInput2Comment = /input2 /;
+    const solgenComparisonMathOp = /comparison/;
     const specificFunctionAnalysis: FunctionAnalysis[] = [];
 
     let isInsideHighLevelFunction = false;
+    let isComparisonMathOp = false;
     let braceDepth = 0;
     let funcName = "";
     let returnType = undefined;
@@ -54,6 +57,9 @@ async function analyzeGoFile(filePath: string): Promise<FunctionAnalysis[] | nul
                 }
                 if(solgenOutputPlaintextComment.test(trimmedLine)) {
                     returnType = 'plaintext';
+                }
+                if(solgenComparisonMathOp.test(trimmedLine)) {
+                    isComparisonMathOp = true;
                 }
             }
 
@@ -89,7 +95,8 @@ async function analyzeGoFile(filePath: string): Promise<FunctionAnalysis[] | nul
                         paramsCount: amount,
                         needsSameType: needsSameType,
                         returnType: returnType,
-                        inputTypes: inputs.slice(0, amount)
+                        inputTypes: inputs.slice(0, amount),
+                        isComparisonMathOp
                     });
                 }
             }

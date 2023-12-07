@@ -632,6 +632,7 @@ func Rem(input []byte, tp *TxParams) ([]byte, error) {
 }
 
 func And(input []byte, tp *TxParams) ([]byte, error) {
+	//solgen: comparison
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
@@ -667,6 +668,7 @@ func And(input []byte, tp *TxParams) ([]byte, error) {
 }
 
 func Or(input []byte, tp *TxParams) ([]byte, error) {
+	//solgen: comparison
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
@@ -702,6 +704,7 @@ func Or(input []byte, tp *TxParams) ([]byte, error) {
 }
 
 func Xor(input []byte, tp *TxParams) ([]byte, error) {
+	//solgen: comparison
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
@@ -737,6 +740,7 @@ func Xor(input []byte, tp *TxParams) ([]byte, error) {
 }
 
 func Eq(input []byte, tp *TxParams) ([]byte, error) {
+	//solgen: comparison
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
@@ -772,6 +776,7 @@ func Eq(input []byte, tp *TxParams) ([]byte, error) {
 }
 
 func Ne(input []byte, tp *TxParams) ([]byte, error) {
+	//solgen: comparison
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}

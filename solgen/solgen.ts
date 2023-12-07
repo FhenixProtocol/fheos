@@ -11,7 +11,15 @@ import {
     SolTemplate2Arg,
     SolTemplate3Arg
 } from "./templates";
-import {AllTypes, BindMathOperators, EInputType, EPlaintextType, ShorthandOperations, valueIsEncrypted} from "./common";
+import {
+    AllTypes,
+    BindMathOperators,
+    EComparisonType,
+    EInputType,
+    EPlaintextType,
+    ShorthandOperations,
+    valueIsEncrypted
+} from "./common";
 
 interface FunctionMetadata {
     functionName: string;
@@ -19,6 +27,7 @@ interface FunctionMetadata {
     hasDifferentInputTypes: boolean;
     returnValueType?: string;
     inputs: AllTypes[];
+    isComparisonMathOp : boolean;
 }
 
 const generateMetadataPayload = async (): Promise<FunctionMetadata[]> => {
@@ -31,6 +40,7 @@ const generateMetadataPayload = async (): Promise<FunctionMetadata[]> => {
             inputCount: value.paramsCount,
             returnValueType: value.returnType,
             inputs: value.inputTypes,
+            isComparisonMathOp: value.isComparisonMathOp
         }
     })
 }
@@ -107,7 +117,8 @@ const genSolidityFunctionHeaders = (metadata: FunctionMetadata): string[] => {
         inputCount,
         hasDifferentInputTypes,
         returnValueType,
-        inputs
+        inputs,
+        isComparisonMathOp
     } = metadata;
 
     let functions: string[][] = [];
@@ -117,6 +128,9 @@ const genSolidityFunctionHeaders = (metadata: FunctionMetadata): string[] => {
         switch (input) {
             case "encrypted":
                 for (let inputType of EInputType) {
+                    if (inputs.length === 2 && !isComparisonMathOp && EComparisonType.includes(input)) {
+                        continue;
+                    }
                     inputVariants.push(`input${idx} ${inputType}`)
                 }
                 break;
