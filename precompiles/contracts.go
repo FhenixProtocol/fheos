@@ -135,7 +135,6 @@ func Reencrypt(input []byte, tp *TxParams) ([]byte, error) {
 
 	ct := getCiphertext(tfhe.BytesToHash(input[0:32]))
 	if ct != nil {
-		println("TOMMM 1")
 		decryptedValue, err := tfhe.Decrypt(*ct)
 		if err != nil {
 			logger.Error("failed decrypting ciphertext ", "error ", err)
