@@ -7,6 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	template "github.com/fhenixprotocol/fheos/contractsgen"
+	"strings"
 )
 
 type addr = common.Address
@@ -19,6 +20,8 @@ func GetPrecompilesList() []Precompile {
 	precompiles := []Precompile{}
 	append := func(metadata *bind.MetaData, a addr) {
 		var precompile Precompile
+		manipulatedABI := strings.Replace(metadata.ABI, "pure", "view", -1)
+		metadata.ABI = manipulatedABI
 		precompile.Metadata = metadata
 		precompile.Address = a
 		precompiles = append(precompiles, precompile)
