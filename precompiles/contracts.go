@@ -171,9 +171,9 @@ func Decrypt(input []byte, tp *TxParams) (*big.Int, error) {
 		return nil, errors.New(msg)
 	}
 
-	if len(input) != 64 {
-		msg := "decrypt input len must be 64 bytes"
-		logger.Error(msg, "input", hex.EncodeToString(input), "len", len(input))
+	if len(input) != 32 {
+		msg := "decrypt input len must be 32 bytes"
+		logger.Error(msg, " input ", hex.EncodeToString(input), " len ", len(input))
 		return nil, errors.New(msg)
 	}
 

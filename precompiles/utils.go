@@ -97,8 +97,8 @@ func getCiphertext(ciphertextHash tfhe.Hash) *tfhe.Ciphertext {
 }
 
 func get2VerifiedOperands(input []byte) (lhs *tfhe.Ciphertext, rhs *tfhe.Ciphertext, err error) {
-	if len(input) != 65 {
-		return nil, nil, errors.New("input needs to contain two 256-bit sized values and 1 8-bit value")
+	if len(input) != 64 {
+		return nil, nil, errors.New("input needs to contain two 256-bit sized values")
 	}
 	lhs = getCiphertext(tfhe.BytesToHash(input[0:32]))
 	if lhs == nil {
