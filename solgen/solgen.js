@@ -76,7 +76,7 @@ function generateCombinations(arr, current, index) {
     }
     return result;
 }
-var getReturnType = function (inputs, returnType) {
+var getReturnType = function (inputs, isComparisonMathOp, returnType) {
     if (returnType === 'plaintext') {
         if (inputs.length != 1) {
             throw new Error("expecting exactly one input for functions returning plaintext");
@@ -93,6 +93,9 @@ var getReturnType = function (inputs, returnType) {
     if (inputs.includes("bytes") || inputs.includes("bytes32")) {
         return "bytes";
     }
+    if (isComparisonMathOp) {
+        return "ebool";
+    }
     var maxRank = 0;
     for (var _i = 0, inputs_1 = inputs; _i < inputs_1.length; _i++) {
         var input = inputs_1[_i];
@@ -101,13 +104,13 @@ var getReturnType = function (inputs, returnType) {
     }
     return common_1.EInputType[maxRank];
 };
-function getAllFunctionDeclarations(functionName, functions, returnValueType) {
+function getAllFunctionDeclarations(functionName, functions, isComparisonMathOp, returnValueType) {
     var functionDecl = "function ".concat(functionName);
     // Generate all combinations of input parameters.
     var allCombinations = generateCombinations(functions);
     // Create function declarations for each combination.
     return allCombinations.map(function (combination) {
-        var returnType = getReturnType(combination, returnValueType);
+        var returnType = getReturnType(combination, isComparisonMathOp, returnValueType);
         var returnStr = "internal pure returns (".concat(returnType, ");");
         return "".concat(functionDecl, "(").concat(combination.join(', '), ") ").concat(returnStr);
     });
@@ -125,19 +128,10 @@ var genSolidityFunctionHeaders = function (metadata) {
             case "encrypted":
                 for (var _i = 0, EInputType_1 = common_1.EInputType; _i < EInputType_1.length; _i++) {
                     var inputType = EInputType_1[_i];
-                    if (functionName === "add") {
-                        console.log("inputs: ".concat(inputs, " isComparisonMathOp ").concat(isComparisonMathOp, " inputType ").concat(inputType));
-                    }
                     if (inputs.length === 2 && !isComparisonMathOp && common_1.EComparisonType.includes(inputType)) {
-                        if (functionName === "add") {
-                            console.log("here");
-                        }
                         continue;
                     }
                     inputVariants.push("input".concat(idx, " ").concat(inputType));
-                }
-                if (functionName === "add") {
-                    console.log(inputVariants);
                 }
                 break;
             case "plaintext":
@@ -151,7 +145,7 @@ var genSolidityFunctionHeaders = function (metadata) {
         }
         functions.push(inputVariants);
     });
-    return getAllFunctionDeclarations(functionName, functions, returnValueType);
+    return getAllFunctionDeclarations(functionName, functions, isComparisonMathOp, returnValueType);
 };
 // Regular expression to match the Solidity function signature pattern
 var functionPattern = /function (\w+)\((.*?)\) internal pure returns \((.*?)\);/;
@@ -220,6 +214,9 @@ var main = function () { return __awaiter(void 0, void 0, void 0, function () {
                         toType = EInputType_2[_d];
                         // casting from bool is annoying - if we really need this we can add it later
                         if (fromType === "bool") {
+                            continue;
+                        }
+                        if (fromType === toType) {
                             continue;
                         }
                         outputFile += (0, templates_1.AsTypeFunction)(fromType, toType);

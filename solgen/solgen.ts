@@ -60,7 +60,7 @@ function generateCombinations(arr: string[][], current: string[] = [], index: nu
     return result;
 }
 
-const getReturnType = (inputs: string[], returnType?: string) => {
+const getReturnType = (inputs: string[], isComparisonMathOp: boolean, returnType?: string) => {
     if (returnType === 'plaintext') {
         if (inputs.length != 1) {
             throw new Error("expecting exactly one input for functions returning plaintext");
@@ -83,6 +83,10 @@ const getReturnType = (inputs: string[], returnType?: string) => {
         return "bytes";
     }
 
+    if (isComparisonMathOp) {
+        return "ebool";
+    }
+
     let maxRank = 0;
     for (let input of inputs) {
         let inputType = input.split(' ')[1];
@@ -92,7 +96,7 @@ const getReturnType = (inputs: string[], returnType?: string) => {
     return EInputType[maxRank]
 }
 
-function getAllFunctionDeclarations(functionName: string, functions: string[][], returnValueType?: string): string[] {
+function getAllFunctionDeclarations(functionName: string, functions: string[][], isComparisonMathOp: boolean, returnValueType?: string): string[] {
     let functionDecl = `function ${functionName}`;
 
     // Generate all combinations of input parameters.
@@ -100,7 +104,7 @@ function getAllFunctionDeclarations(functionName: string, functions: string[][],
 
     // Create function declarations for each combination.
     return allCombinations.map(combination => {
-        let returnType = getReturnType(combination, returnValueType);
+        let returnType = getReturnType(combination, isComparisonMathOp, returnValueType);
         let returnStr =  `internal pure returns (${returnType});`;
 
         return `${functionDecl}(${combination.join(', ')}) ${returnStr}`;
@@ -145,7 +149,7 @@ const genSolidityFunctionHeaders = (metadata: FunctionMetadata): string[] => {
         functions.push(inputVariants);
     });
 
-    return getAllFunctionDeclarations(functionName, functions, returnValueType);
+    return getAllFunctionDeclarations(functionName, functions, isComparisonMathOp, returnValueType);
 };
 
 type ParsedFunction = {
@@ -233,6 +237,9 @@ const main = async () => {
 
             // casting from bool is annoying - if we really need this we can add it later
             if (fromType === "bool") {
+                continue;
+            }
+            if (fromType === toType) {
                 continue;
             }
             outputFile += AsTypeFunction(fromType, toType);
