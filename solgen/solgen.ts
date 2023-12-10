@@ -128,7 +128,7 @@ const genSolidityFunctionHeaders = (metadata: FunctionMetadata): string[] => {
         switch (input) {
             case "encrypted":
                 for (let inputType of EInputType) {
-                    if (inputs.length === 2 && !isComparisonMathOp && EComparisonType.includes(input)) {
+                    if (inputs.length === 2 && !isComparisonMathOp && EComparisonType.includes(inputType)) {
                         continue;
                     }
                     inputVariants.push(`input${idx} ${inputType}`)
@@ -265,25 +265,27 @@ const main = async () => {
             }
         });
 
-        outputFile += BindingLibraryType(encryptedType);
-        BindMathOperators.forEach(fnToBind => {
-            let foundFnDef = solidityHeaders.find((funcHeader) => {
-                const fnDef = parseFunctionDefinition(funcHeader);
-                const input = fnDef.inputs[0];
+        if (!EComparisonType.includes(encryptedType)) {
+            outputFile += BindingLibraryType(encryptedType);
+            BindMathOperators.forEach(fnToBind => {
+                let foundFnDef = solidityHeaders.find((funcHeader) => {
+                    const fnDef = parseFunctionDefinition(funcHeader);
+                    const input = fnDef.inputs[0];
 
-                if (!EInputType.includes(input)) {
-                    return false;
+                    if (!EInputType.includes(input)) {
+                        return false;
+                    }
+
+                    return (fnDef.funcName === fnToBind && fnDef.inputs.every(item => item === input))
+                });
+
+                if (foundFnDef) {
+                    const fnDef = parseFunctionDefinition(foundFnDef);
+                    outputFile += OperatorBinding(fnDef.funcName, encryptedType, fnDef.inputs.length === 1)
                 }
-
-                return (fnDef.funcName === fnToBind && fnDef.inputs.every(item => item === input))
             });
-
-            if (foundFnDef) {
-                const fnDef = parseFunctionDefinition(foundFnDef);
-                outputFile += OperatorBinding(fnDef.funcName, encryptedType, fnDef.inputs.length === 1)
-            }
-        });
-        outputFile += PostFix();
+            outputFile += PostFix();
+        }
     })
 
 
