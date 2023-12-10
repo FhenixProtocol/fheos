@@ -7,6 +7,8 @@ import (
 	"math/big"
 	"os"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 	tfhe "github.com/fhenixprotocol/go-tfhe"
 	"golang.org/x/crypto/nacl/box"
@@ -27,44 +29,11 @@ func TxParamsFromEVM(evm *vm.EVM) TxParams {
 	return tp
 }
 
-type DepthSet struct {
-	m map[int]struct{}
+type Precompile struct {
+	Metadata *bind.MetaData
+	Address  common.Address
 }
 
-func newDepthSet() *DepthSet {
-	s := &DepthSet{}
-	s.m = make(map[int]struct{})
-	return s
-}
-
-func (s *DepthSet) add(v int) {
-	s.m[v] = struct{}{}
-}
-
-func (s *DepthSet) del(v int) {
-	delete(s.m, v)
-}
-
-func (s *DepthSet) has(v int) bool {
-	_, found := s.m[v]
-	return found
-}
-
-func (s *DepthSet) Has(v int) bool {
-	return s.has(v)
-}
-
-func (s *DepthSet) count() int {
-	return len(s.m)
-}
-
-func (from *DepthSet) clone() (to *DepthSet) {
-	to = newDepthSet()
-	for k := range from.m {
-		to.add(k)
-	}
-	return
-}
 func classicalPublicKeyEncrypt(value *big.Int, userPublicKey []byte) ([]byte, error) {
 	encrypted, err := box.SealAnonymous(nil, value.Bytes(), (*[32]byte)(userPublicKey), rand.Reader)
 	if err != nil {
