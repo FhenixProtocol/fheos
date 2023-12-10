@@ -30,7 +30,7 @@ const generateMetadataPayload = async (): Promise<FunctionMetadata[]> => {
             hasDifferentInputTypes: !value.needsSameType,
             inputCount: value.paramsCount,
             returnValueType: value.returnType,
-            inputs: value.inputTypes,
+            inputs: value.inputTypes
         }
     })
 }
@@ -51,20 +51,6 @@ function generateCombinations(arr: string[][], current: string[] = [], index: nu
 }
 
 const getReturnType = (inputs: string[], returnType?: string) => {
-    if (returnType === 'plaintext') {
-        if (inputs.length != 1) {
-            throw new Error("expecting exactly one input for functions returning plaintext");
-        }
-
-        let inputType = inputs[0].split(' ')[1];
-        if (inputType[0] !== 'e') {
-            throw new Error("expecting encrypted input for plaintext output");
-        }
-
-        return inputType.slice(1);
-    }
-
-
     if (returnType && returnType !== "encrypted") {
         return returnType;
     }

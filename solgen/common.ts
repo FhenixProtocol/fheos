@@ -71,7 +71,3 @@ export const BindMathOperators = ['add', 'mul', 'div', 'sub', 'eq', 'and', 'or']
 export const valueIsEncrypted = (value: string): value is EUintType => {
     return EInputType.includes(value);
 }
-
-export const valueIsPlaintext = (value: string): value is PlaintextType => {
-    return EPlaintextType.includes(value);
-}

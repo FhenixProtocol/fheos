@@ -35,7 +35,7 @@ require (
 	github.com/StackExchange/wmi v1.2.1 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.2.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
-	github.com/fhenixprotocol/go-tfhe v0.0.1
+	github.com/fhenixprotocol/go-tfhe v0.0.0-20230806123311-862edf6c6556
 	github.com/go-ole/go-ole v1.2.5 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/google/uuid v1.3.1 // indirect

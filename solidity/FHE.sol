@@ -2,7 +2,7 @@
 
 pragma solidity >=0.8.13 <0.9.0;
 
-import "./FheOS.sol";
+import "FheOS.sol";
 
 type ebool is uint256;
 type euint8 is uint256;
@@ -15,34 +15,6 @@ library Common {
     uint8 internal constant euint8_tfhe_go = 0;
     uint8 internal constant euint16_tfhe_go = 1;
     uint8 internal constant euint32_tfhe_go = 2;
-    
-    function bigIntToBool(uint256 i) internal pure returns (bool) {
-        return (i > 0);
-    }
-    
-    function bigIntToUint8(uint256 i) internal pure returns (uint8) {
-        return uint8(i);
-    }
-    
-    function bigIntToUint16(uint256 i) internal pure returns (uint16) {
-        return uint16(i);
-    }
-    
-    function bigIntToUint32(uint256 i) internal pure returns (uint32) {
-        return uint32(i);
-    }
-    
-    function bigIntToUint64(uint256 i) internal pure returns (uint64) {
-        return uint64(i);
-    }
-    
-    function bigIntToUint128(uint256 i) internal pure returns (uint128) {
-        return uint128(i);
-    }
-    
-    function bigIntToUint256(uint256 i) internal pure returns (uint256) {
-        return i;
-    }
 }
 
 library Impl {
@@ -352,46 +324,6 @@ function reencrypt(euint32 value, bytes32 publicKey) internal pure returns (byte
     return Impl.reencrypt(unwrapped, publicKey);
 
 }
-function decrypt(ebool input1) internal pure  returns (bool) {
-    if(!isInitialized(input1)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(input1);
-    bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
-    uint256 result = FheOps(Precompiles.Fheos).decrypt(inputAsBytes);
-    return Common.bigIntToBool(result);
-}
-
-function decrypt(euint8 input1) internal pure  returns (uint8) {
-    if(!isInitialized(input1)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint8.unwrap(input1);
-    bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
-    uint256 result = FheOps(Precompiles.Fheos).decrypt(inputAsBytes);
-    return Common.bigIntToUint8(result);
-}
-
-function decrypt(euint16 input1) internal pure  returns (uint16) {
-    if(!isInitialized(input1)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint16.unwrap(input1);
-    bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
-    uint256 result = FheOps(Precompiles.Fheos).decrypt(inputAsBytes);
-    return Common.bigIntToUint16(result);
-}
-
-function decrypt(euint32 input1) internal pure  returns (uint32) {
-    if(!isInitialized(input1)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint32.unwrap(input1);
-    bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
-    uint256 result = FheOps(Precompiles.Fheos).decrypt(inputAsBytes);
-    return Common.bigIntToUint32(result);
-}
-
 function lte(ebool lhs, ebool rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
@@ -3612,50 +3544,6 @@ function shr(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
     return euint32.wrap(result);
 
 }
-function not(ebool input1) internal pure  returns (ebool) {
-    if(!isInitialized(input1)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(input1);
-    bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
-    bytes memory b = FheOps(Precompiles.Fheos).not(inputAsBytes);
-    uint256 result = Impl.getValue(b);
-    return ebool.wrap(result);
-}
-
-function not(euint8 input1) internal pure  returns (euint8) {
-    if(!isInitialized(input1)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint8.unwrap(input1);
-    bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
-    bytes memory b = FheOps(Precompiles.Fheos).not(inputAsBytes);
-    uint256 result = Impl.getValue(b);
-    return euint8.wrap(result);
-}
-
-function not(euint16 input1) internal pure  returns (euint16) {
-    if(!isInitialized(input1)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint16.unwrap(input1);
-    bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
-    bytes memory b = FheOps(Precompiles.Fheos).not(inputAsBytes);
-    uint256 result = Impl.getValue(b);
-    return euint16.wrap(result);
-}
-
-function not(euint32 input1) internal pure  returns (euint32) {
-    if(!isInitialized(input1)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint32.unwrap(input1);
-    bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
-    bytes memory b = FheOps(Precompiles.Fheos).not(inputAsBytes);
-    uint256 result = Impl.getValue(b);
-    return euint32.wrap(result);
-}
-
 // ********** TYPE CASTING ************* //
 function asEbool(ebool value) internal pure returns (ebool) {
         return ebool.wrap(Impl.cast(ebool.unwrap(value), Common.ebool_tfhe_go));

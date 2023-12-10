@@ -27,7 +27,6 @@ async function analyzeGoFile(filePath: string): Promise<FunctionAnalysis[] | nul
     const solgenCommentRegex = /solgen:/;
     const solgenReturnsComment = / return /;
     const solgenInputPlaintextComment = /input plaintext/;
-    const solgenOutputPlaintextComment = /output plaintext/;
     const solgenInput2Comment = /input2 /;
     const specificFunctionAnalysis: FunctionAnalysis[] = [];
 
@@ -41,6 +40,7 @@ async function analyzeGoFile(filePath: string): Promise<FunctionAnalysis[] | nul
         const trimmedLine = line.trim();
         //console.log(`testing: ${trimmedLine}`)
         if (isInsideHighLevelFunction) {
+
             if (solgenCommentRegex.test(trimmedLine)) {
                 if (solgenReturnsComment.test(trimmedLine)) {
                     returnType = trimmedLine.split('return')[1].trim();
@@ -51,9 +51,6 @@ async function analyzeGoFile(filePath: string): Promise<FunctionAnalysis[] | nul
                 if (solgenInput2Comment.test(trimmedLine)) {
                     // @ts-ignore
                     inputs[1] = trimmedLine.split('input2 ')[1].trim();
-                }
-                if(solgenOutputPlaintextComment.test(trimmedLine)) {
-                    returnType = 'plaintext';
                 }
             }
 
