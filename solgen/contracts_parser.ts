@@ -96,7 +96,7 @@ async function analyzeGoFile(filePath: string): Promise<FunctionAnalysis[] | nul
                         needsSameType: needsSameType,
                         returnType: returnType,
                         inputTypes: inputs.slice(0, amount),
-                        isComparisonMathOp
+                        isComparisonMathOp : isComparisonMathOp
                     });
                 }
             }
@@ -107,6 +107,7 @@ async function analyzeGoFile(filePath: string): Promise<FunctionAnalysis[] | nul
             funcName = trimmedLine.split(' ')[1].split('(')[0].toLowerCase();
             // If we match the high-level function, set the flag and initialize brace counting
             isInsideHighLevelFunction = true;
+            isComparisonMathOp = false;
             braceDepth = 1; // starts with the opening brace of the function
         }
     }

@@ -256,23 +256,24 @@ const main = async () => {
             if (!valueIsEncrypted(encType)) {
                 throw new Error("InputType mismatch");
             }
-            outputFile += OperatorOverloadDecl(value.func, value.operator, encType, value.unary)
+            if (!EComparisonType.includes(encType)) {
+                outputFile += OperatorOverloadDecl(value.func, value.operator, encType, value.unary)
+            }
         }
     });
 
     outputFile += `\n// ********** BINDING DEFS ************* //\n`
 
     EInputType.forEach(encryptedType => {
-
-        BindMathOperators.forEach(bindMathOp => {
-
-            if (ShorthandOperations.filter(value => value.func === bindMathOp).length === 0) {
-                // console.log(`${bindMathOp}`)
-                outputFile += BindingsWithoutOperator(bindMathOp, encryptedType);
-            }
-        });
-
         if (!EComparisonType.includes(encryptedType)) {
+            BindMathOperators.forEach(bindMathOp => {
+
+                if (ShorthandOperations.filter(value => value.func === bindMathOp).length === 0) {
+                    // console.log(`${bindMathOp}`)
+                    outputFile += BindingsWithoutOperator(bindMathOp, encryptedType);
+                }
+            });
+
             outputFile += BindingLibraryType(encryptedType);
             BindMathOperators.forEach(fnToBind => {
                 let foundFnDef = solidityHeaders.find((funcHeader) => {

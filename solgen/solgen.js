@@ -231,18 +231,20 @@ var main = function () { return __awaiter(void 0, void 0, void 0, function () {
                         if (!(0, common_1.valueIsEncrypted)(encType)) {
                             throw new Error("InputType mismatch");
                         }
-                        outputFile += (0, templates_1.OperatorOverloadDecl)(value.func, value.operator, encType, value.unary);
+                        if (!common_1.EComparisonType.includes(encType)) {
+                            outputFile += (0, templates_1.OperatorOverloadDecl)(value.func, value.operator, encType, value.unary);
+                        }
                     }
                 });
                 outputFile += "\n// ********** BINDING DEFS ************* //\n";
                 common_1.EInputType.forEach(function (encryptedType) {
-                    common_1.BindMathOperators.forEach(function (bindMathOp) {
-                        if (common_1.ShorthandOperations.filter(function (value) { return value.func === bindMathOp; }).length === 0) {
-                            // console.log(`${bindMathOp}`)
-                            outputFile += (0, templates_1.BindingsWithoutOperator)(bindMathOp, encryptedType);
-                        }
-                    });
                     if (!common_1.EComparisonType.includes(encryptedType)) {
+                        common_1.BindMathOperators.forEach(function (bindMathOp) {
+                            if (common_1.ShorthandOperations.filter(function (value) { return value.func === bindMathOp; }).length === 0) {
+                                // console.log(`${bindMathOp}`)
+                                outputFile += (0, templates_1.BindingsWithoutOperator)(bindMathOp, encryptedType);
+                            }
+                        });
                         outputFile += (0, templates_1.BindingLibraryType)(encryptedType);
                         common_1.BindMathOperators.forEach(function (fnToBind) {
                             var foundFnDef = solidityHeaders.find(function (funcHeader) {
