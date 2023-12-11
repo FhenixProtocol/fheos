@@ -2,17 +2,22 @@
 
 set -e
 
-PRECOMPILES=${1:-"precompiles"}
-FHE_OPS_DEST=${2:-".."}
-OUTPUT=${3:-"chains/arbitrum"}
+FHE_OPS_DEST=${1:-"../precompiles"}
+OUTPUT=${2:-"chains/arbitrum"}
 
 go run gen.go 1
-cp FheOps_gen.sol "$PRECOMPILES"/contracts/FheOps.sol
-cd "$PRECOMPILES"
+if [ ! -e precompiles/contracts ]; then
+    mkdir precompiles/contracts
+
+fi
+cp FheOs_gen.sol precompiles/contracts/FheOs.sol
+mv FheOs_gen.sol solidity/FheOS.sol
+cd precompiles
 rm -rf artifacts
 yarn
 yarn build
-cd ..
+rm -r ./contracts/
+cd ../
 go run gen.go 2 $OUTPUT
 cp FheOps_gen.go "$FHE_OPS_DEST"/FheOps.go
 rm *_gen*

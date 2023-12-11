@@ -3,11 +3,10 @@ install:
 	cd precompiles && yarn install
 	cd solgen && npm install
 
-.PHONY: solgen
-solgen:
-	cd precompiles && yarn build
-	go run gen.go 1
-	mv FheOps_gen.sol solidity/FheOS.sol
+.PHONY: gen
+gen:
+	cd precompiles
+	./gen.sh
 	cd solgen && npm run build
 
 .PHONY: clean

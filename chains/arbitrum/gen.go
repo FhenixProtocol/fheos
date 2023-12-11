@@ -92,7 +92,7 @@ type Param struct {
 
 func CreateTemplate(dirPath string) {
 	path := filepath.Join(dirPath, "precompiles", "contracts.go")
-	outPath := filepath.Join(dirPath, "FheOps_gen.sol")
+	outPath := filepath.Join(dirPath, "FheOs_gen.sol")
 	file, err := os.Open(path)
 	if err != nil {
 		fmt.Println("Error opening file:", err)
@@ -187,6 +187,10 @@ interface FheOps {
 					param.Type = "bytes memory"
 				}
 
+				if param.Type == "*big.Int" {
+					param.Type = "uint256"
+				}
+
 				if param.Type == "*TxParams" {
 					continue
 				}
@@ -203,6 +207,9 @@ interface FheOps {
 			if Ret != "" {
 				if Ret == "[]byte" {
 					Ret = "bytes memory"
+				}
+				if Ret == "*big.Int" {
+					Ret = "uint256"
 				}
 				outLine += " returns (" + Ret + ")"
 			}
@@ -339,6 +346,10 @@ func Gen(parent string, output string) {
 				t = "[]byte"
 			}
 
+			if t == "uint256" {
+				t = "*big.Int"
+			}
+
 			if t == "*TxParams" {
 				continue
 			}
@@ -357,6 +368,10 @@ func Gen(parent string, output string) {
 			ret = f.Outputs[0].Type
 			if ret == "bytes" {
 				ret = "[]byte"
+			}
+
+			if ret == "uint256" {
+				ret = "*big.Int"
 			}
 		}
 
@@ -377,11 +392,12 @@ func Gen(parent string, output string) {
 	file.WriteString(`package precompiles
 
 import (
+	"math/big"
 	fheos "github.com/fhenixprotocol/fheos/precompiles"
 )
 
 type FheOps struct {
-	Address    addr // 0x80
+	Address addr // 0x80
 }
 `)
 	defer file.Close()

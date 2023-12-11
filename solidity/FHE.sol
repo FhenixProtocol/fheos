@@ -2,7 +2,7 @@
 
 pragma solidity >=0.8.13 <0.9.0;
 
-import "FheOS.sol";
+import "./FheOS.sol";
 
 type ebool is uint256;
 type euint8 is uint256;
@@ -15,6 +15,34 @@ library Common {
     uint8 internal constant euint8_tfhe_go = 0;
     uint8 internal constant euint16_tfhe_go = 1;
     uint8 internal constant euint32_tfhe_go = 2;
+    
+    function bigIntToBool(uint256 i) internal pure returns (bool) {
+        return (i > 0);
+    }
+    
+    function bigIntToUint8(uint256 i) internal pure returns (uint8) {
+        return uint8(i);
+    }
+    
+    function bigIntToUint16(uint256 i) internal pure returns (uint16) {
+        return uint16(i);
+    }
+    
+    function bigIntToUint32(uint256 i) internal pure returns (uint32) {
+        return uint32(i);
+    }
+    
+    function bigIntToUint64(uint256 i) internal pure returns (uint64) {
+        return uint64(i);
+    }
+    
+    function bigIntToUint128(uint256 i) internal pure returns (uint128) {
+        return uint128(i);
+    }
+    
+    function bigIntToUint256(uint256 i) internal pure returns (uint256) {
+        return i;
+    }
 }
 
 library Impl {
@@ -124,61 +152,6 @@ library TFHE {
         result = getValue(output);
     }
 
-function add(ebool lhs, ebool rhs) internal pure returns (ebool) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(rhs);
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).add);
-    return ebool.wrap(result);
-
-}
-function add(ebool lhs, euint8 rhs) internal pure returns (euint8) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).add);
-    return euint8.wrap(result);
-
-}
-function add(ebool lhs, euint16 rhs) internal pure returns (euint16) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).add);
-    return euint16.wrap(result);
-
-}
-function add(ebool lhs, euint32 rhs) internal pure returns (euint32) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).add);
-    return euint32.wrap(result);
-
-}
-function add(euint8 lhs, ebool rhs) internal pure returns (euint8) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint8.unwrap(lhs);
-    uint256 unwrappedInput2 = euint8.unwrap(asEuint8(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).add);
-    return euint8.wrap(result);
-
-}
 function add(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
@@ -212,17 +185,6 @@ function add(euint8 lhs, euint32 rhs) internal pure returns (euint32) {
     return euint32.wrap(result);
 
 }
-function add(euint16 lhs, ebool rhs) internal pure returns (euint16) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint16.unwrap(lhs);
-    uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).add);
-    return euint16.wrap(result);
-
-}
 function add(euint16 lhs, euint8 rhs) internal pure returns (euint16) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
@@ -251,17 +213,6 @@ function add(euint16 lhs, euint32 rhs) internal pure returns (euint32) {
     }
     uint256 unwrappedInput1 = euint16.unwrap(lhs);
     uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).add);
-    return euint32.wrap(result);
-
-}
-function add(euint32 lhs, ebool rhs) internal pure returns (euint32) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint32.unwrap(lhs);
-    uint256 unwrappedInput2 = euint32.unwrap(asEuint32(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).add);
     return euint32.wrap(result);
@@ -300,12 +251,6 @@ function add(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
     return euint32.wrap(result);
 
 }
-function reencrypt(ebool value, bytes32 publicKey) internal pure returns (bytes memory) {
-    uint256 unwrapped = ebool.unwrap(value);
-
-    return Impl.reencrypt(unwrapped, publicKey);
-
-}
 function reencrypt(euint8 value, bytes32 publicKey) internal pure returns (bytes memory) {
     uint256 unwrapped = euint8.unwrap(value);
 
@@ -324,6 +269,46 @@ function reencrypt(euint32 value, bytes32 publicKey) internal pure returns (byte
     return Impl.reencrypt(unwrapped, publicKey);
 
 }
+function decrypt(ebool input1) internal pure  returns (bool) {
+    if(!isInitialized(input1)) {
+        revert("One or more inputs are not initialized.");
+    }
+    uint256 unwrappedInput1 = ebool.unwrap(input1);
+    bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
+    uint256 result = FheOps(Precompiles.Fheos).decrypt(inputAsBytes);
+    return Common.bigIntToBool(result);
+}
+
+function decrypt(euint8 input1) internal pure  returns (uint8) {
+    if(!isInitialized(input1)) {
+        revert("One or more inputs are not initialized.");
+    }
+    uint256 unwrappedInput1 = euint8.unwrap(input1);
+    bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
+    uint256 result = FheOps(Precompiles.Fheos).decrypt(inputAsBytes);
+    return Common.bigIntToUint8(result);
+}
+
+function decrypt(euint16 input1) internal pure  returns (uint16) {
+    if(!isInitialized(input1)) {
+        revert("One or more inputs are not initialized.");
+    }
+    uint256 unwrappedInput1 = euint16.unwrap(input1);
+    bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
+    uint256 result = FheOps(Precompiles.Fheos).decrypt(inputAsBytes);
+    return Common.bigIntToUint16(result);
+}
+
+function decrypt(euint32 input1) internal pure  returns (uint32) {
+    if(!isInitialized(input1)) {
+        revert("One or more inputs are not initialized.");
+    }
+    uint256 unwrappedInput1 = euint32.unwrap(input1);
+    bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
+    uint256 result = FheOps(Precompiles.Fheos).decrypt(inputAsBytes);
+    return Common.bigIntToUint32(result);
+}
+
 function lte(ebool lhs, ebool rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
@@ -335,7 +320,7 @@ function lte(ebool lhs, ebool rhs) internal pure returns (ebool) {
     return ebool.wrap(result);
 
 }
-function lte(ebool lhs, euint8 rhs) internal pure returns (euint8) {
+function lte(ebool lhs, euint8 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -343,10 +328,10 @@ function lte(ebool lhs, euint8 rhs) internal pure returns (euint8) {
     uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lte);
-    return euint8.wrap(result);
+    return ebool.wrap(result);
 
 }
-function lte(ebool lhs, euint16 rhs) internal pure returns (euint16) {
+function lte(ebool lhs, euint16 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -354,10 +339,10 @@ function lte(ebool lhs, euint16 rhs) internal pure returns (euint16) {
     uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lte);
-    return euint16.wrap(result);
+    return ebool.wrap(result);
 
 }
-function lte(ebool lhs, euint32 rhs) internal pure returns (euint32) {
+function lte(ebool lhs, euint32 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -365,10 +350,10 @@ function lte(ebool lhs, euint32 rhs) internal pure returns (euint32) {
     uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lte);
-    return euint32.wrap(result);
+    return ebool.wrap(result);
 
 }
-function lte(euint8 lhs, ebool rhs) internal pure returns (euint8) {
+function lte(euint8 lhs, ebool rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -376,10 +361,10 @@ function lte(euint8 lhs, ebool rhs) internal pure returns (euint8) {
     uint256 unwrappedInput2 = euint8.unwrap(asEuint8(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lte);
-    return euint8.wrap(result);
+    return ebool.wrap(result);
 
 }
-function lte(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
+function lte(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -387,10 +372,10 @@ function lte(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
     uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lte);
-    return euint8.wrap(result);
+    return ebool.wrap(result);
 
 }
-function lte(euint8 lhs, euint16 rhs) internal pure returns (euint16) {
+function lte(euint8 lhs, euint16 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -398,10 +383,10 @@ function lte(euint8 lhs, euint16 rhs) internal pure returns (euint16) {
     uint256 unwrappedInput2 = euint8.unwrap(asEuint8(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lte);
-    return euint16.wrap(result);
+    return ebool.wrap(result);
 
 }
-function lte(euint8 lhs, euint32 rhs) internal pure returns (euint32) {
+function lte(euint8 lhs, euint32 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -409,10 +394,10 @@ function lte(euint8 lhs, euint32 rhs) internal pure returns (euint32) {
     uint256 unwrappedInput2 = euint8.unwrap(asEuint8(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lte);
-    return euint32.wrap(result);
+    return ebool.wrap(result);
 
 }
-function lte(euint16 lhs, ebool rhs) internal pure returns (euint16) {
+function lte(euint16 lhs, ebool rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -420,10 +405,10 @@ function lte(euint16 lhs, ebool rhs) internal pure returns (euint16) {
     uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lte);
-    return euint16.wrap(result);
+    return ebool.wrap(result);
 
 }
-function lte(euint16 lhs, euint8 rhs) internal pure returns (euint16) {
+function lte(euint16 lhs, euint8 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -431,10 +416,10 @@ function lte(euint16 lhs, euint8 rhs) internal pure returns (euint16) {
     uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lte);
-    return euint16.wrap(result);
+    return ebool.wrap(result);
 
 }
-function lte(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
+function lte(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -442,10 +427,10 @@ function lte(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
     uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lte);
-    return euint16.wrap(result);
+    return ebool.wrap(result);
 
 }
-function lte(euint16 lhs, euint32 rhs) internal pure returns (euint32) {
+function lte(euint16 lhs, euint32 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -453,10 +438,10 @@ function lte(euint16 lhs, euint32 rhs) internal pure returns (euint32) {
     uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lte);
-    return euint32.wrap(result);
+    return ebool.wrap(result);
 
 }
-function lte(euint32 lhs, ebool rhs) internal pure returns (euint32) {
+function lte(euint32 lhs, ebool rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -464,10 +449,10 @@ function lte(euint32 lhs, ebool rhs) internal pure returns (euint32) {
     uint256 unwrappedInput2 = euint32.unwrap(asEuint32(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lte);
-    return euint32.wrap(result);
+    return ebool.wrap(result);
 
 }
-function lte(euint32 lhs, euint8 rhs) internal pure returns (euint32) {
+function lte(euint32 lhs, euint8 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -475,10 +460,10 @@ function lte(euint32 lhs, euint8 rhs) internal pure returns (euint32) {
     uint256 unwrappedInput2 = euint32.unwrap(asEuint32(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lte);
-    return euint32.wrap(result);
+    return ebool.wrap(result);
 
 }
-function lte(euint32 lhs, euint16 rhs) internal pure returns (euint32) {
+function lte(euint32 lhs, euint16 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -486,10 +471,10 @@ function lte(euint32 lhs, euint16 rhs) internal pure returns (euint32) {
     uint256 unwrappedInput2 = euint32.unwrap(asEuint32(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lte);
-    return euint32.wrap(result);
+    return ebool.wrap(result);
 
 }
-function lte(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
+function lte(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -497,62 +482,7 @@ function lte(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
     uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lte);
-    return euint32.wrap(result);
-
-}
-function sub(ebool lhs, ebool rhs) internal pure returns (ebool) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(rhs);
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).sub);
     return ebool.wrap(result);
-
-}
-function sub(ebool lhs, euint8 rhs) internal pure returns (euint8) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).sub);
-    return euint8.wrap(result);
-
-}
-function sub(ebool lhs, euint16 rhs) internal pure returns (euint16) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).sub);
-    return euint16.wrap(result);
-
-}
-function sub(ebool lhs, euint32 rhs) internal pure returns (euint32) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).sub);
-    return euint32.wrap(result);
-
-}
-function sub(euint8 lhs, ebool rhs) internal pure returns (euint8) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint8.unwrap(lhs);
-    uint256 unwrappedInput2 = euint8.unwrap(asEuint8(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).sub);
-    return euint8.wrap(result);
 
 }
 function sub(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
@@ -588,17 +518,6 @@ function sub(euint8 lhs, euint32 rhs) internal pure returns (euint32) {
     return euint32.wrap(result);
 
 }
-function sub(euint16 lhs, ebool rhs) internal pure returns (euint16) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint16.unwrap(lhs);
-    uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).sub);
-    return euint16.wrap(result);
-
-}
 function sub(euint16 lhs, euint8 rhs) internal pure returns (euint16) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
@@ -627,17 +546,6 @@ function sub(euint16 lhs, euint32 rhs) internal pure returns (euint32) {
     }
     uint256 unwrappedInput1 = euint16.unwrap(lhs);
     uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).sub);
-    return euint32.wrap(result);
-
-}
-function sub(euint32 lhs, ebool rhs) internal pure returns (euint32) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint32.unwrap(lhs);
-    uint256 unwrappedInput2 = euint32.unwrap(asEuint32(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).sub);
     return euint32.wrap(result);
@@ -676,61 +584,6 @@ function sub(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
     return euint32.wrap(result);
 
 }
-function mul(ebool lhs, ebool rhs) internal pure returns (ebool) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(rhs);
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).mul);
-    return ebool.wrap(result);
-
-}
-function mul(ebool lhs, euint8 rhs) internal pure returns (euint8) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).mul);
-    return euint8.wrap(result);
-
-}
-function mul(ebool lhs, euint16 rhs) internal pure returns (euint16) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).mul);
-    return euint16.wrap(result);
-
-}
-function mul(ebool lhs, euint32 rhs) internal pure returns (euint32) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).mul);
-    return euint32.wrap(result);
-
-}
-function mul(euint8 lhs, ebool rhs) internal pure returns (euint8) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint8.unwrap(lhs);
-    uint256 unwrappedInput2 = euint8.unwrap(asEuint8(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).mul);
-    return euint8.wrap(result);
-
-}
 function mul(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
@@ -764,17 +617,6 @@ function mul(euint8 lhs, euint32 rhs) internal pure returns (euint32) {
     return euint32.wrap(result);
 
 }
-function mul(euint16 lhs, ebool rhs) internal pure returns (euint16) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint16.unwrap(lhs);
-    uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).mul);
-    return euint16.wrap(result);
-
-}
 function mul(euint16 lhs, euint8 rhs) internal pure returns (euint16) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
@@ -803,17 +645,6 @@ function mul(euint16 lhs, euint32 rhs) internal pure returns (euint32) {
     }
     uint256 unwrappedInput1 = euint16.unwrap(lhs);
     uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).mul);
-    return euint32.wrap(result);
-
-}
-function mul(euint32 lhs, ebool rhs) internal pure returns (euint32) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint32.unwrap(lhs);
-    uint256 unwrappedInput2 = euint32.unwrap(asEuint32(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).mul);
     return euint32.wrap(result);
@@ -863,7 +694,7 @@ function lt(ebool lhs, ebool rhs) internal pure returns (ebool) {
     return ebool.wrap(result);
 
 }
-function lt(ebool lhs, euint8 rhs) internal pure returns (euint8) {
+function lt(ebool lhs, euint8 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -871,10 +702,10 @@ function lt(ebool lhs, euint8 rhs) internal pure returns (euint8) {
     uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lt);
-    return euint8.wrap(result);
+    return ebool.wrap(result);
 
 }
-function lt(ebool lhs, euint16 rhs) internal pure returns (euint16) {
+function lt(ebool lhs, euint16 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -882,10 +713,10 @@ function lt(ebool lhs, euint16 rhs) internal pure returns (euint16) {
     uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lt);
-    return euint16.wrap(result);
+    return ebool.wrap(result);
 
 }
-function lt(ebool lhs, euint32 rhs) internal pure returns (euint32) {
+function lt(ebool lhs, euint32 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -893,10 +724,10 @@ function lt(ebool lhs, euint32 rhs) internal pure returns (euint32) {
     uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lt);
-    return euint32.wrap(result);
+    return ebool.wrap(result);
 
 }
-function lt(euint8 lhs, ebool rhs) internal pure returns (euint8) {
+function lt(euint8 lhs, ebool rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -904,10 +735,10 @@ function lt(euint8 lhs, ebool rhs) internal pure returns (euint8) {
     uint256 unwrappedInput2 = euint8.unwrap(asEuint8(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lt);
-    return euint8.wrap(result);
+    return ebool.wrap(result);
 
 }
-function lt(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
+function lt(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -915,10 +746,10 @@ function lt(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
     uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lt);
-    return euint8.wrap(result);
+    return ebool.wrap(result);
 
 }
-function lt(euint8 lhs, euint16 rhs) internal pure returns (euint16) {
+function lt(euint8 lhs, euint16 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -926,10 +757,10 @@ function lt(euint8 lhs, euint16 rhs) internal pure returns (euint16) {
     uint256 unwrappedInput2 = euint8.unwrap(asEuint8(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lt);
-    return euint16.wrap(result);
+    return ebool.wrap(result);
 
 }
-function lt(euint8 lhs, euint32 rhs) internal pure returns (euint32) {
+function lt(euint8 lhs, euint32 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -937,10 +768,10 @@ function lt(euint8 lhs, euint32 rhs) internal pure returns (euint32) {
     uint256 unwrappedInput2 = euint8.unwrap(asEuint8(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lt);
-    return euint32.wrap(result);
+    return ebool.wrap(result);
 
 }
-function lt(euint16 lhs, ebool rhs) internal pure returns (euint16) {
+function lt(euint16 lhs, ebool rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -948,10 +779,10 @@ function lt(euint16 lhs, ebool rhs) internal pure returns (euint16) {
     uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lt);
-    return euint16.wrap(result);
+    return ebool.wrap(result);
 
 }
-function lt(euint16 lhs, euint8 rhs) internal pure returns (euint16) {
+function lt(euint16 lhs, euint8 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -959,10 +790,10 @@ function lt(euint16 lhs, euint8 rhs) internal pure returns (euint16) {
     uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lt);
-    return euint16.wrap(result);
+    return ebool.wrap(result);
 
 }
-function lt(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
+function lt(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -970,10 +801,10 @@ function lt(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
     uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lt);
-    return euint16.wrap(result);
+    return ebool.wrap(result);
 
 }
-function lt(euint16 lhs, euint32 rhs) internal pure returns (euint32) {
+function lt(euint16 lhs, euint32 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -981,10 +812,10 @@ function lt(euint16 lhs, euint32 rhs) internal pure returns (euint32) {
     uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lt);
-    return euint32.wrap(result);
+    return ebool.wrap(result);
 
 }
-function lt(euint32 lhs, ebool rhs) internal pure returns (euint32) {
+function lt(euint32 lhs, ebool rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -992,10 +823,10 @@ function lt(euint32 lhs, ebool rhs) internal pure returns (euint32) {
     uint256 unwrappedInput2 = euint32.unwrap(asEuint32(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lt);
-    return euint32.wrap(result);
+    return ebool.wrap(result);
 
 }
-function lt(euint32 lhs, euint8 rhs) internal pure returns (euint32) {
+function lt(euint32 lhs, euint8 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -1003,10 +834,10 @@ function lt(euint32 lhs, euint8 rhs) internal pure returns (euint32) {
     uint256 unwrappedInput2 = euint32.unwrap(asEuint32(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lt);
-    return euint32.wrap(result);
+    return ebool.wrap(result);
 
 }
-function lt(euint32 lhs, euint16 rhs) internal pure returns (euint32) {
+function lt(euint32 lhs, euint16 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -1014,10 +845,10 @@ function lt(euint32 lhs, euint16 rhs) internal pure returns (euint32) {
     uint256 unwrappedInput2 = euint32.unwrap(asEuint32(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lt);
-    return euint32.wrap(result);
+    return ebool.wrap(result);
 
 }
-function lt(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
+function lt(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -1025,7 +856,7 @@ function lt(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
     uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lt);
-    return euint32.wrap(result);
+    return ebool.wrap(result);
 
 }
 function cmux(ebool input1, ebool input2, ebool input3) internal pure returns (ebool) {
@@ -1256,61 +1087,6 @@ function req(euint32 input1) internal pure {
     FheOps(Precompiles.Fheos).req(inputAsBytes);
 }
 
-function div(ebool lhs, ebool rhs) internal pure returns (ebool) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(rhs);
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).div);
-    return ebool.wrap(result);
-
-}
-function div(ebool lhs, euint8 rhs) internal pure returns (euint8) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).div);
-    return euint8.wrap(result);
-
-}
-function div(ebool lhs, euint16 rhs) internal pure returns (euint16) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).div);
-    return euint16.wrap(result);
-
-}
-function div(ebool lhs, euint32 rhs) internal pure returns (euint32) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).div);
-    return euint32.wrap(result);
-
-}
-function div(euint8 lhs, ebool rhs) internal pure returns (euint8) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint8.unwrap(lhs);
-    uint256 unwrappedInput2 = euint8.unwrap(asEuint8(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).div);
-    return euint8.wrap(result);
-
-}
 function div(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
@@ -1344,17 +1120,6 @@ function div(euint8 lhs, euint32 rhs) internal pure returns (euint32) {
     return euint32.wrap(result);
 
 }
-function div(euint16 lhs, ebool rhs) internal pure returns (euint16) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint16.unwrap(lhs);
-    uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).div);
-    return euint16.wrap(result);
-
-}
 function div(euint16 lhs, euint8 rhs) internal pure returns (euint16) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
@@ -1383,17 +1148,6 @@ function div(euint16 lhs, euint32 rhs) internal pure returns (euint32) {
     }
     uint256 unwrappedInput1 = euint16.unwrap(lhs);
     uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).div);
-    return euint32.wrap(result);
-
-}
-function div(euint32 lhs, ebool rhs) internal pure returns (euint32) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint32.unwrap(lhs);
-    uint256 unwrappedInput2 = euint32.unwrap(asEuint32(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).div);
     return euint32.wrap(result);
@@ -1443,7 +1197,7 @@ function gt(ebool lhs, ebool rhs) internal pure returns (ebool) {
     return ebool.wrap(result);
 
 }
-function gt(ebool lhs, euint8 rhs) internal pure returns (euint8) {
+function gt(ebool lhs, euint8 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -1451,10 +1205,10 @@ function gt(ebool lhs, euint8 rhs) internal pure returns (euint8) {
     uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gt);
-    return euint8.wrap(result);
+    return ebool.wrap(result);
 
 }
-function gt(ebool lhs, euint16 rhs) internal pure returns (euint16) {
+function gt(ebool lhs, euint16 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -1462,10 +1216,10 @@ function gt(ebool lhs, euint16 rhs) internal pure returns (euint16) {
     uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gt);
-    return euint16.wrap(result);
+    return ebool.wrap(result);
 
 }
-function gt(ebool lhs, euint32 rhs) internal pure returns (euint32) {
+function gt(ebool lhs, euint32 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -1473,10 +1227,10 @@ function gt(ebool lhs, euint32 rhs) internal pure returns (euint32) {
     uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gt);
-    return euint32.wrap(result);
+    return ebool.wrap(result);
 
 }
-function gt(euint8 lhs, ebool rhs) internal pure returns (euint8) {
+function gt(euint8 lhs, ebool rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -1484,10 +1238,10 @@ function gt(euint8 lhs, ebool rhs) internal pure returns (euint8) {
     uint256 unwrappedInput2 = euint8.unwrap(asEuint8(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gt);
-    return euint8.wrap(result);
+    return ebool.wrap(result);
 
 }
-function gt(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
+function gt(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -1495,10 +1249,10 @@ function gt(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
     uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gt);
-    return euint8.wrap(result);
+    return ebool.wrap(result);
 
 }
-function gt(euint8 lhs, euint16 rhs) internal pure returns (euint16) {
+function gt(euint8 lhs, euint16 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -1506,10 +1260,10 @@ function gt(euint8 lhs, euint16 rhs) internal pure returns (euint16) {
     uint256 unwrappedInput2 = euint8.unwrap(asEuint8(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gt);
-    return euint16.wrap(result);
+    return ebool.wrap(result);
 
 }
-function gt(euint8 lhs, euint32 rhs) internal pure returns (euint32) {
+function gt(euint8 lhs, euint32 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -1517,10 +1271,10 @@ function gt(euint8 lhs, euint32 rhs) internal pure returns (euint32) {
     uint256 unwrappedInput2 = euint8.unwrap(asEuint8(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gt);
-    return euint32.wrap(result);
+    return ebool.wrap(result);
 
 }
-function gt(euint16 lhs, ebool rhs) internal pure returns (euint16) {
+function gt(euint16 lhs, ebool rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -1528,10 +1282,10 @@ function gt(euint16 lhs, ebool rhs) internal pure returns (euint16) {
     uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gt);
-    return euint16.wrap(result);
+    return ebool.wrap(result);
 
 }
-function gt(euint16 lhs, euint8 rhs) internal pure returns (euint16) {
+function gt(euint16 lhs, euint8 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -1539,10 +1293,10 @@ function gt(euint16 lhs, euint8 rhs) internal pure returns (euint16) {
     uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gt);
-    return euint16.wrap(result);
+    return ebool.wrap(result);
 
 }
-function gt(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
+function gt(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -1550,10 +1304,10 @@ function gt(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
     uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gt);
-    return euint16.wrap(result);
+    return ebool.wrap(result);
 
 }
-function gt(euint16 lhs, euint32 rhs) internal pure returns (euint32) {
+function gt(euint16 lhs, euint32 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -1561,10 +1315,10 @@ function gt(euint16 lhs, euint32 rhs) internal pure returns (euint32) {
     uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gt);
-    return euint32.wrap(result);
+    return ebool.wrap(result);
 
 }
-function gt(euint32 lhs, ebool rhs) internal pure returns (euint32) {
+function gt(euint32 lhs, ebool rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -1572,10 +1326,10 @@ function gt(euint32 lhs, ebool rhs) internal pure returns (euint32) {
     uint256 unwrappedInput2 = euint32.unwrap(asEuint32(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gt);
-    return euint32.wrap(result);
+    return ebool.wrap(result);
 
 }
-function gt(euint32 lhs, euint8 rhs) internal pure returns (euint32) {
+function gt(euint32 lhs, euint8 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -1583,10 +1337,10 @@ function gt(euint32 lhs, euint8 rhs) internal pure returns (euint32) {
     uint256 unwrappedInput2 = euint32.unwrap(asEuint32(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gt);
-    return euint32.wrap(result);
+    return ebool.wrap(result);
 
 }
-function gt(euint32 lhs, euint16 rhs) internal pure returns (euint32) {
+function gt(euint32 lhs, euint16 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -1594,10 +1348,10 @@ function gt(euint32 lhs, euint16 rhs) internal pure returns (euint32) {
     uint256 unwrappedInput2 = euint32.unwrap(asEuint32(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gt);
-    return euint32.wrap(result);
+    return ebool.wrap(result);
 
 }
-function gt(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
+function gt(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -1605,62 +1359,7 @@ function gt(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
     uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gt);
-    return euint32.wrap(result);
-
-}
-function gte(ebool lhs, ebool rhs) internal pure returns (ebool) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(rhs);
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gte);
     return ebool.wrap(result);
-
-}
-function gte(ebool lhs, euint8 rhs) internal pure returns (euint8) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gte);
-    return euint8.wrap(result);
-
-}
-function gte(ebool lhs, euint16 rhs) internal pure returns (euint16) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gte);
-    return euint16.wrap(result);
-
-}
-function gte(ebool lhs, euint32 rhs) internal pure returns (euint32) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gte);
-    return euint32.wrap(result);
-
-}
-function gte(euint8 lhs, ebool rhs) internal pure returns (euint8) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint8.unwrap(lhs);
-    uint256 unwrappedInput2 = euint8.unwrap(asEuint8(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gte);
-    return euint8.wrap(result);
 
 }
 function gte(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
@@ -1696,17 +1395,6 @@ function gte(euint8 lhs, euint32 rhs) internal pure returns (euint32) {
     return euint32.wrap(result);
 
 }
-function gte(euint16 lhs, ebool rhs) internal pure returns (euint16) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint16.unwrap(lhs);
-    uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gte);
-    return euint16.wrap(result);
-
-}
 function gte(euint16 lhs, euint8 rhs) internal pure returns (euint16) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
@@ -1735,17 +1423,6 @@ function gte(euint16 lhs, euint32 rhs) internal pure returns (euint32) {
     }
     uint256 unwrappedInput1 = euint16.unwrap(lhs);
     uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gte);
-    return euint32.wrap(result);
-
-}
-function gte(euint32 lhs, ebool rhs) internal pure returns (euint32) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint32.unwrap(lhs);
-    uint256 unwrappedInput2 = euint32.unwrap(asEuint32(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gte);
     return euint32.wrap(result);
@@ -1784,61 +1461,6 @@ function gte(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
     return euint32.wrap(result);
 
 }
-function rem(ebool lhs, ebool rhs) internal pure returns (ebool) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(rhs);
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).rem);
-    return ebool.wrap(result);
-
-}
-function rem(ebool lhs, euint8 rhs) internal pure returns (euint8) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).rem);
-    return euint8.wrap(result);
-
-}
-function rem(ebool lhs, euint16 rhs) internal pure returns (euint16) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).rem);
-    return euint16.wrap(result);
-
-}
-function rem(ebool lhs, euint32 rhs) internal pure returns (euint32) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).rem);
-    return euint32.wrap(result);
-
-}
-function rem(euint8 lhs, ebool rhs) internal pure returns (euint8) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint8.unwrap(lhs);
-    uint256 unwrappedInput2 = euint8.unwrap(asEuint8(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).rem);
-    return euint8.wrap(result);
-
-}
 function rem(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
@@ -1872,17 +1494,6 @@ function rem(euint8 lhs, euint32 rhs) internal pure returns (euint32) {
     return euint32.wrap(result);
 
 }
-function rem(euint16 lhs, ebool rhs) internal pure returns (euint16) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint16.unwrap(lhs);
-    uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).rem);
-    return euint16.wrap(result);
-
-}
 function rem(euint16 lhs, euint8 rhs) internal pure returns (euint16) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
@@ -1911,17 +1522,6 @@ function rem(euint16 lhs, euint32 rhs) internal pure returns (euint32) {
     }
     uint256 unwrappedInput1 = euint16.unwrap(lhs);
     uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).rem);
-    return euint32.wrap(result);
-
-}
-function rem(euint32 lhs, ebool rhs) internal pure returns (euint32) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint32.unwrap(lhs);
-    uint256 unwrappedInput2 = euint32.unwrap(asEuint32(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).rem);
     return euint32.wrap(result);
@@ -1960,61 +1560,6 @@ function rem(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
     return euint32.wrap(result);
 
 }
-function and(ebool lhs, ebool rhs) internal pure returns (ebool) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(rhs);
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).and);
-    return ebool.wrap(result);
-
-}
-function and(ebool lhs, euint8 rhs) internal pure returns (euint8) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).and);
-    return euint8.wrap(result);
-
-}
-function and(ebool lhs, euint16 rhs) internal pure returns (euint16) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).and);
-    return euint16.wrap(result);
-
-}
-function and(ebool lhs, euint32 rhs) internal pure returns (euint32) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).and);
-    return euint32.wrap(result);
-
-}
-function and(euint8 lhs, ebool rhs) internal pure returns (euint8) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint8.unwrap(lhs);
-    uint256 unwrappedInput2 = euint8.unwrap(asEuint8(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).and);
-    return euint8.wrap(result);
-
-}
 function and(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
@@ -2048,17 +1593,6 @@ function and(euint8 lhs, euint32 rhs) internal pure returns (euint32) {
     return euint32.wrap(result);
 
 }
-function and(euint16 lhs, ebool rhs) internal pure returns (euint16) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint16.unwrap(lhs);
-    uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).and);
-    return euint16.wrap(result);
-
-}
 function and(euint16 lhs, euint8 rhs) internal pure returns (euint16) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
@@ -2087,17 +1621,6 @@ function and(euint16 lhs, euint32 rhs) internal pure returns (euint32) {
     }
     uint256 unwrappedInput1 = euint16.unwrap(lhs);
     uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).and);
-    return euint32.wrap(result);
-
-}
-function and(euint32 lhs, ebool rhs) internal pure returns (euint32) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint32.unwrap(lhs);
-    uint256 unwrappedInput2 = euint32.unwrap(asEuint32(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).and);
     return euint32.wrap(result);
@@ -2136,61 +1659,6 @@ function and(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
     return euint32.wrap(result);
 
 }
-function or(ebool lhs, ebool rhs) internal pure returns (ebool) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(rhs);
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).or);
-    return ebool.wrap(result);
-
-}
-function or(ebool lhs, euint8 rhs) internal pure returns (euint8) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).or);
-    return euint8.wrap(result);
-
-}
-function or(ebool lhs, euint16 rhs) internal pure returns (euint16) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).or);
-    return euint16.wrap(result);
-
-}
-function or(ebool lhs, euint32 rhs) internal pure returns (euint32) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).or);
-    return euint32.wrap(result);
-
-}
-function or(euint8 lhs, ebool rhs) internal pure returns (euint8) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint8.unwrap(lhs);
-    uint256 unwrappedInput2 = euint8.unwrap(asEuint8(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).or);
-    return euint8.wrap(result);
-
-}
 function or(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
@@ -2224,17 +1692,6 @@ function or(euint8 lhs, euint32 rhs) internal pure returns (euint32) {
     return euint32.wrap(result);
 
 }
-function or(euint16 lhs, ebool rhs) internal pure returns (euint16) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint16.unwrap(lhs);
-    uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).or);
-    return euint16.wrap(result);
-
-}
 function or(euint16 lhs, euint8 rhs) internal pure returns (euint16) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
@@ -2263,17 +1720,6 @@ function or(euint16 lhs, euint32 rhs) internal pure returns (euint32) {
     }
     uint256 unwrappedInput1 = euint16.unwrap(lhs);
     uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).or);
-    return euint32.wrap(result);
-
-}
-function or(euint32 lhs, ebool rhs) internal pure returns (euint32) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint32.unwrap(lhs);
-    uint256 unwrappedInput2 = euint32.unwrap(asEuint32(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).or);
     return euint32.wrap(result);
@@ -2312,61 +1758,6 @@ function or(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
     return euint32.wrap(result);
 
 }
-function xor(ebool lhs, ebool rhs) internal pure returns (ebool) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(rhs);
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).xor);
-    return ebool.wrap(result);
-
-}
-function xor(ebool lhs, euint8 rhs) internal pure returns (euint8) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).xor);
-    return euint8.wrap(result);
-
-}
-function xor(ebool lhs, euint16 rhs) internal pure returns (euint16) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).xor);
-    return euint16.wrap(result);
-
-}
-function xor(ebool lhs, euint32 rhs) internal pure returns (euint32) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).xor);
-    return euint32.wrap(result);
-
-}
-function xor(euint8 lhs, ebool rhs) internal pure returns (euint8) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint8.unwrap(lhs);
-    uint256 unwrappedInput2 = euint8.unwrap(asEuint8(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).xor);
-    return euint8.wrap(result);
-
-}
 function xor(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
@@ -2400,17 +1791,6 @@ function xor(euint8 lhs, euint32 rhs) internal pure returns (euint32) {
     return euint32.wrap(result);
 
 }
-function xor(euint16 lhs, ebool rhs) internal pure returns (euint16) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint16.unwrap(lhs);
-    uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).xor);
-    return euint16.wrap(result);
-
-}
 function xor(euint16 lhs, euint8 rhs) internal pure returns (euint16) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
@@ -2439,17 +1819,6 @@ function xor(euint16 lhs, euint32 rhs) internal pure returns (euint32) {
     }
     uint256 unwrappedInput1 = euint16.unwrap(lhs);
     uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).xor);
-    return euint32.wrap(result);
-
-}
-function xor(euint32 lhs, ebool rhs) internal pure returns (euint32) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint32.unwrap(lhs);
-    uint256 unwrappedInput2 = euint32.unwrap(asEuint32(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).xor);
     return euint32.wrap(result);
@@ -2499,7 +1868,7 @@ function eq(ebool lhs, ebool rhs) internal pure returns (ebool) {
     return ebool.wrap(result);
 
 }
-function eq(ebool lhs, euint8 rhs) internal pure returns (euint8) {
+function eq(ebool lhs, euint8 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -2507,10 +1876,10 @@ function eq(ebool lhs, euint8 rhs) internal pure returns (euint8) {
     uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).eq);
-    return euint8.wrap(result);
+    return ebool.wrap(result);
 
 }
-function eq(ebool lhs, euint16 rhs) internal pure returns (euint16) {
+function eq(ebool lhs, euint16 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -2518,10 +1887,10 @@ function eq(ebool lhs, euint16 rhs) internal pure returns (euint16) {
     uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).eq);
-    return euint16.wrap(result);
+    return ebool.wrap(result);
 
 }
-function eq(ebool lhs, euint32 rhs) internal pure returns (euint32) {
+function eq(ebool lhs, euint32 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -2529,10 +1898,10 @@ function eq(ebool lhs, euint32 rhs) internal pure returns (euint32) {
     uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).eq);
-    return euint32.wrap(result);
+    return ebool.wrap(result);
 
 }
-function eq(euint8 lhs, ebool rhs) internal pure returns (euint8) {
+function eq(euint8 lhs, ebool rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -2540,10 +1909,10 @@ function eq(euint8 lhs, ebool rhs) internal pure returns (euint8) {
     uint256 unwrappedInput2 = euint8.unwrap(asEuint8(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).eq);
-    return euint8.wrap(result);
+    return ebool.wrap(result);
 
 }
-function eq(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
+function eq(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -2551,10 +1920,10 @@ function eq(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
     uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).eq);
-    return euint8.wrap(result);
+    return ebool.wrap(result);
 
 }
-function eq(euint8 lhs, euint16 rhs) internal pure returns (euint16) {
+function eq(euint8 lhs, euint16 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -2562,10 +1931,10 @@ function eq(euint8 lhs, euint16 rhs) internal pure returns (euint16) {
     uint256 unwrappedInput2 = euint8.unwrap(asEuint8(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).eq);
-    return euint16.wrap(result);
+    return ebool.wrap(result);
 
 }
-function eq(euint8 lhs, euint32 rhs) internal pure returns (euint32) {
+function eq(euint8 lhs, euint32 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -2573,10 +1942,10 @@ function eq(euint8 lhs, euint32 rhs) internal pure returns (euint32) {
     uint256 unwrappedInput2 = euint8.unwrap(asEuint8(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).eq);
-    return euint32.wrap(result);
+    return ebool.wrap(result);
 
 }
-function eq(euint16 lhs, ebool rhs) internal pure returns (euint16) {
+function eq(euint16 lhs, ebool rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -2584,10 +1953,10 @@ function eq(euint16 lhs, ebool rhs) internal pure returns (euint16) {
     uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).eq);
-    return euint16.wrap(result);
+    return ebool.wrap(result);
 
 }
-function eq(euint16 lhs, euint8 rhs) internal pure returns (euint16) {
+function eq(euint16 lhs, euint8 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -2595,10 +1964,10 @@ function eq(euint16 lhs, euint8 rhs) internal pure returns (euint16) {
     uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).eq);
-    return euint16.wrap(result);
+    return ebool.wrap(result);
 
 }
-function eq(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
+function eq(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -2606,10 +1975,10 @@ function eq(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
     uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).eq);
-    return euint16.wrap(result);
+    return ebool.wrap(result);
 
 }
-function eq(euint16 lhs, euint32 rhs) internal pure returns (euint32) {
+function eq(euint16 lhs, euint32 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -2617,10 +1986,10 @@ function eq(euint16 lhs, euint32 rhs) internal pure returns (euint32) {
     uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).eq);
-    return euint32.wrap(result);
+    return ebool.wrap(result);
 
 }
-function eq(euint32 lhs, ebool rhs) internal pure returns (euint32) {
+function eq(euint32 lhs, ebool rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -2628,10 +1997,10 @@ function eq(euint32 lhs, ebool rhs) internal pure returns (euint32) {
     uint256 unwrappedInput2 = euint32.unwrap(asEuint32(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).eq);
-    return euint32.wrap(result);
+    return ebool.wrap(result);
 
 }
-function eq(euint32 lhs, euint8 rhs) internal pure returns (euint32) {
+function eq(euint32 lhs, euint8 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -2639,10 +2008,10 @@ function eq(euint32 lhs, euint8 rhs) internal pure returns (euint32) {
     uint256 unwrappedInput2 = euint32.unwrap(asEuint32(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).eq);
-    return euint32.wrap(result);
+    return ebool.wrap(result);
 
 }
-function eq(euint32 lhs, euint16 rhs) internal pure returns (euint32) {
+function eq(euint32 lhs, euint16 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -2650,10 +2019,10 @@ function eq(euint32 lhs, euint16 rhs) internal pure returns (euint32) {
     uint256 unwrappedInput2 = euint32.unwrap(asEuint32(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).eq);
-    return euint32.wrap(result);
+    return ebool.wrap(result);
 
 }
-function eq(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
+function eq(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -2661,7 +2030,7 @@ function eq(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
     uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).eq);
-    return euint32.wrap(result);
+    return ebool.wrap(result);
 
 }
 function ne(ebool lhs, ebool rhs) internal pure returns (ebool) {
@@ -2675,7 +2044,7 @@ function ne(ebool lhs, ebool rhs) internal pure returns (ebool) {
     return ebool.wrap(result);
 
 }
-function ne(ebool lhs, euint8 rhs) internal pure returns (euint8) {
+function ne(ebool lhs, euint8 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -2683,10 +2052,10 @@ function ne(ebool lhs, euint8 rhs) internal pure returns (euint8) {
     uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ne);
-    return euint8.wrap(result);
+    return ebool.wrap(result);
 
 }
-function ne(ebool lhs, euint16 rhs) internal pure returns (euint16) {
+function ne(ebool lhs, euint16 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -2694,10 +2063,10 @@ function ne(ebool lhs, euint16 rhs) internal pure returns (euint16) {
     uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ne);
-    return euint16.wrap(result);
+    return ebool.wrap(result);
 
 }
-function ne(ebool lhs, euint32 rhs) internal pure returns (euint32) {
+function ne(ebool lhs, euint32 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -2705,10 +2074,10 @@ function ne(ebool lhs, euint32 rhs) internal pure returns (euint32) {
     uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ne);
-    return euint32.wrap(result);
+    return ebool.wrap(result);
 
 }
-function ne(euint8 lhs, ebool rhs) internal pure returns (euint8) {
+function ne(euint8 lhs, ebool rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -2716,10 +2085,10 @@ function ne(euint8 lhs, ebool rhs) internal pure returns (euint8) {
     uint256 unwrappedInput2 = euint8.unwrap(asEuint8(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ne);
-    return euint8.wrap(result);
+    return ebool.wrap(result);
 
 }
-function ne(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
+function ne(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -2727,10 +2096,10 @@ function ne(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
     uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ne);
-    return euint8.wrap(result);
+    return ebool.wrap(result);
 
 }
-function ne(euint8 lhs, euint16 rhs) internal pure returns (euint16) {
+function ne(euint8 lhs, euint16 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -2738,10 +2107,10 @@ function ne(euint8 lhs, euint16 rhs) internal pure returns (euint16) {
     uint256 unwrappedInput2 = euint8.unwrap(asEuint8(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ne);
-    return euint16.wrap(result);
+    return ebool.wrap(result);
 
 }
-function ne(euint8 lhs, euint32 rhs) internal pure returns (euint32) {
+function ne(euint8 lhs, euint32 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -2749,10 +2118,10 @@ function ne(euint8 lhs, euint32 rhs) internal pure returns (euint32) {
     uint256 unwrappedInput2 = euint8.unwrap(asEuint8(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ne);
-    return euint32.wrap(result);
+    return ebool.wrap(result);
 
 }
-function ne(euint16 lhs, ebool rhs) internal pure returns (euint16) {
+function ne(euint16 lhs, ebool rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -2760,10 +2129,10 @@ function ne(euint16 lhs, ebool rhs) internal pure returns (euint16) {
     uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ne);
-    return euint16.wrap(result);
+    return ebool.wrap(result);
 
 }
-function ne(euint16 lhs, euint8 rhs) internal pure returns (euint16) {
+function ne(euint16 lhs, euint8 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -2771,10 +2140,10 @@ function ne(euint16 lhs, euint8 rhs) internal pure returns (euint16) {
     uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ne);
-    return euint16.wrap(result);
+    return ebool.wrap(result);
 
 }
-function ne(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
+function ne(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -2782,10 +2151,10 @@ function ne(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
     uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ne);
-    return euint16.wrap(result);
+    return ebool.wrap(result);
 
 }
-function ne(euint16 lhs, euint32 rhs) internal pure returns (euint32) {
+function ne(euint16 lhs, euint32 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -2793,10 +2162,10 @@ function ne(euint16 lhs, euint32 rhs) internal pure returns (euint32) {
     uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ne);
-    return euint32.wrap(result);
+    return ebool.wrap(result);
 
 }
-function ne(euint32 lhs, ebool rhs) internal pure returns (euint32) {
+function ne(euint32 lhs, ebool rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -2804,10 +2173,10 @@ function ne(euint32 lhs, ebool rhs) internal pure returns (euint32) {
     uint256 unwrappedInput2 = euint32.unwrap(asEuint32(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ne);
-    return euint32.wrap(result);
+    return ebool.wrap(result);
 
 }
-function ne(euint32 lhs, euint8 rhs) internal pure returns (euint32) {
+function ne(euint32 lhs, euint8 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -2815,10 +2184,10 @@ function ne(euint32 lhs, euint8 rhs) internal pure returns (euint32) {
     uint256 unwrappedInput2 = euint32.unwrap(asEuint32(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ne);
-    return euint32.wrap(result);
+    return ebool.wrap(result);
 
 }
-function ne(euint32 lhs, euint16 rhs) internal pure returns (euint32) {
+function ne(euint32 lhs, euint16 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -2826,10 +2195,10 @@ function ne(euint32 lhs, euint16 rhs) internal pure returns (euint32) {
     uint256 unwrappedInput2 = euint32.unwrap(asEuint32(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ne);
-    return euint32.wrap(result);
+    return ebool.wrap(result);
 
 }
-function ne(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
+function ne(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
     }
@@ -2837,62 +2206,7 @@ function ne(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
     uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ne);
-    return euint32.wrap(result);
-
-}
-function min(ebool lhs, ebool rhs) internal pure returns (ebool) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(rhs);
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).min);
     return ebool.wrap(result);
-
-}
-function min(ebool lhs, euint8 rhs) internal pure returns (euint8) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).min);
-    return euint8.wrap(result);
-
-}
-function min(ebool lhs, euint16 rhs) internal pure returns (euint16) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).min);
-    return euint16.wrap(result);
-
-}
-function min(ebool lhs, euint32 rhs) internal pure returns (euint32) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).min);
-    return euint32.wrap(result);
-
-}
-function min(euint8 lhs, ebool rhs) internal pure returns (euint8) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint8.unwrap(lhs);
-    uint256 unwrappedInput2 = euint8.unwrap(asEuint8(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).min);
-    return euint8.wrap(result);
 
 }
 function min(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
@@ -2928,17 +2242,6 @@ function min(euint8 lhs, euint32 rhs) internal pure returns (euint32) {
     return euint32.wrap(result);
 
 }
-function min(euint16 lhs, ebool rhs) internal pure returns (euint16) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint16.unwrap(lhs);
-    uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).min);
-    return euint16.wrap(result);
-
-}
 function min(euint16 lhs, euint8 rhs) internal pure returns (euint16) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
@@ -2967,17 +2270,6 @@ function min(euint16 lhs, euint32 rhs) internal pure returns (euint32) {
     }
     uint256 unwrappedInput1 = euint16.unwrap(lhs);
     uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).min);
-    return euint32.wrap(result);
-
-}
-function min(euint32 lhs, ebool rhs) internal pure returns (euint32) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint32.unwrap(lhs);
-    uint256 unwrappedInput2 = euint32.unwrap(asEuint32(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).min);
     return euint32.wrap(result);
@@ -3016,61 +2308,6 @@ function min(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
     return euint32.wrap(result);
 
 }
-function max(ebool lhs, ebool rhs) internal pure returns (ebool) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(rhs);
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).max);
-    return ebool.wrap(result);
-
-}
-function max(ebool lhs, euint8 rhs) internal pure returns (euint8) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).max);
-    return euint8.wrap(result);
-
-}
-function max(ebool lhs, euint16 rhs) internal pure returns (euint16) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).max);
-    return euint16.wrap(result);
-
-}
-function max(ebool lhs, euint32 rhs) internal pure returns (euint32) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).max);
-    return euint32.wrap(result);
-
-}
-function max(euint8 lhs, ebool rhs) internal pure returns (euint8) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint8.unwrap(lhs);
-    uint256 unwrappedInput2 = euint8.unwrap(asEuint8(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).max);
-    return euint8.wrap(result);
-
-}
 function max(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
@@ -3104,17 +2341,6 @@ function max(euint8 lhs, euint32 rhs) internal pure returns (euint32) {
     return euint32.wrap(result);
 
 }
-function max(euint16 lhs, ebool rhs) internal pure returns (euint16) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint16.unwrap(lhs);
-    uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).max);
-    return euint16.wrap(result);
-
-}
 function max(euint16 lhs, euint8 rhs) internal pure returns (euint16) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
@@ -3143,17 +2369,6 @@ function max(euint16 lhs, euint32 rhs) internal pure returns (euint32) {
     }
     uint256 unwrappedInput1 = euint16.unwrap(lhs);
     uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).max);
-    return euint32.wrap(result);
-
-}
-function max(euint32 lhs, ebool rhs) internal pure returns (euint32) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint32.unwrap(lhs);
-    uint256 unwrappedInput2 = euint32.unwrap(asEuint32(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).max);
     return euint32.wrap(result);
@@ -3192,61 +2407,6 @@ function max(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
     return euint32.wrap(result);
 
 }
-function shl(ebool lhs, ebool rhs) internal pure returns (ebool) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(rhs);
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shl);
-    return ebool.wrap(result);
-
-}
-function shl(ebool lhs, euint8 rhs) internal pure returns (euint8) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shl);
-    return euint8.wrap(result);
-
-}
-function shl(ebool lhs, euint16 rhs) internal pure returns (euint16) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shl);
-    return euint16.wrap(result);
-
-}
-function shl(ebool lhs, euint32 rhs) internal pure returns (euint32) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shl);
-    return euint32.wrap(result);
-
-}
-function shl(euint8 lhs, ebool rhs) internal pure returns (euint8) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint8.unwrap(lhs);
-    uint256 unwrappedInput2 = euint8.unwrap(asEuint8(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shl);
-    return euint8.wrap(result);
-
-}
 function shl(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
@@ -3280,17 +2440,6 @@ function shl(euint8 lhs, euint32 rhs) internal pure returns (euint32) {
     return euint32.wrap(result);
 
 }
-function shl(euint16 lhs, ebool rhs) internal pure returns (euint16) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint16.unwrap(lhs);
-    uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shl);
-    return euint16.wrap(result);
-
-}
 function shl(euint16 lhs, euint8 rhs) internal pure returns (euint16) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
@@ -3319,17 +2468,6 @@ function shl(euint16 lhs, euint32 rhs) internal pure returns (euint32) {
     }
     uint256 unwrappedInput1 = euint16.unwrap(lhs);
     uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shl);
-    return euint32.wrap(result);
-
-}
-function shl(euint32 lhs, ebool rhs) internal pure returns (euint32) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint32.unwrap(lhs);
-    uint256 unwrappedInput2 = euint32.unwrap(asEuint32(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shl);
     return euint32.wrap(result);
@@ -3368,61 +2506,6 @@ function shl(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
     return euint32.wrap(result);
 
 }
-function shr(ebool lhs, ebool rhs) internal pure returns (ebool) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(rhs);
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shr);
-    return ebool.wrap(result);
-
-}
-function shr(ebool lhs, euint8 rhs) internal pure returns (euint8) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shr);
-    return euint8.wrap(result);
-
-}
-function shr(ebool lhs, euint16 rhs) internal pure returns (euint16) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shr);
-    return euint16.wrap(result);
-
-}
-function shr(ebool lhs, euint32 rhs) internal pure returns (euint32) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(lhs);
-    uint256 unwrappedInput2 = ebool.unwrap(asEbool(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shr);
-    return euint32.wrap(result);
-
-}
-function shr(euint8 lhs, ebool rhs) internal pure returns (euint8) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint8.unwrap(lhs);
-    uint256 unwrappedInput2 = euint8.unwrap(asEuint8(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shr);
-    return euint8.wrap(result);
-
-}
 function shr(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
@@ -3456,17 +2539,6 @@ function shr(euint8 lhs, euint32 rhs) internal pure returns (euint32) {
     return euint32.wrap(result);
 
 }
-function shr(euint16 lhs, ebool rhs) internal pure returns (euint16) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint16.unwrap(lhs);
-    uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shr);
-    return euint16.wrap(result);
-
-}
 function shr(euint16 lhs, euint8 rhs) internal pure returns (euint16) {
     if(!isInitialized(lhs) || !isInitialized(rhs)) {
         revert("One or more inputs are not initialized.");
@@ -3495,17 +2567,6 @@ function shr(euint16 lhs, euint32 rhs) internal pure returns (euint32) {
     }
     uint256 unwrappedInput1 = euint16.unwrap(lhs);
     uint256 unwrappedInput2 = euint16.unwrap(asEuint16(rhs));
-
-    uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shr);
-    return euint32.wrap(result);
-
-}
-function shr(euint32 lhs, ebool rhs) internal pure returns (euint32) {
-    if(!isInitialized(lhs) || !isInitialized(rhs)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = euint32.unwrap(lhs);
-    uint256 unwrappedInput2 = euint32.unwrap(asEuint32(rhs));
 
     uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shr);
     return euint32.wrap(result);
@@ -3544,10 +2605,51 @@ function shr(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
     return euint32.wrap(result);
 
 }
-// ********** TYPE CASTING ************* //
-function asEbool(ebool value) internal pure returns (ebool) {
-        return ebool.wrap(Impl.cast(ebool.unwrap(value), Common.ebool_tfhe_go));
+function not(ebool input1) internal pure  returns (ebool) {
+    if(!isInitialized(input1)) {
+        revert("One or more inputs are not initialized.");
     }
+    uint256 unwrappedInput1 = ebool.unwrap(input1);
+    bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
+    bytes memory b = FheOps(Precompiles.Fheos).not(inputAsBytes);
+    uint256 result = Impl.getValue(b);
+    return ebool.wrap(result);
+}
+
+function not(euint8 input1) internal pure  returns (euint8) {
+    if(!isInitialized(input1)) {
+        revert("One or more inputs are not initialized.");
+    }
+    uint256 unwrappedInput1 = euint8.unwrap(input1);
+    bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
+    bytes memory b = FheOps(Precompiles.Fheos).not(inputAsBytes);
+    uint256 result = Impl.getValue(b);
+    return euint8.wrap(result);
+}
+
+function not(euint16 input1) internal pure  returns (euint16) {
+    if(!isInitialized(input1)) {
+        revert("One or more inputs are not initialized.");
+    }
+    uint256 unwrappedInput1 = euint16.unwrap(input1);
+    bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
+    bytes memory b = FheOps(Precompiles.Fheos).not(inputAsBytes);
+    uint256 result = Impl.getValue(b);
+    return euint16.wrap(result);
+}
+
+function not(euint32 input1) internal pure  returns (euint32) {
+    if(!isInitialized(input1)) {
+        revert("One or more inputs are not initialized.");
+    }
+    uint256 unwrappedInput1 = euint32.unwrap(input1);
+    bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
+    bytes memory b = FheOps(Precompiles.Fheos).not(inputAsBytes);
+    uint256 result = Impl.getValue(b);
+    return euint32.wrap(result);
+}
+
+// ********** TYPE CASTING ************* //
 function asEuint8(ebool value) internal pure returns (euint8) {
         return euint8.wrap(Impl.cast(ebool.unwrap(value), Common.euint8_tfhe_go));
     }
@@ -3558,10 +2660,7 @@ function asEuint32(ebool value) internal pure returns (euint32) {
         return euint32.wrap(Impl.cast(ebool.unwrap(value), Common.euint32_tfhe_go));
     }
 function asEbool(euint8 value) internal pure returns (ebool) {
-        return ebool.wrap(Impl.cast(euint8.unwrap(value), Common.ebool_tfhe_go));
-    }
-function asEuint8(euint8 value) internal pure returns (euint8) {
-        return euint8.wrap(Impl.cast(euint8.unwrap(value), Common.euint8_tfhe_go));
+        return ne(value,  asEuint8(0));
     }
 function asEuint16(euint8 value) internal pure returns (euint16) {
         return euint16.wrap(Impl.cast(euint8.unwrap(value), Common.euint16_tfhe_go));
@@ -3570,28 +2669,22 @@ function asEuint32(euint8 value) internal pure returns (euint32) {
         return euint32.wrap(Impl.cast(euint8.unwrap(value), Common.euint32_tfhe_go));
     }
 function asEbool(euint16 value) internal pure returns (ebool) {
-        return ebool.wrap(Impl.cast(euint16.unwrap(value), Common.ebool_tfhe_go));
+        return ne(value,  asEuint16(0));
     }
 function asEuint8(euint16 value) internal pure returns (euint8) {
         return euint8.wrap(Impl.cast(euint16.unwrap(value), Common.euint8_tfhe_go));
-    }
-function asEuint16(euint16 value) internal pure returns (euint16) {
-        return euint16.wrap(Impl.cast(euint16.unwrap(value), Common.euint16_tfhe_go));
     }
 function asEuint32(euint16 value) internal pure returns (euint32) {
         return euint32.wrap(Impl.cast(euint16.unwrap(value), Common.euint32_tfhe_go));
     }
 function asEbool(euint32 value) internal pure returns (ebool) {
-        return ebool.wrap(Impl.cast(euint32.unwrap(value), Common.ebool_tfhe_go));
+        return ne(value,  asEuint32(0));
     }
 function asEuint8(euint32 value) internal pure returns (euint8) {
         return euint8.wrap(Impl.cast(euint32.unwrap(value), Common.euint8_tfhe_go));
     }
 function asEuint16(euint32 value) internal pure returns (euint16) {
         return euint16.wrap(Impl.cast(euint32.unwrap(value), Common.euint16_tfhe_go));
-    }
-function asEuint32(euint32 value) internal pure returns (euint32) {
-        return euint32.wrap(Impl.cast(euint32.unwrap(value), Common.euint32_tfhe_go));
     }
 function asEbool(uint256 value) internal pure returns (ebool) {
         return ebool.wrap(Impl.trivialEncrypt(value, Common.ebool_tfhe_go));
@@ -3621,12 +2714,6 @@ function asEuint32(bytes memory value) internal pure returns (euint32) {
 }
 // ********** OPERATOR OVERLOADING ************* //
 
-using {operatorAddEbool as +, BindingsEbool.add} for ebool global;
-
-function operatorAddEbool(ebool lhs, ebool  rhs) pure returns (ebool) {
-    return TFHE.add(lhs, rhs);
-}
-
 using {operatorAddEuint8 as +, BindingsEuint8.add} for euint8 global;
 
 function operatorAddEuint8(euint8 lhs, euint8  rhs) pure returns (euint8) {
@@ -3643,12 +2730,6 @@ using {operatorAddEuint32 as +, BindingsEuint32.add} for euint32 global;
 
 function operatorAddEuint32(euint32 lhs, euint32  rhs) pure returns (euint32) {
     return TFHE.add(lhs, rhs);
-}
-
-using {operatorSubEbool as -, BindingsEbool.sub} for ebool global;
-
-function operatorSubEbool(ebool lhs, ebool  rhs) pure returns (ebool) {
-    return TFHE.sub(lhs, rhs);
 }
 
 using {operatorSubEuint8 as -, BindingsEuint8.sub} for euint8 global;
@@ -3669,12 +2750,6 @@ function operatorSubEuint32(euint32 lhs, euint32  rhs) pure returns (euint32) {
     return TFHE.sub(lhs, rhs);
 }
 
-using {operatorMulEbool as *, BindingsEbool.mul} for ebool global;
-
-function operatorMulEbool(ebool lhs, ebool  rhs) pure returns (ebool) {
-    return TFHE.mul(lhs, rhs);
-}
-
 using {operatorMulEuint8 as *, BindingsEuint8.mul} for euint8 global;
 
 function operatorMulEuint8(euint8 lhs, euint8  rhs) pure returns (euint8) {
@@ -3691,12 +2766,6 @@ using {operatorMulEuint32 as *, BindingsEuint32.mul} for euint32 global;
 
 function operatorMulEuint32(euint32 lhs, euint32  rhs) pure returns (euint32) {
     return TFHE.mul(lhs, rhs);
-}
-
-using {operatorDivEbool as /, BindingsEbool.div} for ebool global;
-
-function operatorDivEbool(ebool lhs, ebool  rhs) pure returns (ebool) {
-    return TFHE.div(lhs, rhs);
 }
 
 using {operatorDivEuint8 as /, BindingsEuint8.div} for euint8 global;
@@ -3717,12 +2786,6 @@ function operatorDivEuint32(euint32 lhs, euint32  rhs) pure returns (euint32) {
     return TFHE.div(lhs, rhs);
 }
 
-using {operatorOrEbool as |, BindingsEbool.or} for ebool global;
-
-function operatorOrEbool(ebool lhs, ebool  rhs) pure returns (ebool) {
-    return TFHE.or(lhs, rhs);
-}
-
 using {operatorOrEuint8 as |, BindingsEuint8.or} for euint8 global;
 
 function operatorOrEuint8(euint8 lhs, euint8  rhs) pure returns (euint8) {
@@ -3739,12 +2802,6 @@ using {operatorOrEuint32 as |, BindingsEuint32.or} for euint32 global;
 
 function operatorOrEuint32(euint32 lhs, euint32  rhs) pure returns (euint32) {
     return TFHE.or(lhs, rhs);
-}
-
-using {operatorAndEbool as &, BindingsEbool.and} for ebool global;
-
-function operatorAndEbool(ebool lhs, ebool  rhs) pure returns (ebool) {
-    return TFHE.and(lhs, rhs);
 }
 
 using {operatorAndEuint8 as &, BindingsEuint8.and} for euint8 global;
@@ -3767,31 +2824,6 @@ function operatorAndEuint32(euint32 lhs, euint32  rhs) pure returns (euint32) {
 
 // ********** BINDING DEFS ************* //
 
-using {BindingsEbool.eq} for ebool global;
-
-library BindingsEbool {
-function add(ebool lhs, ebool  rhs) pure internal returns (ebool) {
-    return TFHE.add(lhs, rhs);
-}
-function mul(ebool lhs, ebool  rhs) pure internal returns (ebool) {
-    return TFHE.mul(lhs, rhs);
-}
-function div(ebool lhs, ebool  rhs) pure internal returns (ebool) {
-    return TFHE.div(lhs, rhs);
-}
-function sub(ebool lhs, ebool  rhs) pure internal returns (ebool) {
-    return TFHE.sub(lhs, rhs);
-}
-function eq(ebool lhs, ebool  rhs) pure internal returns (ebool) {
-    return TFHE.eq(lhs, rhs);
-}
-function and(ebool lhs, ebool  rhs) pure internal returns (ebool) {
-    return TFHE.and(lhs, rhs);
-}
-function or(ebool lhs, ebool  rhs) pure internal returns (ebool) {
-    return TFHE.or(lhs, rhs);
-}
-}
 using {BindingsEuint8.eq} for euint8 global;
 
 library BindingsEuint8 {
@@ -3807,7 +2839,7 @@ function div(euint8 lhs, euint8  rhs) pure internal returns (euint8) {
 function sub(euint8 lhs, euint8  rhs) pure internal returns (euint8) {
     return TFHE.sub(lhs, rhs);
 }
-function eq(euint8 lhs, euint8  rhs) pure internal returns (euint8) {
+function eq(euint8 lhs, euint8  rhs) pure internal returns (ebool) {
     return TFHE.eq(lhs, rhs);
 }
 function and(euint8 lhs, euint8  rhs) pure internal returns (euint8) {
@@ -3832,7 +2864,7 @@ function div(euint16 lhs, euint16  rhs) pure internal returns (euint16) {
 function sub(euint16 lhs, euint16  rhs) pure internal returns (euint16) {
     return TFHE.sub(lhs, rhs);
 }
-function eq(euint16 lhs, euint16  rhs) pure internal returns (euint16) {
+function eq(euint16 lhs, euint16  rhs) pure internal returns (ebool) {
     return TFHE.eq(lhs, rhs);
 }
 function and(euint16 lhs, euint16  rhs) pure internal returns (euint16) {
@@ -3857,7 +2889,7 @@ function div(euint32 lhs, euint32  rhs) pure internal returns (euint32) {
 function sub(euint32 lhs, euint32  rhs) pure internal returns (euint32) {
     return TFHE.sub(lhs, rhs);
 }
-function eq(euint32 lhs, euint32  rhs) pure internal returns (euint32) {
+function eq(euint32 lhs, euint32  rhs) pure internal returns (ebool) {
     return TFHE.eq(lhs, rhs);
 }
 function and(euint32 lhs, euint32  rhs) pure internal returns (euint32) {

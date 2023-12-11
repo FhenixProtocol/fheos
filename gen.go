@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"runtime"
 
-	arbitrum "github.com/fhenixprotocol/fheos/chains/arbitrum"
+	"github.com/fhenixprotocol/fheos/chains/arbitrum"
 )
 
 func main() {
