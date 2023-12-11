@@ -1,4 +1,4 @@
-precompiles/node_modules/*
+*/node_modules/*
 precompiles/cache/*
 precompiles/types/*
 precompiles/artifacts/*
