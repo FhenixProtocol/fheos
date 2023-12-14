@@ -6,10 +6,6 @@ import (
 	"strings"
 )
 
-func initLogger() {
-
-}
-
 func logLevelFromString(logLevel string, defaultLevel logrus.Level) logrus.Level {
 	logLevelUpper := strings.ToUpper(logLevel)
 	switch logLevelUpper {
