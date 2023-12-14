@@ -54,6 +54,7 @@ var generateMetadataPayload = function () { return __awaiter(void 0, void 0, voi
                             inputCount: value.paramsCount,
                             returnValueType: value.returnType,
                             inputs: value.inputTypes,
+                            isComparisonMathOp: value.isComparisonMathOp
                         };
                     })];
         }
@@ -75,7 +76,7 @@ function generateCombinations(arr, current, index) {
     }
     return result;
 }
-var getReturnType = function (inputs, returnType) {
+var getReturnType = function (inputs, isComparisonMathOp, returnType) {
     if (returnType === 'plaintext') {
         if (inputs.length != 1) {
             throw new Error("expecting exactly one input for functions returning plaintext");
@@ -92,6 +93,9 @@ var getReturnType = function (inputs, returnType) {
     if (inputs.includes("bytes") || inputs.includes("bytes32")) {
         return "bytes";
     }
+    if (isComparisonMathOp) {
+        return "ebool";
+    }
     var maxRank = 0;
     for (var _i = 0, inputs_1 = inputs; _i < inputs_1.length; _i++) {
         var input = inputs_1[_i];
@@ -100,13 +104,13 @@ var getReturnType = function (inputs, returnType) {
     }
     return common_1.EInputType[maxRank];
 };
-function getAllFunctionDeclarations(functionName, functions, returnValueType) {
+function getAllFunctionDeclarations(functionName, functions, isComparisonMathOp, returnValueType) {
     var functionDecl = "function ".concat(functionName);
     // Generate all combinations of input parameters.
     var allCombinations = generateCombinations(functions);
     // Create function declarations for each combination.
     return allCombinations.map(function (combination) {
-        var returnType = getReturnType(combination, returnValueType);
+        var returnType = getReturnType(combination, isComparisonMathOp, returnValueType);
         var returnStr = "internal pure returns (".concat(returnType, ");");
         return "".concat(functionDecl, "(").concat(combination.join(', '), ") ").concat(returnStr);
     });
@@ -116,7 +120,7 @@ function getAllFunctionDeclarations(functionName, functions, returnValueType) {
  * This generates all the different types of function headers that can exist
  */
 var genSolidityFunctionHeaders = function (metadata) {
-    var functionName = metadata.functionName, inputCount = metadata.inputCount, hasDifferentInputTypes = metadata.hasDifferentInputTypes, returnValueType = metadata.returnValueType, inputs = metadata.inputs;
+    var functionName = metadata.functionName, inputCount = metadata.inputCount, hasDifferentInputTypes = metadata.hasDifferentInputTypes, returnValueType = metadata.returnValueType, inputs = metadata.inputs, isComparisonMathOp = metadata.isComparisonMathOp;
     var functions = [];
     inputs.forEach(function (input, idx) {
         var inputVariants = [];
@@ -124,6 +128,9 @@ var genSolidityFunctionHeaders = function (metadata) {
             case "encrypted":
                 for (var _i = 0, EInputType_1 = common_1.EInputType; _i < EInputType_1.length; _i++) {
                     var inputType = EInputType_1[_i];
+                    if (inputs.length === 2 && !isComparisonMathOp && common_1.EComparisonType.includes(inputType)) {
+                        continue;
+                    }
                     inputVariants.push("input".concat(idx, " ").concat(inputType));
                 }
                 break;
@@ -138,7 +145,7 @@ var genSolidityFunctionHeaders = function (metadata) {
         }
         functions.push(inputVariants);
     });
-    return getAllFunctionDeclarations(functionName, functions, returnValueType);
+    return getAllFunctionDeclarations(functionName, functions, isComparisonMathOp, returnValueType);
 };
 // Regular expression to match the Solidity function signature pattern
 var functionPattern = /function (\w+)\((.*?)\) internal pure returns \((.*?)\);/;
@@ -209,6 +216,9 @@ var main = function () { return __awaiter(void 0, void 0, void 0, function () {
                         if (fromType === "bool") {
                             continue;
                         }
+                        if (fromType === toType) {
+                            continue;
+                        }
                         outputFile += (0, templates_1.AsTypeFunction)(fromType, toType);
                     }
                 }
@@ -221,33 +231,37 @@ var main = function () { return __awaiter(void 0, void 0, void 0, function () {
                         if (!(0, common_1.valueIsEncrypted)(encType)) {
                             throw new Error("InputType mismatch");
                         }
-                        outputFile += (0, templates_1.OperatorOverloadDecl)(value.func, value.operator, encType, value.unary);
+                        if (!common_1.EComparisonType.includes(encType)) {
+                            outputFile += (0, templates_1.OperatorOverloadDecl)(value.func, value.operator, encType, value.unary);
+                        }
                     }
                 });
                 outputFile += "\n// ********** BINDING DEFS ************* //\n";
                 common_1.EInputType.forEach(function (encryptedType) {
-                    common_1.BindMathOperators.forEach(function (bindMathOp) {
-                        if (common_1.ShorthandOperations.filter(function (value) { return value.func === bindMathOp; }).length === 0) {
-                            // console.log(`${bindMathOp}`)
-                            outputFile += (0, templates_1.BindingsWithoutOperator)(bindMathOp, encryptedType);
-                        }
-                    });
-                    outputFile += (0, templates_1.BindingLibraryType)(encryptedType);
-                    common_1.BindMathOperators.forEach(function (fnToBind) {
-                        var foundFnDef = solidityHeaders.find(function (funcHeader) {
-                            var fnDef = parseFunctionDefinition(funcHeader);
-                            var input = fnDef.inputs[0];
-                            if (!common_1.EInputType.includes(input)) {
-                                return false;
+                    if (!common_1.EComparisonType.includes(encryptedType)) {
+                        common_1.BindMathOperators.forEach(function (bindMathOp) {
+                            if (common_1.ShorthandOperations.filter(function (value) { return value.func === bindMathOp; }).length === 0) {
+                                // console.log(`${bindMathOp}`)
+                                outputFile += (0, templates_1.BindingsWithoutOperator)(bindMathOp, encryptedType);
                             }
-                            return (fnDef.funcName === fnToBind && fnDef.inputs.every(function (item) { return item === input; }));
                         });
-                        if (foundFnDef) {
-                            var fnDef = parseFunctionDefinition(foundFnDef);
-                            outputFile += (0, templates_1.OperatorBinding)(fnDef.funcName, encryptedType, fnDef.inputs.length === 1);
-                        }
-                    });
-                    outputFile += (0, templates_1.PostFix)();
+                        outputFile += (0, templates_1.BindingLibraryType)(encryptedType);
+                        common_1.BindMathOperators.forEach(function (fnToBind) {
+                            var foundFnDef = solidityHeaders.find(function (funcHeader) {
+                                var fnDef = parseFunctionDefinition(funcHeader);
+                                var input = fnDef.inputs[0];
+                                if (!common_1.EInputType.includes(input)) {
+                                    return false;
+                                }
+                                return (fnDef.funcName === fnToBind && fnDef.inputs.every(function (item) { return item === input; }));
+                            });
+                            if (foundFnDef) {
+                                var fnDef = parseFunctionDefinition(foundFnDef);
+                                outputFile += (0, templates_1.OperatorBinding)(fnDef.funcName, encryptedType, fnDef.inputs.length === 1);
+                            }
+                        });
+                        outputFile += (0, templates_1.PostFix)();
+                    }
                 });
                 return [4 /*yield*/, fs.promises.writeFile('FHE.sol', outputFile)];
             case 2:

@@ -1,4 +1,5 @@
 export const EInputType = ['ebool', 'euint8', 'euint16', 'euint32'];
+export const EComparisonType = ['ebool'];
 export const EPlaintextType = ['bool', 'uint8', 'uint16', 'uint32', 'uint64', 'uint128', 'uint256'];
 export type EUintType = 'ebool' | 'euint8' | 'euint16' | 'euint32';
 export type PlaintextType = 'bool' | 'uint8' | 'uint16' | 'uint32' | 'uint64' | 'uint128' | 'uint256';

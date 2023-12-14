@@ -181,6 +181,13 @@ const castFromBytes = (name: string, toType: string): string => {
     return `Impl.verify(${name}, Common.${toType}_tfhe_go)`;
 }
 
+const castToEbool = (name: string, fromType: string): string => {
+    return `function asEbool(${fromType} value) internal pure returns (ebool) {
+        return ne(${name},  as${capitalize(fromType)}(0));
+    }\n`
+}
+
+
 
 export const AsTypeFunction = (fromType: string, toType: string) => {
 
@@ -189,6 +196,8 @@ export const AsTypeFunction = (fromType: string, toType: string) => {
         castString = castFromBytes("value", toType)
     } else if (EPlaintextType.includes(fromType)) {
         castString = castFromPlaintext("value", toType);
+    } else if (toType === "ebool") {
+        return castToEbool("value", fromType);
     } else if (!EInputType.includes(fromType)) {
         throw new Error(`Unsupported type for casting: ${fromType}`)
     }
@@ -358,6 +367,10 @@ export const BindingLibraryType = (type: string) => {
 export const OperatorBinding = (funcName: string, forType: string, unary: boolean) => {
     let unaryParameters = unary ? 'lhs' : 'lhs, rhs';
     let funcParams = unaryParameters.split(',').map((key) => {return `${forType} ${key}`}).join(', ')
+
+    if (funcName === "eq") {
+        forType = "ebool"
+    }
 
     return `\nfunction ${funcName}(${funcParams}) pure internal returns (${forType}) {
     return TFHE.${funcName}(${unaryParameters});

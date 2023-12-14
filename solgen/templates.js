@@ -19,6 +19,9 @@ var castFromPlaintext = function (name, toType) {
 var castFromBytes = function (name, toType) {
     return "Impl.verify(".concat(name, ", Common.").concat(toType, "_tfhe_go)");
 };
+var castToEbool = function (name, fromType) {
+    return "function asEbool(".concat(fromType, " value) internal pure returns (ebool) {\n        return ne(").concat(name, ",  as").concat(capitalize(fromType), "(0));\n    }\n");
+};
 var AsTypeFunction = function (fromType, toType) {
     var castString = castFromEncrypted(fromType, toType, "value");
     if (fromType === 'bytes memory') {
@@ -26,6 +29,9 @@ var AsTypeFunction = function (fromType, toType) {
     }
     else if (common_1.EPlaintextType.includes(fromType)) {
         castString = castFromPlaintext("value", toType);
+    }
+    else if (toType === "ebool") {
+        return castToEbool("value", fromType);
     }
     else if (!common_1.EInputType.includes(fromType)) {
         throw new Error("Unsupported type for casting: ".concat(fromType));
@@ -133,6 +139,9 @@ exports.BindingLibraryType = BindingLibraryType;
 var OperatorBinding = function (funcName, forType, unary) {
     var unaryParameters = unary ? 'lhs' : 'lhs, rhs';
     var funcParams = unaryParameters.split(',').map(function (key) { return "".concat(forType, " ").concat(key); }).join(', ');
+    if (funcName === "eq") {
+        forType = "ebool";
+    }
     return "\nfunction ".concat(funcName, "(").concat(funcParams, ") pure internal returns (").concat(forType, ") {\n    return TFHE.").concat(funcName, "(").concat(unaryParameters, ");\n}");
 };
 exports.OperatorBinding = OperatorBinding;

@@ -1,7 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.valueIsPlaintext = exports.valueIsEncrypted = exports.BindMathOperators = exports.ShorthandOperations = exports.UnderlyingTypes = exports.EPlaintextType = exports.EInputType = void 0;
+exports.valueIsPlaintext = exports.valueIsEncrypted = exports.BindMathOperators = exports.ShorthandOperations = exports.UnderlyingTypes = exports.EPlaintextType = exports.EComparisonType = exports.EInputType = void 0;
 exports.EInputType = ['ebool', 'euint8', 'euint16', 'euint32'];
+exports.EComparisonType = ['ebool'];
 exports.EPlaintextType = ['bool', 'uint8', 'uint16', 'uint32', 'uint64', 'uint128', 'uint256'];
 exports.UnderlyingTypes = {
     euint8: 'uint256',

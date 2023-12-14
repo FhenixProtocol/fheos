@@ -48,7 +48,7 @@ var specificFunctions = [
 ];
 function analyzeGoFile(filePath) {
     return __awaiter(this, void 0, void 0, function () {
-        var fileContent, lines, highLevelFunctionRegex, solgenCommentRegex, solgenReturnsComment, solgenInputPlaintextComment, solgenOutputPlaintextComment, solgenInput2Comment, specificFunctionAnalysis, isInsideHighLevelFunction, braceDepth, funcName, returnType, inputs, _i, lines_1, line, trimmedLine, _a, specificFunctions_1, keyfn, needsSameType, amount;
+        var fileContent, lines, highLevelFunctionRegex, solgenCommentRegex, solgenReturnsComment, solgenInputPlaintextComment, solgenOutputPlaintextComment, solgenInput2Comment, solgenComparisonMathOp, specificFunctionAnalysis, isInsideHighLevelFunction, isComparisonMathOp, braceDepth, funcName, returnType, inputs, _i, lines_1, line, trimmedLine, _a, specificFunctions_1, keyfn, needsSameType, amount;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0: return [4 /*yield*/, fs.promises.readFile(filePath, 'utf-8')];
@@ -61,8 +61,10 @@ function analyzeGoFile(filePath) {
                     solgenInputPlaintextComment = /input plaintext/;
                     solgenOutputPlaintextComment = /output plaintext/;
                     solgenInput2Comment = /input2 /;
+                    solgenComparisonMathOp = /comparison/;
                     specificFunctionAnalysis = [];
                     isInsideHighLevelFunction = false;
+                    isComparisonMathOp = false;
                     braceDepth = 0;
                     funcName = "";
                     returnType = undefined;
@@ -85,6 +87,9 @@ function analyzeGoFile(filePath) {
                                 }
                                 if (solgenOutputPlaintextComment.test(trimmedLine)) {
                                     returnType = 'plaintext';
+                                }
+                                if (solgenComparisonMathOp.test(trimmedLine)) {
+                                    isComparisonMathOp = true;
                                 }
                             }
                             braceDepth += (trimmedLine.match(/\{/g) || []).length;
@@ -117,7 +122,8 @@ function analyzeGoFile(filePath) {
                                         paramsCount: amount,
                                         needsSameType: needsSameType,
                                         returnType: returnType,
-                                        inputTypes: inputs.slice(0, amount)
+                                        inputTypes: inputs.slice(0, amount),
+                                        isComparisonMathOp: isComparisonMathOp
                                     });
                                 }
                             }
@@ -129,6 +135,7 @@ function analyzeGoFile(filePath) {
                             funcName = trimmedLine.split(' ')[1].split('(')[0].toLowerCase();
                             // If we match the high-level function, set the flag and initialize brace counting
                             isInsideHighLevelFunction = true;
+                            isComparisonMathOp = false;
                             braceDepth = 1; // starts with the opening brace of the function
                         }
                     }
