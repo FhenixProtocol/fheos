@@ -192,7 +192,17 @@ const castToEbool = (name: string, fromType: string): string => {
 export const AsTypeFunction = (fromType: string, toType: string) => {
 
     let castString = castFromEncrypted(fromType, toType, "value");
-    if (fromType === 'bytes memory') {
+    if (fromType === 'bool' && toType === 'ebool') {
+        return `function asEbool(bool value) internal pure returns (ebool) {
+    uint256 sVal = 0;
+    if (value) {
+        sVal = 1;
+    }
+
+    return asEbool(sVal);
+}\n`;
+    }
+    else if (fromType === 'bytes memory') {
         castString = castFromBytes("value", toType)
     } else if (EPlaintextType.includes(fromType)) {
         castString = castFromPlaintext("value", toType);
@@ -203,8 +213,8 @@ export const AsTypeFunction = (fromType: string, toType: string) => {
     }
 
     return `function as${capitalize(toType)}(${fromType} value) internal pure returns (${toType}) {
-        return ${toType}.wrap(${castString});
-    }\n`;
+    return ${toType}.wrap(${castString});
+}\n`;
 }
 
 
@@ -214,6 +224,7 @@ const asEuintFuncName = (typeName: EUintType): string => `as${capitalize(typeNam
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export function SolTemplate2Arg(name: string, input1: AllTypes, input2: AllTypes, returnType: AllTypes) {
+
     // special names for reencrypt function (don't check name === reencrypt) because the name could change
     let variableName1 = input2 === "bytes32" ? "value" : "lhs";
     let variableName2 = input2 === "bytes32" ? "publicKey" : "rhs";
@@ -227,6 +238,9 @@ function ${name}(${input1} ${variableName1}, ${input2} ${variableName2}) interna
         // 1. possibly cast input1
         // 2. possibly cast input2
         // 3. possibly cast return type
+        if (valueIsEncrypted(input2) && input1 !== input2) {
+           return "";
+        }
         if (valueIsEncrypted(input2) || EPlaintextType.includes(input2)) {
             let input2Cast = input1 === input2 ? variableName2 : `${asEuintFuncName(input1)}(${variableName2})`;
             //
@@ -320,6 +334,10 @@ function ${name}(${input1} input1) internal pure ${returnStr}{`;
 export function SolTemplate3Arg(name: string, input1: AllTypes, input2: AllTypes,input3: AllTypes,returnType: AllTypes) {
     if (valueIsEncrypted(returnType)) {
         if (valueIsEncrypted(input1) && valueIsEncrypted(input2) && valueIsEncrypted(input3) && input1 === 'ebool') {
+            if (input2 !== input3) {
+                return "";
+            }
+
             return `
 function ${name}(${input1} input1, ${input2} input2, ${input3} input3) internal pure returns (${returnType}) {
     if(!isInitialized(input1) || !isInitialized(input2) || !isInitialized(input3)) {
