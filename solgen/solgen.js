@@ -115,6 +115,30 @@ function getAllFunctionDeclarations(functionName, functions, isBooleanMathOp, re
         return "".concat(functionDecl, "(").concat(combination.join(', '), ") ").concat(returnStr);
     });
 }
+/** Generates a Solidity test contract based on the provided metadata */
+var generateSolidityTestContract = function (metadata) {
+    var functionName = metadata.functionName, inputCount = metadata.inputCount, hasDifferentInputTypes = metadata.hasDifferentInputTypes, returnValueType = metadata.returnValueType, inputs = metadata.inputs, isBooleanMathOp = metadata.isBooleanMathOp;
+    if (functionName === "req") {
+        return (0, templates_1.testContractReq)();
+    }
+    if (functionName === "reencrypt") {
+        return (0, templates_1.testContractReencrypt)();
+    }
+    if (inputCount === 2 && inputs[0] === "encrypted" && inputs[1] === "encrypted") {
+        if (returnValueType === "ebool") {
+            return (0, templates_1.testContract2ArgBoolRes)(functionName, isBooleanMathOp);
+        }
+        return (0, templates_1.testContract2Arg)(functionName, isBooleanMathOp);
+    }
+    if (inputCount === 1 && inputs[0] === "encrypted" && returnValueType === "encrypted") {
+        return (0, templates_1.testContract1Arg)(functionName);
+    }
+    if (inputCount === 3) {
+        return (0, templates_1.testContract3Arg)(functionName);
+    }
+    console.log("Function ".concat(functionName, " with ").concat(inputCount, " inputs that are ").concat(inputs, " is not implemented"));
+    return ["", ""];
+};
 /**
  * Generates a Solidity function based on the provided metadata
  * This generates all the different types of function headers that can exist
@@ -188,18 +212,32 @@ var generateSolidityFunction = function (parsedFunction) {
     }
 };
 var main = function () { return __awaiter(void 0, void 0, void 0, function () {
-    var metadata, solidityHeaders, _i, metadata_1, func, outputFile, _a, solidityHeaders_1, fn, funcDefinition, _b, _c, fromType, _d, EInputType_2, toType;
-    return __generator(this, function (_e) {
-        switch (_e.label) {
+    var metadata, solidityHeaders, testContracts, testContractsAbis, importLineHelper, _i, metadata_1, func, testContract, outputFile, _a, solidityHeaders_1, fn, funcDefinition, _b, _c, fromType, _d, EInputType_2, toType, _e, _f, testContract;
+    return __generator(this, function (_g) {
+        switch (_g.label) {
             case 0: return [4 /*yield*/, generateMetadataPayload()];
             case 1:
-                metadata = _e.sent();
+                metadata = _g.sent();
                 solidityHeaders = [];
+                testContracts = {};
+                testContractsAbis = "";
+                importLineHelper = "import { ";
                 for (_i = 0, metadata_1 = metadata; _i < metadata_1.length; _i++) {
                     func = metadata_1[_i];
+                    // Decrypt is already tested in every test contract
+                    if (func.functionName !== "decrypt") {
+                        testContract = generateSolidityTestContract(func);
+                        if (testContract[0] !== "") {
+                            testContracts[(0, templates_1.capitalize)(func.functionName)] = testContract[0];
+                            testContractsAbis += testContract[1];
+                            importLineHelper += "".concat((0, templates_1.capitalize)(func.functionName), "TestType,\n");
+                        }
+                    }
                     // this generates solidity header functions for all the different possible types
                     solidityHeaders = solidityHeaders.concat(genSolidityFunctionHeaders(func));
                 }
+                // replace last character in importLineHelper to be a } instead of a ,
+                importLineHelper = importLineHelper.slice(0, -2) + " } from './abis';\n";
                 outputFile = (0, templates_1.preamble)();
                 for (_a = 0, solidityHeaders_1 = solidityHeaders; _a < solidityHeaders_1.length; _a++) {
                     fn = solidityHeaders_1[_a];
@@ -262,7 +300,13 @@ var main = function () { return __awaiter(void 0, void 0, void 0, function () {
                 });
                 return [4 /*yield*/, fs.promises.writeFile('FHE.sol', outputFile)];
             case 2:
-                _e.sent();
+                _g.sent();
+                for (_e = 0, _f = Object.entries(testContracts); _e < _f.length; _e++) {
+                    testContract = _f[_e];
+                    fs.writeFileSync("../solidity/tests/contracts/".concat(testContract[0], ".sol"), testContract[1]);
+                }
+                fs.writeFileSync("../solidity/tests/abis.ts", (0, templates_1.genAbiFile)(testContractsAbis));
+                console.log(importLineHelper);
                 return [2 /*return*/];
         }
     });
