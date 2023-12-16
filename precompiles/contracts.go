@@ -350,7 +350,7 @@ func Cmux(input []byte, tp *TxParams) ([]byte, error) {
 
 	if ifTrue.UintType != ifFalse.UintType {
 		msg := "selector operands type mismatch"
-		logger.Error(msg, " control ", control.UintType, " ifTrue ", ifTrue.UintType, " ifFalse ", ifFalse.UintType)
+		logger.Error(msg, " ifTrue ", ifTrue.UintType, " ifFalse ", ifFalse.UintType)
 		return nil, errors.New(msg)
 	}
 

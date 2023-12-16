@@ -417,6 +417,22 @@ export function testContract3Arg(name: string) {
             return TFHE.decrypt(TFHE.${name}(condition, TFHE.asEuint16(a), TFHE.asEuint16(b)));
         } else if (Utils.cmp(test, "${name}: euint32")) {
             return TFHE.decrypt(TFHE.${name}(condition, TFHE.asEuint32(a), TFHE.asEuint32(b)));
+        } else if (Utils.cmp(test, "${name}: ebool")) {
+            bool aBool = true;
+            bool bBool = true;
+            
+            if (a == 0) {
+                aBool = false;
+            }
+            if (b == 0) {
+                bBool = false;
+            }
+            
+            if(TFHE.decrypt(TFHE.${name}(condition, TFHE.asEbool(aBool), TFHE.asEbool(bBool)))) {
+                return 1;
+            }
+            
+            return 0;
         } else {
             require(false, string(abi.encodePacked("test '", test, "' not found")));
         }
