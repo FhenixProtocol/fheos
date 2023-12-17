@@ -1048,7 +1048,7 @@ describe('Test Not', () =>  {
     const cases = [
         { a: 9, b: 15, expectedResult: 9 | 15, name: "" },
         { a: 7, b: 0, expectedResult: 7, name: " a | 0" },
-        { a: 0, b: 5, expectedResult: 5, name: " 0 | b" },aBool
+        { a: 0, b: 5, expectedResult: 5, name: " 0 | b" },
     ];
 
     const testCases = [
