@@ -392,8 +392,8 @@ func Gen(parent string, output string) {
 	file.WriteString(`package precompiles
 
 import (
-	"math/big"
 	fheos "github.com/fhenixprotocol/fheos/precompiles"
+	"math/big"
 )
 
 type FheOps struct {

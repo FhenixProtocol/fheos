@@ -310,7 +310,15 @@ export function testContract2ArgBoolRes(name: string, isBoolean: boolean) {
         }`
     if (isBoolean) {
         func += ` else if (Utils.cmp(test, "${name}(ebool,ebool)")) {
-            if (TFHE.decrypt(TFHE.${name}(TFHE.asEbool(a), TFHE.asEbool(b)))) {
+            bool aBool = true;
+            bool bBool = true;
+            if (a == 0) {
+                aBool = false;
+            }
+            if (b == 0) {
+                bBool = false;
+            }
+            if (TFHE.decrypt(TFHE.${name}(TFHE.asEbool(aBool), TFHE.asEbool(bBool)))) {
                 return 1;
             }
 
@@ -336,6 +344,17 @@ export function testContract1Arg(name: string) {
             return TFHE.decrypt(TFHE.${name}(TFHE.asEuint16(a)));
         } else if (Utils.cmp(test, "${name}(euint32)")) {
             return TFHE.decrypt(TFHE.${name}(TFHE.asEuint32(a)));
+        } else if (Utils.cmp(test, "${name}(ebool)")) {
+            bool aBool = true;
+            if (a == 0) {
+                aBool = false;
+            }
+            
+            if (TFHE.decrypt(TFHE.${name}(TFHE.asEbool(aBool)))) {
+                return 1;
+            }
+            
+            return 0;
         } else {
             require(false, string(abi.encodePacked("test '", test, "' not found")));
         }
@@ -454,8 +473,16 @@ export function testContract2Arg(name: string, isBoolean: boolean) {
             return TFHE.decrypt(TFHE.${name}(TFHE.asEuint32(a), TFHE.asEuint32(b)));
         }`
     if (isBoolean) {
-        func += ` else if (Utils.cmp(test, "and(ebool,ebool)")) {
-            if (TFHE.decrypt(TFHE.${name}(TFHE.asEbool(a), TFHE.asEbool(b)))) {
+        func += ` else if (Utils.cmp(test, "${name}(ebool,ebool)")) {
+            bool aBool = true;
+            bool bBool = true;
+            if (a == 0) {
+                aBool = false;
+            }
+            if (b == 0) {
+                bBool = false;
+            }
+            if (TFHE.decrypt(TFHE.${name}(TFHE.asEbool(aBool), TFHE.asEbool(bBool)))) {
                 return 1;
             }
 
