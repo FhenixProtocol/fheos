@@ -392,7 +392,7 @@ func Req(input []byte, tp *TxParams) ([]byte, error) {
 
 	ct := getCiphertext(tfhe.BytesToHash(input))
 	if ct == nil {
-		msg := "optimisticRequire unverified handle"
+		msg := "require unverified handle"
 		logger.Error(msg, " input ", hex.EncodeToString(input))
 		return nil, errors.New(msg)
 	}
@@ -400,11 +400,6 @@ func Req(input []byte, tp *TxParams) ([]byte, error) {
 	// (i.e. mutatiting the oracle DB).
 	if !tp.Commit {
 		return nil, nil
-	}
-	if ct.UintType != tfhe.Uint32 {
-		msg := "require ciphertext type is not euint32"
-		logger.Error(msg, " type ", ct.UintType)
-		return nil, errors.New(msg)
 	}
 
 	ev := evaluateRequire(ct)
