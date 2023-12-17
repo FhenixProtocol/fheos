@@ -949,15 +949,10 @@ function shr(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
     return euint32.wrap(result);
 
 }
-function not(ebool input1) internal pure  returns (ebool) {
-    if(!isInitialized(input1)) {
-        revert("One or more inputs are not initialized.");
-    }
-    uint256 unwrappedInput1 = ebool.unwrap(input1);
-    bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
-    bytes memory b = FheOps(Precompiles.Fheos).not(inputAsBytes);
-    uint256 result = Impl.getValue(b);
-    return ebool.wrap(result);
+// "not" for ebool not working in the traditional way as it is converting ebool to euint8
+// Ebool(true) is Euint8(1) so !Ebool(true) is !Euint8(1) which is Euint8(254) which is still Ebool(true)
+function not(ebool value) internal pure returns (ebool) {
+    return xor(value,  asEbool(true));
 }
 
 function not(euint8 input1) internal pure  returns (euint8) {
@@ -1004,8 +999,8 @@ function asEuint32(ebool value) internal pure returns (euint32) {
     return euint32.wrap(Impl.cast(ebool.unwrap(value), Common.euint32_tfhe_go));
 }
 function asEbool(euint8 value) internal pure returns (ebool) {
-        return ne(value,  asEuint8(0));
-    }
+    return ne(value,  asEuint8(0));
+}
 function asEuint16(euint8 value) internal pure returns (euint16) {
     return euint16.wrap(Impl.cast(euint8.unwrap(value), Common.euint16_tfhe_go));
 }
@@ -1013,8 +1008,8 @@ function asEuint32(euint8 value) internal pure returns (euint32) {
     return euint32.wrap(Impl.cast(euint8.unwrap(value), Common.euint32_tfhe_go));
 }
 function asEbool(euint16 value) internal pure returns (ebool) {
-        return ne(value,  asEuint16(0));
-    }
+    return ne(value,  asEuint16(0));
+}
 function asEuint8(euint16 value) internal pure returns (euint8) {
     return euint8.wrap(Impl.cast(euint16.unwrap(value), Common.euint8_tfhe_go));
 }
@@ -1022,8 +1017,8 @@ function asEuint32(euint16 value) internal pure returns (euint32) {
     return euint32.wrap(Impl.cast(euint16.unwrap(value), Common.euint32_tfhe_go));
 }
 function asEbool(euint32 value) internal pure returns (ebool) {
-        return ne(value,  asEuint32(0));
-    }
+    return ne(value,  asEuint32(0));
+}
 function asEuint8(euint32 value) internal pure returns (euint8) {
     return euint8.wrap(Impl.cast(euint32.unwrap(value), Common.euint8_tfhe_go));
 }

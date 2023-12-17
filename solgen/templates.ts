@@ -183,8 +183,8 @@ const castFromBytes = (name: string, toType: string): string => {
 
 const castToEbool = (name: string, fromType: string): string => {
     return `function asEbool(${fromType} value) internal pure returns (ebool) {
-        return ne(${name},  as${capitalize(fromType)}(0));
-    }\n`
+    return ne(${name},  as${capitalize(fromType)}(0));
+}\n`
 }
 
 
@@ -379,7 +379,8 @@ contract ${capitalize(name)}Test {
 }`;
 }
 export function testContractReq() {
-    let func = `function req(string calldata test, uint256 a) public pure {
+    // Req is failing on EthCall so we need to make it as tx for now
+    let func = `function req(string calldata test, uint256 a) public {
         if (Utils.cmp(test, "req(euint8)")) {
             TFHE.req(TFHE.asEuint8(a));
         } else if (Utils.cmp(test, "req(euint16)")) {
@@ -505,6 +506,14 @@ export function genAbiFile(abi: string) {
 
 
 export function SolTemplate1Arg(name: string, input1: AllTypes, returnType: AllTypes) {
+
+    if (name === "not" && input1 === "ebool") {
+        return `\n// "not" for ebool not working in the traditional way as it is converting ebool to euint8
+// Ebool(true) is Euint8(1) so !Ebool(true) is !Euint8(1) which is Euint8(254) which is still Ebool(true)
+function not(ebool value) internal pure returns (ebool) {
+    return xor(value,  asEbool(true));
+}\n`
+    }
 
     let returnStr = returnType === "none" ? `` : ` returns (${returnType}) `
 

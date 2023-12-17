@@ -20,7 +20,7 @@ var castFromBytes = function (name, toType) {
     return "Impl.verify(".concat(name, ", Common.").concat(toType, "_tfhe_go)");
 };
 var castToEbool = function (name, fromType) {
-    return "function asEbool(".concat(fromType, " value) internal pure returns (ebool) {\n        return ne(").concat(name, ",  as").concat((0, exports.capitalize)(fromType), "(0));\n    }\n");
+    return "function asEbool(".concat(fromType, " value) internal pure returns (ebool) {\n    return ne(").concat(name, ",  as").concat((0, exports.capitalize)(fromType), "(0));\n}\n");
 };
 var AsTypeFunction = function (fromType, toType) {
     var castString = castFromEncrypted(fromType, toType, "value");
@@ -109,7 +109,7 @@ function generateTestContract(name, testFunc) {
 }
 exports.generateTestContract = generateTestContract;
 function testContractReq() {
-    var func = "function req(string calldata test, uint256 a) public pure {\n        if (Utils.cmp(test, \"req(euint8)\")) {\n            TFHE.req(TFHE.asEuint8(a));\n        } else if (Utils.cmp(test, \"req(euint16)\")) {\n            TFHE.req(TFHE.asEuint16(a));\n        } else if (Utils.cmp(test, \"req(euint32)\")) {\n            TFHE.req(TFHE.asEuint32(a));\n        } else if (Utils.cmp(test, \"req(ebool)\")) {\n            bool b = true;\n            if (a == 0) {\n                b = false;\n            }\n            TFHE.req(TFHE.asEbool(b));\n        } else {\n            require(false, string(abi.encodePacked(\"test '\", test, \"' not found\")));\n        }\n    }";
+    var func = "function req(string calldata test, uint256 a) public {\n        if (Utils.cmp(test, \"req(euint8)\")) {\n            TFHE.req(TFHE.asEuint8(a));\n        } else if (Utils.cmp(test, \"req(euint16)\")) {\n            TFHE.req(TFHE.asEuint16(a));\n        } else if (Utils.cmp(test, \"req(euint32)\")) {\n            TFHE.req(TFHE.asEuint32(a));\n        } else if (Utils.cmp(test, \"req(ebool)\")) {\n            bool b = true;\n            if (a == 0) {\n                b = false;\n            }\n            TFHE.req(TFHE.asEbool(b));\n        } else {\n            require(false, string(abi.encodePacked(\"test '\", test, \"' not found\")));\n        }\n    }";
     var abi = "export interface ReqTestType extends Contract {\n    req: (test: string, a: bigint) => Promise<()>; // Adjust the method signature\n}\n";
     return [generateTestContract("req", func), abi];
 }
@@ -141,6 +141,9 @@ function genAbiFile(abi) {
 }
 exports.genAbiFile = genAbiFile;
 function SolTemplate1Arg(name, input1, returnType) {
+    if (name === "not" && input1 === "ebool") {
+        return "\n// \"not\" for ebool not working in the traditional way as it is converting ebool to euint8\n// Ebool(true) is Euint8(1) so !Ebool(true) is !Euint8(1) which is Euint8(254) which is still Ebool(true)\nfunction not(ebool value) internal pure returns (ebool) {\n    return xor(value,  asEbool(true));\n}\n";
+    }
     var returnStr = returnType === "none" ? "" : " returns (".concat(returnType, ") ");
     var funcBody = "\nfunction ".concat(name, "(").concat(input1, " input1) internal pure ").concat(returnStr, "{");
     if ((0, common_1.valueIsEncrypted)(input1)) {

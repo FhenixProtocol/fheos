@@ -25,9 +25,6 @@ import { AddTestType,
 
 import {BaseContract} from "ethers";
 
-const bUnderflow = 4;
-
-
 const deployContractFromSigner = async (con: any, signer: any, nonce?: number) => {
     return await con.deploy({
         from: signer,
@@ -71,7 +68,6 @@ const deployContract = async (contractName: string) => {
     const contract = deployedContract.connect(signer);
     return contract;
 }
-
 const getFheContract = async (contractAddress: string) => {
     const fheContract = await createFheInstance(contractAddress);
     return fheContract;
@@ -414,9 +410,7 @@ describe('Test Cmux', () =>  {
         }
     }
 });
-
-// Req is failing on EthCall (not sure why is it EthCall)
-describe.skip('Test Req', () =>  {
+describe('Test Req', () =>  {
     let contract;
 
     // We don't really need it as test but it is a test since it is async
@@ -426,8 +420,8 @@ describe.skip('Test Req', () =>  {
     });
 
     const cases = [
-        { a: 0, shouldCrash: true, name: " no crash" },
-        { a: 1, shouldCrash: false, name: " with crash" },
+        { a: 0, shouldCrash: true, name: " with crash" },
+        { a: 1, shouldCrash: false, name: " no crash" },
     ];
 
     const testCases = [
@@ -452,13 +446,14 @@ describe.skip('Test Req', () =>  {
     for (const test of testCases) {
         for (const testCase of test.cases) {
             it(`Test ${test.function}${testCase.name}`, async () => {
-                let hadCrash = false;
+                let hadEvaluationFailure = false;
                 try {
                     await contract.req(test.function, BigInt(testCase.a));
                 } catch (e) {
-                    hadCrash = true;
+                    console.log(e);
+                    hadEvaluationFailure = `${e}`.includes("execution reverted");
                 }
-                expect(hadCrash).toBe(testCase.shouldCrash);
+                expect(hadEvaluationFailure).toBe(testCase.shouldCrash);
             });
         }
     }
@@ -1035,7 +1030,6 @@ describe('Test Shr', () =>  {
         }
     }
 });
-
 describe('Test Not', () =>  {
     let contract;
 
