@@ -5,10 +5,18 @@ install:
 
 .PHONY: gen
 gen:
-	cd precompiles
 	./gen.sh
 	rm solidity/tests/contracts/*.sol || true
 	cd solgen && npm run build
+
+.PHONY: compile
+compile:
+	cd solidity && pnpm compile
+
+.PHONY: test
+test: gen compile
+	cd solidity && pnpm compile
+	cd solidity && npm test
 
 .PHONY: clean
 clean:

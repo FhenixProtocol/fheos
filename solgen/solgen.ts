@@ -16,7 +16,7 @@ import {
     testContract2ArgBoolRes,
     testContractReencrypt,
     testContractReq,
-    generateTestContractExport,
+    AsTypeTestingContract,
     genAbiFile,
     capitalize,
 } from "./templates";
@@ -276,9 +276,6 @@ const main = async () => {
         solidityHeaders = solidityHeaders.concat(genSolidityFunctionHeaders(func));
     }
 
-    // replace last character in importLineHelper to be a } instead of a ,
-    importLineHelper = importLineHelper.slice(0, -2) + " } from './abis';\n";
-
     //console.log(solidityHeaders.filter(name => name.includes('cmux')).map(item => parseFunctionDefinition(item)));
 
     let outputFile = preamble();
@@ -299,6 +296,17 @@ const main = async () => {
             outputFile += AsTypeFunction(fromType, toType);
         }
     }
+
+    for (let type of EInputType) {
+        const functionName = `as${capitalize(type)}`;
+        const testContract = AsTypeTestingContract(type);
+
+        testContracts[functionName] = testContract[0];
+        testContractsAbis += testContract[1];
+        importLineHelper += `${capitalize(functionName)}TestType,\n`
+    }
+
+    importLineHelper = importLineHelper.slice(0, -2) + " } from './abis';\n";
 
     outputFile += AsTypeFunction("bool", "ebool");
 

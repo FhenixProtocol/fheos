@@ -186,9 +186,6 @@ const castToEbool = (name: string, fromType: string): string => {
     return ne(${name},  as${capitalize(fromType)}(0));
 }\n`
 }
-
-
-
 export const AsTypeFunction = (fromType: string, toType: string) => {
 
     let castString = castFromEncrypted(fromType, toType, "value");
@@ -215,6 +212,47 @@ export const AsTypeFunction = (fromType: string, toType: string) => {
     return `function as${capitalize(toType)}(${fromType} value) internal pure returns (${toType}) {
     return ${toType}.wrap(${castString});
 }\n`;
+}
+
+function TypeCastTestingFunction(fromType: string, fromTypeForTs: string, toType: string, fromTypeEncrypted?: string) {
+    let to = capitalize(toType);
+    const retType = to.slice(1);
+    let testType = fromTypeEncrypted? fromTypeEncrypted : fromType;
+    testType = testType === 'bytes memory' ? 'PreEncrypted' : capitalize(testType);
+    testType = testType === 'Uint256' ? 'Plaintext' : testType;
+    const encryptedVal = fromTypeEncrypted ? `TFHE.as${capitalize(fromTypeEncrypted)}(val)` : "val";
+    const func = `\tfunction castFrom${testType}To${to}(${fromType} val) public pure returns (${retType}) {
+    \treturn TFHE.decrypt(TFHE.as${to}(${encryptedVal}));
+\t}\n\n`
+
+    let retTypeTs = (retType === 'bool') ? 'boolean' : retType;
+    retTypeTs = retTypeTs.includes("uint") ? 'bigint' : retTypeTs;
+    const abi =  `\tcastFrom${testType}To${to}: (val: ${fromTypeForTs}) => Promise<${retTypeTs}>;\n`;
+    return [func, abi];
+}
+
+export function AsTypeTestingContract(type: string) {
+    let funcs = "";
+    let abi = `export interface As${capitalize(type)}TestType extends Contract {\n`;
+    for (const fromType of EInputType.concat('uint256', 'bytes memory')) {
+        if (type === fromType) {
+            continue;
+        }
+
+        const fromTypeTs = (fromType === 'bytes memory') ? 'Uint8Array' : `bigint`;
+        const fromTypeSol = (fromType === 'bytes memory') ? fromType : `uint256`;
+        const fromTypeEncrypted = (EInputType.includes(fromType)) ? fromType : undefined;
+        const contractInfo = TypeCastTestingFunction(fromTypeSol, fromTypeTs, type, fromTypeEncrypted);
+        funcs += contractInfo[0];
+        abi += contractInfo[1];
+
+    }
+
+    funcs = funcs.slice(1);
+
+    abi += `}\n`;
+
+    return [generateTestContract(`As${capitalize(type)}`, funcs), abi];
 }
 
 
@@ -281,10 +319,6 @@ function ${name}(${input1} ${variableName1}, ${input2} ${variableName2}) interna
     funcBody += `\n}`
 
     return funcBody;
-}
-
-export function generateTestContractExport(functionName: string) {
-    return `export ${capitalize(functionName)}TestType;\n`;
 }
 
 export function testContract2ArgBoolRes(name: string, isBoolean: boolean) {
@@ -360,7 +394,7 @@ export function testContract1Arg(name: string) {
         }
     }`;
     const abi = `export interface ${capitalize(name)}TestType extends Contract {
-    ${name}: (test: string, a: bigint) => Promise<bigint>; // Adjust the method signature
+    ${name}: (test: string, a: bigint) => Promise<bigint>;
 }\n`
     return [generateTestContract(name, func), abi];
 }
@@ -398,7 +432,7 @@ export function testContractReq() {
         }
     }`;
     const abi = `export interface ReqTestType extends Contract {
-    req: (test: string, a: bigint) => Promise<()>; // Adjust the method signature
+    req: (test: string, a: bigint) => Promise<()>;
 }\n`
     return [generateTestContract("req", func), abi];
 }
@@ -423,7 +457,7 @@ export function testContractReencrypt() {
         }
     }`;
     const abi = `export interface ReencryptTestType extends Contract {
-    reencrypt: (test: string, a: bigint, pubkey: Uint8Array) => Promise<Uint8Array>; // Adjust the method signature
+    reencrypt: (test: string, a: bigint, pubkey: Uint8Array) => Promise<Uint8Array>;
 }\n`
     return [generateTestContract("reencrypt", func), abi];
 }
@@ -458,7 +492,7 @@ export function testContract3Arg(name: string) {
         }
     }`;
     const abi = `export interface ${capitalize(name)}TestType extends Contract {
-    ${name}: (test: string,c: boolean, a: bigint, b: bigint) => Promise<bigint>; // Adjust the method signature
+    ${name}: (test: string,c: boolean, a: bigint, b: bigint) => Promise<bigint>;
 }\n`
     return [generateTestContract(name,func), abi];
 }
@@ -495,7 +529,7 @@ export function testContract2Arg(name: string, isBoolean: boolean) {
         }
     }`;
     const abi = `export interface ${capitalize(name)}TestType extends Contract {
-    ${name}: (test: string, a: bigint, b: bigint) => Promise<bigint>; // Adjust the method signature
+    ${name}: (test: string, a: bigint, b: bigint) => Promise<bigint>;
 }\n`
     return [generateTestContract(name,func), abi];
 }

@@ -212,12 +212,12 @@ var generateSolidityFunction = function (parsedFunction) {
     }
 };
 var main = function () { return __awaiter(void 0, void 0, void 0, function () {
-    var metadata, solidityHeaders, testContracts, testContractsAbis, importLineHelper, _i, metadata_1, func, testContract, outputFile, _a, solidityHeaders_1, fn, funcDefinition, _b, _c, fromType, _d, EInputType_2, toType, _e, _f, testContract;
-    return __generator(this, function (_g) {
-        switch (_g.label) {
+    var metadata, solidityHeaders, testContracts, testContractsAbis, importLineHelper, _i, metadata_1, func, testContract, outputFile, _a, solidityHeaders_1, fn, funcDefinition, _b, _c, fromType, _d, EInputType_2, toType, _e, EInputType_3, type, functionName, testContract, _f, _g, testContract;
+    return __generator(this, function (_h) {
+        switch (_h.label) {
             case 0: return [4 /*yield*/, generateMetadataPayload()];
             case 1:
-                metadata = _g.sent();
+                metadata = _h.sent();
                 solidityHeaders = [];
                 testContracts = {};
                 testContractsAbis = "";
@@ -236,8 +236,6 @@ var main = function () { return __awaiter(void 0, void 0, void 0, function () {
                     // this generates solidity header functions for all the different possible types
                     solidityHeaders = solidityHeaders.concat(genSolidityFunctionHeaders(func));
                 }
-                // replace last character in importLineHelper to be a } instead of a ,
-                importLineHelper = importLineHelper.slice(0, -2) + " } from './abis';\n";
                 outputFile = (0, templates_1.preamble)();
                 for (_a = 0, solidityHeaders_1 = solidityHeaders; _a < solidityHeaders_1.length; _a++) {
                     fn = solidityHeaders_1[_a];
@@ -256,13 +254,22 @@ var main = function () { return __awaiter(void 0, void 0, void 0, function () {
                         outputFile += (0, templates_1.AsTypeFunction)(fromType, toType);
                     }
                 }
+                for (_e = 0, EInputType_3 = common_1.EInputType; _e < EInputType_3.length; _e++) {
+                    type = EInputType_3[_e];
+                    functionName = "as".concat((0, templates_1.capitalize)(type));
+                    testContract = (0, templates_1.AsTypeTestingContract)(type);
+                    testContracts[functionName] = testContract[0];
+                    testContractsAbis += testContract[1];
+                    importLineHelper += "".concat((0, templates_1.capitalize)(functionName), "TestType,\n");
+                }
+                importLineHelper = importLineHelper.slice(0, -2) + " } from './abis';\n";
                 outputFile += (0, templates_1.AsTypeFunction)("bool", "ebool");
                 outputFile += (0, templates_1.PostFix)();
                 outputFile += "\n// ********** OPERATOR OVERLOADING ************* //\n";
                 // generate operator overloading
                 common_1.ShorthandOperations.forEach(function (value) {
-                    for (var _i = 0, EInputType_3 = common_1.EInputType; _i < EInputType_3.length; _i++) {
-                        var encType = EInputType_3[_i];
+                    for (var _i = 0, EInputType_4 = common_1.EInputType; _i < EInputType_4.length; _i++) {
+                        var encType = EInputType_4[_i];
                         if (!(0, common_1.valueIsEncrypted)(encType)) {
                             throw new Error("InputType mismatch");
                         }
@@ -300,9 +307,9 @@ var main = function () { return __awaiter(void 0, void 0, void 0, function () {
                 });
                 return [4 /*yield*/, fs.promises.writeFile('FHE.sol', outputFile)];
             case 2:
-                _g.sent();
-                for (_e = 0, _f = Object.entries(testContracts); _e < _f.length; _e++) {
-                    testContract = _f[_e];
+                _h.sent();
+                for (_f = 0, _g = Object.entries(testContracts); _f < _g.length; _f++) {
+                    testContract = _g[_f];
                     fs.writeFileSync("../solidity/tests/contracts/".concat(testContract[0], ".sol"), testContract[1]);
                 }
                 fs.writeFileSync("../solidity/tests/abis.ts", (0, templates_1.genAbiFile)(testContractsAbis));

@@ -21,7 +21,13 @@ import { AddTestType,
     MaxTestType,
     ShlTestType,
     ShrTestType,
-    NotTestType } from './abis';
+    NotTestType,
+    AsEboolTestType,
+    AsEuint8TestType,
+    AsEuint16TestType,
+    AsEuint32TestType } from './abis';
+
+
 
 import {BaseContract} from "ethers";
 
@@ -1073,3 +1079,191 @@ describe('Test Not', () =>  {
         }
     }
 });
+describe('Test AsEbool', () =>  {
+    let contract;
+    let fheContract;
+
+    const cases = [{input: BigInt(0), output: false}, {input: BigInt(5), output: true}]
+    // We don't really need it as test but it is a test since it is async
+    it(`Test Contract Deployment`, async () => {
+        const baseContract = await deployContract('AsEboolTest');
+        contract = baseContract  as AsEboolTestType;
+
+        const contractAddress = await baseContract.getAddress();
+        fheContract = await getFheContract(contractAddress);
+
+        expect(contract).toBeTruthy();
+        expect(fheContract).toBeTruthy();
+    });
+
+    it(`From euint8`, async () => {
+        for (const testCase of cases) {
+            let decryptedResult = await contract.castFromEuint8ToEbool(testCase.input);
+            expect(decryptedResult).toBe(testCase.output);
+        }
+    });
+
+    it(`From euint16`, async () => {
+        for (const testCase of cases) {
+            let decryptedResult = await contract.castFromEuint16ToEbool(testCase.input);
+            expect(decryptedResult).toBe(testCase.output);
+        }
+    });
+
+    it(`From euint32`, async () => {
+        for (const testCase of cases) {
+            let decryptedResult = await contract.castFromEuint32ToEbool(testCase.input);
+            expect(decryptedResult).toBe(testCase.output);
+        }
+    });
+
+    it(`From plaintext`, async () => {
+        for (const testCase of cases) {
+            let decryptedResult = await contract.castFromPlaintextToEbool(testCase.input);
+            expect(decryptedResult).toBe(testCase.output);
+        }
+    });
+
+    it(`From pre encrypted`, async () => {
+        for (const testCase of cases) {
+            // skip for 0 as currently encrypting 0 is not supported
+            if (testCase.input === BigInt(0)) {
+                continue;
+            }
+
+            const encInput = fheContract.instance.encrypt8(Number(testCase.input));
+            let decryptedResult = await contract.castFromPreEncryptedToEbool(encInput);
+            expect(decryptedResult).toBe(testCase.output);
+        }
+    });
+});
+describe('Test AsEuin8', () =>  {
+    let contract;
+    let fheContract;
+
+    // We don't really need it as test but it is a test since it is async
+    it(`Test Contract Deployment`, async () => {
+        const baseContract = await deployContract('AsEuint8Test');
+        contract = baseContract  as AsEuint8TestType;
+
+        const contractAddress = await baseContract.getAddress();
+        fheContract = await getFheContract(contractAddress);
+
+        expect(contract).toBeTruthy();
+        expect(fheContract).toBeTruthy();
+    });
+
+    const value = BigInt(1);
+    it(`From ebool`, async () => {
+        let decryptedResult = await contract.castFromEboolToEuint8(value);
+        expect(decryptedResult).toBe(value);
+    });
+
+    it(`From euint16`, async () => {
+        let decryptedResult = await contract.castFromEuint16ToEuint8(value);
+        expect(decryptedResult).toBe(value);
+    });
+
+    it(`From euint32`, async () => {
+        let decryptedResult = await contract.castFromEuint32ToEuint8(value);
+        expect(decryptedResult).toBe(value);
+    });
+
+    it(`From plaintext`, async () => {
+        let decryptedResult = await contract.castFromPlaintextToEuint8(value);
+        expect(decryptedResult).toBe(value);
+    });
+
+    it(`From pre encrypted`, async () => {
+        const encInput = fheContract.instance.encrypt8(Number(value));
+        let decryptedResult = await contract.castFromPreEncryptedToEuint8(encInput);
+        expect(decryptedResult).toBe(value);
+    });
+});
+describe('Test AsEuin16', () =>  {
+    let contract;
+    let fheContract;
+
+    // We don't really need it as test but it is a test since it is async
+    it(`Test Contract Deployment`, async () => {
+        const baseContract = await deployContract('AsEuint16Test');
+        contract = baseContract  as AsEuint16TestType;
+
+        const contractAddress = await baseContract.getAddress();
+        fheContract = await getFheContract(contractAddress);
+
+        expect(contract).toBeTruthy();
+        expect(fheContract).toBeTruthy();
+    });
+
+    const value = BigInt(1);
+    it(`From ebool`, async () => {
+        let decryptedResult = await contract.castFromEboolToEuint16(value);
+        expect(decryptedResult).toBe(value);
+    });
+
+    it(`From euint8`, async () => {
+        let decryptedResult = await contract.castFromEuint8ToEuint16(value);
+        expect(decryptedResult).toBe(value);
+    });
+
+    it(`From euint32`, async () => {
+        let decryptedResult = await contract.castFromEuint32ToEuint16(value);
+        expect(decryptedResult).toBe(value);
+    });
+
+    it(`From plaintext`, async () => {
+        let decryptedResult = await contract.castFromPlaintextToEuint16(value);
+        expect(decryptedResult).toBe(value);
+    });
+
+    it(`From pre encrypted`, async () => {
+        const encInput = fheContract.instance.encrypt16(Number(value));
+        let decryptedResult = await contract.castFromPreEncryptedToEuint16(encInput);
+        expect(decryptedResult).toBe(value);
+    });
+});
+describe('Test AsEuin16', () =>  {
+    let contract;
+    let fheContract;
+
+    // We don't really need it as test but it is a test since it is async
+    it(`Test Contract Deployment`, async () => {
+        const baseContract = await deployContract('AsEuint32Test');
+        contract = baseContract  as AsEuint32TestType;
+
+        const contractAddress = await baseContract.getAddress();
+        fheContract = await getFheContract(contractAddress);
+
+        expect(contract).toBeTruthy();
+        expect(fheContract).toBeTruthy();
+    });
+
+    const value = BigInt(1);
+    it(`From ebool`, async () => {
+        let decryptedResult = await contract.castFromEboolToEuint32(value);
+        expect(decryptedResult).toBe(value);
+    });
+
+    it(`From euint8`, async () => {
+        let decryptedResult = await contract.castFromEuint8ToEuint32(value);
+        expect(decryptedResult).toBe(value);
+    });
+
+    it(`From euint16`, async () => {
+        let decryptedResult = await contract.castFromEuint16ToEuint32(value);
+        expect(decryptedResult).toBe(value);
+    });
+
+    it(`From plaintext`, async () => {
+        let decryptedResult = await contract.castFromPlaintextToEuint32(value);
+        expect(decryptedResult).toBe(value);
+    });
+
+    it(`From pre encrypted`, async () => {
+        const encInput = fheContract.instance.encrypt32(Number(value));
+        let decryptedResult = await contract.castFromPreEncryptedToEuint32(encInput);
+        expect(decryptedResult).toBe(value);
+    });
+});
+
