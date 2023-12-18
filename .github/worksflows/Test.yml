@@ -1,0 +1,44 @@
+  runs-on: ubuntu-latest
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        token: ${{ secrets.GH_PAT }}
+    - run: |
+        FHE_OPS_DEST=${1:-"../precompiles"}
+        OUTPUT=${2:-"chains/arbitrum"}
+        
+        go run gen.go 1
+        if [ ! -e precompiles/contracts ]; then
+            mkdir precompiles/contracts
+        fi
+        cp FheOs_gen.sol precompiles/contracts/FheOs.sol
+        mv FheOs_gen.sol solidity/FheOS.sol
+        cd precompiles
+        rm -rf artifacts
+        yarn
+        yarn build
+        rm -r ./contracts/
+        cd ../
+        go run gen.go 2 $OUTPUT
+        rm *_gen*
+    - uses: actions/checkout@v4
+      name: Checkout Fhenix-Contracts
+      with:
+        repository: fhenix-contracts
+        ref: 'main'
+        token:  ${{ secrets.GH_PAT }}
+    - name: setup git config
+      run: |
+        git config user.name "GitHub Actions Bot"
+        git config user.email "<>"
+    - name: Copy test contracts & Generated libs
+      run: |
+        cp solidity/contracts/* fhenix-contracts/test/contracts/*
+        cp solidity/FHE.sol fhenix-contracts/contracts/
+        cp solidity/FheOS.sol fhenix-contracts/contracts/
+    - name: Commit Changes
+      run: |
+        cd fhenix-contracts && git commit -a
+    - run: git push origin master
