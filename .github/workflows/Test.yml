@@ -59,7 +59,7 @@ jobs:
           git config user.email "fhenixprotocol@github.com"
       - name: Copy test contracts & Generated libs
         run: |
-          cp fheos/solidity/contracts/* fhenix-contracts/test/contracts/*
+          cp fheos/tests/contracts/* fhenix-contracts/test/contracts/*
           cp fheos/solidity/FHE.sol fhenix-contracts/contracts/
           cp fheos/solidity/FheOS.sol fhenix-contracts/contracts/
       - name: Commit Changes
