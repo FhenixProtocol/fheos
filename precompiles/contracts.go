@@ -337,19 +337,19 @@ func Lt(input []byte, tp *TxParams) ([]byte, error) {
 	return resultHash[:], nil
 }
 
-func Cmux(input []byte, tp *TxParams) ([]byte, error) {
+func Select(input []byte, tp *TxParams) ([]byte, error) {
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
 	control, ifTrue, ifFalse, err := get3VerifiedOperands(input)
 	if err != nil {
-		logger.Error("selector inputs not verified input len: ", len(input), " err: ", err)
+		logger.Error("select inputs not verified input len: ", len(input), " err: ", err)
 		return nil, err
 	}
 
 	if ifTrue.UintType != ifFalse.UintType {
-		msg := "selector operands type mismatch"
+		msg := "select operands type mismatch"
 		logger.Error(msg, " ifTrue ", ifTrue.UintType, " ifFalse ", ifFalse.UintType)
 		return nil, errors.New(msg)
 	}
@@ -361,13 +361,13 @@ func Cmux(input []byte, tp *TxParams) ([]byte, error) {
 
 	result, err := control.Cmux(ifTrue, ifFalse)
 	if err != nil {
-		logger.Error("selector failed ", " err ", err)
+		logger.Error("select failed ", " err ", err)
 		return nil, err
 	}
 	importCiphertext(result)
 
 	resultHash := result.Hash()
-	logger.Debug("selector success ", " control ", control.Hash().Hex(), " ifTrue ", ifTrue.Hash().Hex(), " ifFalse ", ifTrue.Hash().Hex(), " result ", resultHash.Hex())
+	logger.Debug("select success ", " control ", control.Hash().Hex(), " ifTrue ", ifTrue.Hash().Hex(), " ifFalse ", ifTrue.Hash().Hex(), " result ", resultHash.Hex())
 	return resultHash[:], nil
 }
 
