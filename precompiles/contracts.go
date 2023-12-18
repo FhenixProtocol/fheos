@@ -3,7 +3,6 @@ package precompiles
 import (
 	"encoding/hex"
 	"errors"
-	"github.com/holiman/uint256"
 	"math/big"
 	"runtime"
 
@@ -46,18 +45,6 @@ func getFunctionName() string {
 	pc, _, _, _ := runtime.Caller(1)
 	funcName := runtime.FuncForPC(pc).Name()
 	return funcName
-}
-
-// Return a memory with a layout that matches the `bytes` EVM type, namely:
-//   - 32 byte integer in big-endian order as length
-//   - the actual bytes in the `bytes` value
-func toEVMBytes(input []byte) []byte {
-	len := uint64(len(input))
-	lenBytes32 := uint256.NewInt(len).Bytes32()
-	ret := make([]byte, 0, len+32)
-	ret = append(ret, lenBytes32[:]...)
-	ret = append(ret, input...)
-	return ret
 }
 
 // ============================
@@ -1004,5 +991,5 @@ func GetNetworkPublicKey(tp *TxParams) ([]byte, error) {
 		return nil, err
 	}
 
-	return toEVMBytes(pk), nil
+	return pk, nil
 }
