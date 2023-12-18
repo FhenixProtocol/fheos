@@ -55,10 +55,10 @@ jobs:
           git config user.email "<>"
       - name: Copy test contracts & Generated libs
         run: |
-          cp solidity/contracts/* fhenix-contracts/test/contracts/*
-          cp solidity/FHE.sol fhenix-contracts/contracts/
-          cp solidity/FheOS.sol fhenix-contracts/contracts/
+          cp ../solidity/contracts/* test/contracts/*
+          cp ../solidity/FHE.sol contracts/
+          cp ../solidity/FheOS.sol contracts/
       - name: Commit Changes
         run: |
-          cd fhenix-contracts && git commit -a
-      - run: git push origin master
+          git commit -m "FheOS updated - pushing new contracts and scripts"
+      - run: git push origin main
