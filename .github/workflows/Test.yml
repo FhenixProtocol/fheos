@@ -13,6 +13,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          path: fheos
           submodules: recursive
           token: ${{ secrets.GH_PAT }}
       - uses: actions/setup-go@v4
@@ -47,7 +48,7 @@ jobs:
         name: Checkout Fhenix-Contracts
         with:
           repository: FhenixProtocol/fhenix-contracts
-          clean: false
+          path: fhenix-contracts
           ref: 'main'
           token:  ${{ secrets.GH_PAT }}
       - name: setup git config
