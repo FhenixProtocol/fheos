@@ -17,8 +17,8 @@ export interface MulTestType extends Contract {
 export interface LtTestType extends Contract {
     lt: (test: string, a: bigint, b: bigint) => Promise<bigint>;
 }
-export interface CmuxTestType extends Contract {
-    cmux: (test: string,c: boolean, a: bigint, b: bigint) => Promise<bigint>;
+export interface SelectTestType extends Contract {
+    select: (test: string,c: boolean, a: bigint, b: bigint) => Promise<bigint>;
 }
 export interface ReqTestType extends Contract {
     req: (test: string, a: bigint) => Promise<()>;
