@@ -25,7 +25,7 @@ jobs:
           version: "8"
       - name: Build go-tfhe
         run: |
-          cd go-tfhe && make build-rust
+          cd fheos/go-tfhe && make build-rust
       - run: |
           FHE_OPS_DEST=${1:-"../precompiles"}
           OUTPUT=${2:-"chains/arbitrum"}
