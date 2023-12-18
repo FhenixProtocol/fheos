@@ -94,13 +94,13 @@ library Impl {
         result = getValue(output);
     }
     
-    function cmux(uint256 control, uint256 ifTrue, uint256 ifFalse) internal pure returns (uint256 result) {
+    function select(uint256 control, uint256 ifTrue, uint256 ifFalse) internal pure returns (uint256 result) {
         bytes memory input = bytes.concat(bytes32(control), bytes32(ifTrue), bytes32(ifFalse));
 
         bytes memory output;
 
         // Call the trivialEncrypt precompile.
-        output = FheOps(Precompiles.Fheos).cmux(input);
+        output = FheOps(Precompiles.Fheos).select(input);
 
         result = getValue(output);
     }

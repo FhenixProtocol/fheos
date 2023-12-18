@@ -18,7 +18,7 @@ export interface LtTestType extends Contract {
     lt: (test: string, a: bigint, b: bigint) => Promise<bigint>;
 }
 export interface SelectTestType extends Contract {
-    select: (test: string,c: boolean, a: bigint, b: bigint) => Promise<bigint>;
+    select: (test: string, c: boolean, a: bigint, b: bigint) => Promise<bigint>;
 }
 export interface ReqTestType extends Contract {
     req: (test: string, a: bigint) => Promise<()>;
