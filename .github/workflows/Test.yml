@@ -18,6 +18,10 @@ jobs:
       - uses: actions/setup-go@v4
         with:
           go-version: 1.21
+      - name: "Install Pnpm"
+        uses: "pnpm/action-setup@v2"
+        with:
+          version: "8"
       - name: Build go-tfhe
         run: |
           cd go-tfhe && make build-rust
