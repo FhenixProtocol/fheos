@@ -24,7 +24,10 @@ var castToEbool = function (name, fromType) {
 };
 var AsTypeFunction = function (fromType, toType) {
     var castString = castFromEncrypted(fromType, toType, "value");
-    if (fromType === 'bytes memory') {
+    if (fromType === 'bool' && toType === 'ebool') {
+        return "function asEbool(bool value) internal pure returns (ebool) {\n    uint256 sVal = 0;\n    if (value) {\n        sVal = 1;\n    }\n\n    return asEbool(sVal);\n}\n";
+    }
+    else if (fromType === 'bytes memory') {
         castString = castFromBytes("value", toType);
     }
     else if (common_1.EPlaintextType.includes(fromType)) {
@@ -36,7 +39,7 @@ var AsTypeFunction = function (fromType, toType) {
     else if (!common_1.EInputType.includes(fromType)) {
         throw new Error("Unsupported type for casting: ".concat(fromType));
     }
-    return "function as".concat(capitalize(toType), "(").concat(fromType, " value) internal pure returns (").concat(toType, ") {\n        return ").concat(toType, ".wrap(").concat(castString, ");\n    }\n");
+    return "function as".concat(capitalize(toType), "(").concat(fromType, " value) internal pure returns (").concat(toType, ") {\n    return ").concat(toType, ".wrap(").concat(castString, ");\n}\n");
 };
 exports.AsTypeFunction = AsTypeFunction;
 var unwrapType = function (typeName, inputName) { return "".concat(typeName, ".unwrap(").concat(inputName, ")"); };
@@ -53,6 +56,9 @@ function SolTemplate2Arg(name, input1, input2, returnType) {
         // 1. possibly cast input1
         // 2. possibly cast input2
         // 3. possibly cast return type
+        if ((0, common_1.valueIsEncrypted)(input2) && input1 !== input2) {
+            return "";
+        }
         if ((0, common_1.valueIsEncrypted)(input2) || common_1.EPlaintextType.includes(input2)) {
             var input2Cast = input1 === input2 ? variableName2 : "".concat(asEuintFuncName(input1), "(").concat(variableName2, ")");
             //
@@ -107,6 +113,9 @@ exports.SolTemplate1Arg = SolTemplate1Arg;
 function SolTemplate3Arg(name, input1, input2, input3, returnType) {
     if ((0, common_1.valueIsEncrypted)(returnType)) {
         if ((0, common_1.valueIsEncrypted)(input1) && (0, common_1.valueIsEncrypted)(input2) && (0, common_1.valueIsEncrypted)(input3) && input1 === 'ebool') {
+            if (input2 !== input3) {
+                return "";
+            }
             return "\nfunction ".concat(name, "(").concat(input1, " input1, ").concat(input2, " input2, ").concat(input3, " input3) internal pure returns (").concat(returnType, ") {\n    if(!isInitialized(input1) || !isInitialized(input2) || !isInitialized(input3)) {\n        revert(\"One or more inputs are not initialized.\");\n    }\n\n    ").concat(common_1.UnderlyingTypes[input1], " unwrappedInput1 = ").concat(unwrapType(input1, "input1"), ";\n    ").concat(common_1.UnderlyingTypes[input2], " unwrappedInput2 = ").concat(unwrapType(input2, "input2"), ";\n    ").concat(common_1.UnderlyingTypes[input3], " unwrappedInput3 = ").concat(unwrapType(input3, "input3"), ";\n\n    ").concat(common_1.UnderlyingTypes[returnType], " result = Impl.").concat(name, "(unwrappedInput1, unwrappedInput2, unwrappedInput3);\n    return ").concat(wrapType(returnType, "result"), ";\n    }");
         }
         else {

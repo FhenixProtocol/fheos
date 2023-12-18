@@ -27,7 +27,7 @@ interface FunctionMetadata {
     hasDifferentInputTypes: boolean;
     returnValueType?: string;
     inputs: AllTypes[];
-    isComparisonMathOp : boolean;
+    isBooleanMathOp : boolean;
 }
 
 const generateMetadataPayload = async (): Promise<FunctionMetadata[]> => {
@@ -40,7 +40,7 @@ const generateMetadataPayload = async (): Promise<FunctionMetadata[]> => {
             inputCount: value.paramsCount,
             returnValueType: value.returnType,
             inputs: value.inputTypes,
-            isComparisonMathOp: value.isComparisonMathOp
+            isBooleanMathOp: value.isBooleanMathOp
         }
     })
 }
@@ -60,7 +60,7 @@ function generateCombinations(arr: string[][], current: string[] = [], index: nu
     return result;
 }
 
-const getReturnType = (inputs: string[], isComparisonMathOp: boolean, returnType?: string) => {
+const getReturnType = (inputs: string[], isBooleanMathOp: boolean, returnType?: string) => {
     if (returnType === 'plaintext') {
         if (inputs.length != 1) {
             throw new Error("expecting exactly one input for functions returning plaintext");
@@ -83,9 +83,9 @@ const getReturnType = (inputs: string[], isComparisonMathOp: boolean, returnType
         return "bytes";
     }
 
-    if (isComparisonMathOp) {
-        return "ebool";
-    }
+    // if (isBooleanMathOp) {
+    //     return "ebool";
+    // }
 
     let maxRank = 0;
     for (let input of inputs) {
@@ -96,7 +96,7 @@ const getReturnType = (inputs: string[], isComparisonMathOp: boolean, returnType
     return EInputType[maxRank]
 }
 
-function getAllFunctionDeclarations(functionName: string, functions: string[][], isComparisonMathOp: boolean, returnValueType?: string): string[] {
+function getAllFunctionDeclarations(functionName: string, functions: string[][], isBooleanMathOp: boolean, returnValueType?: string): string[] {
     let functionDecl = `function ${functionName}`;
 
     // Generate all combinations of input parameters.
@@ -104,7 +104,7 @@ function getAllFunctionDeclarations(functionName: string, functions: string[][],
 
     // Create function declarations for each combination.
     return allCombinations.map(combination => {
-        let returnType = getReturnType(combination, isComparisonMathOp, returnValueType);
+        let returnType = getReturnType(combination, isBooleanMathOp, returnValueType);
         let returnStr =  `internal pure returns (${returnType});`;
 
         return `${functionDecl}(${combination.join(', ')}) ${returnStr}`;
@@ -122,7 +122,7 @@ const genSolidityFunctionHeaders = (metadata: FunctionMetadata): string[] => {
         hasDifferentInputTypes,
         returnValueType,
         inputs,
-        isComparisonMathOp
+        isBooleanMathOp
     } = metadata;
 
     let functions: string[][] = [];
@@ -132,7 +132,7 @@ const genSolidityFunctionHeaders = (metadata: FunctionMetadata): string[] => {
         switch (input) {
             case "encrypted":
                 for (let inputType of EInputType) {
-                    if (inputs.length === 2 && !isComparisonMathOp && EComparisonType.includes(inputType)) {
+                    if (inputs.length === 2 && !isBooleanMathOp && EComparisonType.includes(inputType)) {
                         continue;
                     }
                     inputVariants.push(`input${idx} ${inputType}`)
@@ -149,7 +149,7 @@ const genSolidityFunctionHeaders = (metadata: FunctionMetadata): string[] => {
         functions.push(inputVariants);
     });
 
-    return getAllFunctionDeclarations(functionName, functions, isComparisonMathOp, returnValueType);
+    return getAllFunctionDeclarations(functionName, functions, isBooleanMathOp, returnValueType);
 };
 
 type ParsedFunction = {
@@ -234,17 +234,15 @@ const main = async () => {
     // generate casting functions
     for (let fromType of EInputType.concat('uint256', 'bytes memory')) {
         for (let toType of EInputType) {
-
-            // casting from bool is annoying - if we really need this we can add it later
-            if (fromType === "bool") {
-                continue;
-            }
             if (fromType === toType) {
                 continue;
             }
+
             outputFile += AsTypeFunction(fromType, toType);
         }
     }
+
+    outputFile += AsTypeFunction("bool", "ebool");
 
     outputFile += PostFix();
 
