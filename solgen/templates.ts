@@ -492,11 +492,10 @@ export function testContract3Arg(name: string) {
         }
     }`;
     const abi = `export interface ${capitalize(name)}TestType extends Contract {
-    ${name}: (test: string,c: boolean, a: bigint, b: bigint) => Promise<bigint>;
+    ${name}: (test: string, c: boolean, a: bigint, b: bigint) => Promise<bigint>;
 }\n`
-    return [generateTestContract(name,func), abi];
+    return [generateTestContract(name, func), abi];
 }
-
 
 export function testContract2Arg(name: string, isBoolean: boolean) {
     let func = ` function ${name}(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
