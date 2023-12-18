@@ -47,6 +47,7 @@ jobs:
         name: Checkout Fhenix-Contracts
         with:
           repository: FhenixProtocol/fhenix-contracts
+          clean: false
           ref: 'main'
           token:  ${{ secrets.GH_PAT }}
       - name: setup git config
