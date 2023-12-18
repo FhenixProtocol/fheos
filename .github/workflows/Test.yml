@@ -27,6 +27,7 @@ jobs:
         run: |
           cd fheos/go-tfhe && make build-rust
       - run: |
+          cd fheos
           FHE_OPS_DEST=${1:-"../precompiles"}
           OUTPUT=${2:-"chains/arbitrum"}
           
@@ -57,9 +58,9 @@ jobs:
           git config user.email "<>"
       - name: Copy test contracts & Generated libs
         run: |
-          cp ../solidity/contracts/* test/contracts/*
-          cp ../solidity/FHE.sol contracts/
-          cp ../solidity/FheOS.sol contracts/
+          cp fheos/solidity/contracts/* fhenix-contracts/test/contracts/*
+          cp fheos/solidity/FHE.sol fhenix-contracts/contracts/
+          cp fheos/solidity/FheOS.sol fhenix-contracts/contracts/
       - name: Commit Changes
         run: |
           git commit -m "FheOS updated - pushing new contracts and scripts"
