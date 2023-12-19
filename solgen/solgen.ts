@@ -139,11 +139,11 @@ const generateSolidityTestContract = (metadata: FunctionMetadata): string[] => {
         return testContract2Arg(functionName, isBooleanMathOp);
     }
 
-    if(inputCount === 1 && inputs[0] === "encrypted" && returnValueType === "encrypted") {
+    if (inputCount === 1 && inputs[0] === "encrypted" && returnValueType === "encrypted") {
         return testContract1Arg(functionName);
     }
 
-    if(inputCount === 3) {
+    if (inputCount === 3) {
         return testContract3Arg(functionName);
     }
 
@@ -264,7 +264,7 @@ const main = async () => {
         // Decrypt is already tested in every test contract
         if (func.functionName !== "decrypt") {
             // this generates test contract for every function
-            const testContract= generateSolidityTestContract(func);
+            const testContract = generateSolidityTestContract(func);
             if (testContract[0] !== "") {
                 testContracts[capitalize(func.functionName)] = testContract[0];
                 testContractsAbis += testContract[1];
