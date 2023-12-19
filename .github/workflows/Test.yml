@@ -57,8 +57,8 @@ jobs:
           path: contracts.tar
 
   push-to-contracts-repo:
+    runs-on: ubuntu-latest
     steps:
-
       - uses: actions/checkout@v4
         name: Checkout Fhenix-Contracts
         with:
