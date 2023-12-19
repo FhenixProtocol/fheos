@@ -38,7 +38,9 @@ jobs:
       - name: Build go-tfhe
         run: |
           cd go-tfhe && make build-rust
-      # todo: replace this with the command from the makefile after lior makes it not depend on nitro repo
+      - name: Install Dependencies
+        run: |
+          make install
       - name: Make gen
         run: |
           make gen
@@ -59,7 +61,9 @@ jobs:
           path: contracts.tar
 
   push-to-contracts-repo:
+    needs: [build]
     runs-on: ubuntu-latest
+    # if: ${{ matrix.db_backend == 'goleveldb' }}
     steps:
       - uses: actions/checkout@v4
         name: Checkout Fhenix-Contracts
