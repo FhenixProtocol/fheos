@@ -6,8 +6,21 @@ on:
   pull_request:
     branches: [ "master" ]
 
+
 jobs:
   build:
+    # Service containers to run with `container-job`
+    services:
+      # Label used to access the service container
+      fhenix:
+        # Docker image
+        image: ghcr.io/fhenixprotocol/fhenix-node-dev:v0.0.6-standalone
+        ports:
+          # Opens tcp port
+          - 3000:3000
+          - 8548:8548
+          - 8547:8547
+  
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -26,6 +39,7 @@ jobs:
       - name: Build go-tfhe
         run: |
           cd fheos/go-tfhe && make build-rust
+      # todo: replace this with the command from the makefile after lior makes it not depend on nitro repo
       - run: |
           cd fheos
           FHE_OPS_DEST=${1:-"../precompiles"}
@@ -45,6 +59,9 @@ jobs:
           cd ../
           go run gen.go 2 $OUTPUT
           rm *_gen*
+      - name: Run tests
+        run: |
+          cd fheos && make tests
       - uses: actions/checkout@v4
         name: Checkout Fhenix-Contracts
         with:
@@ -56,18 +73,24 @@ jobs:
         run: |
           cd fhenix-contracts
           git config user.name "GitHub Actions Bot"
-          git config user.email "fhenixprotocol@github.com"
+          git config user.email "noreply@github.com"
       - name: Copy test contracts & Generated libs
         run: |
           ls -l
-          cp -r fheos/solidity/tests/contracts/* fhenix-contracts/test/contracts/*
+          mkdir -p fhenix-contracts/test/automated/contracts
+          cp -r fheos/solidity/tests/contracts/* fhenix-contracts/test/automated/contracts/*
           cp fheos/solidity/FHE.sol fhenix-contracts/contracts/
           cp fheos/solidity/FheOS.sol fhenix-contracts/contracts/
       - name: Commit Changes
         run: |
           cd fhenix-contracts
+          git checkout -b automated
           git add test/contracts/*
           git add contracts/FHE.sol
           git add contracts/FheOS.sol
           git commit -m "FheOS updated - pushing new contracts and scripts"
-      - run: cd fhenix-contracts && git push origin main
+      - name: create pull request
+        #if: blah blah
+        run: cd fhenix-contracts && gh pr create -B automated -H main --title 'Merge automated into main' --body 'Created by Github action'
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
