@@ -1,4 +1,4 @@
-name: Push to Other Repo
+name: Build & Test
 
 on:
   push:
@@ -26,7 +26,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          path: fheos
           submodules: recursive
           token: ${{ secrets.GH_PAT }}
       - uses: actions/setup-go@v4
@@ -38,59 +37,76 @@ jobs:
           version: "8"
       - name: Build go-tfhe
         run: |
-          cd fheos/go-tfhe && make build-rust
+          cd go-tfhe && make build-rust
       # todo: replace this with the command from the makefile after lior makes it not depend on nitro repo
-      - run: |
-          cd fheos
-          FHE_OPS_DEST=${1:-"../precompiles"}
-          OUTPUT=${2:-"chains/arbitrum"}
-          
-          go run gen.go 1
-          if [ ! -e precompiles/contracts ]; then
-              mkdir precompiles/contracts
-          fi
-          cp FheOs_gen.sol precompiles/contracts/FheOs.sol
-          mv FheOs_gen.sol solidity/FheOS.sol
-          cd precompiles
-          rm -rf artifacts
-          yarn
-          yarn build
-          rm -r ./contracts/
-          cd ../
-          go run gen.go 2 $OUTPUT
-          rm *_gen*
+      - name: Make gen
+        run: |
+          make gen
+      - name: Compile
       - name: Run tests
         run: |
-          cd fheos && make test
+          make test
+      
+      - name: Package Contracts
+        run: |
+          tar -cvf contracts.tar solidity/tests/contracts/ solidity/FHE.sol solidity/FheOS.sol
+      - uses: actions/upload-artifact@v3
+        name: Store contracts
+        with:
+          name: contracts.tar
+          path: contracts.tar
+
+  push-to-contracts-repo:
+    steps:
+
       - uses: actions/checkout@v4
         name: Checkout Fhenix-Contracts
         with:
           repository: FhenixProtocol/fhenix-contracts
-          path: fhenix-contracts
           ref: 'main'
           token:  ${{ secrets.GH_PAT }}
+      - uses: actions/download-artifact@v3
+        with:
+          name: contracts.tar
+          path: contracts.tar
       - name: setup git config
         run: |
-          cd fhenix-contracts
           git config user.name "GitHub Actions Bot"
           git config user.email "noreply@github.com"
       - name: Copy test contracts & Generated libs
         run: |
           ls -l
-          mkdir -p fhenix-contracts/test/automated/contracts
-          cp -r fheos/solidity/tests/contracts/* fhenix-contracts/test/automated/contracts/*
-          cp fheos/solidity/FHE.sol fhenix-contracts/contracts/
-          cp fheos/solidity/FheOS.sol fhenix-contracts/contracts/
+          mkdir -p test/automated/contracts
+          mkdir temp_extraction
+          tar -xvf contracts.tar -C temp_extraction
+          mv temp_extraction/solidity/tests/contracts/ test/automated/contracts/
+          mv temp_extraction/solidity/FHE.sol temp_extraction/solidity/FheOS.sol contracts/
       - name: Commit Changes
         run: |
           cd fhenix-contracts
           git checkout -b automated
-          git add test/contracts/*
+          git add test/automated/contracts/*
           git add contracts/FHE.sol
           git add contracts/FheOS.sol
           git commit -m "FheOS updated - pushing new contracts and scripts"
-      - name: create pull request
-        #if: blah blah
-        run: cd fhenix-contracts && gh pr create -B automated -H main --title 'Merge automated into main' --body 'Created by Github action'
-        env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create Pull Request
+        id: cpr
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GH_PAT }}
+          commit-message: Updated Contracts from FheOS
+          committer: GitHub <noreply@github.com>
+          author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
+          signoff: false
+          branch: test
+          delete-branch: true
+          title: 'Update report'
+          body: |
+            Updated contracts
+          labels: |
+            report
+            automated pr
+          team-reviewers: |
+            developers
+            qa-team
+          draft: false
