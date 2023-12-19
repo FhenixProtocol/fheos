@@ -60,7 +60,7 @@ jobs:
       - name: Copy test contracts & Generated libs
         run: |
           ls -l
-          cp fheos/solidity/tests/contracts/* fhenix-contracts/test/contracts/*
+          cp -r fheos/solidity/tests/contracts/* fhenix-contracts/test/contracts/*
           cp fheos/solidity/tests/FHE.sol fhenix-contracts/contracts/
           cp fheos/solidity/tests/FheOS.sol fhenix-contracts/contracts/
       - name: Commit Changes
