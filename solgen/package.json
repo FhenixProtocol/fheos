@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "Code that generates solidity user facing library",
   "scripts": {
-    "install": "npm install",
     "build": "tsc solgen.ts && node solgen.js && mv FHE.sol ../solidity"
   },
   "keywords": [],

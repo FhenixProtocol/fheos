@@ -211,6 +211,9 @@ interface FheOps {
 				if Ret == "*big.Int" {
 					Ret = "uint256"
 				}
+				if Ret == "string" {
+					Ret = "string memory"
+				}
 				outLine += " returns (" + Ret + ")"
 			}
 
@@ -340,6 +343,9 @@ func Gen(parent string, output string) {
 	for _, f := range functions {
 		parameters := ""
 		innerParameters := ""
+		if len(f.Inputs) > 0 {
+			parameters += ", "
+		}
 		for count, arg := range f.Inputs {
 			t := arg.Type
 			if t == "bytes" {
@@ -359,8 +365,8 @@ func Gen(parent string, output string) {
 			// Is it the last (Ignoring the TxParams)
 			if count < (len(f.Inputs) - 2) {
 				parameters += ", "
-				innerParameters += ", "
 			}
+			innerParameters += ", "
 		}
 
 		ret := "void"
@@ -435,17 +441,17 @@ type Argument struct {
 
 func GenerateFHEOperationTemplate(returnType string) *template.Template {
 	templateText := `
-func (con FheOps) {{.Name}}(c ctx, evm mech, {{.Inputs}}) ({{.ReturnType}}, error) {
+func (con FheOps) {{.Name}}(c ctx, evm mech{{.Inputs}}) ({{.ReturnType}}, error) {
 	tp := fheos.TxParamsFromEVM(evm)
-	return fheos.{{.Name}}({{.InnerInputs}}, &tp)
+	return fheos.{{.Name}}({{.InnerInputs}}&tp)
 }
 `
 
 	if returnType == "void" {
 		templateText = `
-func (con FheOps) {{.Name}}(c ctx, evm mech, {{.Inputs}}) error {
+func (con FheOps) {{.Name}}(c ctx, evm mech{{.Inputs}}) error {
 	tp := fheos.TxParamsFromEVM(evm)
-	fheos.{{.Name}}({{.InnerInputs}}, &tp)
+	fheos.{{.Name}}({{.InnerInputs}}&tp)
 	return nil
 }
 `

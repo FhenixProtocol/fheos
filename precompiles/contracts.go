@@ -982,3 +982,16 @@ func Not(input []byte, tp *TxParams) ([]byte, error) {
 	logger.Debug("fheNot success", " in ", ct.Hash().Hex(), " result ", resultHash.Hex())
 	return resultHash[:], nil
 }
+
+func GetNetworkPublicKey(tp *TxParams) ([]byte, error) {
+	if shouldPrintPrecompileInfo(tp) {
+		logger.Info("starting new function get network public key:", getFunctionName())
+	}
+
+	pk, err := tfhe.PublicKey()
+	if err != nil {
+		return nil, err
+	}
+
+	return pk, nil
+}
