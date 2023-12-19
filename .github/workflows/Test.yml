@@ -65,5 +65,9 @@ jobs:
           cp fheos/solidity/FheOS.sol fhenix-contracts/contracts/
       - name: Commit Changes
         run: |
-          cd fhenix-contracts && git commit -m "FheOS updated - pushing new contracts and scripts"
+          cd fhenix-contracts
+          git add test/contracts/*
+          git add contracts/FHE.sol
+          git add contracts/FheOS.sol
+          git commit -m "FheOS updated - pushing new contracts and scripts"
       - run: cd fhenix-contracts && git push origin main
