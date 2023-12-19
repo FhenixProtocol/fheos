@@ -601,6 +601,17 @@ library TFHE {
         return euint32.wrap(result);
 	}
 
+    function and(ebool lhs, ebool rhs) internal pure returns (ebool) {
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert("One or more inputs are not initialized.");
+        }
+        uint256 unwrappedInput1 = ebool.unwrap(lhs);
+        uint256 unwrappedInput2 = ebool.unwrap(rhs);
+
+        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).and);
+        return ebool.wrap(result);
+	}
+
     function and(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
             revert("One or more inputs are not initialized.");
@@ -634,6 +645,17 @@ library TFHE {
         return euint32.wrap(result);
 	}
 
+    function or(ebool lhs, ebool rhs) internal pure returns (ebool) {
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert("One or more inputs are not initialized.");
+        }
+        uint256 unwrappedInput1 = ebool.unwrap(lhs);
+        uint256 unwrappedInput2 = ebool.unwrap(rhs);
+
+        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).or);
+        return ebool.wrap(result);
+	}
+
     function or(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
             revert("One or more inputs are not initialized.");
@@ -665,6 +687,17 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).or);
         return euint32.wrap(result);
+	}
+
+    function xor(ebool lhs, ebool rhs) internal pure returns (ebool) {
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert("One or more inputs are not initialized.");
+        }
+        uint256 unwrappedInput1 = ebool.unwrap(lhs);
+        uint256 unwrappedInput2 = ebool.unwrap(rhs);
+
+        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).xor);
+        return ebool.wrap(result);
 	}
 
     function xor(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
@@ -920,10 +953,10 @@ library TFHE {
         return euint32.wrap(result);
 	}
 
-	// "not" for ebool not working in the traditional way as it is converting ebool to euint8
+	// "not" for ebool not working in the traditional way as it converts ebool to euint8
     // Ebool(true) is Euint8(1) so !Ebool(true) is !Euint8(1) which is Euint8(254) which is still Ebool(true)
     function not(ebool value) internal pure returns (ebool) {
-        return xor(value,  asEbool(true));
+        return xor(value, asEbool(true));
     }
 
     function not(euint8 input1) internal pure returns (euint8) {
@@ -1136,66 +1169,6 @@ function operatorXorEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
     return TFHE.xor(lhs, rhs);
 }
 
-using {operatorGtEuint8 as >, BindingsEuint8.gt} for euint8 global;
-function operatorGtEuint8(euint8 lhs, euint8 rhs) pure returns (ebool) {
-    return TFHE.gt(lhs, rhs);
-}
-
-using {operatorGtEuint16 as >, BindingsEuint16.gt} for euint16 global;
-function operatorGtEuint16(euint16 lhs, euint16 rhs) pure returns (ebool) {
-    return TFHE.gt(lhs, rhs);
-}
-
-using {operatorGtEuint32 as >, BindingsEuint32.gt} for euint32 global;
-function operatorGtEuint32(euint32 lhs, euint32 rhs) pure returns (ebool) {
-    return TFHE.gt(lhs, rhs);
-}
-
-using {operatorGteEuint8 as >=, BindingsEuint8.gte} for euint8 global;
-function operatorGteEuint8(euint8 lhs, euint8 rhs) pure returns (ebool) {
-    return TFHE.gte(lhs, rhs);
-}
-
-using {operatorGteEuint16 as >=, BindingsEuint16.gte} for euint16 global;
-function operatorGteEuint16(euint16 lhs, euint16 rhs) pure returns (ebool) {
-    return TFHE.gte(lhs, rhs);
-}
-
-using {operatorGteEuint32 as >=, BindingsEuint32.gte} for euint32 global;
-function operatorGteEuint32(euint32 lhs, euint32 rhs) pure returns (ebool) {
-    return TFHE.gte(lhs, rhs);
-}
-
-using {operatorLtEuint8 as <, BindingsEuint8.lt} for euint8 global;
-function operatorLtEuint8(euint8 lhs, euint8 rhs) pure returns (ebool) {
-    return TFHE.lt(lhs, rhs);
-}
-
-using {operatorLtEuint16 as <, BindingsEuint16.lt} for euint16 global;
-function operatorLtEuint16(euint16 lhs, euint16 rhs) pure returns (ebool) {
-    return TFHE.lt(lhs, rhs);
-}
-
-using {operatorLtEuint32 as <, BindingsEuint32.lt} for euint32 global;
-function operatorLtEuint32(euint32 lhs, euint32 rhs) pure returns (ebool) {
-    return TFHE.lt(lhs, rhs);
-}
-
-using {operatorLteEuint8 as <=, BindingsEuint8.lte} for euint8 global;
-function operatorLteEuint8(euint8 lhs, euint8 rhs) pure returns (ebool) {
-    return TFHE.lte(lhs, rhs);
-}
-
-using {operatorLteEuint16 as <=, BindingsEuint16.lte} for euint16 global;
-function operatorLteEuint16(euint16 lhs, euint16 rhs) pure returns (ebool) {
-    return TFHE.lte(lhs, rhs);
-}
-
-using {operatorLteEuint32 as <=, BindingsEuint32.lte} for euint32 global;
-function operatorLteEuint32(euint32 lhs, euint32 rhs) pure returns (ebool) {
-    return TFHE.lte(lhs, rhs);
-}
-
 using {operatorRemEuint8 as %, BindingsEuint8.rem} for euint8 global;
 function operatorRemEuint8(euint8 lhs, euint8 rhs) pure returns (euint8) {
     return TFHE.rem(lhs, rhs);
@@ -1209,36 +1182,6 @@ function operatorRemEuint16(euint16 lhs, euint16 rhs) pure returns (euint16) {
 using {operatorRemEuint32 as %, BindingsEuint32.rem} for euint32 global;
 function operatorRemEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
     return TFHE.rem(lhs, rhs);
-}
-
-using {operatorEqEuint8 as ==, BindingsEuint8.eq} for euint8 global;
-function operatorEqEuint8(euint8 lhs, euint8 rhs) pure returns (ebool) {
-    return TFHE.eq(lhs, rhs);
-}
-
-using {operatorEqEuint16 as ==, BindingsEuint16.eq} for euint16 global;
-function operatorEqEuint16(euint16 lhs, euint16 rhs) pure returns (ebool) {
-    return TFHE.eq(lhs, rhs);
-}
-
-using {operatorEqEuint32 as ==, BindingsEuint32.eq} for euint32 global;
-function operatorEqEuint32(euint32 lhs, euint32 rhs) pure returns (ebool) {
-    return TFHE.eq(lhs, rhs);
-}
-
-using {operatorNeEuint8 as !=, BindingsEuint8.ne} for euint8 global;
-function operatorNeEuint8(euint8 lhs, euint8 rhs) pure returns (ebool) {
-    return TFHE.ne(lhs, rhs);
-}
-
-using {operatorNeEuint16 as !=, BindingsEuint16.ne} for euint16 global;
-function operatorNeEuint16(euint16 lhs, euint16 rhs) pure returns (ebool) {
-    return TFHE.ne(lhs, rhs);
-}
-
-using {operatorNeEuint32 as !=, BindingsEuint32.ne} for euint32 global;
-function operatorNeEuint32(euint32 lhs, euint32 rhs) pure returns (ebool) {
-    return TFHE.ne(lhs, rhs);
 }
 
 // ********** BINDING DEFS ************* //

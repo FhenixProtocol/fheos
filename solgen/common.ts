@@ -75,25 +75,25 @@ export const ShorthandOperations: OperatorMap[] =
     },
     {
         func: 'gt',
-        operator: '>',
+        operator: null,
         unary: false,
         returnsBool: true,
     },
     {
         func: 'gte',
-        operator: '>=',
+        operator: null,
         unary: false,
         returnsBool: true,
     },
     {
         func: 'lt',
-        operator: '<',
+        operator: null,
         unary: false,
         returnsBool: true,
     },
     {
         func: 'lte',
-        operator: '<=',
+        operator: null,
         unary: false,
         returnsBool: true,
     },
@@ -117,19 +117,20 @@ export const ShorthandOperations: OperatorMap[] =
     },
     {
         func: 'eq',
-        operator: '==',
+        operator: null,
         unary: false,
         returnsBool: true,
     },
     {
         func: 'ne',
-        operator: '!=',
+        operator: null,
         unary: false,
         returnsBool: true,
     }
 ]
 
 export const BindMathOperators = ['add', 'mul', 'div', 'sub', 'eq', 'ne', 'and', 'or', 'xor', 'gt', 'gte', 'lt', 'lte', 'rem', 'max', 'min'];
+export const bitwiseAndLogicalOperators = ['and', 'or', 'xor', 'not'];
 
 export const valueIsEncrypted = (value: string): value is EUintType => {
     return EInputType.includes(value);

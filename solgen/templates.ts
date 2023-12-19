@@ -537,10 +537,10 @@ export function genAbiFile(abi: string) {
 export function SolTemplate1Arg(name: string, input1: AllTypes, returnType: AllTypes) {
 
     if (name === "not" && input1 === "ebool") {
-        return `\n\n\t// "not" for ebool not working in the traditional way as it is converting ebool to euint8
+        return `\n\n\t// "not" for ebool not working in the traditional way as it converts ebool to euint8
     // Ebool(true) is Euint8(1) so !Ebool(true) is !Euint8(1) which is Euint8(254) which is still Ebool(true)
     function not(ebool value) internal pure returns (ebool) {
-        return xor(value,  asEbool(true));
+        return xor(value, asEbool(true));
     }`;
     }
 

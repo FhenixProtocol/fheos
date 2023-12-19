@@ -22,7 +22,7 @@ import {
 } from "./templates";
 import {
     AllTypes,
-    BindMathOperators,
+    BindMathOperators, bitwiseAndLogicalOperators,
     EComparisonType,
     EInputType,
     EPlaintextType,
@@ -356,7 +356,12 @@ const main = async () => {
                     if (fnDef.funcName === "and") {
                         console.log("and return type", fnDef.returnType);
                     }
-                    outputFile += OperatorBinding(fnDef.funcName, encryptedType, fnDef.inputs.length === 1, fnDef.returnType === "ebool");
+                    outputFile += OperatorBinding(
+                      fnDef.funcName,
+                      encryptedType,
+                      fnDef.inputs.length === 1,
+                      fnDef.returnType === "ebool" && !bitwiseAndLogicalOperators.includes(fnDef.funcName)
+                    );
                 }
             });
             outputFile += PostFix();
