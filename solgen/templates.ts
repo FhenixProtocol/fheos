@@ -269,7 +269,6 @@ export function SolTemplate2Arg(name: string, input1: AllTypes, input2: AllTypes
     let funcBody = `\n
     function ${name}(${input1} ${variableName1}, ${input2} ${variableName2}) internal pure returns (${returnType}) {`;
 
-
     if (valueIsEncrypted(input1)) {
         // both inputs encrypted - this is a generic math function. i.e. div, mul, eq, etc.
         // 1. possibly cast input1
@@ -408,6 +407,7 @@ contract ${capitalize(name)}Test {
     ${testFunc}\n
 }`;
 }
+
 export function testContractReq() {
     // Req is failing on EthCall so we need to make it as tx for now
     let func = `function req(string calldata test, uint256 a) public {
@@ -589,7 +589,7 @@ export function SolTemplate1Arg(name: string, input1: AllTypes, returnType: AllT
     return funcBody;
 }
 
-export function SolTemplate3Arg(name: string, input1: AllTypes, input2: AllTypes,input3: AllTypes,returnType: AllTypes) {
+export function SolTemplate3Arg(name: string, input1: AllTypes, input2: AllTypes,input3: AllTypes, returnType: AllTypes) {
     if (valueIsEncrypted(returnType)) {
         if (valueIsEncrypted(input1) && valueIsEncrypted(input2) && valueIsEncrypted(input3) && input1 === 'ebool') {
             if (input2 !== input3) {
@@ -621,13 +621,14 @@ function operatorFunctionName(funcName: string, forType: "ebool" | "euint8"  | "
     return `operator${capitalize(funcName)}${capitalize(forType)}`;
 }
 
-export const OperatorOverloadDecl = (funcName: string, op: string, forType: EUintType, unary: boolean) => {
+export const OperatorOverloadDecl = (funcName: string, op: string, forType: EUintType, unary: boolean, returnsBool: boolean) => {
     let opOverloadName = operatorFunctionName(funcName, forType);
     let unaryParameters = unary ? 'lhs' : 'lhs, rhs';
     let funcParams = unaryParameters.split(', ').map((key) => {return `${forType} ${key}`}).join(', ')
+    let returnType = returnsBool ? 'ebool' : forType;
 
     return `\nusing {${opOverloadName} as ${op}, Bindings${capitalize(forType)}.${funcName}} for ${forType} global;
-function ${opOverloadName}(${funcParams}) pure returns (${forType}) {
+function ${opOverloadName}(${funcParams}) pure returns (${returnType}) {
     return TFHE.${funcName}(${unaryParameters});
 }\n`;
 }
@@ -640,16 +641,13 @@ export const BindingLibraryType = (type: string) => {
     return `\nlibrary Bindings${capitalize(type)} {`;
 }
 
-export const OperatorBinding = (funcName: string, forType: string, unary: boolean) => {
+export const OperatorBinding = (funcName: string, forType: string, unary: boolean, returnsBool: boolean) => {
     let unaryParameters = unary ? 'lhs' : 'lhs, rhs';
-    let funcParams = unaryParameters.split(',').map((key) => {return `${forType} ${key}`}).join(', ')
-
-    if (funcName === "eq") {
-        forType = "ebool"
-    }
+    let funcParams = unaryParameters.split(', ').map((key) => {return `${forType} ${key}`}).join(', ')
+    let returnType = returnsBool ? 'ebool' : forType;
 
     return `
-    function ${funcName}(${funcParams}) pure internal returns (${forType}) {
+    function ${funcName}(${funcParams}) pure internal returns (${returnType}) {
         return TFHE.${funcName}(${unaryParameters});
     }`;
 }

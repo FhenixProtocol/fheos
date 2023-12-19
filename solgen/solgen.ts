@@ -255,7 +255,6 @@ const generateSolidityFunction = (
 }
 
 const main = async () => {
-
     let metadata = await generateMetadataPayload();
     let solidityHeaders: string[] = [];
     const testContracts: Record<string, string> = {};
@@ -321,7 +320,7 @@ const main = async () => {
                 throw new Error("InputType mismatch");
             }
             if (!EComparisonType.includes(encType)) {
-                outputFile += OperatorOverloadDecl(value.func, value.operator!, encType, value.unary)
+                outputFile += OperatorOverloadDecl(value.func, value.operator!, encType, value.unary, value.returnsBool)
             }
         }
     });
@@ -352,8 +351,12 @@ const main = async () => {
                 });
 
                 if (foundFnDef) {
+                    console.log("parsing:", foundFnDef);
                     const fnDef = parseFunctionDefinition(foundFnDef);
-                    outputFile += OperatorBinding(fnDef.funcName, encryptedType, fnDef.inputs.length === 1)
+                    if (fnDef.funcName === "and") {
+                        console.log("and return type", fnDef.returnType);
+                    }
+                    outputFile += OperatorBinding(fnDef.funcName, encryptedType, fnDef.inputs.length === 1, fnDef.returnType === "ebool");
                 }
             });
             outputFile += PostFix();

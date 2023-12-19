@@ -15,7 +15,8 @@ export const UnderlyingTypes: Record<EUintType, string> = {
 interface OperatorMap {
     operator: string | null,
     func: string,
-    unary: boolean
+    unary: boolean,
+    returnsBool: boolean,
 }
 
 export const ShorthandOperations: OperatorMap[] =
@@ -23,22 +24,26 @@ export const ShorthandOperations: OperatorMap[] =
     {
         func: 'add',
         operator: '+',
-        unary: false
+        unary: false,
+        returnsBool: false,
     },
     {
         func: 'sub',
         operator: '-',
-        unary: false
+        unary: false,
+        returnsBool: false,
     },
     {
         func: 'mul',
         operator: '*',
-        unary: false
+        unary: false,
+        returnsBool: false,
     },
     {
         func: 'div',
         operator: '/',
-        unary: false
+        unary: false,
+        returnsBool: false,
     },
     // {
     //     func: 'not',
@@ -54,61 +59,73 @@ export const ShorthandOperations: OperatorMap[] =
         func: 'or',
         operator: '|',
         unary: false,
+        returnsBool: false,
     },
     {
         func: 'and',
         operator: '&',
-        unary: false
+        unary: false,
+        returnsBool: false,
     },
     {
         func: 'xor',
         operator: '^',
-        unary: false
+        unary: false,
+        returnsBool: false,
     },
     {
         func: 'gt',
         operator: '>',
-        unary: false
+        unary: false,
+        returnsBool: true,
     },
     {
         func: 'gte',
         operator: '>=',
-        unary: false
+        unary: false,
+        returnsBool: true,
     },
     {
         func: 'lt',
         operator: '<',
-        unary: false
+        unary: false,
+        returnsBool: true,
     },
     {
         func: 'lte',
         operator: '<=',
-        unary: false
+        unary: false,
+        returnsBool: true,
     },
     {
         func: 'rem',
         operator: '%',
-        unary: false
+        unary: false,
+        returnsBool: false,
     },
     {
         func: 'max',
         operator: null,
-        unary: false
+        unary: false,
+        returnsBool: false,
     },
     {
         func: 'min',
         operator: null,
-        unary: false
+        unary: false,
+        returnsBool: false,
     },
     {
         func: 'eq',
         operator: '==',
-        unary: false
+        unary: false,
+        returnsBool: true,
     },
     {
         func: 'ne',
         operator: '!=',
-        unary: false
+        unary: false,
+        returnsBool: true,
     }
 ]
 
