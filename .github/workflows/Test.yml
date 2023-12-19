@@ -63,7 +63,7 @@ jobs:
   push-to-contracts-repo:
     needs: [build]
     runs-on: ubuntu-latest
-    # if: ${{ matrix.db_backend == 'goleveldb' }}
+    # if: github.ref == 'refs/heads/master'
     steps:
       - uses: actions/checkout@v4
         name: Checkout Fhenix-Contracts

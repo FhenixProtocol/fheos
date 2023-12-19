@@ -2,6 +2,7 @@
 install:
 	cd precompiles && yarn install
 	cd solgen && npm install
+	cd solidity && pnpm install
 
 .PHONY: gen
 gen:
