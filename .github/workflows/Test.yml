@@ -61,7 +61,7 @@ jobs:
           rm *_gen*
       - name: Run tests
         run: |
-          cd fheos && make tests
+          cd fheos && make test
       - uses: actions/checkout@v4
         name: Checkout Fhenix-Contracts
         with:
