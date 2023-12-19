@@ -315,13 +315,13 @@ const main = async () => {
     outputFile += `\n// ********** OPERATOR OVERLOADING ************* //\n`
 
     // generate operator overloading
-    ShorthandOperations.forEach((value) =>  {
+    ShorthandOperations.filter(v => v.operator !== null).forEach((value) =>  {
         for (let encType of EInputType) {
             if (!valueIsEncrypted(encType)) {
                 throw new Error("InputType mismatch");
             }
             if (!EComparisonType.includes(encType)) {
-                outputFile += OperatorOverloadDecl(value.func, value.operator, encType, value.unary)
+                outputFile += OperatorOverloadDecl(value.func, value.operator!, encType, value.unary)
             }
         }
     });

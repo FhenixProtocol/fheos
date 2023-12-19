@@ -624,7 +624,7 @@ function operatorFunctionName(funcName: string, forType: "ebool" | "euint8"  | "
 export const OperatorOverloadDecl = (funcName: string, op: string, forType: EUintType, unary: boolean) => {
     let opOverloadName = operatorFunctionName(funcName, forType);
     let unaryParameters = unary ? 'lhs' : 'lhs, rhs';
-    let funcParams = unaryParameters.split(',').map((key) => {return `${forType} ${key}`}).join(', ')
+    let funcParams = unaryParameters.split(', ').map((key) => {return `${forType} ${key}`}).join(', ')
 
     return `\nusing {${opOverloadName} as ${op}, Bindings${capitalize(forType)}.${funcName}} for ${forType} global;
 function ${opOverloadName}(${funcParams}) pure returns (${forType}) {

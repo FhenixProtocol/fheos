@@ -13,7 +13,7 @@ export const UnderlyingTypes: Record<EUintType, string> = {
 };
 
 interface OperatorMap {
-    operator: string,
+    operator: string | null,
     func: string,
     unary: boolean
 }
@@ -50,11 +50,6 @@ export const ShorthandOperations: OperatorMap[] =
     //     operator: '-',
     //     unary: true
     // },
-    // {
-    //     func: 'xor',
-    //     operator: '^',
-    //     unary: true
-    // },
     {
         func: 'or',
         operator: '|',
@@ -64,10 +59,60 @@ export const ShorthandOperations: OperatorMap[] =
         func: 'and',
         operator: '&',
         unary: false
+    },
+    {
+        func: 'xor',
+        operator: '^',
+        unary: false
+    },
+    {
+        func: 'gt',
+        operator: '>',
+        unary: false
+    },
+    {
+        func: 'gte',
+        operator: '>=',
+        unary: false
+    },
+    {
+        func: 'lt',
+        operator: '<',
+        unary: false
+    },
+    {
+        func: 'lte',
+        operator: '<=',
+        unary: false
+    },
+    {
+        func: 'rem',
+        operator: '%',
+        unary: false
+    },
+    {
+        func: 'max',
+        operator: null,
+        unary: false
+    },
+    {
+        func: 'min',
+        operator: null,
+        unary: false
+    },
+    {
+        func: 'eq',
+        operator: '==',
+        unary: false
+    },
+    {
+        func: 'ne',
+        operator: '!=',
+        unary: false
     }
 ]
 
-export const BindMathOperators = ['add', 'mul', 'div', 'sub', 'eq', 'and', 'or']
+export const BindMathOperators = ['add', 'mul', 'div', 'sub', 'eq', 'ne', 'and', 'or', 'xor', 'gt', 'gte', 'lt', 'lte', 'rem', 'max', 'min'];
 
 export const valueIsEncrypted = (value: string): value is EUintType => {
     return EInputType.includes(value);

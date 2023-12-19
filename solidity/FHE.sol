@@ -1065,98 +1065,216 @@ library TFHE {
 // ********** OPERATOR OVERLOADING ************* //
 
 using {operatorAddEuint8 as +, BindingsEuint8.add} for euint8 global;
-function operatorAddEuint8(euint8 lhs, euint8  rhs) pure returns (euint8) {
+function operatorAddEuint8(euint8 lhs, euint8 rhs) pure returns (euint8) {
     return TFHE.add(lhs, rhs);
 }
 
 using {operatorAddEuint16 as +, BindingsEuint16.add} for euint16 global;
-function operatorAddEuint16(euint16 lhs, euint16  rhs) pure returns (euint16) {
+function operatorAddEuint16(euint16 lhs, euint16 rhs) pure returns (euint16) {
     return TFHE.add(lhs, rhs);
 }
 
 using {operatorAddEuint32 as +, BindingsEuint32.add} for euint32 global;
-function operatorAddEuint32(euint32 lhs, euint32  rhs) pure returns (euint32) {
+function operatorAddEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
     return TFHE.add(lhs, rhs);
 }
 
 using {operatorSubEuint8 as -, BindingsEuint8.sub} for euint8 global;
-function operatorSubEuint8(euint8 lhs, euint8  rhs) pure returns (euint8) {
+function operatorSubEuint8(euint8 lhs, euint8 rhs) pure returns (euint8) {
     return TFHE.sub(lhs, rhs);
 }
 
 using {operatorSubEuint16 as -, BindingsEuint16.sub} for euint16 global;
-function operatorSubEuint16(euint16 lhs, euint16  rhs) pure returns (euint16) {
+function operatorSubEuint16(euint16 lhs, euint16 rhs) pure returns (euint16) {
     return TFHE.sub(lhs, rhs);
 }
 
 using {operatorSubEuint32 as -, BindingsEuint32.sub} for euint32 global;
-function operatorSubEuint32(euint32 lhs, euint32  rhs) pure returns (euint32) {
+function operatorSubEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
     return TFHE.sub(lhs, rhs);
 }
 
 using {operatorMulEuint8 as *, BindingsEuint8.mul} for euint8 global;
-function operatorMulEuint8(euint8 lhs, euint8  rhs) pure returns (euint8) {
+function operatorMulEuint8(euint8 lhs, euint8 rhs) pure returns (euint8) {
     return TFHE.mul(lhs, rhs);
 }
 
 using {operatorMulEuint16 as *, BindingsEuint16.mul} for euint16 global;
-function operatorMulEuint16(euint16 lhs, euint16  rhs) pure returns (euint16) {
+function operatorMulEuint16(euint16 lhs, euint16 rhs) pure returns (euint16) {
     return TFHE.mul(lhs, rhs);
 }
 
 using {operatorMulEuint32 as *, BindingsEuint32.mul} for euint32 global;
-function operatorMulEuint32(euint32 lhs, euint32  rhs) pure returns (euint32) {
+function operatorMulEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
     return TFHE.mul(lhs, rhs);
 }
 
 using {operatorDivEuint8 as /, BindingsEuint8.div} for euint8 global;
-function operatorDivEuint8(euint8 lhs, euint8  rhs) pure returns (euint8) {
+function operatorDivEuint8(euint8 lhs, euint8 rhs) pure returns (euint8) {
     return TFHE.div(lhs, rhs);
 }
 
 using {operatorDivEuint16 as /, BindingsEuint16.div} for euint16 global;
-function operatorDivEuint16(euint16 lhs, euint16  rhs) pure returns (euint16) {
+function operatorDivEuint16(euint16 lhs, euint16 rhs) pure returns (euint16) {
     return TFHE.div(lhs, rhs);
 }
 
 using {operatorDivEuint32 as /, BindingsEuint32.div} for euint32 global;
-function operatorDivEuint32(euint32 lhs, euint32  rhs) pure returns (euint32) {
+function operatorDivEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
     return TFHE.div(lhs, rhs);
 }
 
 using {operatorOrEuint8 as |, BindingsEuint8.or} for euint8 global;
-function operatorOrEuint8(euint8 lhs, euint8  rhs) pure returns (euint8) {
+function operatorOrEuint8(euint8 lhs, euint8 rhs) pure returns (euint8) {
     return TFHE.or(lhs, rhs);
 }
 
 using {operatorOrEuint16 as |, BindingsEuint16.or} for euint16 global;
-function operatorOrEuint16(euint16 lhs, euint16  rhs) pure returns (euint16) {
+function operatorOrEuint16(euint16 lhs, euint16 rhs) pure returns (euint16) {
     return TFHE.or(lhs, rhs);
 }
 
 using {operatorOrEuint32 as |, BindingsEuint32.or} for euint32 global;
-function operatorOrEuint32(euint32 lhs, euint32  rhs) pure returns (euint32) {
+function operatorOrEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
     return TFHE.or(lhs, rhs);
 }
 
 using {operatorAndEuint8 as &, BindingsEuint8.and} for euint8 global;
-function operatorAndEuint8(euint8 lhs, euint8  rhs) pure returns (euint8) {
+function operatorAndEuint8(euint8 lhs, euint8 rhs) pure returns (euint8) {
     return TFHE.and(lhs, rhs);
 }
 
 using {operatorAndEuint16 as &, BindingsEuint16.and} for euint16 global;
-function operatorAndEuint16(euint16 lhs, euint16  rhs) pure returns (euint16) {
+function operatorAndEuint16(euint16 lhs, euint16 rhs) pure returns (euint16) {
     return TFHE.and(lhs, rhs);
 }
 
 using {operatorAndEuint32 as &, BindingsEuint32.and} for euint32 global;
-function operatorAndEuint32(euint32 lhs, euint32  rhs) pure returns (euint32) {
+function operatorAndEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
     return TFHE.and(lhs, rhs);
 }
 
-// ********** BINDING DEFS ************* //
+using {operatorXorEuint8 as ^, BindingsEuint8.xor} for euint8 global;
+function operatorXorEuint8(euint8 lhs, euint8 rhs) pure returns (euint8) {
+    return TFHE.xor(lhs, rhs);
+}
 
-using {BindingsEuint8.eq} for euint8 global;
+using {operatorXorEuint16 as ^, BindingsEuint16.xor} for euint16 global;
+function operatorXorEuint16(euint16 lhs, euint16 rhs) pure returns (euint16) {
+    return TFHE.xor(lhs, rhs);
+}
+
+using {operatorXorEuint32 as ^, BindingsEuint32.xor} for euint32 global;
+function operatorXorEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
+    return TFHE.xor(lhs, rhs);
+}
+
+using {operatorGtEuint8 as >, BindingsEuint8.gt} for euint8 global;
+function operatorGtEuint8(euint8 lhs, euint8 rhs) pure returns (euint8) {
+    return TFHE.gt(lhs, rhs);
+}
+
+using {operatorGtEuint16 as >, BindingsEuint16.gt} for euint16 global;
+function operatorGtEuint16(euint16 lhs, euint16 rhs) pure returns (euint16) {
+    return TFHE.gt(lhs, rhs);
+}
+
+using {operatorGtEuint32 as >, BindingsEuint32.gt} for euint32 global;
+function operatorGtEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
+    return TFHE.gt(lhs, rhs);
+}
+
+using {operatorGteEuint8 as >=, BindingsEuint8.gte} for euint8 global;
+function operatorGteEuint8(euint8 lhs, euint8 rhs) pure returns (euint8) {
+    return TFHE.gte(lhs, rhs);
+}
+
+using {operatorGteEuint16 as >=, BindingsEuint16.gte} for euint16 global;
+function operatorGteEuint16(euint16 lhs, euint16 rhs) pure returns (euint16) {
+    return TFHE.gte(lhs, rhs);
+}
+
+using {operatorGteEuint32 as >=, BindingsEuint32.gte} for euint32 global;
+function operatorGteEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
+    return TFHE.gte(lhs, rhs);
+}
+
+using {operatorLtEuint8 as <, BindingsEuint8.lt} for euint8 global;
+function operatorLtEuint8(euint8 lhs, euint8 rhs) pure returns (euint8) {
+    return TFHE.lt(lhs, rhs);
+}
+
+using {operatorLtEuint16 as <, BindingsEuint16.lt} for euint16 global;
+function operatorLtEuint16(euint16 lhs, euint16 rhs) pure returns (euint16) {
+    return TFHE.lt(lhs, rhs);
+}
+
+using {operatorLtEuint32 as <, BindingsEuint32.lt} for euint32 global;
+function operatorLtEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
+    return TFHE.lt(lhs, rhs);
+}
+
+using {operatorLteEuint8 as <=, BindingsEuint8.lte} for euint8 global;
+function operatorLteEuint8(euint8 lhs, euint8 rhs) pure returns (euint8) {
+    return TFHE.lte(lhs, rhs);
+}
+
+using {operatorLteEuint16 as <=, BindingsEuint16.lte} for euint16 global;
+function operatorLteEuint16(euint16 lhs, euint16 rhs) pure returns (euint16) {
+    return TFHE.lte(lhs, rhs);
+}
+
+using {operatorLteEuint32 as <=, BindingsEuint32.lte} for euint32 global;
+function operatorLteEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
+    return TFHE.lte(lhs, rhs);
+}
+
+using {operatorRemEuint8 as %, BindingsEuint8.rem} for euint8 global;
+function operatorRemEuint8(euint8 lhs, euint8 rhs) pure returns (euint8) {
+    return TFHE.rem(lhs, rhs);
+}
+
+using {operatorRemEuint16 as %, BindingsEuint16.rem} for euint16 global;
+function operatorRemEuint16(euint16 lhs, euint16 rhs) pure returns (euint16) {
+    return TFHE.rem(lhs, rhs);
+}
+
+using {operatorRemEuint32 as %, BindingsEuint32.rem} for euint32 global;
+function operatorRemEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
+    return TFHE.rem(lhs, rhs);
+}
+
+using {operatorEqEuint8 as ==, BindingsEuint8.eq} for euint8 global;
+function operatorEqEuint8(euint8 lhs, euint8 rhs) pure returns (euint8) {
+    return TFHE.eq(lhs, rhs);
+}
+
+using {operatorEqEuint16 as ==, BindingsEuint16.eq} for euint16 global;
+function operatorEqEuint16(euint16 lhs, euint16 rhs) pure returns (euint16) {
+    return TFHE.eq(lhs, rhs);
+}
+
+using {operatorEqEuint32 as ==, BindingsEuint32.eq} for euint32 global;
+function operatorEqEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
+    return TFHE.eq(lhs, rhs);
+}
+
+using {operatorNeEuint8 as !=, BindingsEuint8.ne} for euint8 global;
+function operatorNeEuint8(euint8 lhs, euint8 rhs) pure returns (euint8) {
+    return TFHE.ne(lhs, rhs);
+}
+
+using {operatorNeEuint16 as !=, BindingsEuint16.ne} for euint16 global;
+function operatorNeEuint16(euint16 lhs, euint16 rhs) pure returns (euint16) {
+    return TFHE.ne(lhs, rhs);
+}
+
+using {operatorNeEuint32 as !=, BindingsEuint32.ne} for euint32 global;
+function operatorNeEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
+    return TFHE.ne(lhs, rhs);
+}
+
+// ********** BINDING DEFS ************* //
 
 library BindingsEuint8 {
     function add(euint8 lhs, euint8  rhs) pure internal returns (euint8) {
@@ -1174,15 +1292,40 @@ library BindingsEuint8 {
     function eq(euint8 lhs, euint8  rhs) pure internal returns (ebool) {
         return TFHE.eq(lhs, rhs);
     }
+    function ne(euint8 lhs, euint8  rhs) pure internal returns (euint8) {
+        return TFHE.ne(lhs, rhs);
+    }
     function and(euint8 lhs, euint8  rhs) pure internal returns (euint8) {
         return TFHE.and(lhs, rhs);
     }
     function or(euint8 lhs, euint8  rhs) pure internal returns (euint8) {
         return TFHE.or(lhs, rhs);
     }
+    function xor(euint8 lhs, euint8  rhs) pure internal returns (euint8) {
+        return TFHE.xor(lhs, rhs);
+    }
+    function gt(euint8 lhs, euint8  rhs) pure internal returns (euint8) {
+        return TFHE.gt(lhs, rhs);
+    }
+    function gte(euint8 lhs, euint8  rhs) pure internal returns (euint8) {
+        return TFHE.gte(lhs, rhs);
+    }
+    function lt(euint8 lhs, euint8  rhs) pure internal returns (euint8) {
+        return TFHE.lt(lhs, rhs);
+    }
+    function lte(euint8 lhs, euint8  rhs) pure internal returns (euint8) {
+        return TFHE.lte(lhs, rhs);
+    }
+    function rem(euint8 lhs, euint8  rhs) pure internal returns (euint8) {
+        return TFHE.rem(lhs, rhs);
+    }
+    function max(euint8 lhs, euint8  rhs) pure internal returns (euint8) {
+        return TFHE.max(lhs, rhs);
+    }
+    function min(euint8 lhs, euint8  rhs) pure internal returns (euint8) {
+        return TFHE.min(lhs, rhs);
+    }
 }
-using {BindingsEuint16.eq} for euint16 global;
-
 library BindingsEuint16 {
     function add(euint16 lhs, euint16  rhs) pure internal returns (euint16) {
         return TFHE.add(lhs, rhs);
@@ -1199,15 +1342,40 @@ library BindingsEuint16 {
     function eq(euint16 lhs, euint16  rhs) pure internal returns (ebool) {
         return TFHE.eq(lhs, rhs);
     }
+    function ne(euint16 lhs, euint16  rhs) pure internal returns (euint16) {
+        return TFHE.ne(lhs, rhs);
+    }
     function and(euint16 lhs, euint16  rhs) pure internal returns (euint16) {
         return TFHE.and(lhs, rhs);
     }
     function or(euint16 lhs, euint16  rhs) pure internal returns (euint16) {
         return TFHE.or(lhs, rhs);
     }
+    function xor(euint16 lhs, euint16  rhs) pure internal returns (euint16) {
+        return TFHE.xor(lhs, rhs);
+    }
+    function gt(euint16 lhs, euint16  rhs) pure internal returns (euint16) {
+        return TFHE.gt(lhs, rhs);
+    }
+    function gte(euint16 lhs, euint16  rhs) pure internal returns (euint16) {
+        return TFHE.gte(lhs, rhs);
+    }
+    function lt(euint16 lhs, euint16  rhs) pure internal returns (euint16) {
+        return TFHE.lt(lhs, rhs);
+    }
+    function lte(euint16 lhs, euint16  rhs) pure internal returns (euint16) {
+        return TFHE.lte(lhs, rhs);
+    }
+    function rem(euint16 lhs, euint16  rhs) pure internal returns (euint16) {
+        return TFHE.rem(lhs, rhs);
+    }
+    function max(euint16 lhs, euint16  rhs) pure internal returns (euint16) {
+        return TFHE.max(lhs, rhs);
+    }
+    function min(euint16 lhs, euint16  rhs) pure internal returns (euint16) {
+        return TFHE.min(lhs, rhs);
+    }
 }
-using {BindingsEuint32.eq} for euint32 global;
-
 library BindingsEuint32 {
     function add(euint32 lhs, euint32  rhs) pure internal returns (euint32) {
         return TFHE.add(lhs, rhs);
@@ -1224,10 +1392,37 @@ library BindingsEuint32 {
     function eq(euint32 lhs, euint32  rhs) pure internal returns (ebool) {
         return TFHE.eq(lhs, rhs);
     }
+    function ne(euint32 lhs, euint32  rhs) pure internal returns (euint32) {
+        return TFHE.ne(lhs, rhs);
+    }
     function and(euint32 lhs, euint32  rhs) pure internal returns (euint32) {
         return TFHE.and(lhs, rhs);
     }
     function or(euint32 lhs, euint32  rhs) pure internal returns (euint32) {
         return TFHE.or(lhs, rhs);
+    }
+    function xor(euint32 lhs, euint32  rhs) pure internal returns (euint32) {
+        return TFHE.xor(lhs, rhs);
+    }
+    function gt(euint32 lhs, euint32  rhs) pure internal returns (euint32) {
+        return TFHE.gt(lhs, rhs);
+    }
+    function gte(euint32 lhs, euint32  rhs) pure internal returns (euint32) {
+        return TFHE.gte(lhs, rhs);
+    }
+    function lt(euint32 lhs, euint32  rhs) pure internal returns (euint32) {
+        return TFHE.lt(lhs, rhs);
+    }
+    function lte(euint32 lhs, euint32  rhs) pure internal returns (euint32) {
+        return TFHE.lte(lhs, rhs);
+    }
+    function rem(euint32 lhs, euint32  rhs) pure internal returns (euint32) {
+        return TFHE.rem(lhs, rhs);
+    }
+    function max(euint32 lhs, euint32  rhs) pure internal returns (euint32) {
+        return TFHE.max(lhs, rhs);
+    }
+    function min(euint32 lhs, euint32  rhs) pure internal returns (euint32) {
+        return TFHE.min(lhs, rhs);
     }
 }
