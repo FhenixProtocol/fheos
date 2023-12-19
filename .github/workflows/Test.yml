@@ -46,6 +46,7 @@ jobs:
           make gen
       - name: Compile
         run: |
+          cp solidity/.env.example solidity/.env
           make compile
       - name: Run tests
         run: |
