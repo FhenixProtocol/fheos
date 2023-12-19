@@ -9,7 +9,16 @@ import {
     preamble,
     SolTemplate1Arg,
     SolTemplate2Arg,
-    SolTemplate3Arg
+    SolTemplate3Arg,
+    testContract2Arg,
+    testContract1Arg,
+    testContract3Arg,
+    testContract2ArgBoolRes,
+    testContractReencrypt,
+    testContractReq,
+    AsTypeTestingContract,
+    genAbiFile,
+    capitalize,
 } from "./templates";
 import {
     AllTypes,
@@ -110,6 +119,39 @@ function getAllFunctionDeclarations(functionName: string, functions: string[][],
         return `${functionDecl}(${combination.join(', ')}) ${returnStr}`;
     });
 }
+
+/** Generates a Solidity test contract based on the provided metadata */
+const generateSolidityTestContract = (metadata: FunctionMetadata): string[] => {
+    const {functionName, inputCount, hasDifferentInputTypes, returnValueType, inputs, isBooleanMathOp} = metadata;
+
+    if (functionName === "req") {
+        return testContractReq();
+    }
+
+    if (functionName === "reencrypt") {
+        return testContractReencrypt();
+    }
+
+    if (inputCount === 2 && inputs[0] === "encrypted" && inputs[1] === "encrypted") {
+        if (returnValueType === "ebool") {
+            return testContract2ArgBoolRes(functionName, isBooleanMathOp);
+        }
+        return testContract2Arg(functionName, isBooleanMathOp);
+    }
+
+    if(inputCount === 1 && inputs[0] === "encrypted" && returnValueType === "encrypted") {
+        return testContract1Arg(functionName);
+    }
+
+    if(inputCount === 3) {
+        return testContract3Arg(functionName);
+    }
+
+    console.log(`Function ${functionName} with ${inputCount} inputs that are ${inputs} is not implemented`);
+
+    return ["", ""];
+}
+
 
 /**
  * Generates a Solidity function based on the provided metadata
@@ -216,7 +258,20 @@ const main = async () => {
 
     let metadata = await generateMetadataPayload();
     let solidityHeaders: string[] = [];
+    const testContracts: Record<string, string> = {};
+    let testContractsAbis = "";
+    let importLineHelper : string = "import { "
     for (let func of metadata) {
+        // Decrypt is already tested in every test contract
+        if (func.functionName !== "decrypt") {
+            // this generates test contract for every function
+            const testContract= generateSolidityTestContract(func);
+            if (testContract[0] !== "") {
+                testContracts[capitalize(func.functionName)] = testContract[0];
+                testContractsAbis += testContract[1];
+                importLineHelper += `${capitalize(func.functionName)}TestType,\n`
+            }
+        }
         // this generates solidity header functions for all the different possible types
         solidityHeaders = solidityHeaders.concat(genSolidityFunctionHeaders(func));
     }
@@ -241,6 +296,17 @@ const main = async () => {
             outputFile += AsTypeFunction(fromType, toType);
         }
     }
+
+    for (let type of EInputType) {
+        const functionName = `as${capitalize(type)}`;
+        const testContract = AsTypeTestingContract(type);
+
+        testContracts[functionName] = testContract[0];
+        testContractsAbis += testContract[1];
+        importLineHelper += `${capitalize(functionName)}TestType,\n`
+    }
+
+    importLineHelper = importLineHelper.slice(0, -2) + " } from './abis';\n";
 
     outputFile += AsTypeFunction("bool", "ebool");
 
@@ -297,6 +363,12 @@ const main = async () => {
 
 
     await fs.promises.writeFile('FHE.sol', outputFile);
+    for (const testContract of Object.entries(testContracts)) {
+        fs.writeFileSync(`../solidity/tests/contracts/${testContract[0]}.sol`, testContract[1]);
+    }
+
+    fs.writeFileSync("../solidity/tests/abis.ts", genAbiFile(testContractsAbis));
+    console.log(importLineHelper);
 }
 
 main();

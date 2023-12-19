@@ -183,12 +183,9 @@ const castFromBytes = (name: string, toType: string): string => {
 
 const castToEbool = (name: string, fromType: string): string => {
     return `function asEbool(${fromType} value) internal pure returns (ebool) {
-        return ne(${name},  as${capitalize(fromType)}(0));
-    }\n`
+    return ne(${name},  as${capitalize(fromType)}(0));
+}\n`
 }
-
-
-
 export const AsTypeFunction = (fromType: string, toType: string) => {
 
     let castString = castFromEncrypted(fromType, toType, "value");
@@ -217,11 +214,52 @@ export const AsTypeFunction = (fromType: string, toType: string) => {
 }\n`;
 }
 
+function TypeCastTestingFunction(fromType: string, fromTypeForTs: string, toType: string, fromTypeEncrypted?: string) {
+    let to = capitalize(toType);
+    const retType = to.slice(1);
+    let testType = fromTypeEncrypted? fromTypeEncrypted : fromType;
+    testType = testType === 'bytes memory' ? 'PreEncrypted' : capitalize(testType);
+    testType = testType === 'Uint256' ? 'Plaintext' : testType;
+    const encryptedVal = fromTypeEncrypted ? `TFHE.as${capitalize(fromTypeEncrypted)}(val)` : "val";
+    const func = `\tfunction castFrom${testType}To${to}(${fromType} val) public pure returns (${retType}) {
+    \treturn TFHE.decrypt(TFHE.as${to}(${encryptedVal}));
+\t}\n\n`
+
+    let retTypeTs = (retType === 'bool') ? 'boolean' : retType;
+    retTypeTs = retTypeTs.includes("uint") ? 'bigint' : retTypeTs;
+    const abi =  `\tcastFrom${testType}To${to}: (val: ${fromTypeForTs}) => Promise<${retTypeTs}>;\n`;
+    return [func, abi];
+}
+
+export function AsTypeTestingContract(type: string) {
+    let funcs = "";
+    let abi = `export interface As${capitalize(type)}TestType extends Contract {\n`;
+    for (const fromType of EInputType.concat('uint256', 'bytes memory')) {
+        if (type === fromType) {
+            continue;
+        }
+
+        const fromTypeTs = (fromType === 'bytes memory') ? 'Uint8Array' : `bigint`;
+        const fromTypeSol = (fromType === 'bytes memory') ? fromType : `uint256`;
+        const fromTypeEncrypted = (EInputType.includes(fromType)) ? fromType : undefined;
+        const contractInfo = TypeCastTestingFunction(fromTypeSol, fromTypeTs, type, fromTypeEncrypted);
+        funcs += contractInfo[0];
+        abi += contractInfo[1];
+
+    }
+
+    funcs = funcs.slice(1);
+
+    abi += `}\n`;
+
+    return [generateTestContract(`As${capitalize(type)}`, funcs), abi];
+}
+
 
 const unwrapType = (typeName: EUintType, inputName: string): string => `${typeName}.unwrap(${inputName})`;
 const wrapType = (resultType: EUintType, inputName: string): string => `${resultType}.wrap(${inputName})`;
 const asEuintFuncName = (typeName: EUintType): string => `as${capitalize(typeName)}`;
-const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+export const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export function SolTemplate2Arg(name: string, input1: AllTypes, input2: AllTypes, returnType: AllTypes) {
 
@@ -283,8 +321,233 @@ function ${name}(${input1} ${variableName1}, ${input2} ${variableName2}) interna
     return funcBody;
 }
 
+export function testContract2ArgBoolRes(name: string, isBoolean: boolean) {
+    let func = `function ${name}(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
+        if (Utils.cmp(test, "${name}(euint8,euint8)")) {
+            if (TFHE.decrypt(TFHE.${name}(TFHE.asEuint8(a), TFHE.asEuint8(b)))) {
+                return 1;
+            }
+
+            return 0;
+        } else if (Utils.cmp(test, "${name}(euint16,euint16)")) {
+            if (TFHE.decrypt(TFHE.${name}(TFHE.asEuint16(a), TFHE.asEuint16(b)))) {
+                return 1;
+            }
+
+            return 0;
+        } else if (Utils.cmp(test, "${name}(euint32,euint32)")) {
+            if (TFHE.decrypt(TFHE.${name}(TFHE.asEuint32(a), TFHE.asEuint32(b)))) {
+                return 1;
+            }
+
+            return 0;
+        }`
+    if (isBoolean) {
+        func += ` else if (Utils.cmp(test, "${name}(ebool,ebool)")) {
+            bool aBool = true;
+            bool bBool = true;
+            if (a == 0) {
+                aBool = false;
+            }
+            if (b == 0) {
+                bBool = false;
+            }
+            if (TFHE.decrypt(TFHE.${name}(TFHE.asEbool(aBool), TFHE.asEbool(bBool)))) {
+                return 1;
+            }
+
+            return 0;
+        }`
+    }
+    func += ` else {
+            require(false, string(abi.encodePacked("test '", test, "' not found")));
+        }
+    }`;
+
+    const abi = `export interface ${capitalize(name)}TestType extends Contract {
+    ${name}: (test: string, a: bigint, b: bigint) => Promise<bigint>;
+}\n`
+    return [generateTestContract(name, func), abi];
+}
+
+export function testContract1Arg(name: string) {
+    let func = `function ${name}(string calldata test, uint256 a) public pure returns (uint256 output) {
+        if (Utils.cmp(test, "${name}(euint8)")) {
+            return TFHE.decrypt(TFHE.${name}(TFHE.asEuint8(a)));
+        } else if (Utils.cmp(test, "${name}(euint16)")) {
+            return TFHE.decrypt(TFHE.${name}(TFHE.asEuint16(a)));
+        } else if (Utils.cmp(test, "${name}(euint32)")) {
+            return TFHE.decrypt(TFHE.${name}(TFHE.asEuint32(a)));
+        } else if (Utils.cmp(test, "${name}(ebool)")) {
+            bool aBool = true;
+            if (a == 0) {
+                aBool = false;
+            }
+            
+            if (TFHE.decrypt(TFHE.${name}(TFHE.asEbool(aBool)))) {
+                return 1;
+            }
+            
+            return 0;
+        } else {
+            require(false, string(abi.encodePacked("test '", test, "' not found")));
+        }
+    }`;
+    const abi = `export interface ${capitalize(name)}TestType extends Contract {
+    ${name}: (test: string, a: bigint) => Promise<bigint>;
+}\n`
+    return [generateTestContract(name, func), abi];
+}
+
+export function generateTestContract(name: string, testFunc: string) {
+    return `// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.17;
+
+import "../../FHE.sol";
+import "./utils/Utils.sol";
+
+contract ${capitalize(name)}Test {
+    using Utils for *;
+
+    ${testFunc}\n
+}`;
+}
+export function testContractReq() {
+    // Req is failing on EthCall so we need to make it as tx for now
+    let func = `function req(string calldata test, uint256 a) public {
+        if (Utils.cmp(test, "req(euint8)")) {
+            TFHE.req(TFHE.asEuint8(a));
+        } else if (Utils.cmp(test, "req(euint16)")) {
+            TFHE.req(TFHE.asEuint16(a));
+        } else if (Utils.cmp(test, "req(euint32)")) {
+            TFHE.req(TFHE.asEuint32(a));
+        } else if (Utils.cmp(test, "req(ebool)")) {
+            bool b = true;
+            if (a == 0) {
+                b = false;
+            }
+            TFHE.req(TFHE.asEbool(b));
+        } else {
+            require(false, string(abi.encodePacked("test '", test, "' not found")));
+        }
+    }`;
+    const abi = `export interface ReqTestType extends Contract {
+    req: (test: string, a: bigint) => Promise<()>;
+}\n`
+    return [generateTestContract("req", func), abi];
+}
+
+export function testContractReencrypt() {
+    let func = `function reencrypt(string calldata test, uint256 a, bytes32 pubkey) public pure returns (bytes memory reencrypted) {
+        if (Utils.cmp(test, "reencrypt(euint8)")) {
+            return TFHE.reencrypt(TFHE.asEuint8(a), pubkey);
+        } else if (Utils.cmp(test, "reencrypt(euint16)")) {
+            return TFHE.reencrypt(TFHE.asEuint16(a), pubkey);
+        } else if (Utils.cmp(test, "reencrypt(euint32)")) {
+            return TFHE.reencrypt(TFHE.asEuint32(a), pubkey);
+        } else if (Utils.cmp(test, "reencrypt(ebool)")) {
+            bool b = true;
+            if (a == 0) {
+                b = false;
+            }
+            
+            return TFHE.reencrypt(TFHE.asEbool(b), pubkey);
+        } else {
+            require(false, string(abi.encodePacked("test '", test, "' not found")));
+        }
+    }`;
+    const abi = `export interface ReencryptTestType extends Contract {
+    reencrypt: (test: string, a: bigint, pubkey: Uint8Array) => Promise<Uint8Array>;
+}\n`
+    return [generateTestContract("reencrypt", func), abi];
+}
+
+export function testContract3Arg(name: string) {
+    let func = `function ${name}(string calldata test, bool c, uint256 a, uint256 b) public pure returns (uint256 output) {
+        ebool condition = TFHE.asEbool(c);
+        if (Utils.cmp(test, "${name}: euint8")) {
+            return TFHE.decrypt(TFHE.${name}(condition, TFHE.asEuint8(a), TFHE.asEuint8(b)));
+        } else if (Utils.cmp(test, "${name}: euint16")) {
+            return TFHE.decrypt(TFHE.${name}(condition, TFHE.asEuint16(a), TFHE.asEuint16(b)));
+        } else if (Utils.cmp(test, "${name}: euint32")) {
+            return TFHE.decrypt(TFHE.${name}(condition, TFHE.asEuint32(a), TFHE.asEuint32(b)));
+        } else if (Utils.cmp(test, "${name}: ebool")) {
+            bool aBool = true;
+            bool bBool = true;
+            
+            if (a == 0) {
+                aBool = false;
+            }
+            if (b == 0) {
+                bBool = false;
+            }
+            
+            if(TFHE.decrypt(TFHE.${name}(condition, TFHE.asEbool(aBool), TFHE.asEbool(bBool)))) {
+                return 1;
+            }
+            
+            return 0;
+        } else {
+            require(false, string(abi.encodePacked("test '", test, "' not found")));
+        }
+    }`;
+    const abi = `export interface ${capitalize(name)}TestType extends Contract {
+    ${name}: (test: string,c: boolean, a: bigint, b: bigint) => Promise<bigint>;
+}\n`
+    return [generateTestContract(name,func), abi];
+}
+
+
+export function testContract2Arg(name: string, isBoolean: boolean) {
+    let func = ` function ${name}(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
+        if (Utils.cmp(test, "${name}(euint8,euint8)")) {
+            return TFHE.decrypt(TFHE.${name}(TFHE.asEuint8(a), TFHE.asEuint8(b)));
+        } else if (Utils.cmp(test, "${name}(euint16,euint16)")) {
+            return TFHE.decrypt(TFHE.${name}(TFHE.asEuint16(a), TFHE.asEuint16(b)));
+        } else if (Utils.cmp(test, "${name}(euint32,euint32)")) {
+            return TFHE.decrypt(TFHE.${name}(TFHE.asEuint32(a), TFHE.asEuint32(b)));
+        }`
+    if (isBoolean) {
+        func += ` else if (Utils.cmp(test, "${name}(ebool,ebool)")) {
+            bool aBool = true;
+            bool bBool = true;
+            if (a == 0) {
+                aBool = false;
+            }
+            if (b == 0) {
+                bBool = false;
+            }
+            if (TFHE.decrypt(TFHE.${name}(TFHE.asEbool(aBool), TFHE.asEbool(bBool)))) {
+                return 1;
+            }
+
+            return 0;
+        }`
+    }
+    func += ` else {
+            require(false, string(abi.encodePacked("test '", test, "' not found")));
+        }
+    }`;
+    const abi = `export interface ${capitalize(name)}TestType extends Contract {
+    ${name}: (test: string, a: bigint, b: bigint) => Promise<bigint>;
+}\n`
+    return [generateTestContract(name,func), abi];
+}
+
+export function genAbiFile(abi: string) {
+    return `import { Contract } from 'ethers';\n${abi}\n\n`;
+}
+
 
 export function SolTemplate1Arg(name: string, input1: AllTypes, returnType: AllTypes) {
+
+    if (name === "not" && input1 === "ebool") {
+        return `\n// "not" for ebool not working in the traditional way as it is converting ebool to euint8
+// Ebool(true) is Euint8(1) so !Ebool(true) is !Euint8(1) which is Euint8(254) which is still Ebool(true)
+function not(ebool value) internal pure returns (ebool) {
+    return xor(value,  asEbool(true));
+}\n`
+    }
 
     let returnStr = returnType === "none" ? `` : ` returns (${returnType}) `
 
