@@ -161,8 +161,7 @@ library TFHE {
 
         output = impl(input);
         result = getValue(output);
-    }
-`;
+    }`;
 }
 
 export const PostFix = () => {
@@ -182,22 +181,22 @@ const castFromBytes = (name: string, toType: string): string => {
 }
 
 const castToEbool = (name: string, fromType: string): string => {
-    return `function asEbool(${fromType} value) internal pure returns (ebool) {
-    return ne(${name},  as${capitalize(fromType)}(0));
-}\n`
+    return `\n\tfunction asEbool(${fromType} value) internal pure returns (ebool) {
+        return ne(${name},  as${capitalize(fromType)}(0));
+    }`;
 }
-export const AsTypeFunction = (fromType: string, toType: string) => {
 
+export const AsTypeFunction = (fromType: string, toType: string) => {
     let castString = castFromEncrypted(fromType, toType, "value");
     if (fromType === 'bool' && toType === 'ebool') {
-        return `function asEbool(bool value) internal pure returns (ebool) {
-    uint256 sVal = 0;
-    if (value) {
-        sVal = 1;
-    }
+        return `\n\tfunction asEbool(bool value) internal pure returns (ebool) {
+        uint256 sVal = 0;
+        if (value) {
+            sVal = 1;
+        }
 
-    return asEbool(sVal);
-}\n`;
+        return asEbool(sVal);
+    }`;
     }
     else if (fromType === 'bytes memory') {
         castString = castFromBytes("value", toType)
@@ -209,9 +208,9 @@ export const AsTypeFunction = (fromType: string, toType: string) => {
         throw new Error(`Unsupported type for casting: ${fromType}`)
     }
 
-    return `function as${capitalize(toType)}(${fromType} value) internal pure returns (${toType}) {
-    return ${toType}.wrap(${castString});
-}\n`;
+    return `\n\tfunction as${capitalize(toType)}(${fromType} value) internal pure returns (${toType}) {
+        return ${toType}.wrap(${castString});
+    }`;
 }
 
 function TypeCastTestingFunction(fromType: string, fromTypeForTs: string, toType: string, fromTypeEncrypted?: string) {
@@ -221,9 +220,9 @@ function TypeCastTestingFunction(fromType: string, fromTypeForTs: string, toType
     testType = testType === 'bytes memory' ? 'PreEncrypted' : capitalize(testType);
     testType = testType === 'Uint256' ? 'Plaintext' : testType;
     const encryptedVal = fromTypeEncrypted ? `TFHE.as${capitalize(fromTypeEncrypted)}(val)` : "val";
-    const func = `\tfunction castFrom${testType}To${to}(${fromType} val) public pure returns (${retType}) {
-    \treturn TFHE.decrypt(TFHE.as${to}(${encryptedVal}));
-\t}\n\n`
+    const func = `\n\tfunction castFrom${testType}To${to}(${fromType} val) public pure returns (${retType}) {
+        return TFHE.decrypt(TFHE.as${to}(${encryptedVal}));
+    }`;
 
     let retTypeTs = (retType === 'bool') ? 'boolean' : retType;
     retTypeTs = retTypeTs.includes("uint") ? 'bigint' : retTypeTs;
@@ -267,8 +266,8 @@ export function SolTemplate2Arg(name: string, input1: AllTypes, input2: AllTypes
     let variableName1 = input2 === "bytes32" ? "value" : "lhs";
     let variableName2 = input2 === "bytes32" ? "publicKey" : "rhs";
 
-    let funcBody = `
-function ${name}(${input1} ${variableName1}, ${input2} ${variableName2}) internal pure returns (${returnType}) {`;
+    let funcBody = `\n
+    function ${name}(${input1} ${variableName1}, ${input2} ${variableName2}) internal pure returns (${returnType}) {`;
 
 
     if (valueIsEncrypted(input1)) {
@@ -283,40 +282,37 @@ function ${name}(${input1} ${variableName1}, ${input2} ${variableName2}) interna
             let input2Cast = input1 === input2 ? variableName2 : `${asEuintFuncName(input1)}(${variableName2})`;
             //
             funcBody += `
-    if(!isInitialized(${variableName1}) || !isInitialized(${variableName2})) {
-        revert("One or more inputs are not initialized.");
-    }
-    ${UnderlyingTypes[input1]} unwrappedInput1 = ${unwrapType(input1, variableName1)};
-    ${UnderlyingTypes[input1]} unwrappedInput2 = ${unwrapType(input1, `${input2Cast}`)};
+        if (!isInitialized(${variableName1}) || !isInitialized(${variableName2})) {
+            revert("One or more inputs are not initialized.");
+        }
+        ${UnderlyingTypes[input1]} unwrappedInput1 = ${unwrapType(input1, variableName1)};
+        ${UnderlyingTypes[input1]} unwrappedInput2 = ${unwrapType(input1, `${input2Cast}`)};
 `;
             if (valueIsEncrypted(returnType)) {
                 funcBody += `
-    ${UnderlyingTypes[returnType]} result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).${name});
-    return ${wrapType(returnType, "result")};
-`
+        ${UnderlyingTypes[returnType]} result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).${name});
+        return ${wrapType(returnType, "result")};`;
             }
             else {
                 funcBody += `
-    ${returnType} result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).${name});
-    return result;
-`
+        ${returnType} result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).${name});
+        return result;`;
             }
         }
 
         else if (input2 === "bytes32") {
             // **** Value 1 is encrypted, value 2 is bytes32 - this is basically reencrypt/wrapForUser
             funcBody += `
-    ${UnderlyingTypes[input1]} unwrapped = ${unwrapType(input1, variableName1)};
+        ${UnderlyingTypes[input1]} unwrapped = ${unwrapType(input1, variableName1)};
 
-    return Impl.${name}(unwrapped, ${variableName2});
-`
+        return Impl.${name}(unwrapped, ${variableName2});`;
         }
     } else {
         // don't support input 1 is plaintext
         throw new Error("Unsupported plaintext input1");
     }
 
-    funcBody += `\n}`
+    funcBody += `\n\t}`;
 
     return funcBody;
 }
@@ -341,7 +337,7 @@ export function testContract2ArgBoolRes(name: string, isBoolean: boolean) {
             }
 
             return 0;
-        }`
+        }`;
     if (isBoolean) {
         func += ` else if (Utils.cmp(test, "${name}(ebool,ebool)")) {
             bool aBool = true;
@@ -357,7 +353,7 @@ export function testContract2ArgBoolRes(name: string, isBoolean: boolean) {
             }
 
             return 0;
-        }`
+        }`;
     }
     func += ` else {
             require(false, string(abi.encodePacked("test '", test, "' not found")));
@@ -366,7 +362,7 @@ export function testContract2ArgBoolRes(name: string, isBoolean: boolean) {
 
     const abi = `export interface ${capitalize(name)}TestType extends Contract {
     ${name}: (test: string, a: bigint, b: bigint) => Promise<bigint>;
-}\n`
+}\n`;
     return [generateTestContract(name, func), abi];
 }
 
@@ -541,51 +537,51 @@ export function genAbiFile(abi: string) {
 export function SolTemplate1Arg(name: string, input1: AllTypes, returnType: AllTypes) {
 
     if (name === "not" && input1 === "ebool") {
-        return `\n// "not" for ebool not working in the traditional way as it is converting ebool to euint8
-// Ebool(true) is Euint8(1) so !Ebool(true) is !Euint8(1) which is Euint8(254) which is still Ebool(true)
-function not(ebool value) internal pure returns (ebool) {
-    return xor(value,  asEbool(true));
-}\n`
+        return `\n\n\t// "not" for ebool not working in the traditional way as it is converting ebool to euint8
+    // Ebool(true) is Euint8(1) so !Ebool(true) is !Euint8(1) which is Euint8(254) which is still Ebool(true)
+    function not(ebool value) internal pure returns (ebool) {
+        return xor(value,  asEbool(true));
+    }`;
     }
 
-    let returnStr = returnType === "none" ? `` : ` returns (${returnType}) `
+    let returnStr = returnType === "none" ? `` : `returns (${returnType})`;
 
-    let funcBody = `
-function ${name}(${input1} input1) internal pure ${returnStr}{`;
+    let funcBody = `\n
+    function ${name}(${input1} input1) internal pure ${returnStr} {`;
 
     if (valueIsEncrypted(input1)) {
         funcBody += `
-    if(!isInitialized(input1)) {
-        revert("One or more inputs are not initialized.");
-    }`;
+        if (!isInitialized(input1)) {
+            revert("One or more inputs are not initialized.");
+        }`;
         let unwrap = `${UnderlyingTypes[input1]} unwrappedInput1 = ${unwrapType(input1, "input1")};`;
         let getResult = (inputName: string) => `FheOps(Precompiles.Fheos).${name}(${inputName});`;
 
         if (valueIsEncrypted(returnType)) {
             // input and return type are encrypted - not/neg other unary functions
             funcBody += `
-    ${unwrap}
-    bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
-    bytes memory b = ${getResult("inputAsBytes")}
-    uint256 result = Impl.getValue(b);
-    return ${wrapType(returnType, "result")};
-}\n`
+        ${unwrap}
+        bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
+        bytes memory b = ${getResult("inputAsBytes")}
+        uint256 result = Impl.getValue(b);
+        return ${wrapType(returnType, "result")};
+    }`
         } else if (returnType === "none") {
             // this is essentially req
             funcBody += `
-    ${unwrap}
-    bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
-    ${getResult("inputAsBytes")}
-}\n`;
+        ${unwrap}
+        bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
+        ${getResult("inputAsBytes")}
+    }`;
         } else if (valueIsPlaintext(returnType)){
             let returnTypeCamelCase = returnType.charAt(0).toUpperCase() + returnType.slice(1);
             let outputConvertor = `Common.bigIntTo${returnTypeCamelCase}(result);`
             funcBody += `
-    ${unwrap}
-    bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
-    uint256 result = ${getResult("inputAsBytes")}
-    return ${outputConvertor}
-}\n`
+        ${unwrap}
+        bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
+        uint256 result = ${getResult("inputAsBytes")}
+        return ${outputConvertor}
+    }`
         }
     } else {
         throw new Error("unsupported function of 1 input that is not encrypted");
@@ -600,18 +596,18 @@ export function SolTemplate3Arg(name: string, input1: AllTypes, input2: AllTypes
                 return "";
             }
 
-            return `
-function ${name}(${input1} input1, ${input2} input2, ${input3} input3) internal pure returns (${returnType}) {
-    if(!isInitialized(input1) || !isInitialized(input2) || !isInitialized(input3)) {
-        revert("One or more inputs are not initialized.");
-    }
+            return `\n
+    function ${name}(${input1} input1, ${input2} input2, ${input3} input3) internal pure returns (${returnType}) {
+        if (!isInitialized(input1) || !isInitialized(input2) || !isInitialized(input3)) {
+            revert("One or more inputs are not initialized.");
+        }
 
-    ${UnderlyingTypes[input1]} unwrappedInput1 = ${unwrapType(input1, "input1")};
-    ${UnderlyingTypes[input2]} unwrappedInput2 = ${unwrapType(input2, "input2")};
-    ${UnderlyingTypes[input3]} unwrappedInput3 = ${unwrapType(input3, `input3`)};
+        ${UnderlyingTypes[input1]} unwrappedInput1 = ${unwrapType(input1, "input1")};
+        ${UnderlyingTypes[input2]} unwrappedInput2 = ${unwrapType(input2, "input2")};
+        ${UnderlyingTypes[input3]} unwrappedInput3 = ${unwrapType(input3, `input3`)};
 
-    ${UnderlyingTypes[returnType]} result = Impl.${name}(unwrappedInput1, unwrappedInput2, unwrappedInput3);
-    return ${wrapType(returnType, "result")};
+        ${UnderlyingTypes[returnType]} result = Impl.${name}(unwrappedInput1, unwrappedInput2, unwrappedInput3);
+        return ${wrapType(returnType, "result")};
     }`;
         } else {
             return "";
@@ -630,7 +626,7 @@ export const OperatorOverloadDecl = (funcName: string, op: string, forType: EUin
     let unaryParameters = unary ? 'lhs' : 'lhs, rhs';
     let funcParams = unaryParameters.split(',').map((key) => {return `${forType} ${key}`}).join(', ')
 
-    return `\nusing {${opOverloadName} as ${op}, Bindings${capitalize(forType)}.${funcName}} for ${forType} global;\n
+    return `\nusing {${opOverloadName} as ${op}, Bindings${capitalize(forType)}.${funcName}} for ${forType} global;
 function ${opOverloadName}(${funcParams}) pure returns (${forType}) {
     return TFHE.${funcName}(${unaryParameters});
 }\n`;
@@ -652,7 +648,8 @@ export const OperatorBinding = (funcName: string, forType: string, unary: boolea
         forType = "ebool"
     }
 
-    return `\nfunction ${funcName}(${funcParams}) pure internal returns (${forType}) {
-    return TFHE.${funcName}(${unaryParameters});
-}`;
+    return `
+    function ${funcName}(${funcParams}) pure internal returns (${forType}) {
+        return TFHE.${funcName}(${unaryParameters});
+    }`;
 }

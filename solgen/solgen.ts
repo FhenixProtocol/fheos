@@ -284,7 +284,7 @@ const main = async () => {
         const funcDefinition = generateSolidityFunction(parseFunctionDefinition(fn));
         outputFile += funcDefinition;
     }
-    outputFile += `\n// ********** TYPE CASTING ************* //\n`
+    outputFile += `\n\n\t// ********** TYPE CASTING ************* //`
 
     // generate casting functions
     for (let fromType of EInputType.concat('uint256', 'bytes memory')) {
@@ -359,8 +359,6 @@ const main = async () => {
             outputFile += PostFix();
         }
     })
-
-
 
     await fs.promises.writeFile('FHE.sol', outputFile);
     for (const testContract of Object.entries(testContracts)) {

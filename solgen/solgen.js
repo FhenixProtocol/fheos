@@ -242,7 +242,7 @@ var main = function () { return __awaiter(void 0, void 0, void 0, function () {
                     funcDefinition = generateSolidityFunction(parseFunctionDefinition(fn));
                     outputFile += funcDefinition;
                 }
-                outputFile += "\n// ********** TYPE CASTING ************* //\n";
+                outputFile += "\n\n\t// ********** TYPE CASTING ************* //";
                 // generate casting functions
                 for (_b = 0, _c = common_1.EInputType.concat('uint256', 'bytes memory'); _b < _c.length; _b++) {
                     fromType = _c[_b];
