@@ -3,4 +3,5 @@ precompiles/cache/*
 precompiles/types/*
 precompiles/artifacts/*
 solgen/templates.js
+solgen/solgen.js
 build/
