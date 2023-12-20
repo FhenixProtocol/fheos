@@ -89,6 +89,7 @@ jobs:
           mkdir -p test/automated/contracts
           mkdir temp_extraction
           tar -xvf contracts.tar -C temp_extraction
+          rm contracts.tar
           mv temp_extraction/solidity/FHE.sol temp_extraction/solidity/FheOS.sol contracts/
       - name: Commit Changes
         run: |
