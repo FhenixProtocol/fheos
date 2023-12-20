@@ -1062,6 +1062,7 @@ library TFHE {
         return asEbool(sVal);
     }
 }
+
 // ********** OPERATOR OVERLOADING ************* //
 
 using {operatorAddEuint8 as +} for euint8 global;
