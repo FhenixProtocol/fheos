@@ -5,6 +5,7 @@ import (
 	"errors"
 	"math/big"
 	"runtime"
+	"sync"
 
 	"github.com/sirupsen/logrus"
 
@@ -15,6 +16,7 @@ var logger *logrus.Logger
 
 // FHENIX: TODO - persist it somehow
 var ctHashMap map[tfhe.Hash]*tfhe.Ciphertext
+var ctHashMapLock *sync.RWMutex
 
 func InitLogger() {
 	logger = newLogger()
@@ -30,6 +32,9 @@ func InitTfheConfig(tfheConfig *tfhe.Config) error {
 
 	if ctHashMap == nil {
 		ctHashMap = make(map[tfhe.Hash]*tfhe.Ciphertext)
+	}
+	if ctHashMapLock == nil {
+		ctHashMapLock = &sync.RWMutex{}
 	}
 
 	logger.Info("Successfully initialized tfhe config to be: ", tfheConfig)
