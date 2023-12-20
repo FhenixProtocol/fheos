@@ -75,7 +75,7 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: contracts.tar
-          path: contracts.tar
+          path: .
       - name: setup git config
         run: |
           git config user.name "GitHub Actions Bot"
