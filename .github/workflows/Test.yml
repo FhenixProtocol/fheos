@@ -90,8 +90,6 @@ jobs:
           mv temp_extraction/solidity/FHE.sol temp_extraction/solidity/FheOS.sol contracts/
       - name: Commit Changes
         run: |
-          cd fhenix-contracts
-          git checkout -b automated
           git add test/automated/contracts/*
           git add contracts/FHE.sol
           git add contracts/FheOS.sol
