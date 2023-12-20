@@ -312,7 +312,7 @@ const main = async () => {
 
     outputFile += PostFix();
 
-    outputFile += `\n// ********** OPERATOR OVERLOADING ************* //\n`
+    outputFile += `\n\n// ********** OPERATOR OVERLOADING ************* //\n`
 
     // generate operator overloading
     ShorthandOperations.filter(v => v.operator !== null).forEach((value) =>  {

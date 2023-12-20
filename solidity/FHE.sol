@@ -1391,4 +1391,10 @@ library BindingsEuint32 {
     function min(euint32 lhs, euint32 rhs) pure internal returns (euint32) {
         return TFHE.min(lhs, rhs);
     }
+    function shl(euint32 lhs, euint32 rhs) pure internal returns (euint32) {
+        return TFHE.shl(lhs, rhs);
+    }
+    function shr(euint32 lhs, euint32 rhs) pure internal returns (euint32) {
+        return TFHE.shr(lhs, rhs);
+    }
 }
