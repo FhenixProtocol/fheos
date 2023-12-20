@@ -198,24 +198,26 @@ describe('Test Lte', () =>  {
 
     const testCases = [
         {
-            function: "lte(euint8,euint8)",
+            function: ["lte(euint8,euint8)", "euint8.lte(euint8)"],
             cases,
         },
         {
-            function: "lte(euint16,euint16)",
+            function: ["lte(euint16,euint16)", "euint16.lte(euint16)"],
             cases,
         },
         {
-            function: "lte(euint32,euint32)",
+            function: ["lte(euint32,euint32)", "euint32.lte(euint32)"],
             cases,
         }
     ];
     for (const test of testCases) {
-        for (const testCase of test.cases) {
-            it(`Test ${test.function}${testCase.name}`, async () => {
-                const decryptedResult = await contract.lte(test.function, BigInt(testCase.a), BigInt(testCase.b));
-                expect(decryptedResult).toBe(BigInt(testCase.expectedResult));
-            });
+        for (const testFunc of test.function) {
+            for (const testCase of test.cases) {
+                it(`Test ${testFunc}${testCase.name}`, async () => {
+                    const decryptedResult = await contract.lte(testFunc, BigInt(testCase.a), BigInt(testCase.b));
+                    expect(decryptedResult).toBe(BigInt(testCase.expectedResult));
+                });
+            }
         }
     }
 });
