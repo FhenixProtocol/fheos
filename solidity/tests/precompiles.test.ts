@@ -1,4 +1,5 @@
 import { ethers } from 'hardhat';
+import { BaseContract } from "ethers";
 import { createFheInstance } from './utils';
 import { AddTestType,
     ReencryptTestType,
@@ -27,7 +28,6 @@ import { AddTestType,
     AsEuint16TestType,
     AsEuint32TestType
 } from './abis';
-import {BaseContract} from "ethers";
 
 const deployContractFromSigner = async (con: any, signer: any, nonce?: number) => {
     return await con.deploy({
@@ -49,6 +49,7 @@ const syncNonce = async (con: any, signer: any, stateNonce: number) => {
 
     return await deployContractFromSigner(con, signer);
 }
+
 const deployContract = async (contractName: string) => {
     const [signer] = await ethers.getSigners();
     const con = await ethers.getContractFactory(contractName);
@@ -72,10 +73,12 @@ const deployContract = async (contractName: string) => {
     const contract = deployedContract.connect(signer);
     return contract;
 }
+
 const getFheContract = async (contractAddress: string) => {
     const fheContract = await createFheInstance(contractAddress);
     return fheContract;
 }
+
 describe('Test Add', () =>  {
     const aOverflow8 = 2 ** 8 - 1;
     const aOverflow16 = 2 ** 16 - 1;
@@ -145,6 +148,7 @@ describe('Test Add', () =>  {
         }
     }
 });
+
 describe('Test Reencrypt', () =>  {
     let contract;
     let fheContract;
@@ -172,8 +176,9 @@ describe('Test Reencrypt', () =>  {
 
             expect(decryptedOutput).toBe(plaintextInput);
         });
-}
+    }
 });
+
 describe('Test Lte', () =>  {
     let contract;
 
@@ -212,6 +217,7 @@ describe('Test Lte', () =>  {
         }
     }
 });
+
 describe('Test Sub', () =>  {
     const aUnderflow = 1;
     const bUnderflow = 4;
@@ -271,6 +277,7 @@ describe('Test Sub', () =>  {
         }
     }
 });
+
 describe('Test Mul', () =>  {
     const overflow8 = 2 ** 8 / 2 + 1;
     const overflow16 = 2 ** 16 / 2 + 1;
@@ -331,6 +338,7 @@ describe('Test Mul', () =>  {
         }
     }
 });
+
 describe('Test Lt', () =>  {
     let contract;
 
@@ -464,6 +472,7 @@ describe('Test Req', () =>  {
         }
     }
 });
+
 describe('Test Div', () =>  {
     let contract;
 
@@ -513,6 +522,7 @@ describe('Test Div', () =>  {
         }
     }
 });
+
 describe('Test Gt', () =>  {
     let contract;
 
@@ -551,6 +561,7 @@ describe('Test Gt', () =>  {
         }
     }
 });
+
 describe('Test Gte', () =>  {
     let contract;
 
@@ -589,6 +600,7 @@ describe('Test Gte', () =>  {
         }
     }
 });
+
 describe('Test Rem', () =>  {
     let contract;
 
@@ -628,6 +640,7 @@ describe('Test Rem', () =>  {
         }
     }
 });
+
 describe('Test And', () =>  {
     let contract;
 
@@ -675,6 +688,7 @@ describe('Test And', () =>  {
         }
     }
 });
+
 describe('Test Or', () =>  {
     let contract;
 
@@ -723,6 +737,7 @@ describe('Test Or', () =>  {
         }
     }
 });
+
 describe('Test Xor', () =>  {
     let contract;
 
@@ -773,6 +788,7 @@ describe('Test Xor', () =>  {
         }
     }
 });
+
 describe('Test Eq', () =>  {
     let contract;
 
@@ -821,6 +837,7 @@ describe('Test Eq', () =>  {
         }
     }
 });
+
 describe('Test Ne', () =>  {
     let contract;
 
@@ -869,6 +886,7 @@ describe('Test Ne', () =>  {
         }
     }
 });
+
 describe('Test Min', () =>  {
     let contract;
 
@@ -908,6 +926,7 @@ describe('Test Min', () =>  {
         }
     }
 });
+
 describe('Test Max', () =>  {
     let contract;
 
@@ -947,6 +966,7 @@ describe('Test Max', () =>  {
         }
     }
 });
+
 describe('Test Shl', () =>  {
     let contract;
 
@@ -994,6 +1014,7 @@ describe('Test Shl', () =>  {
         }
     }
 });
+
 describe('Test Shr', () =>  {
     let contract;
 
@@ -1036,6 +1057,7 @@ describe('Test Shr', () =>  {
         }
     }
 });
+
 describe('Test Not', () =>  {
     let contract;
 
@@ -1079,6 +1101,7 @@ describe('Test Not', () =>  {
         }
     }
 });
+
 describe('Test AsEbool', () =>  {
     let contract;
     let fheContract;
@@ -1137,6 +1160,7 @@ describe('Test AsEbool', () =>  {
         }
     });
 });
+
 describe('Test AsEuin8', () =>  {
     let contract;
     let fheContract;
@@ -1180,6 +1204,7 @@ describe('Test AsEuin8', () =>  {
         expect(decryptedResult).toBe(value);
     });
 });
+
 describe('Test AsEuin16', () =>  {
     let contract;
     let fheContract;
@@ -1223,6 +1248,7 @@ describe('Test AsEuin16', () =>  {
         expect(decryptedResult).toBe(value);
     });
 });
+
 describe('Test AsEuin16', () =>  {
     let contract;
     let fheContract;
@@ -1266,4 +1292,3 @@ describe('Test AsEuin16', () =>  {
         expect(decryptedResult).toBe(value);
     });
 });
-
