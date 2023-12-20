@@ -27,7 +27,8 @@ import {
     EInputType,
     EPlaintextType,
     ShorthandOperations,
-    valueIsEncrypted
+    valueIsEncrypted,
+    isComparisonType,
 } from "./common";
 
 interface FunctionMetadata {
@@ -174,7 +175,7 @@ const genSolidityFunctionHeaders = (metadata: FunctionMetadata): string[] => {
         switch (input) {
             case "encrypted":
                 for (let inputType of EInputType) {
-                    if (inputs.length === 2 && !isBooleanMathOp && EComparisonType.includes(inputType)) {
+                    if (inputs.length === 2 && !isBooleanMathOp && isComparisonType(inputType)) {
                         continue;
                     }
                     inputVariants.push(`input${idx} ${inputType}`)
@@ -319,43 +320,44 @@ const main = async () => {
             if (!valueIsEncrypted(encType)) {
                 throw new Error("InputType mismatch");
             }
-            if (!EComparisonType.includes(encType)) {
+            if (!isComparisonType(encType)) {
                 outputFile += OperatorOverloadDecl(value.func, value.operator!, encType, value.unary, value.returnsBool)
             }
         }
     });
 
-    outputFile += `\n// ********** BINDING DEFS ************* //\n`
+    outputFile += `\n// ********** BINDING DEFS ************* //`
 
     EInputType.forEach(encryptedType => {
-        if (!EComparisonType.includes(encryptedType)) {
-            BindMathOperators.forEach(bindMathOp => {
+        outputFile += "\n";
+        BindMathOperators.forEach(bindMathOp => {
 
-                if (ShorthandOperations.filter(value => value.func === bindMathOp).length === 0) {
-                    // console.log(`${bindMathOp}`)
-                    outputFile += BindingsWithoutOperator(bindMathOp, encryptedType);
+            const shortHandOp = ShorthandOperations.find(value => value.func === bindMathOp);
+            if (shortHandOp && shortHandOp.operator === null) {
+                // console.log(`${bindMathOp}`)
+                outputFile += BindingsWithoutOperator(bindMathOp, encryptedType);
+            }
+        });
+
+        outputFile += BindingLibraryType(encryptedType);
+        BindMathOperators.forEach(fnToBind => {
+            let foundFnDef = solidityHeaders.find((funcHeader) => {
+                const fnDef = parseFunctionDefinition(funcHeader);
+                const input = fnDef.inputs[0];
+
+                if (!EInputType.includes(input)) {
+                    return false;
                 }
+
+                return (fnDef.funcName === fnToBind && fnDef.inputs.every(item => item === input))
             });
 
-            outputFile += BindingLibraryType(encryptedType);
-            BindMathOperators.forEach(fnToBind => {
-                let foundFnDef = solidityHeaders.find((funcHeader) => {
-                    const fnDef = parseFunctionDefinition(funcHeader);
-                    const input = fnDef.inputs[0];
-
-                    if (!EInputType.includes(input)) {
-                        return false;
-                    }
-
-                    return (fnDef.funcName === fnToBind && fnDef.inputs.every(item => item === input))
-                });
-
-                if (foundFnDef) {
-                    console.log("parsing:", foundFnDef);
-                    const fnDef = parseFunctionDefinition(foundFnDef);
-                    if (fnDef.funcName === "and") {
-                        console.log("and return type", fnDef.returnType);
-                    }
+            if (foundFnDef) {
+                const fnDef = parseFunctionDefinition(foundFnDef);
+                if (
+                  !isComparisonType(encryptedType) ||
+                  (isComparisonType(encryptedType) && fnDef.inputs.every(isComparisonType))
+                ) {
                     outputFile += OperatorBinding(
                       fnDef.funcName,
                       encryptedType,
@@ -363,9 +365,9 @@ const main = async () => {
                       fnDef.returnType === "ebool" && !bitwiseAndLogicalOperators.includes(fnDef.funcName)
                     );
                 }
-            });
-            outputFile += PostFix();
-        }
+            }
+        });
+        outputFile += PostFix();
     })
 
     await fs.promises.writeFile('FHE.sol', outputFile);

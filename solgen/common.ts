@@ -139,3 +139,7 @@ export const valueIsEncrypted = (value: string): value is EUintType => {
 export const valueIsPlaintext = (value: string): value is PlaintextType => {
     return EPlaintextType.includes(value);
 }
+
+export const isComparisonType = (value: string): boolean => {
+    return EComparisonType.includes(value);
+}

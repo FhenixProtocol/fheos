@@ -634,11 +634,11 @@ function ${opOverloadName}(${funcParams}) pure returns (${returnType}) {
 }
 
 export const BindingsWithoutOperator = (funcName: string, forType: string) => {
-    return `\nusing {Bindings${capitalize(forType)}.${funcName}} for ${forType} global;\n`;
+    return `\nusing {Bindings${capitalize(forType)}.${funcName}} for ${forType} global;`;
 }
 
 export const BindingLibraryType = (type: string) => {
-    return `\nlibrary Bindings${capitalize(type)} {`;
+    return `\n\nlibrary Bindings${capitalize(type)} {`;
 }
 
 export const OperatorBinding = (funcName: string, forType: string, unary: boolean, returnsBool: boolean) => {

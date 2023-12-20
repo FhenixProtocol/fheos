@@ -1186,6 +1186,42 @@ function operatorRemEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
 
 // ********** BINDING DEFS ************* //
 
+using {BindingsEbool.eq} for ebool global;
+using {BindingsEbool.ne} for ebool global;
+using {BindingsEbool.gt} for ebool global;
+using {BindingsEbool.gte} for ebool global;
+using {BindingsEbool.lt} for ebool global;
+using {BindingsEbool.lte} for ebool global;
+using {BindingsEbool.max} for ebool global;
+using {BindingsEbool.min} for ebool global;
+
+library BindingsEbool {
+    function eq(ebool lhs, ebool rhs) pure internal returns (ebool) {
+        return TFHE.eq(lhs, rhs);
+    }
+    function ne(ebool lhs, ebool rhs) pure internal returns (ebool) {
+        return TFHE.ne(lhs, rhs);
+    }
+    function and(ebool lhs, ebool rhs) pure internal returns (ebool) {
+        return TFHE.and(lhs, rhs);
+    }
+    function or(ebool lhs, ebool rhs) pure internal returns (ebool) {
+        return TFHE.or(lhs, rhs);
+    }
+    function xor(ebool lhs, ebool rhs) pure internal returns (ebool) {
+        return TFHE.xor(lhs, rhs);
+    }
+}
+
+using {BindingsEuint8.eq} for euint8 global;
+using {BindingsEuint8.ne} for euint8 global;
+using {BindingsEuint8.gt} for euint8 global;
+using {BindingsEuint8.gte} for euint8 global;
+using {BindingsEuint8.lt} for euint8 global;
+using {BindingsEuint8.lte} for euint8 global;
+using {BindingsEuint8.max} for euint8 global;
+using {BindingsEuint8.min} for euint8 global;
+
 library BindingsEuint8 {
     function add(euint8 lhs, euint8 rhs) pure internal returns (euint8) {
         return TFHE.add(lhs, rhs);
@@ -1236,6 +1272,16 @@ library BindingsEuint8 {
         return TFHE.min(lhs, rhs);
     }
 }
+
+using {BindingsEuint16.eq} for euint16 global;
+using {BindingsEuint16.ne} for euint16 global;
+using {BindingsEuint16.gt} for euint16 global;
+using {BindingsEuint16.gte} for euint16 global;
+using {BindingsEuint16.lt} for euint16 global;
+using {BindingsEuint16.lte} for euint16 global;
+using {BindingsEuint16.max} for euint16 global;
+using {BindingsEuint16.min} for euint16 global;
+
 library BindingsEuint16 {
     function add(euint16 lhs, euint16 rhs) pure internal returns (euint16) {
         return TFHE.add(lhs, rhs);
@@ -1286,6 +1332,16 @@ library BindingsEuint16 {
         return TFHE.min(lhs, rhs);
     }
 }
+
+using {BindingsEuint32.eq} for euint32 global;
+using {BindingsEuint32.ne} for euint32 global;
+using {BindingsEuint32.gt} for euint32 global;
+using {BindingsEuint32.gte} for euint32 global;
+using {BindingsEuint32.lt} for euint32 global;
+using {BindingsEuint32.lte} for euint32 global;
+using {BindingsEuint32.max} for euint32 global;
+using {BindingsEuint32.min} for euint32 global;
+
 library BindingsEuint32 {
     function add(euint32 lhs, euint32 rhs) pure internal returns (euint32) {
         return TFHE.add(lhs, rhs);
