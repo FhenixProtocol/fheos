@@ -336,6 +336,24 @@ export function testContract2ArgBoolRes(name: string, isBoolean: boolean) {
             }
 
             return 0;
+        } else if (Utils.cmp(test, "euint8.${name}(euint8)")) {
+            if (TFHE.decrypt(TFHE.asEuint8(a).${name}(TFHE.asEuint8(b)))) {
+                return 1;
+            }
+
+            return 0;
+        } else if (Utils.cmp(test, "euint16.${name}(euint16)")) {
+            if (TFHE.decrypt(TFHE.asEuint16(a).${name}(TFHE.asEuint16(b)))) {
+                return 1;
+            }
+
+            return 0;
+        } else if (Utils.cmp(test, "euint32.${name}(euint32)")) {
+            if (TFHE.decrypt(TFHE.asEuint32(a).${name}(TFHE.asEuint32(b)))) {
+                return 1;
+            }
+
+            return 0;
         }`;
     if (isBoolean) {
         func += ` else if (Utils.cmp(test, "${name}(ebool,ebool)")) {
@@ -352,6 +370,18 @@ export function testContract2ArgBoolRes(name: string, isBoolean: boolean) {
             }
 
             return 0;
+        } else if (Utils.cmp(test, "ebool.${name}(ebool)")) {
+            bool aBool = true;
+            bool bBool = true;
+            if (a == 0) {
+                aBool = false;
+            }
+            if (b == 0) {
+                bBool = false;
+            }
+            if (TFHE.decrypt(TFHE.asEbool(aBool).${name}(TFHE.asEbool(bBool)))) {
+                return 1;
+            }
         }`;
     }
     func += ` else {

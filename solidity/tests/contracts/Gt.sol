@@ -26,6 +26,24 @@ contract GtTest {
             }
 
             return 0;
+        } else if (Utils.cmp(test, "euint8.gt(euint8)")) {
+            if (TFHE.decrypt(TFHE.asEuint8(a).gt(TFHE.asEuint8(b)))) {
+                return 1;
+            }
+
+            return 0;
+        } else if (Utils.cmp(test, "euint16.gt(euint16)")) {
+            if (TFHE.decrypt(TFHE.asEuint16(a).gt(TFHE.asEuint16(b)))) {
+                return 1;
+            }
+
+            return 0;
+        } else if (Utils.cmp(test, "euint32.gt(euint32)")) {
+            if (TFHE.decrypt(TFHE.asEuint32(a).gt(TFHE.asEuint32(b)))) {
+                return 1;
+            }
+
+            return 0;
         } else {
             require(false, string(abi.encodePacked("test '", test, "' not found")));
         }

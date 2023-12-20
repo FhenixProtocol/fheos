@@ -26,6 +26,24 @@ contract NeTest {
             }
 
             return 0;
+        } else if (Utils.cmp(test, "euint8.ne(euint8)")) {
+            if (TFHE.decrypt(TFHE.asEuint8(a).ne(TFHE.asEuint8(b)))) {
+                return 1;
+            }
+
+            return 0;
+        } else if (Utils.cmp(test, "euint16.ne(euint16)")) {
+            if (TFHE.decrypt(TFHE.asEuint16(a).ne(TFHE.asEuint16(b)))) {
+                return 1;
+            }
+
+            return 0;
+        } else if (Utils.cmp(test, "euint32.ne(euint32)")) {
+            if (TFHE.decrypt(TFHE.asEuint32(a).ne(TFHE.asEuint32(b)))) {
+                return 1;
+            }
+
+            return 0;
         } else if (Utils.cmp(test, "ne(ebool,ebool)")) {
             bool aBool = true;
             bool bBool = true;
@@ -40,6 +58,18 @@ contract NeTest {
             }
 
             return 0;
+        } else if (Utils.cmp(test, "ebool.ne(ebool)")) {
+            bool aBool = true;
+            bool bBool = true;
+            if (a == 0) {
+                aBool = false;
+            }
+            if (b == 0) {
+                bBool = false;
+            }
+            if (TFHE.decrypt(TFHE.asEbool(aBool).ne(TFHE.asEbool(bBool)))) {
+                return 1;
+            }
         } else {
             require(false, string(abi.encodePacked("test '", test, "' not found")));
         }
