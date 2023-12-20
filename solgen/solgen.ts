@@ -122,6 +122,10 @@ function getAllFunctionDeclarations(functionName: string, functions: string[][],
     });
 }
 
+const getOperator = (functionName: string): string | undefined => {
+    return ShorthandOperations.find(operation => operation.func === functionName)?.operator ?? undefined;
+}
+
 /** Generates a Solidity test contract based on the provided metadata */
 const generateSolidityTestContract = (metadata: FunctionMetadata): string[] => {
     const {functionName, inputCount, hasDifferentInputTypes, returnValueType, inputs, isBooleanMathOp} = metadata;
@@ -138,7 +142,7 @@ const generateSolidityTestContract = (metadata: FunctionMetadata): string[] => {
         if (returnValueType === "ebool") {
             return testContract2ArgBoolRes(functionName, isBooleanMathOp);
         }
-        return testContract2Arg(functionName, isBooleanMathOp);
+        return testContract2Arg(functionName, isBooleanMathOp, getOperator(functionName));
     }
 
     if (inputCount === 1 && inputs[0] === "encrypted" && returnValueType === "encrypted") {

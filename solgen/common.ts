@@ -129,13 +129,13 @@ export const ShorthandOperations: OperatorMap[] =
     },
     {
         func: 'shl',
-        operator: null,
+        operator: null,  // '<<' is not supported as a user-defined op in Solidity
         unary: false,
         returnsBool: false,
     },
     {
         func: 'shr',
-        operator: null,
+        operator: null, // '>>' is not supported as a user-defined op in Solidity
         unary: false,
         returnsBool: false,
     },

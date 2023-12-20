@@ -20,6 +20,12 @@ contract XorTest {
             return TFHE.decrypt(TFHE.asEuint16(a).xor(TFHE.asEuint16(b)));
         } else if (Utils.cmp(test, "euint32.xor(euint32)")) {
             return TFHE.decrypt(TFHE.asEuint32(a).xor(TFHE.asEuint32(b)));
+        } else if (Utils.cmp(test, "euint8 ^ euint8")) {
+            return TFHE.decrypt(TFHE.asEuint8(a) ^ TFHE.asEuint8(b));
+        } else if (Utils.cmp(test, "euint16 ^ euint16")) {
+            return TFHE.decrypt(TFHE.asEuint16(a) ^ TFHE.asEuint16(b));
+        } else if (Utils.cmp(test, "euint32 ^ euint32")) {
+            return TFHE.decrypt(TFHE.asEuint32(a) ^ TFHE.asEuint32(b));
         } else if (Utils.cmp(test, "xor(ebool,ebool)")) {
             bool aBool = true;
             bool bBool = true;

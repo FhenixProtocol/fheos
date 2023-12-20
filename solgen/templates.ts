@@ -493,7 +493,7 @@ export function testContract3Arg(name: string) {
     return [generateTestContract(name, func), abi];
 }
 
-export function testContract2Arg(name: string, isBoolean: boolean) {
+export function testContract2Arg(name: string, isBoolean: boolean, op?: string) {
     let func = `function ${name}(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
         if (Utils.cmp(test, "${name}(euint8,euint8)")) {
             return TFHE.decrypt(TFHE.${name}(TFHE.asEuint8(a), TFHE.asEuint8(b)));
@@ -508,6 +508,15 @@ export function testContract2Arg(name: string, isBoolean: boolean) {
         } else if (Utils.cmp(test, "euint32.${name}(euint32)")) {
             return TFHE.decrypt(TFHE.asEuint32(a).${name}(TFHE.asEuint32(b)));
         }`;
+    if (op) {
+        func += ` else if (Utils.cmp(test, "euint8 ${op} euint8")) {
+            return TFHE.decrypt(TFHE.asEuint8(a) ${op} TFHE.asEuint8(b));
+        } else if (Utils.cmp(test, "euint16 ${op} euint16")) {
+            return TFHE.decrypt(TFHE.asEuint16(a) ${op} TFHE.asEuint16(b));
+        } else if (Utils.cmp(test, "euint32 ${op} euint32")) {
+            return TFHE.decrypt(TFHE.asEuint32(a) ${op} TFHE.asEuint32(b));
+        }`;
+    }
     if (isBoolean) {
         func += ` else if (Utils.cmp(test, "${name}(ebool,ebool)")) {
             bool aBool = true;
