@@ -53,7 +53,7 @@ jobs:
       
       - name: Package Contracts
         run: |
-          tar -cvf contracts.tar solidity/tests/contracts/ solidity/FHE.sol solidity/FheOS.sol
+          tar -cvf contracts.tar solidity/FHE.sol solidity/FheOS.sol
       - uses: actions/upload-artifact@v3
         name: Store contracts
         with:
@@ -108,7 +108,7 @@ jobs:
           delete-branch: true
           title: 'Update Contracts from FheOS'
           body: |
-            Updated contracts from FheOS push to [master](https://github.com/fhenixprotocol/fheos/commit/"$GITHUB_SHA")
+            Updated contracts from FheOS push to [master](https://github.com/fhenixprotocol/fheos/commit/${{ github.sha }})
           labels: |
             report
             automated pr
