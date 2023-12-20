@@ -575,6 +575,22 @@ export function testContract2Arg(name: string, isBoolean: boolean, op?: string) 
             }
             return 0;
         }`;
+        if (op) {
+            func += ` else if (Utils.cmp(test, "ebool ${op} ebool")) {
+            bool aBool = true;
+            bool bBool = true;
+            if (a == 0) {
+                aBool = false;
+            }
+            if (b == 0) {
+                bBool = false;
+            }
+            if (TFHE.decrypt(TFHE.asEbool(aBool) ${op} TFHE.asEbool(bBool))) {
+                return 1;
+            }
+            return 0;
+        }`;
+        }
     }
     func += ` else {
             require(false, string(abi.encodePacked("test '", test, "' not found")));
@@ -583,7 +599,7 @@ export function testContract2Arg(name: string, isBoolean: boolean, op?: string) 
     const abi = `export interface ${capitalize(name)}TestType extends Contract {
     ${name}: (test: string, a: bigint, b: bigint) => Promise<bigint>;
 }\n`
-    return [generateTestContract(name,func), abi];
+    return [generateTestContract(name, func), abi];
 }
 
 export function genAbiFile(abi: string) {
