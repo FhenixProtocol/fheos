@@ -1064,137 +1064,144 @@ library TFHE {
 }
 // ********** OPERATOR OVERLOADING ************* //
 
-using {operatorAddEuint8 as +, BindingsEuint8.add} for euint8 global;
+using {operatorAddEuint8 as +} for euint8 global;
 function operatorAddEuint8(euint8 lhs, euint8 rhs) pure returns (euint8) {
     return TFHE.add(lhs, rhs);
 }
 
-using {operatorAddEuint16 as +, BindingsEuint16.add} for euint16 global;
+using {operatorAddEuint16 as +} for euint16 global;
 function operatorAddEuint16(euint16 lhs, euint16 rhs) pure returns (euint16) {
     return TFHE.add(lhs, rhs);
 }
 
-using {operatorAddEuint32 as +, BindingsEuint32.add} for euint32 global;
+using {operatorAddEuint32 as +} for euint32 global;
 function operatorAddEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
     return TFHE.add(lhs, rhs);
 }
 
-using {operatorSubEuint8 as -, BindingsEuint8.sub} for euint8 global;
+using {operatorSubEuint8 as -} for euint8 global;
 function operatorSubEuint8(euint8 lhs, euint8 rhs) pure returns (euint8) {
     return TFHE.sub(lhs, rhs);
 }
 
-using {operatorSubEuint16 as -, BindingsEuint16.sub} for euint16 global;
+using {operatorSubEuint16 as -} for euint16 global;
 function operatorSubEuint16(euint16 lhs, euint16 rhs) pure returns (euint16) {
     return TFHE.sub(lhs, rhs);
 }
 
-using {operatorSubEuint32 as -, BindingsEuint32.sub} for euint32 global;
+using {operatorSubEuint32 as -} for euint32 global;
 function operatorSubEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
     return TFHE.sub(lhs, rhs);
 }
 
-using {operatorMulEuint8 as *, BindingsEuint8.mul} for euint8 global;
+using {operatorMulEuint8 as *} for euint8 global;
 function operatorMulEuint8(euint8 lhs, euint8 rhs) pure returns (euint8) {
     return TFHE.mul(lhs, rhs);
 }
 
-using {operatorMulEuint16 as *, BindingsEuint16.mul} for euint16 global;
+using {operatorMulEuint16 as *} for euint16 global;
 function operatorMulEuint16(euint16 lhs, euint16 rhs) pure returns (euint16) {
     return TFHE.mul(lhs, rhs);
 }
 
-using {operatorMulEuint32 as *, BindingsEuint32.mul} for euint32 global;
+using {operatorMulEuint32 as *} for euint32 global;
 function operatorMulEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
     return TFHE.mul(lhs, rhs);
 }
 
-using {operatorDivEuint8 as /, BindingsEuint8.div} for euint8 global;
+using {operatorDivEuint8 as /} for euint8 global;
 function operatorDivEuint8(euint8 lhs, euint8 rhs) pure returns (euint8) {
     return TFHE.div(lhs, rhs);
 }
 
-using {operatorDivEuint16 as /, BindingsEuint16.div} for euint16 global;
+using {operatorDivEuint16 as /} for euint16 global;
 function operatorDivEuint16(euint16 lhs, euint16 rhs) pure returns (euint16) {
     return TFHE.div(lhs, rhs);
 }
 
-using {operatorDivEuint32 as /, BindingsEuint32.div} for euint32 global;
+using {operatorDivEuint32 as /} for euint32 global;
 function operatorDivEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
     return TFHE.div(lhs, rhs);
 }
 
-using {operatorOrEuint8 as |, BindingsEuint8.or} for euint8 global;
+using {operatorOrEbool as |} for ebool global;
+function operatorOrEbool(ebool lhs, ebool rhs) pure returns (ebool) {
+    return TFHE.or(lhs, rhs);
+}
+
+using {operatorOrEuint8 as |} for euint8 global;
 function operatorOrEuint8(euint8 lhs, euint8 rhs) pure returns (euint8) {
     return TFHE.or(lhs, rhs);
 }
 
-using {operatorOrEuint16 as |, BindingsEuint16.or} for euint16 global;
+using {operatorOrEuint16 as |} for euint16 global;
 function operatorOrEuint16(euint16 lhs, euint16 rhs) pure returns (euint16) {
     return TFHE.or(lhs, rhs);
 }
 
-using {operatorOrEuint32 as |, BindingsEuint32.or} for euint32 global;
+using {operatorOrEuint32 as |} for euint32 global;
 function operatorOrEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
     return TFHE.or(lhs, rhs);
 }
 
-using {operatorAndEuint8 as &, BindingsEuint8.and} for euint8 global;
+using {operatorAndEbool as &} for ebool global;
+function operatorAndEbool(ebool lhs, ebool rhs) pure returns (ebool) {
+    return TFHE.and(lhs, rhs);
+}
+
+using {operatorAndEuint8 as &} for euint8 global;
 function operatorAndEuint8(euint8 lhs, euint8 rhs) pure returns (euint8) {
     return TFHE.and(lhs, rhs);
 }
 
-using {operatorAndEuint16 as &, BindingsEuint16.and} for euint16 global;
+using {operatorAndEuint16 as &} for euint16 global;
 function operatorAndEuint16(euint16 lhs, euint16 rhs) pure returns (euint16) {
     return TFHE.and(lhs, rhs);
 }
 
-using {operatorAndEuint32 as &, BindingsEuint32.and} for euint32 global;
+using {operatorAndEuint32 as &} for euint32 global;
 function operatorAndEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
     return TFHE.and(lhs, rhs);
 }
 
-using {operatorXorEuint8 as ^, BindingsEuint8.xor} for euint8 global;
+using {operatorXorEbool as ^} for ebool global;
+function operatorXorEbool(ebool lhs, ebool rhs) pure returns (ebool) {
+    return TFHE.xor(lhs, rhs);
+}
+
+using {operatorXorEuint8 as ^} for euint8 global;
 function operatorXorEuint8(euint8 lhs, euint8 rhs) pure returns (euint8) {
     return TFHE.xor(lhs, rhs);
 }
 
-using {operatorXorEuint16 as ^, BindingsEuint16.xor} for euint16 global;
+using {operatorXorEuint16 as ^} for euint16 global;
 function operatorXorEuint16(euint16 lhs, euint16 rhs) pure returns (euint16) {
     return TFHE.xor(lhs, rhs);
 }
 
-using {operatorXorEuint32 as ^, BindingsEuint32.xor} for euint32 global;
+using {operatorXorEuint32 as ^} for euint32 global;
 function operatorXorEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
     return TFHE.xor(lhs, rhs);
 }
 
-using {operatorRemEuint8 as %, BindingsEuint8.rem} for euint8 global;
+using {operatorRemEuint8 as %} for euint8 global;
 function operatorRemEuint8(euint8 lhs, euint8 rhs) pure returns (euint8) {
     return TFHE.rem(lhs, rhs);
 }
 
-using {operatorRemEuint16 as %, BindingsEuint16.rem} for euint16 global;
+using {operatorRemEuint16 as %} for euint16 global;
 function operatorRemEuint16(euint16 lhs, euint16 rhs) pure returns (euint16) {
     return TFHE.rem(lhs, rhs);
 }
 
-using {operatorRemEuint32 as %, BindingsEuint32.rem} for euint32 global;
+using {operatorRemEuint32 as %} for euint32 global;
 function operatorRemEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
     return TFHE.rem(lhs, rhs);
 }
 
 // ********** BINDING DEFS ************* //
 
-using {BindingsEbool.eq} for ebool global;
-using {BindingsEbool.ne} for ebool global;
-using {BindingsEbool.gt} for ebool global;
-using {BindingsEbool.gte} for ebool global;
-using {BindingsEbool.lt} for ebool global;
-using {BindingsEbool.lte} for ebool global;
-using {BindingsEbool.max} for ebool global;
-using {BindingsEbool.min} for ebool global;
-
+using BindingsEbool for ebool global;
 library BindingsEbool {
     function eq(ebool lhs, ebool rhs) pure internal returns (ebool) {
         return TFHE.eq(lhs, rhs);
@@ -1213,15 +1220,7 @@ library BindingsEbool {
     }
 }
 
-using {BindingsEuint8.eq} for euint8 global;
-using {BindingsEuint8.ne} for euint8 global;
-using {BindingsEuint8.gt} for euint8 global;
-using {BindingsEuint8.gte} for euint8 global;
-using {BindingsEuint8.lt} for euint8 global;
-using {BindingsEuint8.lte} for euint8 global;
-using {BindingsEuint8.max} for euint8 global;
-using {BindingsEuint8.min} for euint8 global;
-
+using BindingsEuint8 for euint8 global;
 library BindingsEuint8 {
     function add(euint8 lhs, euint8 rhs) pure internal returns (euint8) {
         return TFHE.add(lhs, rhs);
@@ -1271,17 +1270,15 @@ library BindingsEuint8 {
     function min(euint8 lhs, euint8 rhs) pure internal returns (euint8) {
         return TFHE.min(lhs, rhs);
     }
+    function shl(euint8 lhs, euint8 rhs) pure internal returns (euint8) {
+        return TFHE.shl(lhs, rhs);
+    }
+    function shr(euint8 lhs, euint8 rhs) pure internal returns (euint8) {
+        return TFHE.shr(lhs, rhs);
+    }
 }
 
-using {BindingsEuint16.eq} for euint16 global;
-using {BindingsEuint16.ne} for euint16 global;
-using {BindingsEuint16.gt} for euint16 global;
-using {BindingsEuint16.gte} for euint16 global;
-using {BindingsEuint16.lt} for euint16 global;
-using {BindingsEuint16.lte} for euint16 global;
-using {BindingsEuint16.max} for euint16 global;
-using {BindingsEuint16.min} for euint16 global;
-
+using BindingsEuint16 for euint16 global;
 library BindingsEuint16 {
     function add(euint16 lhs, euint16 rhs) pure internal returns (euint16) {
         return TFHE.add(lhs, rhs);
@@ -1331,17 +1328,15 @@ library BindingsEuint16 {
     function min(euint16 lhs, euint16 rhs) pure internal returns (euint16) {
         return TFHE.min(lhs, rhs);
     }
+    function shl(euint16 lhs, euint16 rhs) pure internal returns (euint16) {
+        return TFHE.shl(lhs, rhs);
+    }
+    function shr(euint16 lhs, euint16 rhs) pure internal returns (euint16) {
+        return TFHE.shr(lhs, rhs);
+    }
 }
 
-using {BindingsEuint32.eq} for euint32 global;
-using {BindingsEuint32.ne} for euint32 global;
-using {BindingsEuint32.gt} for euint32 global;
-using {BindingsEuint32.gte} for euint32 global;
-using {BindingsEuint32.lt} for euint32 global;
-using {BindingsEuint32.lte} for euint32 global;
-using {BindingsEuint32.max} for euint32 global;
-using {BindingsEuint32.min} for euint32 global;
-
+using BindingsEuint32 for euint32 global;
 library BindingsEuint32 {
     function add(euint32 lhs, euint32 rhs) pure internal returns (euint32) {
         return TFHE.add(lhs, rhs);

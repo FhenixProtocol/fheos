@@ -22,13 +22,14 @@ import {
 } from "./templates";
 import {
     AllTypes,
-    BindMathOperators, bitwiseAndLogicalOperators,
-    EComparisonType,
+    BindMathOperators,
+    bitwiseAndLogicalOperators,
     EInputType,
     EPlaintextType,
     ShorthandOperations,
     valueIsEncrypted,
     isComparisonType,
+    isBitwiseOp,
 } from "./common";
 
 interface FunctionMetadata {
@@ -320,7 +321,7 @@ const main = async () => {
             if (!valueIsEncrypted(encType)) {
                 throw new Error("InputType mismatch");
             }
-            if (!isComparisonType(encType)) {
+            if (!isComparisonType(encType) || isBitwiseOp(value.func)) {
                 outputFile += OperatorOverloadDecl(value.func, value.operator!, encType, value.unary, value.returnsBool)
             }
         }
@@ -329,16 +330,6 @@ const main = async () => {
     outputFile += `\n// ********** BINDING DEFS ************* //`
 
     EInputType.forEach(encryptedType => {
-        outputFile += "\n";
-        BindMathOperators.forEach(bindMathOp => {
-
-            const shortHandOp = ShorthandOperations.find(value => value.func === bindMathOp);
-            if (shortHandOp && shortHandOp.operator === null) {
-                // console.log(`${bindMathOp}`)
-                outputFile += BindingsWithoutOperator(bindMathOp, encryptedType);
-            }
-        });
-
         outputFile += BindingLibraryType(encryptedType);
         BindMathOperators.forEach(fnToBind => {
             let foundFnDef = solidityHeaders.find((funcHeader) => {
@@ -354,10 +345,7 @@ const main = async () => {
 
             if (foundFnDef) {
                 const fnDef = parseFunctionDefinition(foundFnDef);
-                if (
-                  !isComparisonType(encryptedType) ||
-                  (isComparisonType(encryptedType) && fnDef.inputs.every(isComparisonType))
-                ) {
+                if (!isComparisonType(encryptedType) || fnDef.inputs.every(isComparisonType)) {
                     outputFile += OperatorBinding(
                       fnDef.funcName,
                       encryptedType,

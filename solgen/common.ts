@@ -155,3 +155,7 @@ export const valueIsPlaintext = (value: string): value is PlaintextType => {
 export const isComparisonType = (value: string): boolean => {
     return EComparisonType.includes(value);
 }
+
+export const isBitwiseOp = (value: string): boolean => {
+    return bitwiseAndLogicalOperators.includes(value);
+}

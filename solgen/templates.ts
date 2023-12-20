@@ -627,7 +627,7 @@ export const OperatorOverloadDecl = (funcName: string, op: string, forType: EUin
     let funcParams = unaryParameters.split(', ').map((key) => {return `${forType} ${key}`}).join(', ')
     let returnType = returnsBool ? 'ebool' : forType;
 
-    return `\nusing {${opOverloadName} as ${op}, Bindings${capitalize(forType)}.${funcName}} for ${forType} global;
+    return `\nusing {${opOverloadName} as ${op}} for ${forType} global;
 function ${opOverloadName}(${funcParams}) pure returns (${returnType}) {
     return TFHE.${funcName}(${unaryParameters});
 }\n`;
@@ -638,7 +638,9 @@ export const BindingsWithoutOperator = (funcName: string, forType: string) => {
 }
 
 export const BindingLibraryType = (type: string) => {
-    return `\n\nlibrary Bindings${capitalize(type)} {`;
+    let typeCap = capitalize(type);
+    return `\n\nusing Bindings${typeCap} for ${type} global;
+library Bindings${typeCap} {`;
 }
 
 export const OperatorBinding = (funcName: string, forType: string, unary: boolean, returnsBool: boolean) => {
