@@ -99,7 +99,7 @@ describe('Test Add', () =>  {
 
     const testCases = [
         {
-            function: "add(euint8,euint8)",
+            function: ["add(euint8,euint8)", "euint8.add(euint8)", "euint8 + euint8"],
             cases: [
                 {a: 1, b: 2, expectedResult: 3, name: ""},
                 {
@@ -112,7 +112,7 @@ describe('Test Add', () =>  {
             resType: 8,
         },
         {
-            function: "add(euint16,euint16)",
+            function: ["add(euint16,euint16)", "euint16.add(euint16)", "euint16 + euint16"],
             cases: [
                 {a: 1, b: 2, expectedResult: 3, name: ""},
                 {
@@ -125,7 +125,7 @@ describe('Test Add', () =>  {
             resType: 16,
         },
         {
-            function: "add(euint32,euint32)",
+            function: ["add(euint32,euint32)", "euint32.add(euint32)", "euint32 + euint32"],
             cases: [
                 {a: 1, b: 2, expectedResult: 3, name: ""},
                 {
@@ -140,11 +140,13 @@ describe('Test Add', () =>  {
     ];
 
     for (const test of testCases) {
-        for (const testCase of test.cases) {
-            it(`Test ${test.function}${testCase.name}`, async () => {
-                const decryptedResult = await contract.add(test.function, BigInt(testCase.a), BigInt(testCase.b));
-                expect(decryptedResult).toBe(BigInt(testCase.expectedResult));
-            });
+        for (const testFunc of test.function) {
+            for (const testCase of test.cases) {
+                it(`Test ${testFunc}${testCase.name}`, async () => {
+                    const decryptedResult = await contract.add(testFunc, BigInt(testCase.a), BigInt(testCase.b));
+                    expect(decryptedResult).toBe(BigInt(testCase.expectedResult));
+                });
+            }
         }
     }
 });
