@@ -4,8 +4,7 @@ on:
   push:
     branches: "*"
   pull_request:
-    branches: [ "master" ]
-
+    branches: "*"
 
 jobs:
   build:
@@ -64,7 +63,7 @@ jobs:
   push-to-contracts-repo:
     needs: [build]
     runs-on: ubuntu-latest
-    # if: github.ref == 'refs/heads/master'
+    if: ${{ github.ref == 'refs/heads/Cashmaney-test-ci-1' }}
     steps:
       - uses: actions/checkout@v4
         name: Checkout Fhenix-Contracts
@@ -72,6 +71,10 @@ jobs:
           repository: FhenixProtocol/fhenix-contracts
           ref: 'main'
           token:  ${{ secrets.GH_PAT }}
+      - name: Parse GH Commit Hash
+        shell: bash
+        run: |
+          echo "sha_short=$(git rev-parse --short "$GITHUB_SHA")" >> "$GITHUB_ENV"
       - uses: actions/download-artifact@v3
         with:
           name: contracts.tar
@@ -86,11 +89,9 @@ jobs:
           mkdir -p test/automated/contracts
           mkdir temp_extraction
           tar -xvf contracts.tar -C temp_extraction
-          mv temp_extraction/solidity/tests/contracts/ test/automated/contracts/
           mv temp_extraction/solidity/FHE.sol temp_extraction/solidity/FheOS.sol contracts/
       - name: Commit Changes
         run: |
-          git add test/automated/contracts/*
           git add contracts/FHE.sol
           git add contracts/FheOS.sol
           git commit -m "FheOS updated - pushing new contracts and scripts"
@@ -103,11 +104,11 @@ jobs:
           committer: GitHub <noreply@github.com>
           author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
           signoff: false
-          branch: test
+          branch: fheos-${{ env.sha_short }}
           delete-branch: true
-          title: 'Update report'
+          title: 'Update Contracts from FheOS'
           body: |
-            Updated contracts
+            Updated contracts from FheOS push to [master](https://github.com/fhenixprotocol/fheos/commit/"$GITHUB_SHA")
           labels: |
             report
             automated pr
