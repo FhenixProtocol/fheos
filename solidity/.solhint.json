@@ -1,3 +1,6 @@
 {
-  "extends": "solhint:recommended"
+  "extends": "solhint:recommended",
+  "rules": {
+    "no-inline-assembly": "off"
+  }
 }
