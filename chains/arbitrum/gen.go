@@ -112,8 +112,8 @@ func CreateTemplate(dirPath string) {
 pragma solidity >=0.8.13 <0.9.0;
 
 library Precompiles {
-   address public constant Fheos = address(128);
-   uint256 public constant FhePubKey = 68;
+    address public constant Fheos = address(128);
+    uint256 public constant FhePubKey = 68;
 }
 `)
 
@@ -181,7 +181,7 @@ interface FheOps {
 				Ret = strings.Replace(Ret, ",", "", 1)
 			}
 
-			outLine := "\tfunction " + uncapitalizeFirstLetter(Name) + "("
+			outLine := "    function " + uncapitalizeFirstLetter(Name) + "("
 			for count, param := range params {
 				if param.Type == "[]byte" {
 					param.Type = "bytes memory"
