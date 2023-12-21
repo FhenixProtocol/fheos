@@ -8,18 +8,6 @@ on:
 
 jobs:
   build:
-    # Service containers to run with `container-job`
-    services:
-      # Label used to access the service container
-      fhenix:
-        # Docker image
-        image: ghcr.io/fhenixprotocol/fhenix-node-dev:v0.0.7-standalone
-        ports:
-          # Opens tcp port
-          - 3000:3000
-          - 8548:8548
-          - 8547:8547
-  
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -47,10 +35,19 @@ jobs:
         run: |
           cp solidity/.env.example solidity/.env
           make compile
+      - name: Build Local Dev Image
+        uses: docker/build-push-action@v4
+        with:
+          file: Dockerfile
+          context: .
+          tags: ghcr.io/fhenixprotocol/localfhenix:v0.0.0
+      - name: Run Local Dev Image
+        run: |
+          docker run -it -p 8547:8547 -p 8548:8548 -p 3000:3000 ghcr.io/fhenixprotocol/localfhenix:v0.0.0 &
       - name: Run tests
         run: |
           make test
-      
+        
       - name: Package Contracts
         run: |
           tar -cvf contracts.tar solidity/FHE.sol solidity/FheOS.sol
@@ -63,6 +60,7 @@ jobs:
   push-to-contracts-repo:
     needs: [build]
     runs-on: ubuntu-latest
+    
     if: ${{ github.ref == 'refs/heads/master' }}
     steps:
       - uses: actions/checkout@v4
