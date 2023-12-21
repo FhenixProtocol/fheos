@@ -384,7 +384,7 @@ export function testContract2ArgBoolRes(name: string, isBoolean: boolean) {
         }`;
     }
     func += ` else {
-            require(false, string(abi.encodePacked("test '", test, "' not found")));
+            revert TestNotFound(test);
         }
     }`;
 
@@ -414,7 +414,7 @@ export function testContract1Arg(name: string) {
 
             return 0;
         } else {
-            require(false, string(abi.encodePacked("test '", test, "' not found")));
+            revert TestNotFound(test);
         }
     }`;
     const abi = `export interface ${capitalize(name)}TestType extends Contract {
@@ -429,6 +429,8 @@ pragma solidity ^0.8.17;
 
 import "../../FHE.sol";
 import "./utils/Utils.sol";
+
+error TestNotFound(string test);
 
 contract ${capitalize(name)}Test {
     using Utils for *;
@@ -453,7 +455,7 @@ export function testContractReq() {
             }
             TFHE.req(TFHE.asEbool(b));
         } else {
-            require(false, string(abi.encodePacked("test '", test, "' not found")));
+            revert TestNotFound(test);
         }
     }`;
     const abi = `export interface ReqTestType extends Contract {
@@ -478,7 +480,7 @@ export function testContractReencrypt() {
 
             return TFHE.reencrypt(TFHE.asEbool(b), pubkey);
         } else {
-            require(false, string(abi.encodePacked("test '", test, "' not found")));
+            revert TestNotFound(test);
         }
     }`;
     const abi = `export interface ReencryptTestType extends Contract {
@@ -511,7 +513,7 @@ export function testContract3Arg(name: string) {
             }
             return 0;
         } else {
-            require(false, string(abi.encodePacked("test '", test, "' not found")));
+            revert TestNotFound(test);
         }
     }`;
     const abi = `export interface ${capitalize(name)}TestType extends Contract {
@@ -590,7 +592,7 @@ export function testContract2Arg(name: string, isBoolean: boolean, op?: string) 
         }
     }
     func += ` else {
-            require(false, string(abi.encodePacked("test '", test, "' not found")));
+            revert TestNotFound(test);
         }
     }`;
     const abi = `export interface ${capitalize(name)}TestType extends Contract {

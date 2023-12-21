@@ -4,6 +4,8 @@ pragma solidity ^0.8.17;
 import "../../FHE.sol";
 import "./utils/Utils.sol";
 
+error TestNotFound(string test);
+
 contract SubTest {
     using Utils for *;
 
@@ -27,7 +29,7 @@ contract SubTest {
         } else if (Utils.cmp(test, "euint32 - euint32")) {
             return TFHE.decrypt(TFHE.asEuint32(a) - TFHE.asEuint32(b));
         } else {
-            require(false, string(abi.encodePacked("test '", test, "' not found")));
+            revert TestNotFound(test);
         }
     }
 

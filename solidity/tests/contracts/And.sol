@@ -4,6 +4,8 @@ pragma solidity ^0.8.17;
 import "../../FHE.sol";
 import "./utils/Utils.sol";
 
+error TestNotFound(string test);
+
 contract AndTest {
     using Utils for *;
 
@@ -66,7 +68,7 @@ contract AndTest {
             }
             return 0;
         } else {
-            require(false, string(abi.encodePacked("test '", test, "' not found")));
+            revert TestNotFound(test);
         }
     }
 

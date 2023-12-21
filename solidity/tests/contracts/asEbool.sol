@@ -4,6 +4,8 @@ pragma solidity ^0.8.17;
 import "../../FHE.sol";
 import "./utils/Utils.sol";
 
+error TestNotFound(string test);
+
 contract AsEboolTest {
     using Utils for *;
 
