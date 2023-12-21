@@ -3,7 +3,7 @@
 pragma solidity >=0.8.13 <0.9.0;
 
 library Precompiles {
-	//solhint-disable const-name-snakecase
+    //solhint-disable const-name-snakecase
     address public constant Fheos = address(128);
     uint256 public constant FhePubKey = 68;
 }

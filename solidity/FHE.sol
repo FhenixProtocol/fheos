@@ -163,7 +163,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).add);
         return euint8.wrap(result);
-	}
+    }
 
     function add(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -174,7 +174,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).add);
         return euint16.wrap(result);
-	}
+    }
 
     function add(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -185,31 +185,31 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).add);
         return euint32.wrap(result);
-	}
+    }
 
     function reencrypt(ebool value, bytes32 publicKey) internal pure returns (bytes memory) {
         uint256 unwrapped = ebool.unwrap(value);
 
         return Impl.reencrypt(unwrapped, publicKey);
-	}
+    }
 
     function reencrypt(euint8 value, bytes32 publicKey) internal pure returns (bytes memory) {
         uint256 unwrapped = euint8.unwrap(value);
 
         return Impl.reencrypt(unwrapped, publicKey);
-	}
+    }
 
     function reencrypt(euint16 value, bytes32 publicKey) internal pure returns (bytes memory) {
         uint256 unwrapped = euint16.unwrap(value);
 
         return Impl.reencrypt(unwrapped, publicKey);
-	}
+    }
 
     function reencrypt(euint32 value, bytes32 publicKey) internal pure returns (bytes memory) {
         uint256 unwrapped = euint32.unwrap(value);
 
         return Impl.reencrypt(unwrapped, publicKey);
-	}
+    }
 
     function decrypt(ebool input1) internal pure returns (bool) {
         if (!isInitialized(input1)) {
@@ -260,7 +260,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lte);
         return ebool.wrap(result);
-	}
+    }
 
     function lte(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -271,7 +271,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lte);
         return ebool.wrap(result);
-	}
+    }
 
     function lte(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -282,7 +282,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lte);
         return ebool.wrap(result);
-	}
+    }
 
     function sub(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -293,7 +293,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).sub);
         return euint8.wrap(result);
-	}
+    }
 
     function sub(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -304,7 +304,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).sub);
         return euint16.wrap(result);
-	}
+    }
 
     function sub(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -315,7 +315,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).sub);
         return euint32.wrap(result);
-	}
+    }
 
     function mul(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -326,7 +326,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).mul);
         return euint8.wrap(result);
-	}
+    }
 
     function mul(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -337,7 +337,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).mul);
         return euint16.wrap(result);
-	}
+    }
 
     function mul(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -348,7 +348,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).mul);
         return euint32.wrap(result);
-	}
+    }
 
     function lt(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -359,7 +359,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lt);
         return ebool.wrap(result);
-	}
+    }
 
     function lt(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -370,7 +370,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lt);
         return ebool.wrap(result);
-	}
+    }
 
     function lt(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -381,7 +381,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lt);
         return ebool.wrap(result);
-	}
+    }
 
     function select(ebool input1, ebool input2, ebool input3) internal pure returns (ebool) {
         if (!isInitialized(input1) || !isInitialized(input2) || !isInitialized(input3)) {
@@ -480,7 +480,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).div);
         return euint8.wrap(result);
-	}
+    }
 
     function div(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -491,7 +491,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).div);
         return euint16.wrap(result);
-	}
+    }
 
     function div(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -502,7 +502,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).div);
         return euint32.wrap(result);
-	}
+    }
 
     function gt(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -513,7 +513,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gt);
         return ebool.wrap(result);
-	}
+    }
 
     function gt(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -524,7 +524,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gt);
         return ebool.wrap(result);
-	}
+    }
 
     function gt(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -535,7 +535,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gt);
         return ebool.wrap(result);
-	}
+    }
 
     function gte(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -546,7 +546,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gte);
         return ebool.wrap(result);
-	}
+    }
 
     function gte(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -557,7 +557,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gte);
         return ebool.wrap(result);
-	}
+    }
 
     function gte(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -568,7 +568,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gte);
         return ebool.wrap(result);
-	}
+    }
 
     function rem(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -579,7 +579,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).rem);
         return euint8.wrap(result);
-	}
+    }
 
     function rem(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -590,7 +590,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).rem);
         return euint16.wrap(result);
-	}
+    }
 
     function rem(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -601,7 +601,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).rem);
         return euint32.wrap(result);
-	}
+    }
 
     function and(ebool lhs, ebool rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -612,7 +612,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).and);
         return ebool.wrap(result);
-	}
+    }
 
     function and(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -623,7 +623,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).and);
         return euint8.wrap(result);
-	}
+    }
 
     function and(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -634,7 +634,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).and);
         return euint16.wrap(result);
-	}
+    }
 
     function and(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -645,7 +645,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).and);
         return euint32.wrap(result);
-	}
+    }
 
     function or(ebool lhs, ebool rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -656,7 +656,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).or);
         return ebool.wrap(result);
-	}
+    }
 
     function or(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -667,7 +667,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).or);
         return euint8.wrap(result);
-	}
+    }
 
     function or(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -678,7 +678,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).or);
         return euint16.wrap(result);
-	}
+    }
 
     function or(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -689,7 +689,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).or);
         return euint32.wrap(result);
-	}
+    }
 
     function xor(ebool lhs, ebool rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -700,7 +700,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).xor);
         return ebool.wrap(result);
-	}
+    }
 
     function xor(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -711,7 +711,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).xor);
         return euint8.wrap(result);
-	}
+    }
 
     function xor(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -722,7 +722,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).xor);
         return euint16.wrap(result);
-	}
+    }
 
     function xor(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -733,7 +733,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).xor);
         return euint32.wrap(result);
-	}
+    }
 
     function eq(ebool lhs, ebool rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -744,7 +744,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).eq);
         return ebool.wrap(result);
-	}
+    }
 
     function eq(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -755,7 +755,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).eq);
         return ebool.wrap(result);
-	}
+    }
 
     function eq(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -766,7 +766,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).eq);
         return ebool.wrap(result);
-	}
+    }
 
     function eq(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -777,7 +777,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).eq);
         return ebool.wrap(result);
-	}
+    }
 
     function ne(ebool lhs, ebool rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -788,7 +788,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ne);
         return ebool.wrap(result);
-	}
+    }
 
     function ne(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -799,7 +799,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ne);
         return ebool.wrap(result);
-	}
+    }
 
     function ne(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -810,7 +810,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ne);
         return ebool.wrap(result);
-	}
+    }
 
     function ne(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -821,7 +821,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ne);
         return ebool.wrap(result);
-	}
+    }
 
     function min(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -832,7 +832,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).min);
         return euint8.wrap(result);
-	}
+    }
 
     function min(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -843,7 +843,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).min);
         return euint16.wrap(result);
-	}
+    }
 
     function min(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -854,7 +854,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).min);
         return euint32.wrap(result);
-	}
+    }
 
     function max(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -865,7 +865,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).max);
         return euint8.wrap(result);
-	}
+    }
 
     function max(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -876,7 +876,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).max);
         return euint16.wrap(result);
-	}
+    }
 
     function max(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -887,7 +887,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).max);
         return euint32.wrap(result);
-	}
+    }
 
     function shl(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -898,7 +898,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shl);
         return euint8.wrap(result);
-	}
+    }
 
     function shl(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -909,7 +909,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shl);
         return euint16.wrap(result);
-	}
+    }
 
     function shl(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -920,7 +920,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shl);
         return euint32.wrap(result);
-	}
+    }
 
     function shr(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -931,7 +931,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shr);
         return euint8.wrap(result);
-	}
+    }
 
     function shr(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -942,7 +942,7 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shr);
         return euint16.wrap(result);
-	}
+    }
 
     function shr(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
@@ -953,9 +953,9 @@ library TFHE {
 
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shr);
         return euint32.wrap(result);
-	}
+    }
 
-	// "not" for ebool not working in the traditional way as it converts ebool to euint8
+    // "not" for ebool not working in the traditional way as it converts ebool to euint8
     // Ebool(true) is Euint8(1) so !Ebool(true) is !Euint8(1) which is Euint8(254) which is still Ebool(true)
     function not(ebool value) internal pure returns (ebool) {
         return xor(value, asEbool(true));
@@ -994,68 +994,68 @@ library TFHE {
         return euint32.wrap(result);
     }
 
-	// ********** TYPE CASTING ************* //
-	function asEuint8(ebool value) internal pure returns (euint8) {
+    // ********** TYPE CASTING ************* //
+    function asEuint8(ebool value) internal pure returns (euint8) {
         return euint8.wrap(Impl.cast(ebool.unwrap(value), Common.EUINT8_TFHE_GO));
     }
-	function asEuint16(ebool value) internal pure returns (euint16) {
+    function asEuint16(ebool value) internal pure returns (euint16) {
         return euint16.wrap(Impl.cast(ebool.unwrap(value), Common.EUINT16_TFHE_GO));
     }
-	function asEuint32(ebool value) internal pure returns (euint32) {
+    function asEuint32(ebool value) internal pure returns (euint32) {
         return euint32.wrap(Impl.cast(ebool.unwrap(value), Common.EUINT32_TFHE_GO));
     }
-	function asEbool(euint8 value) internal pure returns (ebool) {
+    function asEbool(euint8 value) internal pure returns (ebool) {
         return ne(value,  asEuint8(0));
     }
-	function asEuint16(euint8 value) internal pure returns (euint16) {
+    function asEuint16(euint8 value) internal pure returns (euint16) {
         return euint16.wrap(Impl.cast(euint8.unwrap(value), Common.EUINT16_TFHE_GO));
     }
-	function asEuint32(euint8 value) internal pure returns (euint32) {
+    function asEuint32(euint8 value) internal pure returns (euint32) {
         return euint32.wrap(Impl.cast(euint8.unwrap(value), Common.EUINT32_TFHE_GO));
     }
-	function asEbool(euint16 value) internal pure returns (ebool) {
+    function asEbool(euint16 value) internal pure returns (ebool) {
         return ne(value,  asEuint16(0));
     }
-	function asEuint8(euint16 value) internal pure returns (euint8) {
+    function asEuint8(euint16 value) internal pure returns (euint8) {
         return euint8.wrap(Impl.cast(euint16.unwrap(value), Common.EUINT8_TFHE_GO));
     }
-	function asEuint32(euint16 value) internal pure returns (euint32) {
+    function asEuint32(euint16 value) internal pure returns (euint32) {
         return euint32.wrap(Impl.cast(euint16.unwrap(value), Common.EUINT32_TFHE_GO));
     }
-	function asEbool(euint32 value) internal pure returns (ebool) {
+    function asEbool(euint32 value) internal pure returns (ebool) {
         return ne(value,  asEuint32(0));
     }
-	function asEuint8(euint32 value) internal pure returns (euint8) {
+    function asEuint8(euint32 value) internal pure returns (euint8) {
         return euint8.wrap(Impl.cast(euint32.unwrap(value), Common.EUINT8_TFHE_GO));
     }
-	function asEuint16(euint32 value) internal pure returns (euint16) {
+    function asEuint16(euint32 value) internal pure returns (euint16) {
         return euint16.wrap(Impl.cast(euint32.unwrap(value), Common.EUINT16_TFHE_GO));
     }
-	function asEbool(uint256 value) internal pure returns (ebool) {
+    function asEbool(uint256 value) internal pure returns (ebool) {
         return ebool.wrap(Impl.trivialEncrypt(value, Common.EBOOL_TFHE_GO));
     }
-	function asEuint8(uint256 value) internal pure returns (euint8) {
+    function asEuint8(uint256 value) internal pure returns (euint8) {
         return euint8.wrap(Impl.trivialEncrypt(value, Common.EUINT8_TFHE_GO));
     }
-	function asEuint16(uint256 value) internal pure returns (euint16) {
+    function asEuint16(uint256 value) internal pure returns (euint16) {
         return euint16.wrap(Impl.trivialEncrypt(value, Common.EUINT16_TFHE_GO));
     }
-	function asEuint32(uint256 value) internal pure returns (euint32) {
+    function asEuint32(uint256 value) internal pure returns (euint32) {
         return euint32.wrap(Impl.trivialEncrypt(value, Common.EUINT32_TFHE_GO));
     }
-	function asEbool(bytes memory value) internal pure returns (ebool) {
+    function asEbool(bytes memory value) internal pure returns (ebool) {
         return ebool.wrap(Impl.verify(value, Common.EBOOL_TFHE_GO));
     }
-	function asEuint8(bytes memory value) internal pure returns (euint8) {
+    function asEuint8(bytes memory value) internal pure returns (euint8) {
         return euint8.wrap(Impl.verify(value, Common.EUINT8_TFHE_GO));
     }
-	function asEuint16(bytes memory value) internal pure returns (euint16) {
+    function asEuint16(bytes memory value) internal pure returns (euint16) {
         return euint16.wrap(Impl.verify(value, Common.EUINT16_TFHE_GO));
     }
-	function asEuint32(bytes memory value) internal pure returns (euint32) {
+    function asEuint32(bytes memory value) internal pure returns (euint32) {
         return euint32.wrap(Impl.verify(value, Common.EUINT32_TFHE_GO));
     }
-	function asEbool(bool value) internal pure returns (ebool) {
+    function asEbool(bool value) internal pure returns (ebool) {
         uint256 sVal = 0;
         if (value) {
             sVal = 1;

@@ -183,7 +183,7 @@ const castFromBytes = (name: string, toType: string): string => {
 }
 
 const castToEbool = (name: string, fromType: string): string => {
-    return `\n\tfunction asEbool(${fromType} value) internal pure returns (ebool) {
+    return `\n    function asEbool(${fromType} value) internal pure returns (ebool) {
         return ne(${name},  as${capitalize(fromType)}(0));
     }`;
 }
@@ -191,7 +191,7 @@ const castToEbool = (name: string, fromType: string): string => {
 export const AsTypeFunction = (fromType: string, toType: string) => {
     let castString = castFromEncrypted(fromType, toType, "value");
     if (fromType === 'bool' && toType === 'ebool') {
-        return `\n\tfunction asEbool(bool value) internal pure returns (ebool) {
+        return `\n    function asEbool(bool value) internal pure returns (ebool) {
         uint256 sVal = 0;
         if (value) {
             sVal = 1;
@@ -210,7 +210,7 @@ export const AsTypeFunction = (fromType: string, toType: string) => {
         throw new Error(`Unsupported type for casting: ${fromType}`)
     }
 
-    return `\n\tfunction as${capitalize(toType)}(${fromType} value) internal pure returns (${toType}) {
+    return `\n    function as${capitalize(toType)}(${fromType} value) internal pure returns (${toType}) {
         return ${toType}.wrap(${castString});
     }`;
 }
@@ -222,13 +222,13 @@ function TypeCastTestingFunction(fromType: string, fromTypeForTs: string, toType
     testType = testType === 'bytes memory' ? 'PreEncrypted' : capitalize(testType);
     testType = testType === 'Uint256' ? 'Plaintext' : testType;
     const encryptedVal = fromTypeEncrypted ? `TFHE.as${capitalize(fromTypeEncrypted)}(val)` : "val";
-    const func = `\n\tfunction castFrom${testType}To${to}(${fromType} val) public pure returns (${retType}) {
+    const func = `\n\n    function castFrom${testType}To${to}(${fromType} val) public pure returns (${retType}) {
         return TFHE.decrypt(TFHE.as${to}(${encryptedVal}));
     }`;
 
     let retTypeTs = (retType === 'bool') ? 'boolean' : retType;
     retTypeTs = retTypeTs.includes("uint") ? 'bigint' : retTypeTs;
-    const abi =  `\tcastFrom${testType}To${to}: (val: ${fromTypeForTs}) => Promise<${retTypeTs}>;\n`;
+    const abi =  `    castFrom${testType}To${to}: (val: ${fromTypeForTs}) => Promise<${retTypeTs}>;\n`;
     return [func, abi];
 }
 
@@ -310,7 +310,7 @@ export function SolTemplate2Arg(name: string, input1: AllTypes, input2: AllTypes
         throw new Error("Unsupported plaintext input1");
     }
 
-    funcBody += `\n\t}`;
+    funcBody += `\n    }`;
 
     return funcBody;
 }
@@ -428,16 +428,16 @@ export function generateTestContract(name: string, testFunc: string, importTypes
     return `// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import { TFHE } from "../../FHE.sol";${importStatement}
-import { Utils } from "./utils/Utils.sol";
+import {TFHE} from "../../FHE.sol";${importStatement}
+import {Utils} from "./utils/Utils.sol";
 
 error TestNotFound(string test);
 
 contract ${capitalize(name)}Test {
     using Utils for *;
-
-    ${testFunc}\n
-}`;
+${testFunc}
+}
+`;
 }
 
 export function testContractReq() {
@@ -608,9 +608,9 @@ export function genAbiFile(abi: string) {
 
 
 export function SolTemplate1Arg(name: string, input1: AllTypes, returnType: AllTypes) {
-
     if (name === "not" && input1 === "ebool") {
-        return `\n\n\t// "not" for ebool not working in the traditional way as it converts ebool to euint8
+        return `\n
+    // "not" for ebool not working in the traditional way as it converts ebool to euint8
     // Ebool(true) is Euint8(1) so !Ebool(true) is !Euint8(1) which is Euint8(254) which is still Ebool(true)
     function not(ebool value) internal pure returns (ebool) {
         return xor(value, asEbool(true));

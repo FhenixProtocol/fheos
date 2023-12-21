@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import { TFHE } from "../../FHE.sol";
-import { Utils } from "./utils/Utils.sol";
+import {TFHE} from "../../FHE.sol";
+import {Utils} from "./utils/Utils.sol";
 
 error TestNotFound(string test);
 
 contract GteTest {
     using Utils for *;
-
-    function gte(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
+function gte(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
         if (Utils.cmp(test, "gte(euint8,euint8)")) {
             if (TFHE.decrypt(TFHE.gte(TFHE.asEuint8(a), TFHE.asEuint8(b)))) {
                 return 1;
@@ -50,5 +49,4 @@ contract GteTest {
             revert TestNotFound(test);
         }
     }
-
 }

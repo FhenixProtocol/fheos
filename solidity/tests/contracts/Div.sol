@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import { TFHE } from "../../FHE.sol";
-import { Utils } from "./utils/Utils.sol";
+import {TFHE} from "../../FHE.sol";
+import {Utils} from "./utils/Utils.sol";
 
 error TestNotFound(string test);
 
 contract DivTest {
     using Utils for *;
-
-    function div(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
+function div(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
         if (Utils.cmp(test, "div(euint8,euint8)")) {
             return TFHE.decrypt(TFHE.div(TFHE.asEuint8(a), TFHE.asEuint8(b)));
         } else if (Utils.cmp(test, "div(euint16,euint16)")) {
@@ -32,5 +31,4 @@ contract DivTest {
             revert TestNotFound(test);
         }
     }
-
 }
