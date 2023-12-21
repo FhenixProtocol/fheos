@@ -2,7 +2,7 @@
 
 pragma solidity >=0.8.13 <0.9.0;
 
-import "./FheOS.sol";
+import {Precompiles, FheOps} from "./FheOS.sol";
 
 type ebool is uint256;
 type euint8 is uint256;
