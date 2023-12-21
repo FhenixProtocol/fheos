@@ -20,6 +20,8 @@ type euint8 is uint256;
 type euint16 is uint256;
 type euint32 is uint256;
 
+error UninitializedInputs();
+
 library Common {
     // Values used to communicate types to the runtime.
     uint8 internal constant ebool_tfhe_go = 0;
@@ -278,7 +280,7 @@ export function SolTemplate2Arg(name: string, input1: AllTypes, input2: AllTypes
             //
             funcBody += `
         if (!isInitialized(${variableName1}) || !isInitialized(${variableName2})) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         ${UnderlyingTypes[input1]} unwrappedInput1 = ${unwrapType(input1, variableName1)};
         ${UnderlyingTypes[input1]} unwrappedInput2 = ${unwrapType(input1, `${input2Cast}`)};
@@ -619,7 +621,7 @@ export function SolTemplate1Arg(name: string, input1: AllTypes, returnType: AllT
     if (valueIsEncrypted(input1)) {
         funcBody += `
         if (!isInitialized(input1)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }`;
         let unwrap = `${UnderlyingTypes[input1]} unwrappedInput1 = ${unwrapType(input1, "input1")};`;
         let getResult = (inputName: string) => `FheOps(Precompiles.Fheos).${name}(${inputName});`;
@@ -666,7 +668,7 @@ export function SolTemplate3Arg(name: string, input1: AllTypes, input2: AllTypes
             return `\n
     function ${name}(${input1} input1, ${input2} input2, ${input3} input3) internal pure returns (${returnType}) {
         if (!isInitialized(input1) || !isInitialized(input2) || !isInitialized(input3)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
 
         ${UnderlyingTypes[input1]} unwrappedInput1 = ${unwrapType(input1, "input1")};

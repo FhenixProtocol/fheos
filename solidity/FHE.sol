@@ -9,6 +9,8 @@ type euint8 is uint256;
 type euint16 is uint256;
 type euint32 is uint256;
 
+error UninitializedInputs();
+
 library Common {
     // Values used to communicate types to the runtime.
     uint8 internal constant ebool_tfhe_go = 0;
@@ -153,7 +155,7 @@ library TFHE {
 
     function add(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
@@ -164,7 +166,7 @@ library TFHE {
 
     function add(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
@@ -175,7 +177,7 @@ library TFHE {
 
     function add(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
@@ -210,7 +212,7 @@ library TFHE {
 
     function decrypt(ebool input1) internal pure returns (bool) {
         if (!isInitialized(input1)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = ebool.unwrap(input1);
         bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
@@ -220,7 +222,7 @@ library TFHE {
 
     function decrypt(euint8 input1) internal pure returns (uint8) {
         if (!isInitialized(input1)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint8.unwrap(input1);
         bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
@@ -230,7 +232,7 @@ library TFHE {
 
     function decrypt(euint16 input1) internal pure returns (uint16) {
         if (!isInitialized(input1)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint16.unwrap(input1);
         bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
@@ -240,7 +242,7 @@ library TFHE {
 
     function decrypt(euint32 input1) internal pure returns (uint32) {
         if (!isInitialized(input1)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint32.unwrap(input1);
         bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
@@ -250,7 +252,7 @@ library TFHE {
 
     function lte(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
@@ -261,7 +263,7 @@ library TFHE {
 
     function lte(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
@@ -272,7 +274,7 @@ library TFHE {
 
     function lte(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
@@ -283,7 +285,7 @@ library TFHE {
 
     function sub(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
@@ -294,7 +296,7 @@ library TFHE {
 
     function sub(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
@@ -305,7 +307,7 @@ library TFHE {
 
     function sub(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
@@ -316,7 +318,7 @@ library TFHE {
 
     function mul(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
@@ -327,7 +329,7 @@ library TFHE {
 
     function mul(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
@@ -338,7 +340,7 @@ library TFHE {
 
     function mul(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
@@ -349,7 +351,7 @@ library TFHE {
 
     function lt(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
@@ -360,7 +362,7 @@ library TFHE {
 
     function lt(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
@@ -371,7 +373,7 @@ library TFHE {
 
     function lt(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
@@ -382,7 +384,7 @@ library TFHE {
 
     function select(ebool input1, ebool input2, ebool input3) internal pure returns (ebool) {
         if (!isInitialized(input1) || !isInitialized(input2) || !isInitialized(input3)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
 
         uint256 unwrappedInput1 = ebool.unwrap(input1);
@@ -395,7 +397,7 @@ library TFHE {
 
     function select(ebool input1, euint8 input2, euint8 input3) internal pure returns (euint8) {
         if (!isInitialized(input1) || !isInitialized(input2) || !isInitialized(input3)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
 
         uint256 unwrappedInput1 = ebool.unwrap(input1);
@@ -408,7 +410,7 @@ library TFHE {
 
     function select(ebool input1, euint16 input2, euint16 input3) internal pure returns (euint16) {
         if (!isInitialized(input1) || !isInitialized(input2) || !isInitialized(input3)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
 
         uint256 unwrappedInput1 = ebool.unwrap(input1);
@@ -421,7 +423,7 @@ library TFHE {
 
     function select(ebool input1, euint32 input2, euint32 input3) internal pure returns (euint32) {
         if (!isInitialized(input1) || !isInitialized(input2) || !isInitialized(input3)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
 
         uint256 unwrappedInput1 = ebool.unwrap(input1);
@@ -434,7 +436,7 @@ library TFHE {
 
     function req(ebool input1) internal pure  {
         if (!isInitialized(input1)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = ebool.unwrap(input1);
         bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
@@ -443,7 +445,7 @@ library TFHE {
 
     function req(euint8 input1) internal pure  {
         if (!isInitialized(input1)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint8.unwrap(input1);
         bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
@@ -452,7 +454,7 @@ library TFHE {
 
     function req(euint16 input1) internal pure  {
         if (!isInitialized(input1)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint16.unwrap(input1);
         bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
@@ -461,7 +463,7 @@ library TFHE {
 
     function req(euint32 input1) internal pure  {
         if (!isInitialized(input1)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint32.unwrap(input1);
         bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
@@ -470,7 +472,7 @@ library TFHE {
 
     function div(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
@@ -481,7 +483,7 @@ library TFHE {
 
     function div(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
@@ -492,7 +494,7 @@ library TFHE {
 
     function div(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
@@ -503,7 +505,7 @@ library TFHE {
 
     function gt(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
@@ -514,7 +516,7 @@ library TFHE {
 
     function gt(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
@@ -525,7 +527,7 @@ library TFHE {
 
     function gt(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
@@ -536,7 +538,7 @@ library TFHE {
 
     function gte(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
@@ -547,7 +549,7 @@ library TFHE {
 
     function gte(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
@@ -558,7 +560,7 @@ library TFHE {
 
     function gte(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
@@ -569,7 +571,7 @@ library TFHE {
 
     function rem(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
@@ -580,7 +582,7 @@ library TFHE {
 
     function rem(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
@@ -591,7 +593,7 @@ library TFHE {
 
     function rem(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
@@ -602,7 +604,7 @@ library TFHE {
 
     function and(ebool lhs, ebool rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = ebool.unwrap(lhs);
         uint256 unwrappedInput2 = ebool.unwrap(rhs);
@@ -613,7 +615,7 @@ library TFHE {
 
     function and(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
@@ -624,7 +626,7 @@ library TFHE {
 
     function and(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
@@ -635,7 +637,7 @@ library TFHE {
 
     function and(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
@@ -646,7 +648,7 @@ library TFHE {
 
     function or(ebool lhs, ebool rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = ebool.unwrap(lhs);
         uint256 unwrappedInput2 = ebool.unwrap(rhs);
@@ -657,7 +659,7 @@ library TFHE {
 
     function or(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
@@ -668,7 +670,7 @@ library TFHE {
 
     function or(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
@@ -679,7 +681,7 @@ library TFHE {
 
     function or(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
@@ -690,7 +692,7 @@ library TFHE {
 
     function xor(ebool lhs, ebool rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = ebool.unwrap(lhs);
         uint256 unwrappedInput2 = ebool.unwrap(rhs);
@@ -701,7 +703,7 @@ library TFHE {
 
     function xor(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
@@ -712,7 +714,7 @@ library TFHE {
 
     function xor(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
@@ -723,7 +725,7 @@ library TFHE {
 
     function xor(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
@@ -734,7 +736,7 @@ library TFHE {
 
     function eq(ebool lhs, ebool rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = ebool.unwrap(lhs);
         uint256 unwrappedInput2 = ebool.unwrap(rhs);
@@ -745,7 +747,7 @@ library TFHE {
 
     function eq(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
@@ -756,7 +758,7 @@ library TFHE {
 
     function eq(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
@@ -767,7 +769,7 @@ library TFHE {
 
     function eq(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
@@ -778,7 +780,7 @@ library TFHE {
 
     function ne(ebool lhs, ebool rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = ebool.unwrap(lhs);
         uint256 unwrappedInput2 = ebool.unwrap(rhs);
@@ -789,7 +791,7 @@ library TFHE {
 
     function ne(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
@@ -800,7 +802,7 @@ library TFHE {
 
     function ne(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
@@ -811,7 +813,7 @@ library TFHE {
 
     function ne(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
@@ -822,7 +824,7 @@ library TFHE {
 
     function min(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
@@ -833,7 +835,7 @@ library TFHE {
 
     function min(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
@@ -844,7 +846,7 @@ library TFHE {
 
     function min(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
@@ -855,7 +857,7 @@ library TFHE {
 
     function max(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
@@ -866,7 +868,7 @@ library TFHE {
 
     function max(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
@@ -877,7 +879,7 @@ library TFHE {
 
     function max(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
@@ -888,7 +890,7 @@ library TFHE {
 
     function shl(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
@@ -899,7 +901,7 @@ library TFHE {
 
     function shl(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
@@ -910,7 +912,7 @@ library TFHE {
 
     function shl(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
@@ -921,7 +923,7 @@ library TFHE {
 
     function shr(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
@@ -932,7 +934,7 @@ library TFHE {
 
     function shr(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
@@ -943,7 +945,7 @@ library TFHE {
 
     function shr(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
         if (!isInitialized(lhs) || !isInitialized(rhs)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
@@ -960,7 +962,7 @@ library TFHE {
 
     function not(euint8 input1) internal pure returns (euint8) {
         if (!isInitialized(input1)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint8.unwrap(input1);
         bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
@@ -971,7 +973,7 @@ library TFHE {
 
     function not(euint16 input1) internal pure returns (euint16) {
         if (!isInitialized(input1)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint16.unwrap(input1);
         bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
@@ -982,7 +984,7 @@ library TFHE {
 
     function not(euint32 input1) internal pure returns (euint32) {
         if (!isInitialized(input1)) {
-            revert("One or more inputs are not initialized.");
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint32.unwrap(input1);
         bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
