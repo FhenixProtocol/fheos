@@ -45,10 +45,13 @@ jobs:
           make gen
       - name: Compile
         run: |
-          cp solidity/.env.example solidity/.env
           make compile
+      - name: Lint
+        run: |
+          make lint
       - name: Run tests
         run: |
+          cp solidity/.env.example solidity/.env
           make test
       
       - name: Package Contracts
