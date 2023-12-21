@@ -423,12 +423,13 @@ export function testContract1Arg(name: string) {
     return [generateTestContract(name, func), abi];
 }
 
-export function generateTestContract(name: string, testFunc: string) {
+export function generateTestContract(name: string, testFunc: string, importTypes: boolean = false) {
+    const importStatement = importTypes ? `\nimport { ebool } from "../../FHE.sol";` : "";
     return `// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import "../../FHE.sol";
-import "./utils/Utils.sol";
+import { TFHE } from "../../FHE.sol";${importStatement}
+import { Utils } from "./utils/Utils.sol";
 
 error TestNotFound(string test);
 
@@ -441,7 +442,7 @@ contract ${capitalize(name)}Test {
 
 export function testContractReq() {
     // Req is failing on EthCall so we need to make it as tx for now
-    let func = `function req(string calldata test, uint256 a) public {
+    let func = `function req(string calldata test, uint256 a) public pure {
         if (Utils.cmp(test, "req(euint8)")) {
             TFHE.req(TFHE.asEuint8(a));
         } else if (Utils.cmp(test, "req(euint16)")) {
@@ -519,7 +520,7 @@ export function testContract3Arg(name: string) {
     const abi = `export interface ${capitalize(name)}TestType extends Contract {
     ${name}: (test: string, c: boolean, a: bigint, b: bigint) => Promise<bigint>;
 }\n`
-    return [generateTestContract(name, func), abi];
+    return [generateTestContract(name, func, true), abi];
 }
 
 export function testContract2Arg(name: string, isBoolean: boolean, op?: string) {

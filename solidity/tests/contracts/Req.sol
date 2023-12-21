@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import "../../FHE.sol";
-import "./utils/Utils.sol";
+import { TFHE } from "../../FHE.sol";
+import { Utils } from "./utils/Utils.sol";
 
 error TestNotFound(string test);
 
 contract ReqTest {
     using Utils for *;
 
-    function req(string calldata test, uint256 a) public {
+    function req(string calldata test, uint256 a) public pure {
         if (Utils.cmp(test, "req(euint8)")) {
             TFHE.req(TFHE.asEuint8(a));
         } else if (Utils.cmp(test, "req(euint16)")) {
