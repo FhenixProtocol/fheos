@@ -442,7 +442,7 @@ ${testFunc}
 
 export function testContractReq() {
     // Req is failing on EthCall so we need to make it as tx for now
-    let func = `function req(string calldata test, uint256 a) public pure {
+    let func = `\n    function req(string calldata test, uint256 a) public pure {
         if (Utils.cmp(test, "req(euint8)")) {
             TFHE.req(TFHE.asEuint8(a));
         } else if (Utils.cmp(test, "req(euint16)")) {
@@ -466,7 +466,7 @@ export function testContractReq() {
 }
 
 export function testContractReencrypt() {
-    let func = `function reencrypt(string calldata test, uint256 a, bytes32 pubkey) public pure returns (bytes memory reencrypted) {
+    let func = `\n    function reencrypt(string calldata test, uint256 a, bytes32 pubkey) public pure returns (bytes memory reencrypted) {
         if (Utils.cmp(test, "reencrypt(euint8)")) {
             return TFHE.reencrypt(TFHE.asEuint8(a), pubkey);
         } else if (Utils.cmp(test, "reencrypt(euint16)")) {
@@ -598,7 +598,7 @@ export function testContract2Arg(name: string, isBoolean: boolean, op?: string) 
     }`;
     const abi = `export interface ${capitalize(name)}TestType extends Contract {
     ${name}: (test: string, a: bigint, b: bigint) => Promise<bigint>;
-}\n`
+}\n`;
     return [generateTestContract(name, func), abi];
 }
 
@@ -654,7 +654,7 @@ export function SolTemplate1Arg(name: string, input1: AllTypes, returnType: AllT
         bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
         uint256 result = ${getResult("inputAsBytes")}
         return ${outputConvertor}
-    }`
+    }`;
         }
     } else {
         throw new Error("unsupported function of 1 input that is not encrypted");
