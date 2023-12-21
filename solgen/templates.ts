@@ -716,7 +716,7 @@ export const OperatorBinding = (funcName: string, forType: string, unary: boolea
     let returnType = returnsBool ? 'ebool' : forType;
 
     return `
-    function ${funcName}(${funcParams}) pure internal returns (${returnType}) {
+    function ${funcName}(${funcParams}) internal pure returns (${returnType}) {
         return TFHE.${funcName}(${unaryParameters});
     }`;
 }
