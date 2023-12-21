@@ -442,7 +442,7 @@ ${testFunc}
 
 export function testContractReq() {
     // Req is failing on EthCall so we need to make it as tx for now
-    let func = `\n    function req(string calldata test, uint256 a) public pure {
+    let func = `\n    function req(string calldata test, uint256 a) public {
         if (Utils.cmp(test, "req(euint8)")) {
             TFHE.req(TFHE.asEuint8(a));
         } else if (Utils.cmp(test, "req(euint16)")) {

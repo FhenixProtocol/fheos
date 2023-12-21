@@ -434,7 +434,7 @@ describe('Test Select', () =>  {
     }
 });
 
-describe('Test Req', () =>  {
+describe.only('Test Req', () =>  {
     let contract;
 
     // We don't really need it as test but it is a test since it is async
