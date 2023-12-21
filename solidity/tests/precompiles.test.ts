@@ -6,7 +6,7 @@ import { AddTestType,
     SubTestType,
     MulTestType,
     LtTestType,
-    CmuxTestType,
+    SelectTestType,
     ReqTestType,
     DivTestType,
     GtTestType,
@@ -25,10 +25,8 @@ import { AddTestType,
     AsEboolTestType,
     AsEuint8TestType,
     AsEuint16TestType,
-    AsEuint32TestType } from './abis';
-
-
-
+    AsEuint32TestType
+} from './abis';
 import {BaseContract} from "ethers";
 
 const deployContractFromSigner = async (con: any, signer: any, nonce?: number) => {
@@ -371,12 +369,13 @@ describe('Test Lt', () =>  {
         }
     }
 });
-describe('Test Cmux', () =>  {
+
+describe('Test Select', () =>  {
     let contract;
 
     // We don't really need it as test but it is a test since it is async
     it(`Test Contract Deployment`, async () => {
-        contract = await deployContract('CmuxTest') as CmuxTestType;
+        contract = await deployContract('SelectTest') as SelectTestType;
         expect(contract).toBeTruthy();
     });
 
@@ -387,19 +386,19 @@ describe('Test Cmux', () =>  {
 
     const testCases = [
         {
-            function: "cmux: euint8",
+            function: "select: euint8",
             cases,
         },
         {
-            function: "cmux: euint16",
+            function: "select: euint16",
             cases,
         },
         {
-            function: "cmux: euint32",
+            function: "select: euint32",
             cases,
         },
         {
-            function: "cmux: ebool",
+            function: "select: ebool",
             cases: [
                 { control: true, a: 0, b: 1, expectedResult: 0, name: "true" },
                 { control: false, a: 0, b: 1, expectedResult: 1, name: "false" },
@@ -410,12 +409,13 @@ describe('Test Cmux', () =>  {
     for (const test of testCases) {
         for (const testCase of test.cases) {
             it(`Test ${test.function}${testCase.name}`, async () => {
-                const decryptedResult = await contract.cmux(test.function, testCase.control, BigInt(testCase.a), BigInt(testCase.b));
+                const decryptedResult = await contract.select(test.function, testCase.control, BigInt(testCase.a), BigInt(testCase.b));
                 expect(decryptedResult).toBe(BigInt(testCase.expectedResult));
             });
         }
     }
 });
+
 describe('Test Req', () =>  {
     let contract;
 

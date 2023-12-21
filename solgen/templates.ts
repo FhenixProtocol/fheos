@@ -105,13 +105,13 @@ library Impl {
         result = getValue(output);
     }
     
-    function cmux(uint256 control, uint256 ifTrue, uint256 ifFalse) internal pure returns (uint256 result) {
+    function select(uint256 control, uint256 ifTrue, uint256 ifFalse) internal pure returns (uint256 result) {
         bytes memory input = bytes.concat(bytes32(control), bytes32(ifTrue), bytes32(ifFalse));
 
         bytes memory output;
 
         // Call the trivialEncrypt precompile.
-        output = FheOps(Precompiles.Fheos).cmux(input);
+        output = FheOps(Precompiles.Fheos).select(input);
 
         result = getValue(output);
     }
@@ -492,11 +492,10 @@ export function testContract3Arg(name: string) {
         }
     }`;
     const abi = `export interface ${capitalize(name)}TestType extends Contract {
-    ${name}: (test: string,c: boolean, a: bigint, b: bigint) => Promise<bigint>;
+    ${name}: (test: string, c: boolean, a: bigint, b: bigint) => Promise<bigint>;
 }\n`
-    return [generateTestContract(name,func), abi];
+    return [generateTestContract(name, func), abi];
 }
-
 
 export function testContract2Arg(name: string, isBoolean: boolean) {
     let func = ` function ${name}(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
