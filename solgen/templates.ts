@@ -491,7 +491,7 @@ export function testContractReencrypt() {
 }
 
 export function testContract3Arg(name: string) {
-    let func = `function ${name}(string calldata test, bool c, uint256 a, uint256 b) public pure returns (uint256 output) {
+    let func = `\n    function ${name}(string calldata test, bool c, uint256 a, uint256 b) public pure returns (uint256 output) {
         ebool condition = TFHE.asEbool(c);
         if (Utils.cmp(test, "${name}: euint8")) {
             return TFHE.decrypt(TFHE.${name}(condition, TFHE.asEuint8(a), TFHE.asEuint8(b)));
