@@ -16,7 +16,7 @@ compile:
 
 .PHONY: lint
 lint:
-	cd solidity && pnpm solium -f FheOS.sol
+	cd solidity && pnpm solhint FHE.sol
 
 .PHONY: compile-go-tfhe
 compile-go-tfhe:
