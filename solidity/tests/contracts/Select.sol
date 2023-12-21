@@ -18,18 +18,16 @@ contract SelectTest {
         } else if (Utils.cmp(test, "select: ebool")) {
             bool aBool = true;
             bool bBool = true;
-            
             if (a == 0) {
                 aBool = false;
             }
             if (b == 0) {
                 bBool = false;
             }
-            
+
             if(TFHE.decrypt(TFHE.select(condition, TFHE.asEbool(aBool), TFHE.asEbool(bBool)))) {
                 return 1;
             }
-            
             return 0;
         } else {
             require(false, string(abi.encodePacked("test '", test, "' not found")));

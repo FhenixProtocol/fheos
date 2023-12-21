@@ -15,31 +15,31 @@ library Common {
     uint8 internal constant euint8_tfhe_go = 0;
     uint8 internal constant euint16_tfhe_go = 1;
     uint8 internal constant euint32_tfhe_go = 2;
-    
+
     function bigIntToBool(uint256 i) internal pure returns (bool) {
         return (i > 0);
     }
-    
+
     function bigIntToUint8(uint256 i) internal pure returns (uint8) {
         return uint8(i);
     }
-    
+
     function bigIntToUint16(uint256 i) internal pure returns (uint16) {
         return uint16(i);
     }
-    
+
     function bigIntToUint32(uint256 i) internal pure returns (uint32) {
         return uint32(i);
     }
-    
+
     function bigIntToUint64(uint256 i) internal pure returns (uint64) {
         return uint64(i);
     }
-    
+
     function bigIntToUint128(uint256 i) internal pure returns (uint128) {
         return uint128(i);
     }
-    
+
     function bigIntToUint256(uint256 i) internal pure returns (uint256) {
         return i;
     }
@@ -76,13 +76,13 @@ library Impl {
         output = FheOps(Precompiles.Fheos).cast(input);
         result = getValue(output);
     }
-    
+
     function getValue(bytes memory a) internal pure returns (uint256 value) {
         assembly {
             value := mload(add(a, 0x20))
         }
     }
-    
+
     function trivialEncrypt(uint256 value, uint8 toType) internal pure returns (uint256 result) {
         bytes memory input = bytes.concat(bytes32(value), bytes1(toType));
 
@@ -93,7 +93,7 @@ library Impl {
 
         result = getValue(output);
     }
-    
+
     function select(uint256 control, uint256 ifTrue, uint256 ifFalse) internal pure returns (uint256 result) {
         bytes memory input = bytes.concat(bytes32(control), bytes32(ifTrue), bytes32(ifFalse));
 
@@ -104,7 +104,6 @@ library Impl {
 
         result = getValue(output);
     }
-
 }
 
 library TFHE {
@@ -131,7 +130,7 @@ library TFHE {
     function isInitialized(euint32 v) internal pure returns (bool) {
         return euint32.unwrap(v) != 0;
     }
-    
+
     function getValue(bytes memory a) internal pure returns (uint256 value) {
         assembly {
             value := mload(add(a, 0x20))

@@ -19,11 +19,11 @@ contract NotTest {
             if (a == 0) {
                 aBool = false;
             }
-            
+
             if (TFHE.decrypt(TFHE.not(TFHE.asEbool(aBool)))) {
                 return 1;
             }
-            
+
             return 0;
         } else {
             require(false, string(abi.encodePacked("test '", test, "' not found")));

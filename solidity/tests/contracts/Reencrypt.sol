@@ -19,7 +19,7 @@ contract ReencryptTest {
             if (a == 0) {
                 b = false;
             }
-            
+
             return TFHE.reencrypt(TFHE.asEbool(b), pubkey);
         } else {
             require(false, string(abi.encodePacked("test '", test, "' not found")));
