@@ -3,10 +3,12 @@ package precompiles
 import (
 	"encoding/hex"
 	"errors"
-	"math/big"
-	"runtime"
-
+	"fmt"
 	"github.com/sirupsen/logrus"
+	"math/big"
+	"os"
+	"runtime"
+	"time"
 
 	tfhe "github.com/fhenixprotocol/go-tfhe"
 )
@@ -15,6 +17,34 @@ var logger *logrus.Logger
 
 // FHENIX: TODO - persist it somehow
 var ctHashMap map[tfhe.Hash]*tfhe.Ciphertext
+
+func PrintRoutineTime(name string, isEnd bool) {
+	file, err := os.OpenFile("/home/user/perf/perf.txt", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		fmt.Println("Error opening file:", err)
+		return
+	}
+
+	defer file.Close()
+	depth := 3
+	log := ""
+
+	for i := 0; i < depth; i++ {
+		log += "\t"
+	}
+
+	banner := "++"
+	if isEnd {
+		banner = "--"
+	}
+
+	log += fmt.Sprintf("%s function %s at %d\n ", banner, name, time.Now().UTC().UnixMilli())
+	_, err = file.WriteString(log)
+	if err != nil {
+		fmt.Println("Error writing to file:", err)
+		return
+	}
+}
 
 func InitLogger() {
 	logger = newLogger()
@@ -52,6 +82,7 @@ func Add(input []byte, tp *TxParams) ([]byte, error) {
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
+	PrintRoutineTime(getFunctionName(), false)
 
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
@@ -79,6 +110,7 @@ func Add(input []byte, tp *TxParams) ([]byte, error) {
 	importCiphertext(result)
 
 	resultHash := result.Hash()
+	PrintRoutineTime(getFunctionName(), true)
 	logger.Debug("fheAdd success ", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), " result ", resultHash.Hex())
 	return resultHash[:], nil
 }
@@ -87,6 +119,7 @@ func Verify(input []byte, tp *TxParams) ([]byte, error) {
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
+	PrintRoutineTime(getFunctionName(), false)
 
 	if len(input) <= 1 {
 		msg := "verifyCiphertext RequiredGas() input needs to contain a ciphertext and one byte for its type"
@@ -109,6 +142,7 @@ func Verify(input []byte, tp *TxParams) ([]byte, error) {
 	importCiphertext(ct)
 
 	if tp.Commit {
+		PrintRoutineTime(getFunctionName(), true)
 		logger.Debug("verifyCiphertext success ",
 			" ctHash ", ctHash.Hex(),
 			" ctBytes64 ", hex.EncodeToString(ctBytes[:minInt(len(ctBytes), 64)]))
@@ -121,6 +155,7 @@ func Reencrypt(input []byte, tp *TxParams) ([]byte, error) {
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
+	PrintRoutineTime(getFunctionName(), false)
 
 	if !tp.EthCall {
 		msg := "reencrypt only supported on EthCall"
@@ -155,6 +190,7 @@ func Reencrypt(input []byte, tp *TxParams) ([]byte, error) {
 		logger.Error("reencrypt failed to encrypt to user key", " err ", err)
 		return nil, err
 	}
+	PrintRoutineTime(getFunctionName(), true)
 	logger.Debug("reencrypt success", " input ", hex.EncodeToString(input))
 	// FHENIX: Previously it was "return toEVMBytes(reencryptedValue), nil" but the decrypt function in Fhevm didn't support it so we removed the the toEVMBytes
 	return reencryptedValue, nil
@@ -165,6 +201,7 @@ func Decrypt(input []byte, tp *TxParams) (*big.Int, error) {
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
+	PrintRoutineTime(getFunctionName(), false)
 
 	if !tp.EthCall {
 		msg := "decrypt only supported on EthCall"
@@ -193,6 +230,7 @@ func Decrypt(input []byte, tp *TxParams) (*big.Int, error) {
 
 	bgDecrypted := new(big.Int).SetUint64(decryptedValue)
 
+	PrintRoutineTime(getFunctionName(), true)
 	logger.Debug("decrypt success", " input ", hex.EncodeToString(input))
 	return bgDecrypted, nil
 
@@ -203,6 +241,7 @@ func Lte(input []byte, tp *TxParams) ([]byte, error) {
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
+	PrintRoutineTime(getFunctionName(), false)
 
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
@@ -230,6 +269,7 @@ func Lte(input []byte, tp *TxParams) ([]byte, error) {
 	importCiphertext(result)
 
 	resultHash := result.Hash()
+	PrintRoutineTime(getFunctionName(), true)
 	logger.Debug("fheLte success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), " result ", resultHash.Hex())
 	return resultHash[:], nil
 }
@@ -238,6 +278,7 @@ func Sub(input []byte, tp *TxParams) ([]byte, error) {
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
+	PrintRoutineTime(getFunctionName(), false)
 
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
@@ -264,6 +305,7 @@ func Sub(input []byte, tp *TxParams) ([]byte, error) {
 	importCiphertext(result)
 
 	resultHash := result.Hash()
+	PrintRoutineTime(getFunctionName(), true)
 	logger.Debug("fheSub success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), " result ", resultHash.Hex())
 	return resultHash[:], nil
 }
@@ -273,6 +315,7 @@ func Mul(input []byte, tp *TxParams) ([]byte, error) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
+	PrintRoutineTime(getFunctionName(), false)
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
 		logger.Error("fheMul inputs not verified", " err ", err)
@@ -307,6 +350,7 @@ func Lt(input []byte, tp *TxParams) ([]byte, error) {
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
+	PrintRoutineTime(getFunctionName(), false)
 
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
@@ -333,6 +377,7 @@ func Lt(input []byte, tp *TxParams) ([]byte, error) {
 	importCiphertext(result)
 
 	resultHash := result.Hash()
+	PrintRoutineTime(getFunctionName(), true)
 	logger.Debug("fheLt success ", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), " result ", resultHash.Hex())
 	return resultHash[:], nil
 }
@@ -341,6 +386,7 @@ func Cmux(input []byte, tp *TxParams) ([]byte, error) {
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
+	PrintRoutineTime(getFunctionName(), false)
 
 	control, ifTrue, ifFalse, err := get3VerifiedOperands(input)
 	if err != nil {
@@ -367,6 +413,7 @@ func Cmux(input []byte, tp *TxParams) ([]byte, error) {
 	importCiphertext(result)
 
 	resultHash := result.Hash()
+	PrintRoutineTime(getFunctionName(), true)
 	logger.Debug("selector success ", " control ", control.Hash().Hex(), " ifTrue ", ifTrue.Hash().Hex(), " ifFalse ", ifTrue.Hash().Hex(), " result ", resultHash.Hex())
 	return resultHash[:], nil
 }
@@ -377,6 +424,8 @@ func Req(input []byte, tp *TxParams) ([]byte, error) {
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
+
+	PrintRoutineTime(getFunctionName(), false)
 
 	if tp.EthCall {
 		msg := "require not supported on EthCall"
@@ -418,6 +467,8 @@ func Cast(input []byte, tp *TxParams) ([]byte, error) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
+	PrintRoutineTime(getFunctionName(), false)
+
 	if !isValidType(input[32]) {
 		logger.Error("invalid type to cast to")
 		return nil, errors.New("invalid type provided")
@@ -446,6 +497,7 @@ func Cast(input []byte, tp *TxParams) ([]byte, error) {
 
 	importCiphertext(res)
 	if shouldPrintPrecompileInfo(tp) {
+		PrintRoutineTime(getFunctionName(), true)
 		logger.Debug("cast success",
 			" ctHash ", resHash.Hex(),
 		)
@@ -456,8 +508,11 @@ func Cast(input []byte, tp *TxParams) ([]byte, error) {
 
 func TrivialEncrypt(input []byte, tp *TxParams) ([]byte, error) {
 	if shouldPrintPrecompileInfo(tp) {
+		PrintRoutineTime(getFunctionName(), false)
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
+
+	PrintRoutineTime(getFunctionName(), false)
 
 	if len(input) != 33 {
 		msg := "trivialEncrypt input len must be 33 bytes"
@@ -482,6 +537,7 @@ func TrivialEncrypt(input []byte, tp *TxParams) ([]byte, error) {
 	ctHash := ct.Hash()
 	importCiphertext(ct)
 	if shouldPrintPrecompileInfo(tp) {
+		PrintRoutineTime(getFunctionName(), true)
 		logger.Debug("trivialEncrypt success",
 			" ctHash ", ctHash.Hex(),
 			" valueToEncrypt ", valueToEncrypt.Uint64())
@@ -493,6 +549,8 @@ func Div(input []byte, tp *TxParams) ([]byte, error) {
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
+
+	PrintRoutineTime(getFunctionName(), false)
 
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
@@ -520,6 +578,7 @@ func Div(input []byte, tp *TxParams) ([]byte, error) {
 
 	ctHash := result.Hash()
 
+	PrintRoutineTime(getFunctionName(), true)
 	logger.Debug("fheDiv success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), " result ", ctHash.Hex())
 	return ctHash[:], nil
 }
@@ -529,6 +588,8 @@ func Gt(input []byte, tp *TxParams) ([]byte, error) {
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
+
+	PrintRoutineTime(getFunctionName(), false)
 
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
@@ -556,6 +617,7 @@ func Gt(input []byte, tp *TxParams) ([]byte, error) {
 
 	ctHash := result.Hash()
 
+	PrintRoutineTime(getFunctionName(), true)
 	logger.Debug("fheGt success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), " result ", ctHash.Hex())
 	return ctHash[:], nil
 }
@@ -565,6 +627,8 @@ func Gte(input []byte, tp *TxParams) ([]byte, error) {
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
+
+	PrintRoutineTime(getFunctionName(), false)
 
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
@@ -592,6 +656,7 @@ func Gte(input []byte, tp *TxParams) ([]byte, error) {
 
 	ctHash := result.Hash()
 
+	PrintRoutineTime(getFunctionName(), true)
 	logger.Debug("fheGte success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), " result ", ctHash.Hex())
 	return ctHash[:], nil
 }
@@ -600,6 +665,8 @@ func Rem(input []byte, tp *TxParams) ([]byte, error) {
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
+
+	PrintRoutineTime(getFunctionName(), false)
 
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
@@ -627,6 +694,7 @@ func Rem(input []byte, tp *TxParams) ([]byte, error) {
 
 	ctHash := result.Hash()
 
+	PrintRoutineTime(getFunctionName(), true)
 	logger.Debug("fheRem success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), " result ", ctHash.Hex())
 	return ctHash[:], nil
 }
@@ -636,6 +704,8 @@ func And(input []byte, tp *TxParams) ([]byte, error) {
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
+
+	PrintRoutineTime(getFunctionName(), false)
 
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
@@ -663,6 +733,7 @@ func And(input []byte, tp *TxParams) ([]byte, error) {
 
 	ctHash := result.Hash()
 
+	PrintRoutineTime(getFunctionName(), true)
 	logger.Debug("fheAnd success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), " result ", ctHash.Hex())
 	return ctHash[:], nil
 }
@@ -672,6 +743,8 @@ func Or(input []byte, tp *TxParams) ([]byte, error) {
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
+
+	PrintRoutineTime(getFunctionName(), false)
 
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
@@ -699,6 +772,7 @@ func Or(input []byte, tp *TxParams) ([]byte, error) {
 
 	ctHash := result.Hash()
 
+	PrintRoutineTime(getFunctionName(), true)
 	logger.Debug("fheOr success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), " result ", ctHash.Hex())
 	return ctHash[:], nil
 }
@@ -708,6 +782,8 @@ func Xor(input []byte, tp *TxParams) ([]byte, error) {
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
+
+	PrintRoutineTime(getFunctionName(), false)
 
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
@@ -735,6 +811,7 @@ func Xor(input []byte, tp *TxParams) ([]byte, error) {
 
 	ctHash := result.Hash()
 
+	PrintRoutineTime(getFunctionName(), true)
 	logger.Debug("fheXor success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), " result ", ctHash.Hex())
 	return ctHash[:], nil
 }
@@ -745,6 +822,8 @@ func Eq(input []byte, tp *TxParams) ([]byte, error) {
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
+
+	PrintRoutineTime(getFunctionName(), false)
 
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
@@ -772,6 +851,7 @@ func Eq(input []byte, tp *TxParams) ([]byte, error) {
 
 	ctHash := result.Hash()
 
+	PrintRoutineTime(getFunctionName(), true)
 	logger.Debug("fheEq success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), " result ", ctHash.Hex())
 	return ctHash[:], nil
 }
@@ -782,6 +862,8 @@ func Ne(input []byte, tp *TxParams) ([]byte, error) {
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
+
+	PrintRoutineTime(getFunctionName(), false)
 
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
@@ -809,6 +891,7 @@ func Ne(input []byte, tp *TxParams) ([]byte, error) {
 
 	ctHash := result.Hash()
 
+	PrintRoutineTime(getFunctionName(), true)
 	logger.Debug("fheNe success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], nil
 }
@@ -817,6 +900,8 @@ func Min(input []byte, tp *TxParams) ([]byte, error) {
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
+
+	PrintRoutineTime(getFunctionName(), false)
 
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
@@ -844,6 +929,7 @@ func Min(input []byte, tp *TxParams) ([]byte, error) {
 
 	ctHash := result.Hash()
 
+	PrintRoutineTime(getFunctionName(), true)
 	logger.Debug("fheMin success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], nil
 }
@@ -852,6 +938,8 @@ func Max(input []byte, tp *TxParams) ([]byte, error) {
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
+
+	PrintRoutineTime(getFunctionName(), false)
 
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
@@ -879,6 +967,7 @@ func Max(input []byte, tp *TxParams) ([]byte, error) {
 
 	ctHash := result.Hash()
 
+	PrintRoutineTime(getFunctionName(), true)
 	logger.Debug("fheMax success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], nil
 }
@@ -887,6 +976,8 @@ func Shl(input []byte, tp *TxParams) ([]byte, error) {
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
+
+	PrintRoutineTime(getFunctionName(), false)
 
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
@@ -914,6 +1005,7 @@ func Shl(input []byte, tp *TxParams) ([]byte, error) {
 
 	ctHash := result.Hash()
 
+	PrintRoutineTime(getFunctionName(), true)
 	logger.Debug("fheShl success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], nil
 }
@@ -922,6 +1014,8 @@ func Shr(input []byte, tp *TxParams) ([]byte, error) {
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
+
+	PrintRoutineTime(getFunctionName(), false)
 
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
@@ -949,6 +1043,7 @@ func Shr(input []byte, tp *TxParams) ([]byte, error) {
 
 	ctHash := result.Hash()
 
+	PrintRoutineTime(getFunctionName(), true)
 	logger.Debug("fheShr success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], nil
 }
@@ -957,6 +1052,8 @@ func Not(input []byte, tp *TxParams) ([]byte, error) {
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
+
+	PrintRoutineTime(getFunctionName(), false)
 
 	ct := getCiphertext(tfhe.BytesToHash(input[0:32]))
 	if ct == nil {
@@ -979,19 +1076,7 @@ func Not(input []byte, tp *TxParams) ([]byte, error) {
 	importCiphertext(result)
 
 	resultHash := result.Hash()
+	PrintRoutineTime(getFunctionName(), true)
 	logger.Debug("fheNot success", " in ", ct.Hash().Hex(), " result ", resultHash.Hex())
 	return resultHash[:], nil
-}
-
-func GetNetworkPublicKey(tp *TxParams) ([]byte, error) {
-	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("starting new function get network public key:", getFunctionName())
-	}
-
-	pk, err := tfhe.PublicKey()
-	if err != nil {
-		return nil, err
-	}
-
-	return pk, nil
 }

@@ -405,6 +405,34 @@ import (
 type FheOps struct {
 	Address addr // 0x80
 }
+
+func PrintRoutineTime(name string, isEnd bool) {
+	file, err := os.OpenFile("/home/user/perf/perf.txt", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		fmt.Println("Error opening file:", err)
+		return
+	}
+
+	defer file.Close()
+	depth := 2
+	log := ""
+
+	for i := 0; i < depth; i++ {
+		log += "\t"
+	}
+
+	banner := "++"
+	if isEnd {
+		banner = "--"
+	}
+
+	log += fmt.Sprintf("%s function %s at %d\n ", banner, name,time.Now().UTC().UnixMilli())
+	_, err = file.WriteString(log)
+	if err != nil {
+		fmt.Println("Error writing to file:", err)
+		return
+	}
+}
 `)
 	defer file.Close()
 	for _, op := range operations {
@@ -442,16 +470,21 @@ type Argument struct {
 func GenerateFHEOperationTemplate(returnType string) *template.Template {
 	templateText := `
 func (con FheOps) {{.Name}}(c ctx, evm mech{{.Inputs}}) ({{.ReturnType}}, error) {
+	PrintRoutineTime("{{.Name}}", false)
 	tp := fheos.TxParamsFromEVM(evm)
-	return fheos.{{.Name}}({{.InnerInputs}}&tp)
+	ret, err := fheos.{{.Name}}({{.InnerInputs}}&tp)
+	PrintRoutineTime("{{.Name}}", true)
+	return ret, err
 }
 `
 
 	if returnType == "void" {
 		templateText = `
 func (con FheOps) {{.Name}}(c ctx, evm mech{{.Inputs}}) error {
+	PrintRoutineTime("{{.Name}}", false)
 	tp := fheos.TxParamsFromEVM(evm)
 	fheos.{{.Name}}({{.InnerInputs}}&tp)
+	PrintRoutineTime("{{.Name}}", true)
 	return nil
 }
 `

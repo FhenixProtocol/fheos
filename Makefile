@@ -4,7 +4,7 @@ install:
 	cd solgen && npm install
 
 .PHONY: gen
-gen:
+gen: compile-go-tfhe
 	./gen.sh
 	rm solidity/tests/contracts/*.sol || true
 	cd solgen && npm run build
@@ -26,7 +26,7 @@ check_network_is_running:
 	fi
 
 .PHONY: test
-test: check_network_is_running compile-go-tfhe gen compile
+test: check_network_is_running gen compile
 	cp solidity/.env.example solidity/.env
 	cd solidity && pnpm install
 	cd solidity && pnpm compile
