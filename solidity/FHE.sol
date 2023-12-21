@@ -13,10 +13,10 @@ error UninitializedInputs();
 
 library Common {
     // Values used to communicate types to the runtime.
-    uint8 internal constant ebool_tfhe_go = 0;
-    uint8 internal constant euint8_tfhe_go = 0;
-    uint8 internal constant euint16_tfhe_go = 1;
-    uint8 internal constant euint32_tfhe_go = 2;
+    uint8 internal constant EBOOL_TFHE_GO = 0;
+    uint8 internal constant EUINT8_TFHE_GO = 0;
+    uint8 internal constant EUINT16_TFHE_GO = 1;
+    uint8 internal constant EUINT32_TFHE_GO = 2;
 
     function bigIntToBool(uint256 i) internal pure returns (bool) {
         return (i > 0);
@@ -995,64 +995,64 @@ library TFHE {
 
 	// ********** TYPE CASTING ************* //
 	function asEuint8(ebool value) internal pure returns (euint8) {
-        return euint8.wrap(Impl.cast(ebool.unwrap(value), Common.euint8_tfhe_go));
+        return euint8.wrap(Impl.cast(ebool.unwrap(value), Common.EUINT8_TFHE_GO));
     }
 	function asEuint16(ebool value) internal pure returns (euint16) {
-        return euint16.wrap(Impl.cast(ebool.unwrap(value), Common.euint16_tfhe_go));
+        return euint16.wrap(Impl.cast(ebool.unwrap(value), Common.EUINT16_TFHE_GO));
     }
 	function asEuint32(ebool value) internal pure returns (euint32) {
-        return euint32.wrap(Impl.cast(ebool.unwrap(value), Common.euint32_tfhe_go));
+        return euint32.wrap(Impl.cast(ebool.unwrap(value), Common.EUINT32_TFHE_GO));
     }
 	function asEbool(euint8 value) internal pure returns (ebool) {
         return ne(value,  asEuint8(0));
     }
 	function asEuint16(euint8 value) internal pure returns (euint16) {
-        return euint16.wrap(Impl.cast(euint8.unwrap(value), Common.euint16_tfhe_go));
+        return euint16.wrap(Impl.cast(euint8.unwrap(value), Common.EUINT16_TFHE_GO));
     }
 	function asEuint32(euint8 value) internal pure returns (euint32) {
-        return euint32.wrap(Impl.cast(euint8.unwrap(value), Common.euint32_tfhe_go));
+        return euint32.wrap(Impl.cast(euint8.unwrap(value), Common.EUINT32_TFHE_GO));
     }
 	function asEbool(euint16 value) internal pure returns (ebool) {
         return ne(value,  asEuint16(0));
     }
 	function asEuint8(euint16 value) internal pure returns (euint8) {
-        return euint8.wrap(Impl.cast(euint16.unwrap(value), Common.euint8_tfhe_go));
+        return euint8.wrap(Impl.cast(euint16.unwrap(value), Common.EUINT8_TFHE_GO));
     }
 	function asEuint32(euint16 value) internal pure returns (euint32) {
-        return euint32.wrap(Impl.cast(euint16.unwrap(value), Common.euint32_tfhe_go));
+        return euint32.wrap(Impl.cast(euint16.unwrap(value), Common.EUINT32_TFHE_GO));
     }
 	function asEbool(euint32 value) internal pure returns (ebool) {
         return ne(value,  asEuint32(0));
     }
 	function asEuint8(euint32 value) internal pure returns (euint8) {
-        return euint8.wrap(Impl.cast(euint32.unwrap(value), Common.euint8_tfhe_go));
+        return euint8.wrap(Impl.cast(euint32.unwrap(value), Common.EUINT8_TFHE_GO));
     }
 	function asEuint16(euint32 value) internal pure returns (euint16) {
-        return euint16.wrap(Impl.cast(euint32.unwrap(value), Common.euint16_tfhe_go));
+        return euint16.wrap(Impl.cast(euint32.unwrap(value), Common.EUINT16_TFHE_GO));
     }
 	function asEbool(uint256 value) internal pure returns (ebool) {
-        return ebool.wrap(Impl.trivialEncrypt(value, Common.ebool_tfhe_go));
+        return ebool.wrap(Impl.trivialEncrypt(value, Common.EBOOL_TFHE_GO));
     }
 	function asEuint8(uint256 value) internal pure returns (euint8) {
-        return euint8.wrap(Impl.trivialEncrypt(value, Common.euint8_tfhe_go));
+        return euint8.wrap(Impl.trivialEncrypt(value, Common.EUINT8_TFHE_GO));
     }
 	function asEuint16(uint256 value) internal pure returns (euint16) {
-        return euint16.wrap(Impl.trivialEncrypt(value, Common.euint16_tfhe_go));
+        return euint16.wrap(Impl.trivialEncrypt(value, Common.EUINT16_TFHE_GO));
     }
 	function asEuint32(uint256 value) internal pure returns (euint32) {
-        return euint32.wrap(Impl.trivialEncrypt(value, Common.euint32_tfhe_go));
+        return euint32.wrap(Impl.trivialEncrypt(value, Common.EUINT32_TFHE_GO));
     }
 	function asEbool(bytes memory value) internal pure returns (ebool) {
-        return ebool.wrap(Impl.verify(value, Common.ebool_tfhe_go));
+        return ebool.wrap(Impl.verify(value, Common.EBOOL_TFHE_GO));
     }
 	function asEuint8(bytes memory value) internal pure returns (euint8) {
-        return euint8.wrap(Impl.verify(value, Common.euint8_tfhe_go));
+        return euint8.wrap(Impl.verify(value, Common.EUINT8_TFHE_GO));
     }
 	function asEuint16(bytes memory value) internal pure returns (euint16) {
-        return euint16.wrap(Impl.verify(value, Common.euint16_tfhe_go));
+        return euint16.wrap(Impl.verify(value, Common.EUINT16_TFHE_GO));
     }
 	function asEuint32(bytes memory value) internal pure returns (euint32) {
-        return euint32.wrap(Impl.verify(value, Common.euint32_tfhe_go));
+        return euint32.wrap(Impl.verify(value, Common.EUINT32_TFHE_GO));
     }
 	function asEbool(bool value) internal pure returns (ebool) {
         uint256 sVal = 0;

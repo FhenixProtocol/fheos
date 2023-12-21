@@ -24,10 +24,10 @@ error UninitializedInputs();
 
 library Common {
     // Values used to communicate types to the runtime.
-    uint8 internal constant ebool_tfhe_go = 0;
-    uint8 internal constant euint8_tfhe_go = 0;
-    uint8 internal constant euint16_tfhe_go = 1;
-    uint8 internal constant euint32_tfhe_go = 2;
+    uint8 internal constant EBOOL_TFHE_GO = 0;
+    uint8 internal constant EUINT8_TFHE_GO = 0;
+    uint8 internal constant EUINT16_TFHE_GO = 1;
+    uint8 internal constant EUINT32_TFHE_GO = 2;
 
     function bigIntToBool(uint256 i) internal pure returns (bool) {
         return (i > 0);
@@ -170,15 +170,15 @@ export const PostFix = () => {
 }
 
 const castFromEncrypted = (fromType: string, toType: string, name: string): string => {
-    return `Impl.cast(${fromType}.unwrap(${name}), Common.${toType}_tfhe_go)`;
+    return `Impl.cast(${fromType}.unwrap(${name}), Common.${toType.toUpperCase()}_TFHE_GO)`;
 }
 
 const castFromPlaintext = (name: string, toType: string): string => {
-    return `Impl.trivialEncrypt(${name}, Common.${toType}_tfhe_go)`;
+    return `Impl.trivialEncrypt(${name}, Common.${toType.toUpperCase()}_TFHE_GO)`;
 }
 
 const castFromBytes = (name: string, toType: string): string => {
-    return `Impl.verify(${name}, Common.${toType}_tfhe_go)`;
+    return `Impl.verify(${name}, Common.${toType.toUpperCase()}_TFHE_GO)`;
 }
 
 const castToEbool = (name: string, fromType: string): string => {
