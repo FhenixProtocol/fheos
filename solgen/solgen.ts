@@ -22,12 +22,14 @@ import {
 } from "./templates";
 import {
     AllTypes,
-    BindMathOperators, bitwiseAndLogicalOperators,
-    EComparisonType,
+    BindMathOperators,
+    bitwiseAndLogicalOperators,
     EInputType,
     EPlaintextType,
     ShorthandOperations,
-    valueIsEncrypted
+    valueIsEncrypted,
+    isComparisonType,
+    isBitwiseOp,
 } from "./common";
 
 interface FunctionMetadata {
@@ -120,6 +122,10 @@ function getAllFunctionDeclarations(functionName: string, functions: string[][],
     });
 }
 
+const getOperator = (functionName: string): string | undefined => {
+    return ShorthandOperations.find(operation => operation.func === functionName)?.operator ?? undefined;
+}
+
 /** Generates a Solidity test contract based on the provided metadata */
 const generateSolidityTestContract = (metadata: FunctionMetadata): string[] => {
     const {functionName, inputCount, hasDifferentInputTypes, returnValueType, inputs, isBooleanMathOp} = metadata;
@@ -136,7 +142,7 @@ const generateSolidityTestContract = (metadata: FunctionMetadata): string[] => {
         if (returnValueType === "ebool") {
             return testContract2ArgBoolRes(functionName, isBooleanMathOp);
         }
-        return testContract2Arg(functionName, isBooleanMathOp);
+        return testContract2Arg(functionName, isBooleanMathOp, getOperator(functionName));
     }
 
     if (inputCount === 1 && inputs[0] === "encrypted" && returnValueType === "encrypted") {
@@ -174,7 +180,7 @@ const genSolidityFunctionHeaders = (metadata: FunctionMetadata): string[] => {
         switch (input) {
             case "encrypted":
                 for (let inputType of EInputType) {
-                    if (inputs.length === 2 && !isBooleanMathOp && EComparisonType.includes(inputType)) {
+                    if (inputs.length === 2 && !isBooleanMathOp && isComparisonType(inputType)) {
                         continue;
                     }
                     inputVariants.push(`input${idx} ${inputType}`)
@@ -283,7 +289,7 @@ const main = async () => {
         const funcDefinition = generateSolidityFunction(parseFunctionDefinition(fn));
         outputFile += funcDefinition;
     }
-    outputFile += `\n\n\t// ********** TYPE CASTING ************* //`
+    outputFile += `\n\n    // ********** TYPE CASTING ************* //`
 
     // generate casting functions
     for (let fromType of EInputType.concat('uint256', 'bytes memory')) {
@@ -311,7 +317,7 @@ const main = async () => {
 
     outputFile += PostFix();
 
-    outputFile += `\n// ********** OPERATOR OVERLOADING ************* //\n`
+    outputFile += `\n\n// ********** OPERATOR OVERLOADING ************* //\n`
 
     // generate operator overloading
     ShorthandOperations.filter(v => v.operator !== null).forEach((value) =>  {
@@ -319,43 +325,31 @@ const main = async () => {
             if (!valueIsEncrypted(encType)) {
                 throw new Error("InputType mismatch");
             }
-            if (!EComparisonType.includes(encType)) {
+            if (!isComparisonType(encType) || isBitwiseOp(value.func)) {
                 outputFile += OperatorOverloadDecl(value.func, value.operator!, encType, value.unary, value.returnsBool)
             }
         }
     });
 
-    outputFile += `\n// ********** BINDING DEFS ************* //\n`
+    outputFile += `\n// ********** BINDING DEFS ************* //`
 
     EInputType.forEach(encryptedType => {
-        if (!EComparisonType.includes(encryptedType)) {
-            BindMathOperators.forEach(bindMathOp => {
+        outputFile += BindingLibraryType(encryptedType);
+        BindMathOperators.forEach(fnToBind => {
+            let foundFnDef = solidityHeaders.find((funcHeader) => {
+                const fnDef = parseFunctionDefinition(funcHeader);
+                const input = fnDef.inputs[0];
 
-                if (ShorthandOperations.filter(value => value.func === bindMathOp).length === 0) {
-                    // console.log(`${bindMathOp}`)
-                    outputFile += BindingsWithoutOperator(bindMathOp, encryptedType);
+                if (!EInputType.includes(input)) {
+                    return false;
                 }
+
+                return (fnDef.funcName === fnToBind && fnDef.inputs.every(item => item === input))
             });
 
-            outputFile += BindingLibraryType(encryptedType);
-            BindMathOperators.forEach(fnToBind => {
-                let foundFnDef = solidityHeaders.find((funcHeader) => {
-                    const fnDef = parseFunctionDefinition(funcHeader);
-                    const input = fnDef.inputs[0];
-
-                    if (!EInputType.includes(input)) {
-                        return false;
-                    }
-
-                    return (fnDef.funcName === fnToBind && fnDef.inputs.every(item => item === input))
-                });
-
-                if (foundFnDef) {
-                    console.log("parsing:", foundFnDef);
-                    const fnDef = parseFunctionDefinition(foundFnDef);
-                    if (fnDef.funcName === "and") {
-                        console.log("and return type", fnDef.returnType);
-                    }
+            if (foundFnDef) {
+                const fnDef = parseFunctionDefinition(foundFnDef);
+                if (!isComparisonType(encryptedType) || fnDef.inputs.every(isComparisonType)) {
                     outputFile += OperatorBinding(
                       fnDef.funcName,
                       encryptedType,
@@ -363,9 +357,9 @@ const main = async () => {
                       fnDef.returnType === "ebool" && !bitwiseAndLogicalOperators.includes(fnDef.funcName)
                     );
                 }
-            });
-            outputFile += PostFix();
-        }
+            }
+        });
+        outputFile += PostFix();
     })
 
     await fs.promises.writeFile('FHE.sol', outputFile);
@@ -378,5 +372,3 @@ const main = async () => {
 }
 
 main();
-
-

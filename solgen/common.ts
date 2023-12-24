@@ -126,10 +126,22 @@ export const ShorthandOperations: OperatorMap[] =
         operator: null,
         unary: false,
         returnsBool: true,
-    }
+    },
+    {
+        func: 'shl',
+        operator: null,  // '<<' is not supported as a user-defined op in Solidity
+        unary: false,
+        returnsBool: false,
+    },
+    {
+        func: 'shr',
+        operator: null, // '>>' is not supported as a user-defined op in Solidity
+        unary: false,
+        returnsBool: false,
+    },
 ]
 
-export const BindMathOperators = ['add', 'mul', 'div', 'sub', 'eq', 'ne', 'and', 'or', 'xor', 'gt', 'gte', 'lt', 'lte', 'rem', 'max', 'min'];
+export const BindMathOperators = ['add', 'mul', 'div', 'sub', 'eq', 'ne', 'and', 'or', 'xor', 'gt', 'gte', 'lt', 'lte', 'rem', 'max', 'min', "shl", "shr"];
 export const bitwiseAndLogicalOperators = ['and', 'or', 'xor', 'not'];
 
 export const valueIsEncrypted = (value: string): value is EUintType => {
@@ -138,4 +150,12 @@ export const valueIsEncrypted = (value: string): value is EUintType => {
 
 export const valueIsPlaintext = (value: string): value is PlaintextType => {
     return EPlaintextType.includes(value);
+}
+
+export const isComparisonType = (value: string): boolean => {
+    return EComparisonType.includes(value);
+}
+
+export const isBitwiseOp = (value: string): boolean => {
+    return bitwiseAndLogicalOperators.includes(value);
 }

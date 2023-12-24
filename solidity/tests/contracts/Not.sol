@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import "../../FHE.sol";
-import "./utils/Utils.sol";
+import {TFHE} from "../../FHE.sol";
+import {Utils} from "./utils/Utils.sol";
+
+error TestNotFound(string test);
 
 contract NotTest {
     using Utils for *;
-
-    function not(string calldata test, uint256 a) public pure returns (uint256 output) {
+function not(string calldata test, uint256 a) public pure returns (uint256 output) {
         if (Utils.cmp(test, "not(euint8)")) {
             return TFHE.decrypt(TFHE.not(TFHE.asEuint8(a)));
         } else if (Utils.cmp(test, "not(euint16)")) {
@@ -19,15 +20,14 @@ contract NotTest {
             if (a == 0) {
                 aBool = false;
             }
-            
+
             if (TFHE.decrypt(TFHE.not(TFHE.asEbool(aBool)))) {
                 return 1;
             }
-            
+
             return 0;
         } else {
-            require(false, string(abi.encodePacked("test '", test, "' not found")));
+            revert TestNotFound(test);
         }
     }
-
 }

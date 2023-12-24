@@ -14,6 +14,11 @@ gen:
 compile:
 	cd solidity && pnpm compile
 
+.PHONY: lint
+lint:
+	# cd solidity && pnpm solhint FHE.sol FheOS.sol tests/contracts/*.sol tests/contracts/utils/*.sol
+	cd solidity && pnpm solhint FheOS.sol tests/contracts/*.sol tests/contracts/utils/*.sol
+
 .PHONY: compile-go-tfhe
 compile-go-tfhe:
 	if [ ! -e ./go-tfhe/internal/api/amd64/libtfhe_wrapper.x86_64.so ]; then \

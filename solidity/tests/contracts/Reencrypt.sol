@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import "../../FHE.sol";
-import "./utils/Utils.sol";
+import {TFHE} from "../../FHE.sol";
+import {Utils} from "./utils/Utils.sol";
+
+error TestNotFound(string test);
 
 contract ReencryptTest {
     using Utils for *;
@@ -19,11 +21,10 @@ contract ReencryptTest {
             if (a == 0) {
                 b = false;
             }
-            
+
             return TFHE.reencrypt(TFHE.asEbool(b), pubkey);
         } else {
-            require(false, string(abi.encodePacked("test '", test, "' not found")));
+            revert TestNotFound(test);
         }
     }
-
 }
