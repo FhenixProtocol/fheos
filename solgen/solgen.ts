@@ -289,7 +289,7 @@ const main = async () => {
         const funcDefinition = generateSolidityFunction(parseFunctionDefinition(fn));
         outputFile += funcDefinition;
     }
-    outputFile += `\n\n\t// ********** TYPE CASTING ************* //`
+    outputFile += `\n\n    // ********** TYPE CASTING ************* //`
 
     // generate casting functions
     for (let fromType of EInputType.concat('uint256', 'bytes memory')) {
@@ -372,5 +372,3 @@ const main = async () => {
 }
 
 main();
-
-

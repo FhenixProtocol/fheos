@@ -58,6 +58,9 @@ func encryptToUserKey(value *big.Int, pubKey []byte) ([]byte, error) {
 }
 
 func getCiphertext(ciphertextHash tfhe.Hash) *tfhe.Ciphertext {
+	ctHashMapLock.RLock()
+	defer ctHashMapLock.RUnlock()
+
 	ct, ok := ctHashMap[ciphertextHash]
 	if ok {
 		return ct
@@ -102,6 +105,9 @@ func get3VerifiedOperands(input []byte) (control *tfhe.Ciphertext, ifTrue *tfhe.
 }
 
 func importCiphertext(ct *tfhe.Ciphertext) *tfhe.Ciphertext {
+	ctHashMapLock.Lock()
+	defer ctHashMapLock.Unlock()
+
 	existing, ok := ctHashMap[ct.Hash()]
 	if ok {
 		return existing

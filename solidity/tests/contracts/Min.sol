@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import "../../FHE.sol";
-import "./utils/Utils.sol";
+import {TFHE} from "../../FHE.sol";
+import {Utils} from "./utils/Utils.sol";
+
+error TestNotFound(string test);
 
 contract MinTest {
     using Utils for *;
-
-    function min(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
+function min(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
         if (Utils.cmp(test, "min(euint8,euint8)")) {
             return TFHE.decrypt(TFHE.min(TFHE.asEuint8(a), TFHE.asEuint8(b)));
         } else if (Utils.cmp(test, "min(euint16,euint16)")) {
@@ -21,8 +22,7 @@ contract MinTest {
         } else if (Utils.cmp(test, "euint32.min(euint32)")) {
             return TFHE.decrypt(TFHE.asEuint32(a).min(TFHE.asEuint32(b)));
         } else {
-            require(false, string(abi.encodePacked("test '", test, "' not found")));
+            revert TestNotFound(test);
         }
     }
-
 }
