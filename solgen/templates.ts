@@ -606,7 +606,6 @@ export function genAbiFile(abi: string) {
     return `import { Contract } from 'ethers';\n${abi}\n\n`;
 }
 
-
 export function SolTemplate1Arg(name: string, input1: AllTypes, returnType: AllTypes) {
     if (name === "not" && input1 === "ebool") {
         return `\n
@@ -726,7 +725,7 @@ export const OperatorBinding = (funcName: string, forType: string, unary: boolea
 export const CastBinding = (thisType: string, targetType: string) => {
     const shortenedTarget = targetType === "ebool" ? "Bool" : "U" + targetType.slice(5); // get only number at the end
     return `
-    function to${shortenedTarget}(value ${thisType}) internal pure returns (${targetType}) {
-        return TFHE.as${targetType}(value);
+    function to${shortenedTarget}(${thisType} value) internal pure returns (${targetType}) {
+        return TFHE.as${capitalize(targetType)}(value);
     }`;
 }
