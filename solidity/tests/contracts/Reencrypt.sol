@@ -23,8 +23,8 @@ contract ReencryptTest {
             }
 
             return TFHE.reencrypt(TFHE.asEbool(b), pubkey);
-        } else {
-            revert TestNotFound(test);
-        }
+        } 
+        
+        revert TestNotFound(test);
     }
 }

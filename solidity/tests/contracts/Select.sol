@@ -2,7 +2,7 @@
 pragma solidity ^0.8.17;
 
 import {TFHE} from "../../FHE.sol";
-import { ebool } from "../../FHE.sol";
+import {ebool} from "../../FHE.sol";
 import {Utils} from "./utils/Utils.sol";
 
 error TestNotFound(string test);
@@ -32,8 +32,8 @@ contract SelectTest {
                 return 1;
             }
             return 0;
-        } else {
-            revert TestNotFound(test);
-        }
+        } 
+        
+        revert TestNotFound(test);
     }
 }

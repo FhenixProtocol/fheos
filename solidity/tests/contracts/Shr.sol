@@ -22,8 +22,8 @@ contract ShrTest {
             return TFHE.decrypt(TFHE.asEuint16(a).shr(TFHE.asEuint16(b)));
         } else if (Utils.cmp(test, "euint32.shr(euint32)")) {
             return TFHE.decrypt(TFHE.asEuint32(a).shr(TFHE.asEuint32(b)));
-        } else {
-            revert TestNotFound(test);
         }
+    
+        revert TestNotFound(test);
     }
 }

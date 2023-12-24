@@ -72,8 +72,7 @@ contract NeTest {
             if (TFHE.decrypt(TFHE.asEbool(aBool).ne(TFHE.asEbool(bBool)))) {
                 return 1;
             }
-        } else {
-            revert TestNotFound(test);
         }
+        revert TestNotFound(test);
     }
 }

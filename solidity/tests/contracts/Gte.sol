@@ -46,8 +46,7 @@ contract GteTest {
             }
 
             return 0;
-        } else {
-            revert TestNotFound(test);
         }
+        revert TestNotFound(test);
     }
 }

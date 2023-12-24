@@ -22,8 +22,8 @@ contract ReqTest {
                 b = false;
             }
             TFHE.req(TFHE.asEbool(b));
-        } else {
-            revert TestNotFound(test);
         }
+        
+        revert TestNotFound(test);
     }
 }

@@ -67,8 +67,8 @@ contract AndTest {
                 return 1;
             }
             return 0;
-        } else {
-            revert TestNotFound(test);
         }
+    
+        revert TestNotFound(test);
     }
 }
