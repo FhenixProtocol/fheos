@@ -1005,7 +1005,7 @@ library TFHE {
         return euint32.wrap(Impl.cast(ebool.unwrap(value), Common.EUINT32_TFHE_GO));
     }
     function asEbool(euint8 value) internal pure returns (ebool) {
-        return ne(value,  asEuint8(0));
+        return ne(value, asEuint8(0));
     }
     function asEuint16(euint8 value) internal pure returns (euint16) {
         return euint16.wrap(Impl.cast(euint8.unwrap(value), Common.EUINT16_TFHE_GO));
@@ -1014,7 +1014,7 @@ library TFHE {
         return euint32.wrap(Impl.cast(euint8.unwrap(value), Common.EUINT32_TFHE_GO));
     }
     function asEbool(euint16 value) internal pure returns (ebool) {
-        return ne(value,  asEuint16(0));
+        return ne(value, asEuint16(0));
     }
     function asEuint8(euint16 value) internal pure returns (euint8) {
         return euint8.wrap(Impl.cast(euint16.unwrap(value), Common.EUINT8_TFHE_GO));
@@ -1023,7 +1023,7 @@ library TFHE {
         return euint32.wrap(Impl.cast(euint16.unwrap(value), Common.EUINT32_TFHE_GO));
     }
     function asEbool(euint32 value) internal pure returns (ebool) {
-        return ne(value,  asEuint32(0));
+        return ne(value, asEuint32(0));
     }
     function asEuint8(euint32 value) internal pure returns (euint8) {
         return euint8.wrap(Impl.cast(euint32.unwrap(value), Common.EUINT8_TFHE_GO));
@@ -1221,6 +1221,15 @@ library BindingsEbool {
     function xor(ebool lhs, ebool rhs) internal pure returns (ebool) {
         return TFHE.xor(lhs, rhs);
     }
+    function toU8(input ebool) internal pure returns (euint8) {
+        return TFHE.aseuint8(input);
+    }
+    function toU16(input ebool) internal pure returns (euint16) {
+        return TFHE.aseuint16(input);
+    }
+    function toU32(input ebool) internal pure returns (euint32) {
+        return TFHE.aseuint32(input);
+    }
 }
 
 using BindingsEuint8 for euint8 global;
@@ -1278,6 +1287,15 @@ library BindingsEuint8 {
     }
     function shr(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
         return TFHE.shr(lhs, rhs);
+    }
+    function toBool(input euint8) internal pure returns (ebool) {
+        return TFHE.asebool(input);
+    }
+    function toU16(input euint8) internal pure returns (euint16) {
+        return TFHE.aseuint16(input);
+    }
+    function toU32(input euint8) internal pure returns (euint32) {
+        return TFHE.aseuint32(input);
     }
 }
 
@@ -1337,6 +1355,15 @@ library BindingsEuint16 {
     function shr(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
         return TFHE.shr(lhs, rhs);
     }
+    function toBool(input euint16) internal pure returns (ebool) {
+        return TFHE.asebool(input);
+    }
+    function toU8(input euint16) internal pure returns (euint8) {
+        return TFHE.aseuint8(input);
+    }
+    function toU32(input euint16) internal pure returns (euint32) {
+        return TFHE.aseuint32(input);
+    }
 }
 
 using BindingsEuint32 for euint32 global;
@@ -1394,5 +1421,14 @@ library BindingsEuint32 {
     }
     function shr(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
         return TFHE.shr(lhs, rhs);
+    }
+    function toBool(input euint32) internal pure returns (ebool) {
+        return TFHE.asebool(input);
+    }
+    function toU8(input euint32) internal pure returns (euint8) {
+        return TFHE.aseuint8(input);
+    }
+    function toU16(input euint32) internal pure returns (euint16) {
+        return TFHE.aseuint16(input);
     }
 }

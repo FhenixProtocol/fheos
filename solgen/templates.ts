@@ -184,7 +184,7 @@ const castFromBytes = (name: string, toType: string): string => {
 
 const castToEbool = (name: string, fromType: string): string => {
     return `\n    function asEbool(${fromType} value) internal pure returns (ebool) {
-        return ne(${name},  as${capitalize(fromType)}(0));
+        return ne(${name}, as${capitalize(fromType)}(0));
     }`;
 }
 
@@ -706,10 +706,6 @@ function ${opOverloadName}(${funcParams}) pure returns (${returnType}) {
 }\n`;
 }
 
-export const BindingsWithoutOperator = (funcName: string, forType: string) => {
-    return `\nusing {Bindings${capitalize(forType)}.${funcName}} for ${forType} global;`;
-}
-
 export const BindingLibraryType = (type: string) => {
     let typeCap = capitalize(type);
     return `\n\nusing Bindings${typeCap} for ${type} global;
@@ -724,5 +720,13 @@ export const OperatorBinding = (funcName: string, forType: string, unary: boolea
     return `
     function ${funcName}(${funcParams}) internal pure returns (${returnType}) {
         return TFHE.${funcName}(${unaryParameters});
+    }`;
+}
+
+export const CastBinding = (thisType: string, targetType: string) => {
+    const shortenedTarget = targetType === "ebool" ? "Bool" : "U" + targetType.slice(5); // get only number at the end
+    return `
+    function to${shortenedTarget}(value ${thisType}) internal pure returns (${targetType}) {
+        return TFHE.as${targetType}(value);
     }`;
 }
