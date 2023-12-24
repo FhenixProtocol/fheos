@@ -400,6 +400,9 @@ func Gen(parent string, output string) {
 import (
 	fheos "github.com/fhenixprotocol/fheos/precompiles"
 	"math/big"
+	"os"
+	"fmt"
+	"time"
 )
 
 type FheOps struct {

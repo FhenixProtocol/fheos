@@ -63,7 +63,7 @@ function printRoutineTime(name: string, isEnd: boolean): void {
         log += `${banner} function ${name} at ${Math.floor(new Date().getTime())}\n`;
 
         if (isEnd) {
-            log += '\n\n\n';
+            log += 'ENDDDDDDDD\n';
         }
 
         fs.write(file, log, (writeErr) => {

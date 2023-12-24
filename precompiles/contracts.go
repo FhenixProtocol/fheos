@@ -508,7 +508,6 @@ func Cast(input []byte, tp *TxParams) ([]byte, error) {
 
 func TrivialEncrypt(input []byte, tp *TxParams) ([]byte, error) {
 	if shouldPrintPrecompileInfo(tp) {
-		PrintRoutineTime(getFunctionName(), false)
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
@@ -536,8 +535,9 @@ func TrivialEncrypt(input []byte, tp *TxParams) ([]byte, error) {
 
 	ctHash := ct.Hash()
 	importCiphertext(ct)
+	PrintRoutineTime(getFunctionName(), true)
+
 	if shouldPrintPrecompileInfo(tp) {
-		PrintRoutineTime(getFunctionName(), true)
 		logger.Debug("trivialEncrypt success",
 			" ctHash ", ctHash.Hex(),
 			" valueToEncrypt ", valueToEncrypt.Uint64())
