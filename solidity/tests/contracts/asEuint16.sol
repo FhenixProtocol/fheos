@@ -10,16 +10,31 @@ contract AsEuint16Test {
     using Utils for *;
     
     
-    function castFromEboolToEuint16(uint256 val) public pure returns (uint16) {
-        return TFHE.decrypt(TFHE.asEuint16(TFHE.asEbool(val)));
+    function castFromEboolToEuint16(uint256 val, string calldata test) public pure returns (uint16) {
+        if (Utils.cmp(test, "bound")) {
+            return TFHE.decrypt(TFHE.asEbool(val).toU16());
+        } else if (Utils.cmp(test, "regular")) {
+            return TFHE.decrypt(TFHE.asEuint16(TFHE.asEbool(val)));
+        }
+        revert TestNotFound(test);
     }
 
-    function castFromEuint8ToEuint16(uint256 val) public pure returns (uint16) {
-        return TFHE.decrypt(TFHE.asEuint16(TFHE.asEuint8(val)));
+    function castFromEuint8ToEuint16(uint256 val, string calldata test) public pure returns (uint16) {
+        if (Utils.cmp(test, "bound")) {
+            return TFHE.decrypt(TFHE.asEuint8(val).toU16());
+        } else if (Utils.cmp(test, "regular")) {
+            return TFHE.decrypt(TFHE.asEuint16(TFHE.asEuint8(val)));
+        }
+        revert TestNotFound(test);
     }
 
-    function castFromEuint32ToEuint16(uint256 val) public pure returns (uint16) {
-        return TFHE.decrypt(TFHE.asEuint16(TFHE.asEuint32(val)));
+    function castFromEuint32ToEuint16(uint256 val, string calldata test) public pure returns (uint16) {
+        if (Utils.cmp(test, "bound")) {
+            return TFHE.decrypt(TFHE.asEuint32(val).toU16());
+        } else if (Utils.cmp(test, "regular")) {
+            return TFHE.decrypt(TFHE.asEuint16(TFHE.asEuint32(val)));
+        }
+        revert TestNotFound(test);
     }
 
     function castFromPlaintextToEuint16(uint256 val) public pure returns (uint16) {

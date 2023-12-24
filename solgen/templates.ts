@@ -222,19 +222,29 @@ function TypeCastTestingFunction(fromType: string, fromTypeForTs: string, toType
     testType = testType === 'bytes memory' ? 'PreEncrypted' : capitalize(testType);
     testType = testType === 'Uint256' ? 'Plaintext' : testType;
     const encryptedVal = fromTypeEncrypted ? `TFHE.as${capitalize(fromTypeEncrypted)}(val)` : "val";
-    const func = `\n\n    function castFrom${testType}To${to}(${fromType} val, string calldata test) public pure returns (${retType}) {
-        if (Utils.cmp(test, "cast bound function")) {
-            return TFHE.decrypt(TFHE.as${to}(${encryptedVal}));
-        } else if (Utils.cmp(test, "regular cast function")) {
-            return TFHE.decrypt(TFHE.as${to}(${encryptedVal}));
-        }
-        
-        revert("Invalid test type");
-    }`;
-
     let retTypeTs = (retType === 'bool') ? 'boolean' : retType;
     retTypeTs = retTypeTs.includes("uint") ? 'bigint' : retTypeTs;
-    const abi =  `    castFrom${testType}To${to}: (val: ${fromTypeForTs}) => Promise<${retTypeTs}>;\n`;
+
+    let abi: string;
+    let func = "\n\n    ";
+
+    if (testType === 'PreEncrypted' || testType === 'Plaintext') {
+        func += `function castFrom${testType}To${to}(${fromType} val) public pure returns (${retType}) {
+        return TFHE.decrypt(TFHE.as${to}(${encryptedVal}));
+    }`;
+        abi = `    castFrom${testType}To${to}: (val: ${fromTypeForTs}) => Promise<${retTypeTs}>;\n`;
+    } else {
+        func += `function castFrom${testType}To${to}(${fromType} val, string calldata test) public pure returns (${retType}) {
+        if (Utils.cmp(test, "bound")) {
+            return TFHE.decrypt(${encryptedVal}.to${shortenType(toType)}());
+        } else if (Utils.cmp(test, "regular")) {
+            return TFHE.decrypt(TFHE.as${to}(${encryptedVal}));
+        }
+        revert TestNotFound(test);
+    }`;
+        abi = `    castFrom${testType}To${to}: (val: ${fromTypeForTs}, test: string) => Promise<${retTypeTs}>;\n`;
+    }
+
     return [func, abi];
 }
 
@@ -727,10 +737,13 @@ export const OperatorBinding = (funcName: string, forType: string, unary: boolea
     }`;
 }
 
+const shortenType = (type: string) => {
+    return type === "ebool" ? "Bool" : "U" + type.slice(5); // get only number at the end
+}
+
 export const CastBinding = (thisType: string, targetType: string) => {
-    const shortenedTarget = targetType === "ebool" ? "Bool" : "U" + targetType.slice(5); // get only number at the end
     return `
-    function to${shortenedTarget}(${thisType} value) internal pure returns (${targetType}) {
+    function to${shortenType(targetType)}(${thisType} value) internal pure returns (${targetType}) {
         return TFHE.as${capitalize(targetType)}(value);
     }`;
 }
