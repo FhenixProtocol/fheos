@@ -8,7 +8,8 @@ error TestNotFound(string test);
 
 contract MinTest {
     using Utils for *;
-function min(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
+    
+    function min(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
         if (Utils.cmp(test, "min(euint8,euint8)")) {
             return TFHE.decrypt(TFHE.min(TFHE.asEuint8(a), TFHE.asEuint8(b)));
         } else if (Utils.cmp(test, "min(euint16,euint16)")) {

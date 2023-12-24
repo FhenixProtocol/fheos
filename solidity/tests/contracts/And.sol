@@ -8,7 +8,8 @@ error TestNotFound(string test);
 
 contract AndTest {
     using Utils for *;
-function and(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
+    
+    function and(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
         if (Utils.cmp(test, "and(euint8,euint8)")) {
             return TFHE.decrypt(TFHE.and(TFHE.asEuint8(a), TFHE.asEuint8(b)));
         } else if (Utils.cmp(test, "and(euint16,euint16)")) {

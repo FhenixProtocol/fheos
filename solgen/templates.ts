@@ -254,7 +254,6 @@ export function AsTypeTestingContract(type: string) {
     return [generateTestContract(`As${capitalize(type)}`, funcs), abi];
 }
 
-
 const unwrapType = (typeName: EUintType, inputName: string): string => `${typeName}.unwrap(${inputName})`;
 const wrapType = (resultType: EUintType, inputName: string): string => `${resultType}.wrap(${inputName})`;
 const asEuintFuncName = (typeName: EUintType): string => `as${capitalize(typeName)}`;
@@ -435,14 +434,15 @@ error TestNotFound(string test);
 
 contract ${capitalize(name)}Test {
     using Utils for *;
-${testFunc}
+    
+    ${testFunc}
 }
 `;
 }
 
 export function testContractReq() {
     // Req is failing on EthCall so we need to make it as tx for now
-    let func = `\n    function req(string calldata test, uint256 a) public {
+    let func = `function req(string calldata test, uint256 a) public {
         if (Utils.cmp(test, "req(euint8)")) {
             TFHE.req(TFHE.asEuint8(a));
         } else if (Utils.cmp(test, "req(euint16)")) {
@@ -466,7 +466,7 @@ export function testContractReq() {
 }
 
 export function testContractReencrypt() {
-    let func = `\n    function reencrypt(string calldata test, uint256 a, bytes32 pubkey) public pure returns (bytes memory reencrypted) {
+    let func = `function reencrypt(string calldata test, uint256 a, bytes32 pubkey) public pure returns (bytes memory reencrypted) {
         if (Utils.cmp(test, "reencrypt(euint8)")) {
             return TFHE.reencrypt(TFHE.asEuint8(a), pubkey);
         } else if (Utils.cmp(test, "reencrypt(euint16)")) {
@@ -491,7 +491,7 @@ export function testContractReencrypt() {
 }
 
 export function testContract3Arg(name: string) {
-    let func = `\n    function ${name}(string calldata test, bool c, uint256 a, uint256 b) public pure returns (uint256 output) {
+    let func = `function ${name}(string calldata test, bool c, uint256 a, uint256 b) public pure returns (uint256 output) {
         ebool condition = TFHE.asEbool(c);
         if (Utils.cmp(test, "${name}: euint8")) {
             return TFHE.decrypt(TFHE.${name}(condition, TFHE.asEuint8(a), TFHE.asEuint8(b)));

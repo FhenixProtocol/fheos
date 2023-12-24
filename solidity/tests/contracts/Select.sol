@@ -9,7 +9,7 @@ error TestNotFound(string test);
 
 contract SelectTest {
     using Utils for *;
-
+    
     function select(string calldata test, bool c, uint256 a, uint256 b) public pure returns (uint256 output) {
         ebool condition = TFHE.asEbool(c);
         if (Utils.cmp(test, "select: euint8")) {

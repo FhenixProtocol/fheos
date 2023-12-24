@@ -8,7 +8,8 @@ error TestNotFound(string test);
 
 contract MaxTest {
     using Utils for *;
-function max(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
+    
+    function max(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
         if (Utils.cmp(test, "max(euint8,euint8)")) {
             return TFHE.decrypt(TFHE.max(TFHE.asEuint8(a), TFHE.asEuint8(b)));
         } else if (Utils.cmp(test, "max(euint16,euint16)")) {

@@ -8,7 +8,8 @@ error TestNotFound(string test);
 
 contract EqTest {
     using Utils for *;
-function eq(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
+    
+    function eq(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
         if (Utils.cmp(test, "eq(euint8,euint8)")) {
             if (TFHE.decrypt(TFHE.eq(TFHE.asEuint8(a), TFHE.asEuint8(b)))) {
                 return 1;

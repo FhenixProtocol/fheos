@@ -8,7 +8,8 @@ error TestNotFound(string test);
 
 contract RemTest {
     using Utils for *;
-function rem(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
+    
+    function rem(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
         if (Utils.cmp(test, "rem(euint8,euint8)")) {
             return TFHE.decrypt(TFHE.rem(TFHE.asEuint8(a), TFHE.asEuint8(b)));
         } else if (Utils.cmp(test, "rem(euint16,euint16)")) {

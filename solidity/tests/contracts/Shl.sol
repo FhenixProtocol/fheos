@@ -8,7 +8,8 @@ error TestNotFound(string test);
 
 contract ShlTest {
     using Utils for *;
-function shl(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
+    
+    function shl(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
         if (Utils.cmp(test, "shl(euint8,euint8)")) {
             return TFHE.decrypt(TFHE.shl(TFHE.asEuint8(a), TFHE.asEuint8(b)));
         } else if (Utils.cmp(test, "shl(euint16,euint16)")) {

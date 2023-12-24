@@ -8,7 +8,7 @@ error TestNotFound(string test);
 
 contract ReencryptTest {
     using Utils for *;
-
+    
     function reencrypt(string calldata test, uint256 a, bytes32 pubkey) public pure returns (bytes memory reencrypted) {
         if (Utils.cmp(test, "reencrypt(euint8)")) {
             return TFHE.reencrypt(TFHE.asEuint8(a), pubkey);

@@ -8,7 +8,8 @@ error TestNotFound(string test);
 
 contract AsEuint8Test {
     using Utils for *;
-
+    
+    
     function castFromEboolToEuint8(uint256 val) public pure returns (uint8) {
         return TFHE.decrypt(TFHE.asEuint8(TFHE.asEbool(val)));
     }

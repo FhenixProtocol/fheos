@@ -8,7 +8,8 @@ error TestNotFound(string test);
 
 contract GtTest {
     using Utils for *;
-function gt(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
+    
+    function gt(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
         if (Utils.cmp(test, "gt(euint8,euint8)")) {
             if (TFHE.decrypt(TFHE.gt(TFHE.asEuint8(a), TFHE.asEuint8(b)))) {
                 return 1;
