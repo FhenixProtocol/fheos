@@ -1,5 +1,3 @@
-import "@nomicfoundation/hardhat-toolbox";
-
 const config = {
   paths: {
     artifacts: "./artifacts",

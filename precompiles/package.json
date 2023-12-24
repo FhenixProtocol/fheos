@@ -7,15 +7,15 @@
     "url": "https://github.com/FhenixProtocol"
   },
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "4.0.0",
     "hardhat": "^2.19.3",
-    "typescript": "5.3.3"
+    "ts-node": "10.9.2",
+    "typescript": "4.9.5"
   },
   "files": [
     "contracts"
   ],
   "scripts": {
-    "build": "hardhat compile --no-typechain",
+    "build": "hardhat compile",
     "clean": "rimraf ./artifacts ./cache ./coverage ./types ./coverage.json ./deployments/localfhenix && pnpm typechain"
   }
 }
