@@ -72,6 +72,7 @@ contract EqTest {
             if (TFHE.decrypt(TFHE.asEbool(aBool).eq(TFHE.asEbool(bBool)))) {
                 return 1;
             }
+            return 0;
         }
         revert TestNotFound(test);
     }

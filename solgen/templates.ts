@@ -396,6 +396,7 @@ export function testContract2ArgBoolRes(name: string, isBoolean: boolean) {
             if (TFHE.decrypt(TFHE.asEbool(aBool).${name}(TFHE.asEbool(bBool)))) {
                 return 1;
             }
+            return 0;
         }`;
     }
     func += `
