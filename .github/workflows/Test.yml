@@ -43,6 +43,9 @@ jobs:
         run: |
           cp solidity/.env.example solidity/.env
           make compile
+      - name: Lint
+        run: |
+          make lint
       - name: Build Local Dev Image
         uses: docker/build-push-action@v4
         with:
@@ -55,7 +58,7 @@ jobs:
       - name: Run tests
         run: |
           make test
-        
+      
       - name: Package Contracts
         run: |
           tar -cvf contracts.tar solidity/FHE.sol solidity/FheOS.sol
@@ -68,7 +71,7 @@ jobs:
   push-to-contracts-repo:
     needs: [build]
     runs-on: ubuntu-latest
-    
+
     if: ${{ github.ref == 'refs/heads/master' }}
     steps:
       - uses: actions/checkout@v4

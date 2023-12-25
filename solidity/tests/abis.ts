@@ -66,32 +66,32 @@ export interface NotTestType extends Contract {
     not: (test: string, a: bigint) => Promise<bigint>;
 }
 export interface AsEboolTestType extends Contract {
-	castFromEuint8ToEbool: (val: bigint) => Promise<boolean>;
-	castFromEuint16ToEbool: (val: bigint) => Promise<boolean>;
-	castFromEuint32ToEbool: (val: bigint) => Promise<boolean>;
-	castFromPlaintextToEbool: (val: bigint) => Promise<boolean>;
-	castFromPreEncryptedToEbool: (val: Uint8Array) => Promise<boolean>;
+    castFromEuint8ToEbool: (val: bigint) => Promise<boolean>;
+    castFromEuint16ToEbool: (val: bigint) => Promise<boolean>;
+    castFromEuint32ToEbool: (val: bigint) => Promise<boolean>;
+    castFromPlaintextToEbool: (val: bigint) => Promise<boolean>;
+    castFromPreEncryptedToEbool: (val: Uint8Array) => Promise<boolean>;
 }
 export interface AsEuint8TestType extends Contract {
-	castFromEboolToEuint8: (val: bigint) => Promise<bigint>;
-	castFromEuint16ToEuint8: (val: bigint) => Promise<bigint>;
-	castFromEuint32ToEuint8: (val: bigint) => Promise<bigint>;
-	castFromPlaintextToEuint8: (val: bigint) => Promise<bigint>;
-	castFromPreEncryptedToEuint8: (val: Uint8Array) => Promise<bigint>;
+    castFromEboolToEuint8: (val: bigint) => Promise<bigint>;
+    castFromEuint16ToEuint8: (val: bigint) => Promise<bigint>;
+    castFromEuint32ToEuint8: (val: bigint) => Promise<bigint>;
+    castFromPlaintextToEuint8: (val: bigint) => Promise<bigint>;
+    castFromPreEncryptedToEuint8: (val: Uint8Array) => Promise<bigint>;
 }
 export interface AsEuint16TestType extends Contract {
-	castFromEboolToEuint16: (val: bigint) => Promise<bigint>;
-	castFromEuint8ToEuint16: (val: bigint) => Promise<bigint>;
-	castFromEuint32ToEuint16: (val: bigint) => Promise<bigint>;
-	castFromPlaintextToEuint16: (val: bigint) => Promise<bigint>;
-	castFromPreEncryptedToEuint16: (val: Uint8Array) => Promise<bigint>;
+    castFromEboolToEuint16: (val: bigint) => Promise<bigint>;
+    castFromEuint8ToEuint16: (val: bigint) => Promise<bigint>;
+    castFromEuint32ToEuint16: (val: bigint) => Promise<bigint>;
+    castFromPlaintextToEuint16: (val: bigint) => Promise<bigint>;
+    castFromPreEncryptedToEuint16: (val: Uint8Array) => Promise<bigint>;
 }
 export interface AsEuint32TestType extends Contract {
-	castFromEboolToEuint32: (val: bigint) => Promise<bigint>;
-	castFromEuint8ToEuint32: (val: bigint) => Promise<bigint>;
-	castFromEuint16ToEuint32: (val: bigint) => Promise<bigint>;
-	castFromPlaintextToEuint32: (val: bigint) => Promise<bigint>;
-	castFromPreEncryptedToEuint32: (val: Uint8Array) => Promise<bigint>;
+    castFromEboolToEuint32: (val: bigint) => Promise<bigint>;
+    castFromEuint8ToEuint32: (val: bigint) => Promise<bigint>;
+    castFromEuint16ToEuint32: (val: bigint) => Promise<bigint>;
+    castFromPlaintextToEuint32: (val: bigint) => Promise<bigint>;
+    castFromPreEncryptedToEuint32: (val: Uint8Array) => Promise<bigint>;
 }
 
 

@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import "../../FHE.sol";
-import "./utils/Utils.sol";
+import {TFHE} from "../../FHE.sol";
+import { ebool } from "../../FHE.sol";
+import {Utils} from "./utils/Utils.sol";
+
+error TestNotFound(string test);
 
 contract SelectTest {
     using Utils for *;
@@ -18,22 +21,19 @@ contract SelectTest {
         } else if (Utils.cmp(test, "select: ebool")) {
             bool aBool = true;
             bool bBool = true;
-            
             if (a == 0) {
                 aBool = false;
             }
             if (b == 0) {
                 bBool = false;
             }
-            
+
             if(TFHE.decrypt(TFHE.select(condition, TFHE.asEbool(aBool), TFHE.asEbool(bBool)))) {
                 return 1;
             }
-            
             return 0;
         } else {
-            require(false, string(abi.encodePacked("test '", test, "' not found")));
+            revert TestNotFound(test);
         }
     }
-
 }
