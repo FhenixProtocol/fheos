@@ -10,23 +10,23 @@ contract AndTest {
     using Utils for *;
 function and(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
         if (Utils.cmp(test, "and(euint8,euint8)")) {
-            return TFHE.decrypt(TFHE.and(TFHE.asEuint8(a), TFHE.asEuint8(b)));
+            return FHE.decrypt(FHE.and(FHE.asEuint8(a), FHE.asEuint8(b)));
         } else if (Utils.cmp(test, "and(euint16,euint16)")) {
-            return TFHE.decrypt(TFHE.and(TFHE.asEuint16(a), TFHE.asEuint16(b)));
+            return FHE.decrypt(FHE.and(FHE.asEuint16(a), FHE.asEuint16(b)));
         } else if (Utils.cmp(test, "and(euint32,euint32)")) {
-            return TFHE.decrypt(TFHE.and(TFHE.asEuint32(a), TFHE.asEuint32(b)));
+            return FHE.decrypt(FHE.and(FHE.asEuint32(a), FHE.asEuint32(b)));
         } else if (Utils.cmp(test, "euint8.and(euint8)")) {
-            return TFHE.decrypt(TFHE.asEuint8(a).and(TFHE.asEuint8(b)));
+            return FHE.decrypt(FHE.asEuint8(a).and(FHE.asEuint8(b)));
         } else if (Utils.cmp(test, "euint16.and(euint16)")) {
-            return TFHE.decrypt(TFHE.asEuint16(a).and(TFHE.asEuint16(b)));
+            return FHE.decrypt(FHE.asEuint16(a).and(FHE.asEuint16(b)));
         } else if (Utils.cmp(test, "euint32.and(euint32)")) {
-            return TFHE.decrypt(TFHE.asEuint32(a).and(TFHE.asEuint32(b)));
+            return FHE.decrypt(FHE.asEuint32(a).and(FHE.asEuint32(b)));
         } else if (Utils.cmp(test, "euint8 & euint8")) {
-            return TFHE.decrypt(TFHE.asEuint8(a) & TFHE.asEuint8(b));
+            return FHE.decrypt(FHE.asEuint8(a) & FHE.asEuint8(b));
         } else if (Utils.cmp(test, "euint16 & euint16")) {
-            return TFHE.decrypt(TFHE.asEuint16(a) & TFHE.asEuint16(b));
+            return FHE.decrypt(FHE.asEuint16(a) & FHE.asEuint16(b));
         } else if (Utils.cmp(test, "euint32 & euint32")) {
-            return TFHE.decrypt(TFHE.asEuint32(a) & TFHE.asEuint32(b));
+            return FHE.decrypt(FHE.asEuint32(a) & FHE.asEuint32(b));
         } else if (Utils.cmp(test, "and(ebool,ebool)")) {
             bool aBool = true;
             bool bBool = true;
@@ -36,7 +36,7 @@ function and(string calldata test, uint256 a, uint256 b) public pure returns (ui
             if (b == 0) {
                 bBool = false;
             }
-            if (TFHE.decrypt(TFHE.and(TFHE.asEbool(aBool), TFHE.asEbool(bBool)))) {
+            if (FHE.decrypt(FHE.and(FHE.asEbool(aBool), FHE.asEbool(bBool)))) {
                 return 1;
             }
             return 0;
@@ -49,7 +49,7 @@ function and(string calldata test, uint256 a, uint256 b) public pure returns (ui
             if (b == 0) {
                 bBool = false;
             }
-            if (TFHE.decrypt(TFHE.asEbool(aBool).and(TFHE.asEbool(bBool)))) {
+            if (FHE.decrypt(FHE.asEbool(aBool).and(FHE.asEbool(bBool)))) {
                 return 1;
             }
             return 0;
@@ -62,7 +62,7 @@ function and(string calldata test, uint256 a, uint256 b) public pure returns (ui
             if (b == 0) {
                 bBool = false;
             }
-            if (TFHE.decrypt(TFHE.asEbool(aBool) & TFHE.asEbool(bBool))) {
+            if (FHE.decrypt(FHE.asEbool(aBool) & FHE.asEbool(bBool))) {
                 return 1;
             }
             return 0;

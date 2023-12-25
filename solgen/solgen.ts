@@ -19,6 +19,8 @@ import {
     AsTypeTestingContract,
     genAbiFile,
     capitalize,
+    generateCommonTypes,
+    generateFheOSHelpers,
 } from "./templates";
 import {
     AllTypes,
@@ -281,6 +283,10 @@ const main = async () => {
         solidityHeaders = solidityHeaders.concat(genSolidityFunctionHeaders(func));
     }
 
+    // ********** generate libs ********** //
+    await fs.promises.writeFile('Common.sol', generateCommonTypes());
+    await fs.promises.writeFile('FheHelperFunctions.sol', generateFheOSHelpers());
+    
     //console.log(solidityHeaders.filter(name => name.includes('cmux')).map(item => parseFunctionDefinition(item)));
 
     let outputFile = preamble();

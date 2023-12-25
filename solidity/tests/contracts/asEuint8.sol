@@ -10,22 +10,22 @@ contract AsEuint8Test {
     using Utils for *;
 
     function castFromEboolToEuint8(uint256 val) public pure returns (uint8) {
-        return TFHE.decrypt(TFHE.asEuint8(TFHE.asEbool(val)));
+        return FHE.decrypt(FHE.asEuint8(FHE.asEbool(val)));
     }
 
     function castFromEuint16ToEuint8(uint256 val) public pure returns (uint8) {
-        return TFHE.decrypt(TFHE.asEuint8(TFHE.asEuint16(val)));
+        return FHE.decrypt(FHE.asEuint8(FHE.asEuint16(val)));
     }
 
     function castFromEuint32ToEuint8(uint256 val) public pure returns (uint8) {
-        return TFHE.decrypt(TFHE.asEuint8(TFHE.asEuint32(val)));
+        return FHE.decrypt(FHE.asEuint8(FHE.asEuint32(val)));
     }
 
     function castFromPlaintextToEuint8(uint256 val) public pure returns (uint8) {
-        return TFHE.decrypt(TFHE.asEuint8(val));
+        return FHE.decrypt(FHE.asEuint8(val));
     }
 
     function castFromPreEncryptedToEuint8(bytes memory val) public pure returns (uint8) {
-        return TFHE.decrypt(TFHE.asEuint8(val));
+        return FHE.decrypt(FHE.asEuint8(val));
     }
 }

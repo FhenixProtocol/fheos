@@ -61,7 +61,7 @@ jobs:
       
       - name: Package Contracts
         run: |
-          tar -cvf contracts.tar solidity/FHE.sol solidity/FheOS.sol
+          tar -cvf contracts.tar solidity/contracts/FHE.sol solidity/fhe/FheOS.sol solidity/fhe/Common.sol solidity/fhe/FheHelperFunctions.sol
       - uses: actions/upload-artifact@v3
         name: Store contracts
         with:
@@ -95,15 +95,17 @@ jobs:
       - name: Copy test contracts & Generated libs
         run: |
           ls -l
-          mkdir -p test/automated/contracts
+          mkdir -p contracts/fhe
           mkdir temp_extraction
           tar -xvf contracts.tar -C temp_extraction
           rm contracts.tar
-          mv temp_extraction/solidity/FHE.sol temp_extraction/solidity/FheOS.sol contracts/
+          mv temp_extraction/solidity/contracts/FHE.sol contracts/
+          mv temp_extraction/solidity/contracts/fhe contracts/
       - name: Commit Changes
         run: |
+          mkdir -p 
           git add contracts/FHE.sol
-          git add contracts/FheOS.sol
+          git add contracts/fhe/*
           git commit -m "FheOS updated - pushing new contracts and scripts"
       - name: Create Pull Request
         id: cpr

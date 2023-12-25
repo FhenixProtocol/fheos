@@ -11,17 +11,17 @@ contract ReqTest {
 
     function req(string calldata test, uint256 a) public {
         if (Utils.cmp(test, "req(euint8)")) {
-            TFHE.req(TFHE.asEuint8(a));
+            FHE.req(FHE.asEuint8(a));
         } else if (Utils.cmp(test, "req(euint16)")) {
-            TFHE.req(TFHE.asEuint16(a));
+            FHE.req(FHE.asEuint16(a));
         } else if (Utils.cmp(test, "req(euint32)")) {
-            TFHE.req(TFHE.asEuint32(a));
+            FHE.req(FHE.asEuint32(a));
         } else if (Utils.cmp(test, "req(ebool)")) {
             bool b = true;
             if (a == 0) {
                 b = false;
             }
-            TFHE.req(TFHE.asEbool(b));
+            FHE.req(FHE.asEbool(b));
         } else {
             revert TestNotFound(test);
         }
