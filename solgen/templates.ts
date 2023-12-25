@@ -471,9 +471,9 @@ export function testContractReq() {
                 b = false;
             }
             TFHE.req(TFHE.asEbool(b));
+        } else {
+            revert TestNotFound(test);
         }
-        
-        revert TestNotFound(test);
     }`;
     const abi = `export interface ReqTestType extends Contract {
     req: (test: string, a: bigint) => Promise<()>;
