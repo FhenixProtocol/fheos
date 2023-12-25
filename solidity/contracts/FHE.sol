@@ -2,8 +2,8 @@
 
 pragma solidity >=0.8.20 <0.9.0;
 
+import "./fhe/Common.sol";
 import {Precompiles, FheOps} from "./fhe/FheOS.sol";
-import {Precompiles, FheOps} from "./fhe/Common.sol";
 import {FheHelperFunctions} from "./fhe/FheHelperFunctions.sol";
 
 type ebool is uint256;

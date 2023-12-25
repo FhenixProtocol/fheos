@@ -123,8 +123,8 @@ export const preamble = () => {
 
 pragma solidity >=0.8.20 <0.9.0;
 
+import "./fhe/Common.sol";
 import {Precompiles, FheOps} from "./fhe/FheOS.sol";
-import {Precompiles, FheOps} from "./fhe/Common.sol";
 import {FheHelperFunctions} from "./fhe/FheHelperFunctions.sol";
 
 type ebool is uint256;
@@ -477,11 +477,11 @@ export function testContract1Arg(name: string) {
 }
 
 export function generateTestContract(name: string, testFunc: string, importTypes: boolean = false) {
-    const importStatement = importTypes ? `\nimport { ebool } from "../../FHE.sol";` : "";
+    const importStatement = importTypes ? `\nimport { ebool } from "../../contractsFHE.sol";` : "";
     return `// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.20;
 
-import {TFHE} from "../../FHE.sol";${importStatement}
+import {FHE} from "../../contracts/FHE.sol";${importStatement}
 import {Utils} from "./utils/Utils.sol";
 
 error TestNotFound(string test);

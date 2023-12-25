@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: BSD-3-Clause-Clear
-// solhint-disable one-contract-per-file
 
 pragma solidity >=0.8.20 <0.9.0;
 

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.20;
 
-import {TFHE} from "../../FHE.sol";
-import { ebool } from "../../FHE.sol";
+import {FHE} from "../../contracts/FHE.sol";
+import { ebool } from "../../contracts/FHE.sol";
 import {Utils} from "./utils/Utils.sol";
 
 error TestNotFound(string test);
