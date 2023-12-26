@@ -2,11 +2,11 @@ package precompiles
 
 import (
 	"encoding/hex"
-	"errors"
 	"math/big"
 	"runtime"
 	"sync"
 
+	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/sirupsen/logrus"
 
 	tfhe "github.com/fhenixprotocol/go-tfhe"
@@ -61,13 +61,13 @@ func Add(input []byte, tp *TxParams) ([]byte, error) {
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
 		logger.Error("fheAdd inputs not verified ", " err ", err, " input ", hex.EncodeToString(input))
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 
 	if lhs.UintType != rhs.UintType {
 		msg := "fheAdd operand type mismatch"
 		logger.Error(msg, " lhs ", lhs.UintType, " rhs ", rhs.UintType)
-		return nil, errors.New(msg)
+		return nil, vm.ErrExecutionReverted
 	}
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
@@ -78,7 +78,7 @@ func Add(input []byte, tp *TxParams) ([]byte, error) {
 	result, err := lhs.Add(rhs)
 	if err != nil {
 		logger.Error("fheAdd failed ", " err ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 
 	importCiphertext(result)
@@ -96,7 +96,7 @@ func Verify(input []byte, tp *TxParams) ([]byte, error) {
 	if len(input) <= 1 {
 		msg := "verifyCiphertext RequiredGas() input needs to contain a ciphertext and one byte for its type"
 		logger.Error(msg, " len ", len(input))
-		return nil, errors.New(msg)
+		return nil, vm.ErrExecutionReverted
 	}
 
 	ctBytes := input[:len(input)-1]
@@ -108,7 +108,7 @@ func Verify(input []byte, tp *TxParams) ([]byte, error) {
 			" err ", err,
 			" len ", len(ctBytes),
 			" ctBytes64 ", hex.EncodeToString(ctBytes[:minInt(len(ctBytes), 64)]))
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 	ctHash := ct.Hash()
 	importCiphertext(ct)
@@ -130,26 +130,26 @@ func Reencrypt(input []byte, tp *TxParams) ([]byte, error) {
 	if !tp.EthCall {
 		msg := "reencrypt only supported on EthCall"
 		logger.Error(msg)
-		return nil, errors.New(msg)
+		return nil, vm.ErrExecutionReverted
 	}
 
 	if len(input) != 64 {
 		msg := "reencrypt input len must be 64 bytes"
 		logger.Error(msg, " input ", hex.EncodeToString(input), " len ", len(input))
-		return nil, errors.New(msg)
+		return nil, vm.ErrExecutionReverted
 	}
 
 	ct := getCiphertext(tfhe.BytesToHash(input[0:32]))
 	if ct == nil {
 		msg := "reencrypt unverified ciphertext handle"
 		logger.Error(msg, " input ", hex.EncodeToString(input))
-		return nil, errors.New(msg)
+		return nil, vm.ErrExecutionReverted
 	}
 
 	decryptedValue, err := tfhe.Decrypt(*ct)
 	if err != nil {
 		logger.Error("failed decrypting ciphertext ", "error ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 
 	// Cast decrypted value to big.Int
@@ -158,7 +158,7 @@ func Reencrypt(input []byte, tp *TxParams) ([]byte, error) {
 	reencryptedValue, err := encryptToUserKey(bgDecrypted, pubKey)
 	if err != nil {
 		logger.Error("reencrypt failed to encrypt to user key", " err ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 	logger.Debug("reencrypt success", " input ", hex.EncodeToString(input))
 	// FHENIX: Previously it was "return toEVMBytes(reencryptedValue), nil" but the decrypt function in Fhevm didn't support it so we removed the the toEVMBytes
@@ -174,26 +174,26 @@ func Decrypt(input []byte, tp *TxParams) (*big.Int, error) {
 	if !tp.EthCall {
 		msg := "decrypt only supported on EthCall"
 		logger.Error(msg)
-		return nil, errors.New(msg)
+		return nil, vm.ErrExecutionReverted
 	}
 
 	if len(input) != 32 {
 		msg := "decrypt input len must be 32 bytes"
 		logger.Error(msg, " input ", hex.EncodeToString(input), " len ", len(input))
-		return nil, errors.New(msg)
+		return nil, vm.ErrExecutionReverted
 	}
 
 	ct := getCiphertext(tfhe.BytesToHash(input[0:32]))
 	if ct == nil {
 		msg := "decrypt unverified ciphertext handle"
 		logger.Error(msg, " input ", hex.EncodeToString(input))
-		return nil, errors.New(msg)
+		return nil, vm.ErrExecutionReverted
 	}
 
 	decryptedValue, err := tfhe.Decrypt(*ct)
 	if err != nil {
 		logger.Error("failed decrypting ciphertext", " error ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 
 	bgDecrypted := new(big.Int).SetUint64(decryptedValue)
@@ -212,13 +212,13 @@ func Lte(input []byte, tp *TxParams) ([]byte, error) {
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
 		logger.Error("fheLte inputs not verified", " err ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 
 	if lhs.UintType != rhs.UintType {
 		msg := "fheLte operand type mismatch"
 		logger.Error(msg, " lhs ", lhs.UintType, " rhs ", rhs.UintType)
-		return nil, errors.New(msg)
+		return nil, vm.ErrExecutionReverted
 	}
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
@@ -230,7 +230,7 @@ func Lte(input []byte, tp *TxParams) ([]byte, error) {
 	result, err := lhs.Lte(rhs)
 	if err != nil {
 		logger.Error("fheLte failed ", " err ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 	importCiphertext(result)
 
@@ -247,13 +247,13 @@ func Sub(input []byte, tp *TxParams) ([]byte, error) {
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
 		logger.Error("fheSub inputs not verified", " err ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 
 	if lhs.UintType != rhs.UintType {
 		msg := "fheSub operand type mismatch"
 		logger.Error(msg, " lhs ", lhs.UintType, " rhs ", rhs.UintType)
-		return nil, errors.New(msg)
+		return nil, vm.ErrExecutionReverted
 	}
 
 	// // If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
@@ -264,7 +264,7 @@ func Sub(input []byte, tp *TxParams) ([]byte, error) {
 	result, err := lhs.Sub(rhs)
 	if err != nil {
 		logger.Error("fheSub failed", " err ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 	importCiphertext(result)
 
@@ -281,13 +281,13 @@ func Mul(input []byte, tp *TxParams) ([]byte, error) {
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
 		logger.Error("fheMul inputs not verified", " err ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 
 	if lhs.UintType != rhs.UintType {
 		msg := "fheMul operand type mismatch"
 		logger.Error(msg, " lhs ", lhs.UintType, " rhs ", rhs.UintType)
-		return nil, errors.New(msg)
+		return nil, vm.ErrExecutionReverted
 	}
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
@@ -298,7 +298,7 @@ func Mul(input []byte, tp *TxParams) ([]byte, error) {
 	result, err := lhs.Mul(rhs)
 	if err != nil {
 		logger.Error("fheMul failed", " err ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 	importCiphertext(result)
 
@@ -316,13 +316,13 @@ func Lt(input []byte, tp *TxParams) ([]byte, error) {
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
 		logger.Error("fheLt inputs not verified", " err ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 
 	if lhs.UintType != rhs.UintType {
 		msg := "fheLt operand type mismatch"
 		logger.Error(msg, " lhs ", lhs.UintType, " rhs ", rhs.UintType)
-		return nil, errors.New(msg)
+		return nil, vm.ErrExecutionReverted
 	}
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
@@ -333,7 +333,7 @@ func Lt(input []byte, tp *TxParams) ([]byte, error) {
 	result, err := lhs.Lt(rhs)
 	if err != nil {
 		logger.Error("fheLt failed", " err ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 	importCiphertext(result)
 
@@ -350,13 +350,13 @@ func Select(input []byte, tp *TxParams) ([]byte, error) {
 	control, ifTrue, ifFalse, err := get3VerifiedOperands(input)
 	if err != nil {
 		logger.Error("select inputs not verified input len: ", len(input), " err: ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 
 	if ifTrue.UintType != ifFalse.UintType {
 		msg := "select operands type mismatch"
 		logger.Error(msg, " ifTrue ", ifTrue.UintType, " ifFalse ", ifFalse.UintType)
-		return nil, errors.New(msg)
+		return nil, vm.ErrExecutionReverted
 	}
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
@@ -367,7 +367,7 @@ func Select(input []byte, tp *TxParams) ([]byte, error) {
 	result, err := control.Cmux(ifTrue, ifFalse)
 	if err != nil {
 		logger.Error("select failed ", " err ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 	importCiphertext(result)
 
@@ -386,20 +386,20 @@ func Req(input []byte, tp *TxParams) ([]byte, error) {
 	if tp.EthCall {
 		msg := "require not supported on EthCall"
 		logger.Error(msg)
-		return nil, errors.New(msg)
+		return nil, vm.ErrExecutionReverted
 	}
 
 	if len(input) != 32 {
 		msg := "require input len must be 32 bytes"
 		logger.Error(msg, " input ", hex.EncodeToString(input), " len ", len(input))
-		return nil, errors.New(msg)
+		return nil, vm.ErrExecutionReverted
 	}
 
 	ct := getCiphertext(tfhe.BytesToHash(input))
 	if ct == nil {
 		msg := "require unverified handle"
 		logger.Error(msg, " input ", hex.EncodeToString(input))
-		return nil, errors.New(msg)
+		return nil, vm.ErrExecutionReverted
 	}
 	// If we are not committing to state, assume the require is true, avoiding any side effects
 	// (i.e. mutatiting the oracle DB).
@@ -412,7 +412,7 @@ func Req(input []byte, tp *TxParams) ([]byte, error) {
 	if !ev {
 		msg := "require condition not met"
 		logger.Error(msg)
-		return nil, errors.New(msg)
+		return nil, vm.ErrExecutionReverted
 	}
 
 	return nil, nil
@@ -425,7 +425,7 @@ func Cast(input []byte, tp *TxParams) ([]byte, error) {
 
 	if !isValidType(input[32]) {
 		logger.Error("invalid type to cast to")
-		return nil, errors.New("invalid type provided")
+		return nil, vm.ErrExecutionReverted
 	}
 	castToType := tfhe.UintType(input[32])
 
@@ -437,14 +437,14 @@ func Cast(input []byte, tp *TxParams) ([]byte, error) {
 	ct := getCiphertext(tfhe.BytesToHash(input[0:32]))
 	if ct == nil {
 		logger.Error("cast input not verified")
-		return nil, errors.New("unverified ciphertext handle")
+		return nil, vm.ErrExecutionReverted
 	}
 
 	res, err := ct.Cast(castToType)
 	if err != nil {
 		msg := "cast Run() error casting ciphertext to"
 		logger.Error(msg, " type ", castToType)
-		return nil, errors.New(msg)
+		return nil, vm.ErrExecutionReverted
 	}
 
 	resHash := res.Hash()
@@ -467,7 +467,7 @@ func TrivialEncrypt(input []byte, tp *TxParams) ([]byte, error) {
 	if len(input) != 33 {
 		msg := "trivialEncrypt input len must be 33 bytes"
 		logger.Error(msg, " input ", hex.EncodeToString(input), " len ", len(input))
-		return nil, errors.New(msg)
+		return nil, vm.ErrExecutionReverted
 	}
 
 	valueToEncrypt := *new(big.Int).SetBytes(input[0:32])
@@ -481,7 +481,7 @@ func TrivialEncrypt(input []byte, tp *TxParams) ([]byte, error) {
 	ct, err := tfhe.NewCipherTextTrivial(valueToEncrypt, encryptToType)
 	if err != nil {
 		logger.Error("failed to create trivial encrypted value")
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 
 	ctHash := ct.Hash()
@@ -502,13 +502,13 @@ func Div(input []byte, tp *TxParams) ([]byte, error) {
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
 		logger.Error("fheMul inputs not verified", " err ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 
 	if lhs.UintType != rhs.UintType {
 		msg := "fheMul operand type mismatch"
 		logger.Error(msg, " lhs ", lhs.UintType, " rhs ", rhs.UintType)
-		return nil, errors.New(msg)
+		return nil, vm.ErrExecutionReverted
 	}
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
@@ -519,7 +519,7 @@ func Div(input []byte, tp *TxParams) ([]byte, error) {
 	result, err := lhs.Div(rhs)
 	if err != nil {
 		logger.Error("fheDiv failed", " err ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 	importCiphertext(result)
 
@@ -538,13 +538,13 @@ func Gt(input []byte, tp *TxParams) ([]byte, error) {
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
 		logger.Error("fheGt inputs not verified", " err ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 
 	if lhs.UintType != rhs.UintType {
 		msg := "fheGt operand type mismatch"
 		logger.Error(msg, " lhs ", lhs.UintType, " rhs ", rhs.UintType)
-		return nil, errors.New(msg)
+		return nil, vm.ErrExecutionReverted
 	}
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
@@ -555,7 +555,7 @@ func Gt(input []byte, tp *TxParams) ([]byte, error) {
 	result, err := lhs.Gt(rhs)
 	if err != nil {
 		logger.Error("fheGt failed", " err ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 	importCiphertext(result)
 
@@ -574,13 +574,13 @@ func Gte(input []byte, tp *TxParams) ([]byte, error) {
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
 		logger.Error("fheGte inputs not verified", " err ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 
 	if lhs.UintType != rhs.UintType {
 		msg := "fheGte operand type mismatch"
 		logger.Error(msg, " lhs ", lhs.UintType, " rhs ", rhs.UintType)
-		return nil, errors.New(msg)
+		return nil, vm.ErrExecutionReverted
 	}
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
@@ -591,7 +591,7 @@ func Gte(input []byte, tp *TxParams) ([]byte, error) {
 	result, err := lhs.Gte(rhs)
 	if err != nil {
 		logger.Error("fheGte failed", " err ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 	importCiphertext(result)
 
@@ -609,13 +609,13 @@ func Rem(input []byte, tp *TxParams) ([]byte, error) {
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
 		logger.Error("fheRem inputs not verified", " err ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 
 	if lhs.UintType != rhs.UintType {
 		msg := "fheRem operand type mismatch"
 		logger.Error(msg, " lhs ", lhs.UintType, " rhs ", rhs.UintType)
-		return nil, errors.New(msg)
+		return nil, vm.ErrExecutionReverted
 	}
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
@@ -626,7 +626,7 @@ func Rem(input []byte, tp *TxParams) ([]byte, error) {
 	result, err := lhs.Rem(rhs)
 	if err != nil {
 		logger.Error("fheRem failed", " err ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 	importCiphertext(result)
 
@@ -645,13 +645,13 @@ func And(input []byte, tp *TxParams) ([]byte, error) {
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
 		logger.Error("fheAnd inputs not verified", " err ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 
 	if lhs.UintType != rhs.UintType {
 		msg := "fheAnd operand type mismatch"
 		logger.Error(msg, " lhs ", lhs.UintType, " rhs ", rhs.UintType)
-		return nil, errors.New(msg)
+		return nil, vm.ErrExecutionReverted
 	}
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
@@ -662,7 +662,7 @@ func And(input []byte, tp *TxParams) ([]byte, error) {
 	result, err := lhs.And(rhs)
 	if err != nil {
 		logger.Error("fheAnd failed", " err ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 	importCiphertext(result)
 
@@ -681,13 +681,13 @@ func Or(input []byte, tp *TxParams) ([]byte, error) {
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
 		logger.Error("fheOr inputs not verified", " err ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 
 	if lhs.UintType != rhs.UintType {
 		msg := "fheOr operand type mismatch"
 		logger.Error(msg, " lhs ", lhs.UintType, " rhs ", rhs.UintType)
-		return nil, errors.New(msg)
+		return nil, vm.ErrExecutionReverted
 	}
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
@@ -698,7 +698,7 @@ func Or(input []byte, tp *TxParams) ([]byte, error) {
 	result, err := lhs.Or(rhs)
 	if err != nil {
 		logger.Error("fheOr failed", " err ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 	importCiphertext(result)
 
@@ -717,13 +717,13 @@ func Xor(input []byte, tp *TxParams) ([]byte, error) {
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
 		logger.Error("fheXor inputs not verified", " err ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 
 	if lhs.UintType != rhs.UintType {
 		msg := "fheXor operand type mismatch"
 		logger.Error(msg, " lhs ", lhs.UintType, " rhs ", rhs.UintType)
-		return nil, errors.New(msg)
+		return nil, vm.ErrExecutionReverted
 	}
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
@@ -734,7 +734,7 @@ func Xor(input []byte, tp *TxParams) ([]byte, error) {
 	result, err := lhs.Xor(rhs)
 	if err != nil {
 		logger.Error("fheXor failed", " err ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 	importCiphertext(result)
 
@@ -754,13 +754,13 @@ func Eq(input []byte, tp *TxParams) ([]byte, error) {
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
 		logger.Error("fheEq inputs not verified", " err ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 
 	if lhs.UintType != rhs.UintType {
 		msg := "fheEq operand type mismatch"
 		logger.Error(msg, " lhs ", lhs.UintType, " rhs ", rhs.UintType)
-		return nil, errors.New(msg)
+		return nil, vm.ErrExecutionReverted
 	}
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
@@ -771,7 +771,7 @@ func Eq(input []byte, tp *TxParams) ([]byte, error) {
 	result, err := lhs.Eq(rhs)
 	if err != nil {
 		logger.Error("fheEq failed", " err ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 	importCiphertext(result)
 
@@ -791,13 +791,13 @@ func Ne(input []byte, tp *TxParams) ([]byte, error) {
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
 		logger.Error("fheNe inputs not verified", " err ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 
 	if lhs.UintType != rhs.UintType {
 		msg := "fheNe operand type mismatch"
 		logger.Error(msg, " lhs ", lhs.UintType, " rhs ", rhs.UintType)
-		return nil, errors.New(msg)
+		return nil, vm.ErrExecutionReverted
 	}
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
@@ -808,7 +808,7 @@ func Ne(input []byte, tp *TxParams) ([]byte, error) {
 	result, err := lhs.Ne(rhs)
 	if err != nil {
 		logger.Error("fheNe failed", " err ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 	importCiphertext(result)
 
@@ -826,13 +826,13 @@ func Min(input []byte, tp *TxParams) ([]byte, error) {
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
 		logger.Error("fheMin inputs not verified", " err ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 
 	if lhs.UintType != rhs.UintType {
 		msg := "fheMin operand type mismatch"
 		logger.Error(msg, " lhs ", lhs.UintType, " rhs ", rhs.UintType)
-		return nil, errors.New(msg)
+		return nil, vm.ErrExecutionReverted
 	}
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
@@ -843,7 +843,7 @@ func Min(input []byte, tp *TxParams) ([]byte, error) {
 	result, err := lhs.Min(rhs)
 	if err != nil {
 		logger.Error("fheMin failed", " err ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 	importCiphertext(result)
 
@@ -861,13 +861,13 @@ func Max(input []byte, tp *TxParams) ([]byte, error) {
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
 		logger.Error("fheMax inputs not verified", " err ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 
 	if lhs.UintType != rhs.UintType {
 		msg := "fheMax operand type mismatch"
 		logger.Error(msg, " lhs ", lhs.UintType, " rhs ", rhs.UintType)
-		return nil, errors.New(msg)
+		return nil, vm.ErrExecutionReverted
 	}
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
@@ -878,7 +878,7 @@ func Max(input []byte, tp *TxParams) ([]byte, error) {
 	result, err := lhs.Max(rhs)
 	if err != nil {
 		logger.Error("fheMax failed", " err ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 	importCiphertext(result)
 
@@ -896,13 +896,13 @@ func Shl(input []byte, tp *TxParams) ([]byte, error) {
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
 		logger.Error("fheShl inputs not verified", " err ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 
 	if lhs.UintType != rhs.UintType {
 		msg := "fheShl operand type mismatch"
 		logger.Error(msg, " lhs ", lhs.UintType, " rhs ", rhs.UintType)
-		return nil, errors.New(msg)
+		return nil, vm.ErrExecutionReverted
 	}
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
@@ -913,7 +913,7 @@ func Shl(input []byte, tp *TxParams) ([]byte, error) {
 	result, err := lhs.Shl(rhs)
 	if err != nil {
 		logger.Error("fheShl failed", " err ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 	importCiphertext(result)
 
@@ -931,13 +931,13 @@ func Shr(input []byte, tp *TxParams) ([]byte, error) {
 	lhs, rhs, err := get2VerifiedOperands(input)
 	if err != nil {
 		logger.Error("fheShr inputs not verified", " err ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 
 	if lhs.UintType != rhs.UintType {
 		msg := "fheShr operand type mismatch"
 		logger.Error(msg, " lhs ", lhs.UintType, " rhs ", rhs.UintType)
-		return nil, errors.New(msg)
+		return nil, vm.ErrExecutionReverted
 	}
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
@@ -948,7 +948,7 @@ func Shr(input []byte, tp *TxParams) ([]byte, error) {
 	result, err := lhs.Shr(rhs)
 	if err != nil {
 		logger.Error("fheShr failed", " err ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 	importCiphertext(result)
 
@@ -967,7 +967,7 @@ func Not(input []byte, tp *TxParams) ([]byte, error) {
 	if ct == nil {
 		msg := "not unverified ciphertext handle"
 		logger.Error(msg, "input", hex.EncodeToString(input))
-		return nil, errors.New(msg)
+		return nil, vm.ErrExecutionReverted
 	}
 
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
@@ -978,7 +978,7 @@ func Not(input []byte, tp *TxParams) ([]byte, error) {
 	result, err := ct.Not()
 	if err != nil {
 		logger.Error("not failed", " err ", err)
-		return nil, err
+		return nil, vm.ErrExecutionReverted
 	}
 
 	importCiphertext(result)
@@ -995,7 +995,8 @@ func GetNetworkPublicKey(tp *TxParams) ([]byte, error) {
 
 	pk, err := tfhe.PublicKey()
 	if err != nil {
-		return nil, err
+		logger.Error("could not get public key", " err ", err)
+		return nil, vm.ErrExecutionReverted
 	}
 
 	return pk, nil
