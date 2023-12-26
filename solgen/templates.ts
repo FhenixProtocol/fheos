@@ -126,22 +126,22 @@ library TFHE {
     euint32 public constant NIL32 = euint32.wrap(0);
 
     // Return true if the encrypted integer is initialized and false otherwise.
-    function isInitialized(ebool v) private pure returns (bool) {
+    function isInitialized(ebool v) internal pure returns (bool) {
         return ebool.unwrap(v) != 0;
     }
 
     // Return true if the encrypted integer is initialized and false otherwise.
-    function isInitialized(euint8 v) private pure returns (bool) {
+    function isInitialized(euint8 v) internal pure returns (bool) {
         return euint8.unwrap(v) != 0;
     }
 
     // Return true if the encrypted integer is initialized and false otherwise.
-    function isInitialized(euint16 v) private pure returns (bool) {
+    function isInitialized(euint16 v) internal pure returns (bool) {
         return euint16.unwrap(v) != 0;
     }
 
     // Return true if the encrypted integer is initialized and false otherwise.
-    function isInitialized(euint32 v) private pure returns (bool) {
+    function isInitialized(euint32 v) internal pure returns (bool) {
         return euint32.unwrap(v) != 0;
     }
 
@@ -155,7 +155,7 @@ library TFHE {
         uint256 lhs,
         uint256 rhs,
         function(bytes memory) external pure returns (bytes memory) impl
-    ) private pure returns (uint256 result) {
+    ) internal pure returns (uint256 result) {
         bytes memory input = bytes.concat(bytes32(lhs), bytes32(rhs));
 
         bytes memory output;
@@ -784,7 +784,7 @@ export const OperatorBinding = (funcName: string, forType: string, unary: boolea
 
     return `
     ${docString}
-    function ${funcName}(${funcParams}) public pure returns (${returnType}) {
+    function ${funcName}(${funcParams}) internal pure returns (${returnType}) {
         return TFHE.${funcName}(${unaryParameters});
     }`;
 }
