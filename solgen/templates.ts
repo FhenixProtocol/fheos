@@ -125,27 +125,27 @@ library TFHE {
     euint16 public constant NIL16 = euint16.wrap(0);
     euint32 public constant NIL32 = euint32.wrap(0);
 
-    // Return true if the enrypted integer is initialized and false otherwise.
+    // Return true if the encrypted integer is initialized and false otherwise.
     function isInitialized(ebool v) internal pure returns (bool) {
         return ebool.unwrap(v) != 0;
     }
 
-    // Return true if the enrypted integer is initialized and false otherwise.
+    // Return true if the encrypted integer is initialized and false otherwise.
     function isInitialized(euint8 v) internal pure returns (bool) {
         return euint8.unwrap(v) != 0;
     }
 
-    // Return true if the enrypted integer is initialized and false otherwise.
+    // Return true if the encrypted integer is initialized and false otherwise.
     function isInitialized(euint16 v) internal pure returns (bool) {
         return euint16.unwrap(v) != 0;
     }
 
-    // Return true if the enrypted integer is initialized and false otherwise.
+    // Return true if the encrypted integer is initialized and false otherwise.
     function isInitialized(euint32 v) internal pure returns (bool) {
         return euint32.unwrap(v) != 0;
     }
 
-    function getValue(bytes memory a) internal pure returns (uint256 value) {
+    function getValue(bytes memory a) private pure returns (uint256 value) {
         assembly {
             value := mload(add(a, 0x20))
         }
@@ -183,15 +183,26 @@ const castFromBytes = (name: string, toType: string): string => {
 }
 
 const castToEbool = (name: string, fromType: string): string => {
-    return `\n    function asEbool(${fromType} value) internal pure returns (ebool) {
+    return `
+    \n    /// @notice Converts a ${fromType} to an ebool
+        function asEbool(${fromType} value) internal pure returns (ebool) {
         return ne(${name},  as${capitalize(fromType)}(0));
     }`;
 }
 
 export const AsTypeFunction = (fromType: string, toType: string) => {
     let castString = castFromEncrypted(fromType, toType, "value");
+
+    let docString = `
+    /// @notice Converts a ${fromType} to an ${toType}`;
+
     if (fromType === 'bool' && toType === 'ebool') {
-        return `\n    function asEbool(bool value) internal pure returns (ebool) {
+        return `
+    /// @notice Converts a plaintext boolean value to a ciphertext ebool
+    /// @dev Privacy: The input value is public, therefore the ciphertext should be considered public and should be used
+    ///only for mathematical operations, not to represent data that should be private
+    /// @return A ciphertext representation of the input 
+    function asEbool(bool value) internal pure returns (ebool) {
         uint256 sVal = 0;
         if (value) {
             sVal = 1;
@@ -201,6 +212,10 @@ export const AsTypeFunction = (fromType: string, toType: string) => {
     }`;
     }
     else if (fromType === 'bytes memory') {
+        docString = `
+    /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an ${toType}
+    /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
+    /// @return a ciphertext representation of the input`;
         castString = castFromBytes("value", toType)
     } else if (EPlaintextType.includes(fromType)) {
         castString = castFromPlaintext("value", toType);
@@ -210,7 +225,8 @@ export const AsTypeFunction = (fromType: string, toType: string) => {
         throw new Error(`Unsupported type for casting: ${fromType}`)
     }
 
-    return `\n    function as${capitalize(toType)}(${fromType} value) internal pure returns (${toType}) {
+    return `${docString}
+    function as${capitalize(toType)}(${fromType} value) internal pure returns (${toType}) {
         return ${toType}.wrap(${castString});
     }`;
 }
@@ -265,8 +281,30 @@ export function SolTemplate2Arg(name: string, input1: AllTypes, input2: AllTypes
     let variableName1 = input2 === "bytes32" ? "value" : "lhs";
     let variableName2 = input2 === "bytes32" ? "publicKey" : "rhs";
 
-    let funcBody = `\n
-    function ${name}(${input1} ${variableName1}, ${input2} ${variableName2}) internal pure returns (${returnType}) {`;
+    let docString = `
+    /// @notice This functions performs the ${name} operation
+    /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
+    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @param lhs The first input 
+    /// @param rhs The second input
+    /// @return The result of the operation
+    `;
+
+    // reencrypt
+    if (variableName2 === "publicKey") {
+        docString = `
+    /// @notice performs the ${name} function on a ${input1} ciphertext. This operation returns the plaintext value, sealed for the public key provided 
+    /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @param value Ciphertext to decrypt and seal
+    /// @param publicKey Public Key that will receive the sealed plaintext
+    /// @return Plaintext input, sealed for the owner of \`publicKey\`
+    `;
+    }
+
+
+    let funcBody = docString;
+
+    funcBody += `function ${name}(${input1} ${variableName1}, ${input2} ${variableName2}) internal pure returns (${returnType}) {`;
 
     if (valueIsEncrypted(input1)) {
         // both inputs encrypted - this is a generic math function. i.e. div, mul, eq, etc.
@@ -608,10 +646,19 @@ export function genAbiFile(abi: string) {
 
 
 export function SolTemplate1Arg(name: string, input1: AllTypes, returnType: AllTypes) {
+
+    let docString = `
+    /// @notice Performs the ${name} operation on a ciphertext
+    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @param input1 the input ciphertext
+    `;
+
     if (name === "not" && input1 === "ebool") {
         return `\n
-    // "not" for ebool not working in the traditional way as it converts ebool to euint8
-    // Ebool(true) is Euint8(1) so !Ebool(true) is !Euint8(1) which is Euint8(254) which is still Ebool(true)
+    /// @notice Performs the "not" for the ebool type
+    /// @dev Implemented by a workaround due to ebool being a euint8 type behind the scenes, therefore xor is needed to assure that not(true) = false and vise-versa
+    /// @param value input ebool ciphertext
+    /// @return Result of the not operation on \`value\` 
     function not(ebool value) internal pure returns (ebool) {
         return xor(value, asEbool(true));
     }`;
@@ -619,8 +666,9 @@ export function SolTemplate1Arg(name: string, input1: AllTypes, returnType: AllT
 
     let returnStr = returnType === "none" ? `` : `returns (${returnType})`;
 
-    let funcBody = `\n
-    function ${name}(${input1} input1) internal pure ${returnStr} {`;
+    let funcBody = docString;
+
+    funcBody += `function ${name}(${input1} input1) internal pure ${returnStr} {`;
 
     if (valueIsEncrypted(input1)) {
         funcBody += `
@@ -701,6 +749,7 @@ export const OperatorOverloadDecl = (funcName: string, op: string, forType: EUin
     let returnType = returnsBool ? 'ebool' : forType;
 
     return `\nusing {${opOverloadName} as ${op}} for ${forType} global;
+/// @notice Performs the ${funcName} operation
 function ${opOverloadName}(${funcParams}) pure returns (${returnType}) {
     return TFHE.${funcName}(${unaryParameters});
 }\n`;
@@ -721,7 +770,20 @@ export const OperatorBinding = (funcName: string, forType: string, unary: boolea
     let funcParams = unaryParameters.split(', ').map((key) => {return `${forType} ${key}`}).join(', ')
     let returnType = returnsBool ? 'ebool' : forType;
 
+    let docString = `
+    /// @notice Performs the ${funcName} operation
+    /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @param lhs input of type ${forType}
+    `;
+
+    if (unary) {
+        docString += `/// @param rhs second input of type ${forType}\n`
+    }
+
+    docString += `/// @return the result of the ${funcName}`
+
     return `
+    ${docString}
     function ${funcName}(${funcParams}) internal pure returns (${returnType}) {
         return TFHE.${funcName}(${unaryParameters});
     }`;
