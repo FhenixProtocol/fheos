@@ -186,7 +186,7 @@ const castToEbool = (name: string, fromType: string): string => {
     return `
     \n    /// @notice Converts a ${fromType} to an ebool
         function asEbool(${fromType} value) internal pure returns (ebool) {
-        return ne(${name},  as${capitalize(fromType)}(0));
+        return ne(${name}, as${capitalize(fromType)}(0));
     }`;
 }
 
@@ -238,13 +238,29 @@ function TypeCastTestingFunction(fromType: string, fromTypeForTs: string, toType
     testType = testType === 'bytes memory' ? 'PreEncrypted' : capitalize(testType);
     testType = testType === 'Uint256' ? 'Plaintext' : testType;
     const encryptedVal = fromTypeEncrypted ? `TFHE.as${capitalize(fromTypeEncrypted)}(val)` : "val";
-    const func = `\n\n    function castFrom${testType}To${to}(${fromType} val) public pure returns (${retType}) {
-        return TFHE.decrypt(TFHE.as${to}(${encryptedVal}));
-    }`;
-
     let retTypeTs = (retType === 'bool') ? 'boolean' : retType;
     retTypeTs = retTypeTs.includes("uint") ? 'bigint' : retTypeTs;
-    const abi =  `    castFrom${testType}To${to}: (val: ${fromTypeForTs}) => Promise<${retTypeTs}>;\n`;
+
+    let abi: string;
+    let func = "\n\n    ";
+
+    if (testType === 'PreEncrypted' || testType === 'Plaintext') {
+        func += `function castFrom${testType}To${to}(${fromType} val) public pure returns (${retType}) {
+        return TFHE.decrypt(TFHE.as${to}(${encryptedVal}));
+    }`;
+        abi = `    castFrom${testType}To${to}: (val: ${fromTypeForTs}) => Promise<${retTypeTs}>;\n`;
+    } else {
+        func += `function castFrom${testType}To${to}(${fromType} val, string calldata test) public pure returns (${retType}) {
+        if (Utils.cmp(test, "bound")) {
+            return TFHE.decrypt(${encryptedVal}.to${shortenType(toType)}());
+        } else if (Utils.cmp(test, "regular")) {
+            return TFHE.decrypt(TFHE.as${to}(${encryptedVal}));
+        }
+        revert TestNotFound(test);
+    }`;
+        abi = `    castFrom${testType}To${to}: (val: ${fromTypeForTs}, test: string) => Promise<${retTypeTs}>;\n`;
+    }
+
     return [func, abi];
 }
 
@@ -269,7 +285,6 @@ export function AsTypeTestingContract(type: string) {
 
     return [generateTestContract(`As${capitalize(type)}`, funcs), abi];
 }
-
 
 const unwrapType = (typeName: EUintType, inputName: string): string => `${typeName}.unwrap(${inputName})`;
 const wrapType = (resultType: EUintType, inputName: string): string => `${resultType}.wrap(${inputName})`;
@@ -419,11 +434,11 @@ export function testContract2ArgBoolRes(name: string, isBoolean: boolean) {
             if (TFHE.decrypt(TFHE.asEbool(aBool).${name}(TFHE.asEbool(bBool)))) {
                 return 1;
             }
+            return 0;
         }`;
     }
-    func += ` else {
-            revert TestNotFound(test);
-        }
+    func += `
+        revert TestNotFound(test);
     }`;
 
     const abi = `export interface ${capitalize(name)}TestType extends Contract {
@@ -451,9 +466,9 @@ export function testContract1Arg(name: string) {
             }
 
             return 0;
-        } else {
-            revert TestNotFound(test);
         }
+        
+        revert TestNotFound(test);
     }`;
     const abi = `export interface ${capitalize(name)}TestType extends Contract {
     ${name}: (test: string, a: bigint) => Promise<bigint>;
@@ -462,7 +477,7 @@ export function testContract1Arg(name: string) {
 }
 
 export function generateTestContract(name: string, testFunc: string, importTypes: boolean = false) {
-    const importStatement = importTypes ? `\nimport { ebool } from "../../FHE.sol";` : "";
+    const importStatement = importTypes ? `\nimport {ebool} from "../../FHE.sol";` : "";
     return `// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
@@ -473,14 +488,15 @@ error TestNotFound(string test);
 
 contract ${capitalize(name)}Test {
     using Utils for *;
-${testFunc}
+    
+    ${testFunc}
 }
 `;
 }
 
 export function testContractReq() {
     // Req is failing on EthCall so we need to make it as tx for now
-    let func = `\n    function req(string calldata test, uint256 a) public {
+    let func = `function req(string calldata test, uint256 a) public {
         if (Utils.cmp(test, "req(euint8)")) {
             TFHE.req(TFHE.asEuint8(a));
         } else if (Utils.cmp(test, "req(euint16)")) {
@@ -504,7 +520,7 @@ export function testContractReq() {
 }
 
 export function testContractReencrypt() {
-    let func = `\n    function reencrypt(string calldata test, uint256 a, bytes32 pubkey) public pure returns (bytes memory reencrypted) {
+    let func = `function reencrypt(string calldata test, uint256 a, bytes32 pubkey) public pure returns (bytes memory reencrypted) {
         if (Utils.cmp(test, "reencrypt(euint8)")) {
             return TFHE.reencrypt(TFHE.asEuint8(a), pubkey);
         } else if (Utils.cmp(test, "reencrypt(euint16)")) {
@@ -518,9 +534,9 @@ export function testContractReencrypt() {
             }
 
             return TFHE.reencrypt(TFHE.asEbool(b), pubkey);
-        } else {
-            revert TestNotFound(test);
-        }
+        } 
+        
+        revert TestNotFound(test);
     }`;
     const abi = `export interface ReencryptTestType extends Contract {
     reencrypt: (test: string, a: bigint, pubkey: Uint8Array) => Promise<Uint8Array>;
@@ -529,7 +545,7 @@ export function testContractReencrypt() {
 }
 
 export function testContract3Arg(name: string) {
-    let func = `\n    function ${name}(string calldata test, bool c, uint256 a, uint256 b) public pure returns (uint256 output) {
+    let func = `function ${name}(string calldata test, bool c, uint256 a, uint256 b) public pure returns (uint256 output) {
         ebool condition = TFHE.asEbool(c);
         if (Utils.cmp(test, "${name}: euint8")) {
             return TFHE.decrypt(TFHE.${name}(condition, TFHE.asEuint8(a), TFHE.asEuint8(b)));
@@ -551,9 +567,9 @@ export function testContract3Arg(name: string) {
                 return 1;
             }
             return 0;
-        } else {
-            revert TestNotFound(test);
-        }
+        } 
+        
+        revert TestNotFound(test);
     }`;
     const abi = `export interface ${capitalize(name)}TestType extends Contract {
     ${name}: (test: string, c: boolean, a: bigint, b: bigint) => Promise<bigint>;
@@ -630,9 +646,9 @@ export function testContract2Arg(name: string, isBoolean: boolean, op?: string) 
         }`;
         }
     }
-    func += ` else {
-            revert TestNotFound(test);
-        }
+    func += `
+    
+        revert TestNotFound(test);
     }`;
     const abi = `export interface ${capitalize(name)}TestType extends Contract {
     ${name}: (test: string, a: bigint, b: bigint) => Promise<bigint>;
@@ -643,7 +659,6 @@ export function testContract2Arg(name: string, isBoolean: boolean, op?: string) 
 export function genAbiFile(abi: string) {
     return `import { Contract } from 'ethers';\n${abi}\n\n`;
 }
-
 
 export function SolTemplate1Arg(name: string, input1: AllTypes, returnType: AllTypes) {
 
@@ -755,10 +770,6 @@ function ${opOverloadName}(${funcParams}) pure returns (${returnType}) {
 }\n`;
 }
 
-export const BindingsWithoutOperator = (funcName: string, forType: string) => {
-    return `\nusing {Bindings${capitalize(forType)}.${funcName}} for ${forType} global;`;
-}
-
 export const BindingLibraryType = (type: string) => {
     let typeCap = capitalize(type);
     return `\n\nusing Bindings${typeCap} for ${type} global;
@@ -786,5 +797,16 @@ export const OperatorBinding = (funcName: string, forType: string, unary: boolea
     ${docString}
     function ${funcName}(${funcParams}) internal pure returns (${returnType}) {
         return TFHE.${funcName}(${unaryParameters});
+    }`;
+}
+
+const shortenType = (type: string) => {
+    return type === "ebool" ? "Bool" : "U" + type.slice(5); // get only number at the end
+}
+
+export const CastBinding = (thisType: string, targetType: string) => {
+    return `
+    function to${shortenType(targetType)}(${thisType} value) internal pure returns (${targetType}) {
+        return TFHE.as${capitalize(targetType)}(value);
     }`;
 }

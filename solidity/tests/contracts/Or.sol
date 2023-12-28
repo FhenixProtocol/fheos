@@ -8,7 +8,8 @@ error TestNotFound(string test);
 
 contract OrTest {
     using Utils for *;
-function or(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
+    
+    function or(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
         if (Utils.cmp(test, "or(euint8,euint8)")) {
             return TFHE.decrypt(TFHE.or(TFHE.asEuint8(a), TFHE.asEuint8(b)));
         } else if (Utils.cmp(test, "or(euint16,euint16)")) {
@@ -66,8 +67,8 @@ function or(string calldata test, uint256 a, uint256 b) public pure returns (uin
                 return 1;
             }
             return 0;
-        } else {
-            revert TestNotFound(test);
         }
+    
+        revert TestNotFound(test);
     }
 }

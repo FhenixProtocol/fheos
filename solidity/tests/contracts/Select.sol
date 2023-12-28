@@ -2,14 +2,14 @@
 pragma solidity ^0.8.17;
 
 import {TFHE} from "../../FHE.sol";
-import { ebool } from "../../FHE.sol";
+import {ebool} from "../../FHE.sol";
 import {Utils} from "./utils/Utils.sol";
 
 error TestNotFound(string test);
 
 contract SelectTest {
     using Utils for *;
-
+    
     function select(string calldata test, bool c, uint256 a, uint256 b) public pure returns (uint256 output) {
         ebool condition = TFHE.asEbool(c);
         if (Utils.cmp(test, "select: euint8")) {
@@ -32,8 +32,8 @@ contract SelectTest {
                 return 1;
             }
             return 0;
-        } else {
-            revert TestNotFound(test);
-        }
+        } 
+        
+        revert TestNotFound(test);
     }
 }

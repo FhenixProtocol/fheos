@@ -8,17 +8,33 @@ error TestNotFound(string test);
 
 contract AsEuint8Test {
     using Utils for *;
-
-    function castFromEboolToEuint8(uint256 val) public pure returns (uint8) {
-        return TFHE.decrypt(TFHE.asEuint8(TFHE.asEbool(val)));
+    
+    
+    function castFromEboolToEuint8(uint256 val, string calldata test) public pure returns (uint8) {
+        if (Utils.cmp(test, "bound")) {
+            return TFHE.decrypt(TFHE.asEbool(val).toU8());
+        } else if (Utils.cmp(test, "regular")) {
+            return TFHE.decrypt(TFHE.asEuint8(TFHE.asEbool(val)));
+        }
+        revert TestNotFound(test);
     }
 
-    function castFromEuint16ToEuint8(uint256 val) public pure returns (uint8) {
-        return TFHE.decrypt(TFHE.asEuint8(TFHE.asEuint16(val)));
+    function castFromEuint16ToEuint8(uint256 val, string calldata test) public pure returns (uint8) {
+        if (Utils.cmp(test, "bound")) {
+            return TFHE.decrypt(TFHE.asEuint16(val).toU8());
+        } else if (Utils.cmp(test, "regular")) {
+            return TFHE.decrypt(TFHE.asEuint8(TFHE.asEuint16(val)));
+        }
+        revert TestNotFound(test);
     }
 
-    function castFromEuint32ToEuint8(uint256 val) public pure returns (uint8) {
-        return TFHE.decrypt(TFHE.asEuint8(TFHE.asEuint32(val)));
+    function castFromEuint32ToEuint8(uint256 val, string calldata test) public pure returns (uint8) {
+        if (Utils.cmp(test, "bound")) {
+            return TFHE.decrypt(TFHE.asEuint32(val).toU8());
+        } else if (Utils.cmp(test, "regular")) {
+            return TFHE.decrypt(TFHE.asEuint8(TFHE.asEuint32(val)));
+        }
+        revert TestNotFound(test);
     }
 
     function castFromPlaintextToEuint8(uint256 val) public pure returns (uint8) {

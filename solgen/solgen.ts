@@ -2,7 +2,7 @@ import {getFunctionsFromGo} from "./contracts_parser";
 import * as fs from 'fs';
 import {
     AsTypeFunction,
-    BindingLibraryType, BindingsWithoutOperator,
+    BindingLibraryType,
     OperatorBinding,
     OperatorOverloadDecl,
     PostFix,
@@ -19,6 +19,7 @@ import {
     AsTypeTestingContract,
     genAbiFile,
     capitalize,
+    CastBinding
 } from "./templates";
 import {
     AllTypes,
@@ -358,6 +359,10 @@ const main = async () => {
                     );
                 }
             }
+        });
+
+        EInputType.filter(otherType => otherType !== encryptedType).forEach(otherType => {
+            outputFile += CastBinding(encryptedType, otherType);
         });
         outputFile += PostFix();
     })

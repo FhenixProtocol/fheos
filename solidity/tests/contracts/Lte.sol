@@ -8,7 +8,8 @@ error TestNotFound(string test);
 
 contract LteTest {
     using Utils for *;
-function lte(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
+    
+    function lte(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
         if (Utils.cmp(test, "lte(euint8,euint8)")) {
             if (TFHE.decrypt(TFHE.lte(TFHE.asEuint8(a), TFHE.asEuint8(b)))) {
                 return 1;
@@ -45,8 +46,7 @@ function lte(string calldata test, uint256 a, uint256 b) public pure returns (ui
             }
 
             return 0;
-        } else {
-            revert TestNotFound(test);
         }
+        revert TestNotFound(test);
     }
 }

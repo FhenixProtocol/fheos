@@ -1142,6 +1142,7 @@ describe('Test AsEbool', () =>  {
     let contract;
     let fheContract;
 
+    const funcTypes = ["regular", "bound"];
     const cases = [{input: BigInt(0), output: false}, {input: BigInt(5), output: true}]
     // We don't really need it as test but it is a test since it is async
     it(`Test Contract Deployment`, async () => {
@@ -1155,26 +1156,32 @@ describe('Test AsEbool', () =>  {
         expect(fheContract).toBeTruthy();
     });
 
-    it(`From euint8`, async () => {
-        for (const testCase of cases) {
-            let decryptedResult = await contract.castFromEuint8ToEbool(testCase.input);
-            expect(decryptedResult).toBe(testCase.output);
-        }
-    });
+    for (const funcType of funcTypes) {
+        it(`From euint8 - ${funcType}`, async () => {
+            for (const testCase of cases) {
+                let decryptedResult = await contract.castFromEuint8ToEbool(testCase.input, funcType);
+                expect(decryptedResult).toBe(testCase.output);
+            }
+        });
+    }
 
-    it(`From euint16`, async () => {
-        for (const testCase of cases) {
-            let decryptedResult = await contract.castFromEuint16ToEbool(testCase.input);
-            expect(decryptedResult).toBe(testCase.output);
-        }
-    });
+    for (const funcType of funcTypes) {
+        it(`From euint16 - ${funcType}`, async () => {
+            for (const testCase of cases) {
+                let decryptedResult = await contract.castFromEuint16ToEbool(testCase.input, funcType);
+                expect(decryptedResult).toBe(testCase.output);
+            }
+        });
+    }
 
-    it(`From euint32`, async () => {
-        for (const testCase of cases) {
-            let decryptedResult = await contract.castFromEuint32ToEbool(testCase.input);
-            expect(decryptedResult).toBe(testCase.output);
-        }
-    });
+    for (const funcType of funcTypes) {
+        it(`From euint32 - ${funcType}`, async () => {
+            for (const testCase of cases) {
+                let decryptedResult = await contract.castFromEuint32ToEbool(testCase.input, funcType);
+                expect(decryptedResult).toBe(testCase.output);
+            }
+        });
+    }
 
     it(`From plaintext`, async () => {
         for (const testCase of cases) {
@@ -1197,7 +1204,7 @@ describe('Test AsEbool', () =>  {
     });
 });
 
-describe('Test AsEuin8', () =>  {
+describe('Test AsEuint8', () =>  {
     let contract;
     let fheContract;
 
@@ -1213,21 +1220,28 @@ describe('Test AsEuin8', () =>  {
         expect(fheContract).toBeTruthy();
     });
 
+    const funcTypes = ["regular", "bound"];
     const value = BigInt(1);
-    it(`From ebool`, async () => {
-        let decryptedResult = await contract.castFromEboolToEuint8(value);
-        expect(decryptedResult).toBe(value);
-    });
+    for (const funcType of funcTypes) {
+        it(`From ebool - ${funcType}`, async () => {
+            let decryptedResult = await contract.castFromEboolToEuint8(value, funcType);
+            expect(decryptedResult).toBe(value);
+        });
+    }
 
-    it(`From euint16`, async () => {
-        let decryptedResult = await contract.castFromEuint16ToEuint8(value);
-        expect(decryptedResult).toBe(value);
-    });
+    for (const funcType of funcTypes) {
+        it(`From euint16 - ${funcType}`, async () => {
+            let decryptedResult = await contract.castFromEuint16ToEuint8(value, funcType);
+            expect(decryptedResult).toBe(value);
+        });
+    }
 
-    it(`From euint32`, async () => {
-        let decryptedResult = await contract.castFromEuint32ToEuint8(value);
-        expect(decryptedResult).toBe(value);
-    });
+    for (const funcType of funcTypes) {
+        it(`From euint32 - ${funcType}`, async () => {
+            let decryptedResult = await contract.castFromEuint32ToEuint8(value, funcType);
+            expect(decryptedResult).toBe(value);
+        });
+    }
 
     it(`From plaintext`, async () => {
         let decryptedResult = await contract.castFromPlaintextToEuint8(value);
@@ -1241,7 +1255,7 @@ describe('Test AsEuin8', () =>  {
     });
 });
 
-describe('Test AsEuin16', () =>  {
+describe('Test AsEuint16', () =>  {
     let contract;
     let fheContract;
 
@@ -1258,20 +1272,28 @@ describe('Test AsEuin16', () =>  {
     });
 
     const value = BigInt(1);
-    it(`From ebool`, async () => {
-        let decryptedResult = await contract.castFromEboolToEuint16(value);
-        expect(decryptedResult).toBe(value);
-    });
+    const funcTypes = ["regular", "bound"];
 
-    it(`From euint8`, async () => {
-        let decryptedResult = await contract.castFromEuint8ToEuint16(value);
-        expect(decryptedResult).toBe(value);
-    });
+    for (const funcType of funcTypes) {
+        it(`From ebool - ${funcType}`, async () => {
+            let decryptedResult = await contract.castFromEboolToEuint16(value, funcType);
+            expect(decryptedResult).toBe(value);
+        });
+    }
 
-    it(`From euint32`, async () => {
-        let decryptedResult = await contract.castFromEuint32ToEuint16(value);
-        expect(decryptedResult).toBe(value);
-    });
+    for (const funcType of funcTypes) {
+        it(`From euint8 - ${funcType}`, async () => {
+            let decryptedResult = await contract.castFromEuint8ToEuint16(value, funcType);
+            expect(decryptedResult).toBe(value);
+        });
+    }
+
+    for (const funcType of funcTypes) {
+        it(`From euint32 - ${funcType}`, async () => {
+            let decryptedResult = await contract.castFromEuint32ToEuint16(value, funcType);
+            expect(decryptedResult).toBe(value);
+        });
+    }
 
     it(`From plaintext`, async () => {
         let decryptedResult = await contract.castFromPlaintextToEuint16(value);
@@ -1285,7 +1307,7 @@ describe('Test AsEuin16', () =>  {
     });
 });
 
-describe('Test AsEuin16', () =>  {
+describe('Test AsEuint32', () =>  {
     let contract;
     let fheContract;
 
@@ -1302,20 +1324,28 @@ describe('Test AsEuin16', () =>  {
     });
 
     const value = BigInt(1);
-    it(`From ebool`, async () => {
-        let decryptedResult = await contract.castFromEboolToEuint32(value);
-        expect(decryptedResult).toBe(value);
-    });
+    const funcTypes = ["regular", "bound"];
 
-    it(`From euint8`, async () => {
-        let decryptedResult = await contract.castFromEuint8ToEuint32(value);
-        expect(decryptedResult).toBe(value);
-    });
+    for (const funcType of funcTypes) {
+        it(`From ebool - ${funcType}`, async () => {
+            let decryptedResult = await contract.castFromEboolToEuint32(value, funcType);
+            expect(decryptedResult).toBe(value);
+        });
+    }
 
-    it(`From euint16`, async () => {
-        let decryptedResult = await contract.castFromEuint16ToEuint32(value);
-        expect(decryptedResult).toBe(value);
-    });
+    for (const funcType of funcTypes) {
+        it(`From euint8 - ${funcType}`, async () => {
+            let decryptedResult = await contract.castFromEuint8ToEuint32(value, funcType);
+            expect(decryptedResult).toBe(value);
+        });
+    }
+
+    for (const funcType of funcTypes) {
+        it(`From euint16 - ${funcType}`, async () => {
+            let decryptedResult = await contract.castFromEuint16ToEuint32(value, funcType);
+            expect(decryptedResult).toBe(value);
+        });
+    }
 
     it(`From plaintext`, async () => {
         let decryptedResult = await contract.castFromPlaintextToEuint32(value);

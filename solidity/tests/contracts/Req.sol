@@ -8,7 +8,7 @@ error TestNotFound(string test);
 
 contract ReqTest {
     using Utils for *;
-
+    
     function req(string calldata test, uint256 a) public {
         if (Utils.cmp(test, "req(euint8)")) {
             TFHE.req(TFHE.asEuint8(a));

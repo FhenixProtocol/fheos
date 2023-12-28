@@ -8,7 +8,8 @@ error TestNotFound(string test);
 
 contract NotTest {
     using Utils for *;
-function not(string calldata test, uint256 a) public pure returns (uint256 output) {
+    
+    function not(string calldata test, uint256 a) public pure returns (uint256 output) {
         if (Utils.cmp(test, "not(euint8)")) {
             return TFHE.decrypt(TFHE.not(TFHE.asEuint8(a)));
         } else if (Utils.cmp(test, "not(euint16)")) {
@@ -26,8 +27,8 @@ function not(string calldata test, uint256 a) public pure returns (uint256 outpu
             }
 
             return 0;
-        } else {
-            revert TestNotFound(test);
         }
+        
+        revert TestNotFound(test);
     }
 }
