@@ -28,6 +28,7 @@ import { AddTestType,
     AsEuint16TestType,
     AsEuint32TestType
 } from './abis';
+import { SealoutputTest } from '../types';
 
 const deployContractFromSigner = async (con: any, signer: any, nonce?: number) => {
     return await con.deploy({
@@ -158,8 +159,8 @@ describe('Test SealOutput', () =>  {
 
     // We don't really need it as test but it is a test since it is async
     it(`Test Contract Deployment`, async () => {
-        const baseContract = await deployContract('Sealoutput');
-        contract = baseContract as ReencryptTestType;
+        const baseContract = await deployContract('SealoutputTest');
+        contract = baseContract as SealoutputTest;
         contractAddress = await baseContract.getAddress();
         fheContract = await getFheContract(contractAddress);
 
