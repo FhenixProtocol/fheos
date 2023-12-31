@@ -74,9 +74,9 @@ devDependencies:
   ethers:
     specifier: ^6.9.0
     version: 6.9.1
-  fhevmjs:
-    specifier: ^0.0.5
-    version: 0.0.5
+  fhenix.js:
+    specifier: file:../fhenix.js
+    version: file:../fhenix.js
   fs-extra:
     specifier: ^10.1.0
     version: 10.1.0
@@ -2882,6 +2882,11 @@ packages:
     engines: {node: '>=14'}
     dev: true
 
+  /commander@11.1.0:
+    resolution: {integrity: sha512-yPVavfyCcRhmorC7rWlkHn15b4wDVgVmBA7kV4QVBsF7kv/9TKJAbAXVTxvTnwP8HHKjRCJDClKbciiYS7p0DQ==}
+    engines: {node: '>=16'}
+    dev: true
+
   /commander@3.0.2:
     resolution: {integrity: sha512-Gar0ASD4BDyKC4hl4DwHqDrmvjoxWKZigVnAbn5H1owvm4CxCPdb0HQDehwNYMJpla5+M2tPmPARzhtYuwpHow==}
     dev: true
@@ -3589,17 +3594,6 @@ packages:
     resolution: {integrity: sha512-p5161BqbuCaSnB8jIbzQHOlpgsPmK5rJVDfDKO91Axs5NC1uu3HRQm6wt9cd9/+GtQQIO53JdGXXoyDpTAsgYA==}
     dependencies:
       bser: 2.1.1
-    dev: true
-
-  /fhevmjs@0.0.5:
-    resolution: {integrity: sha512-J2vF2mMkXcQCHi/GX6+7eecXfHkfhTC7zfogO5gCnmYEq5nRp/kIDrxfoExkCvngQL1rlopfHHY0HqlDyjXQ+g==}
-    dependencies:
-      crypto-js: 4.2.0
-      libsodium: 0.7.13
-      libsodium-wrappers: 0.7.13
-      node-tfhe: 0.3.1
-      sha3: 2.1.4
-      tfhe: 0.3.1
     dev: true
 
   /file-entry-cache@6.0.1:
@@ -6892,4 +6886,22 @@ packages:
       ethers: ^5.7.0
     dependencies:
       ethers: 5.7.2
+    dev: true
+
+  file:../fhenix.js:
+    resolution: {directory: ../fhenix.js, type: directory}
+    name: fhenix.js
+    hasBin: true
+    dependencies:
+      commander: 11.1.0
+      crypto-js: 4.2.0
+      ethers: 6.9.1
+      libsodium: 0.7.13
+      libsodium-wrappers: 0.7.13
+      node-tfhe: 0.3.1
+      sha3: 2.1.4
+      tfhe: 0.3.1
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
     dev: true
