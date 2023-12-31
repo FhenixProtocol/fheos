@@ -121,27 +121,27 @@ func Verify(input []byte, tp *TxParams) ([]byte, error) {
 	return ctHash[:], nil
 }
 
-func Reencrypt(input []byte, tp *TxParams) ([]byte, error) {
+func SealOutput(input []byte, tp *TxParams) ([]byte, error) {
 	//solgen: bool math
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
 	if !tp.EthCall {
-		msg := "reencrypt only supported on EthCall"
+		msg := "sealOutput only supported on EthCall"
 		logger.Error(msg)
 		return nil, vm.ErrExecutionReverted
 	}
 
 	if len(input) != 64 {
-		msg := "reencrypt input len must be 64 bytes"
+		msg := "sealOutput input len must be 64 bytes"
 		logger.Error(msg, " input ", hex.EncodeToString(input), " len ", len(input))
 		return nil, vm.ErrExecutionReverted
 	}
 
 	ct := getCiphertext(tfhe.BytesToHash(input[0:32]))
 	if ct == nil {
-		msg := "reencrypt unverified ciphertext handle"
+		msg := "sealOutput unverified ciphertext handle"
 		logger.Error(msg, " input ", hex.EncodeToString(input))
 		return nil, vm.ErrExecutionReverted
 	}
@@ -157,10 +157,10 @@ func Reencrypt(input []byte, tp *TxParams) ([]byte, error) {
 	pubKey := input[32:64]
 	reencryptedValue, err := encryptToUserKey(bgDecrypted, pubKey)
 	if err != nil {
-		logger.Error("reencrypt failed to encrypt to user key", " err ", err)
+		logger.Error("sealOutput failed to encrypt to user key", " err ", err)
 		return nil, vm.ErrExecutionReverted
 	}
-	logger.Debug("reencrypt success", " input ", hex.EncodeToString(input))
+	logger.Debug("sealOutput success", " input ", hex.EncodeToString(input))
 	// FHENIX: Previously it was "return toEVMBytes(reencryptedValue), nil" but the decrypt function in Fhevm didn't support it so we removed the the toEVMBytes
 	return reencryptedValue, nil
 }

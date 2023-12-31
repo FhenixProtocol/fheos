@@ -60,13 +60,13 @@ library Common {
 }
 
 library Impl {
-    function reencrypt(uint256 ciphertext, bytes32 publicKey) internal pure returns (bytes memory reencrypted) {
+    function sealoutput(uint256 ciphertext, bytes32 publicKey) internal pure returns (bytes memory reencrypted) {
         bytes32[2] memory input;
         input[0] = bytes32(ciphertext);
         input[1] = publicKey;
 
         // Call the reencrypt precompile.
-        reencrypted = FheOps(Precompiles.Fheos).reencrypt(bytes.concat(input[0], input[1]));
+        reencrypted = FheOps(Precompiles.Fheos).sealoutput(bytes.concat(input[0], input[1]));
 
         return reencrypted;
     }
@@ -120,7 +120,7 @@ library Impl {
     }
 }
 
-library TFHE {
+library FHE {
     euint8 public constant NIL8 = euint8.wrap(0);
     euint16 public constant NIL16 = euint16.wrap(0);
     euint32 public constant NIL32 = euint32.wrap(0);
@@ -237,7 +237,7 @@ function TypeCastTestingFunction(fromType: string, fromTypeForTs: string, toType
     let testType = fromTypeEncrypted? fromTypeEncrypted : fromType;
     testType = testType === 'bytes memory' ? 'PreEncrypted' : capitalize(testType);
     testType = testType === 'Uint256' ? 'Plaintext' : testType;
-    const encryptedVal = fromTypeEncrypted ? `TFHE.as${capitalize(fromTypeEncrypted)}(val)` : "val";
+    const encryptedVal = fromTypeEncrypted ? `FHE.as${capitalize(fromTypeEncrypted)}(val)` : "val";
     let retTypeTs = (retType === 'bool') ? 'boolean' : retType;
     retTypeTs = retTypeTs.includes("uint") ? 'bigint' : retTypeTs;
 
@@ -246,15 +246,15 @@ function TypeCastTestingFunction(fromType: string, fromTypeForTs: string, toType
 
     if (testType === 'PreEncrypted' || testType === 'Plaintext') {
         func += `function castFrom${testType}To${to}(${fromType} val) public pure returns (${retType}) {
-        return TFHE.decrypt(TFHE.as${to}(${encryptedVal}));
+        return FHE.decrypt(FHE.as${to}(${encryptedVal}));
     }`;
         abi = `    castFrom${testType}To${to}: (val: ${fromTypeForTs}) => Promise<${retTypeTs}>;\n`;
     } else {
         func += `function castFrom${testType}To${to}(${fromType} val, string calldata test) public pure returns (${retType}) {
         if (Utils.cmp(test, "bound")) {
-            return TFHE.decrypt(${encryptedVal}.to${shortenType(toType)}());
+            return FHE.decrypt(${encryptedVal}.to${shortenType(toType)}());
         } else if (Utils.cmp(test, "regular")) {
-            return TFHE.decrypt(TFHE.as${to}(${encryptedVal}));
+            return FHE.decrypt(FHE.as${to}(${encryptedVal}));
         }
         revert TestNotFound(test);
     }`;
@@ -371,13 +371,13 @@ export function SolTemplate2Arg(name: string, input1: AllTypes, input2: AllTypes
 export function testContract2ArgBoolRes(name: string, isBoolean: boolean) {
     let func = `function ${name}(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
         if (Utils.cmp(test, "${name}(euint8,euint8)")) {
-            if (TFHE.decrypt(TFHE.${name}(TFHE.asEuint8(a), TFHE.asEuint8(b)))) {
+            if (FHE.decrypt(FHE.${name}(FHE.asEuint8(a), FHE.asEuint8(b)))) {
                 return 1;
             }
 
             return 0;
         } else if (Utils.cmp(test, "${name}(euint16,euint16)")) {
-            if (TFHE.decrypt(TFHE.${name}(TFHE.asEuint16(a), TFHE.asEuint16(b)))) {
+            if (FHE.decrypt(FHE.${name}(FHE.asEuint16(a), FHE.asEuint16(b)))) {
                 return 1;
             }
 
@@ -520,26 +520,26 @@ export function testContractReq() {
 }
 
 export function testContractReencrypt() {
-    let func = `function reencrypt(string calldata test, uint256 a, bytes32 pubkey) public pure returns (bytes memory reencrypted) {
-        if (Utils.cmp(test, "reencrypt(euint8)")) {
-            return TFHE.reencrypt(TFHE.asEuint8(a), pubkey);
-        } else if (Utils.cmp(test, "reencrypt(euint16)")) {
-            return TFHE.reencrypt(TFHE.asEuint16(a), pubkey);
-        } else if (Utils.cmp(test, "reencrypt(euint32)")) {
-            return TFHE.reencrypt(TFHE.asEuint32(a), pubkey);
-        } else if (Utils.cmp(test, "reencrypt(ebool)")) {
+    let func = `function sealoutput(string calldata test, uint256 a, bytes32 pubkey) public pure returns (bytes memory reencrypted) {
+        if (Utils.cmp(test, "sealoutput(euint8)")) {
+            return TFHE.sealoutput(TFHE.asEuint8(a), pubkey);
+        } else if (Utils.cmp(test, "sealoutput(euint16)")) {
+            return TFHE.sealoutput(TFHE.asEuint16(a), pubkey);
+        } else if (Utils.cmp(test, "sealoutput(euint32)")) {
+            return TFHE.sealoutput(TFHE.asEuint32(a), pubkey);
+        } else if (Utils.cmp(test, "sealoutput(ebool)")) {
             bool b = true;
             if (a == 0) {
                 b = false;
             }
 
-            return TFHE.reencrypt(TFHE.asEbool(b), pubkey);
+            return TFHE.sealoutput(TFHE.asEbool(b), pubkey);
         } 
         
         revert TestNotFound(test);
     }`;
     const abi = `export interface ReencryptTestType extends Contract {
-    reencrypt: (test: string, a: bigint, pubkey: Uint8Array) => Promise<Uint8Array>;
+    sealoutput: (test: string, a: bigint, pubkey: Uint8Array) => Promise<Uint8Array>;
 }\n`
     return [generateTestContract("reencrypt", func), abi];
 }

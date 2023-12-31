@@ -151,14 +151,14 @@ describe('Test Add', () =>  {
     }
 });
 
-describe('Test Reencrypt', () =>  {
+describe('Test SealOutput', () =>  {
     let contract;
     let fheContract;
     let contractAddress;
 
     // We don't really need it as test but it is a test since it is async
     it(`Test Contract Deployment`, async () => {
-        const baseContract = await deployContract('ReencryptTest');
+        const baseContract = await deployContract('SealOutput');
         contract = baseContract as ReencryptTestType;
         contractAddress = await baseContract.getAddress();
         fheContract = await getFheContract(contractAddress);
@@ -168,12 +168,12 @@ describe('Test Reencrypt', () =>  {
 
     });
 
-    const testCases = ["reencrypt(euint8)", "reencrypt(euint16)", "reencrypt(euint32)"];
+    const testCases = ["sealoutput(euint8)", "sealoutput(euint16)", "sealoutput(euint32)"];
 
     for (const test of testCases) {
         it(`Test ${test}`, async () => {
             let plaintextInput = Math.floor(Math.random() * 1000) % 256;
-            let encryptedOutput = await contract.reencrypt(test, plaintextInput, fheContract.publicKey);
+            let encryptedOutput = await contract.sealoutput(test, plaintextInput, fheContract.publicKey);
             let decryptedOutput = fheContract.instance.decrypt(contractAddress, encryptedOutput);
 
             expect(decryptedOutput).toBe(plaintextInput);
