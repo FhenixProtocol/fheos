@@ -14,7 +14,7 @@ RUN ./gen.sh
 
 WORKDIR /workspace
 
-COPY nitro-overrides/ ./
+COPY nitro-overrides/precompiles/FheOps.go precompiles/FheOps.go
 
 RUN go build -gcflags "all=-N -l" -ldflags="-X github.com/offchainlabs/nitro/cmd/util/confighelpers.version= -X github.com/offchainlabs/nitro/cmd/util/confighelpers.datetime= -X github.com/offchainlabs/nitro/cmd/util/confighelpers.modified=" -o target/bin/nitro "/workspace/cmd/nitro"
 
