@@ -94,9 +94,9 @@ func (con FheOps) Or(c ctx, evm mech, input []byte) ([]byte, error) {
 	return fheos.Or(input, &tp)
 }
 
-func (con FheOps) Reencrypt(c ctx, evm mech, input []byte) ([]byte, error) {
+func (con FheOps) SealOutput(c ctx, evm mech, input []byte) ([]byte, error) {
 	tp := fheos.TxParamsFromEVM(evm)
-	return fheos.Reencrypt(input, &tp)
+	return fheos.SealOutput(input, &tp)
 }
 
 func (con FheOps) Rem(c ctx, evm mech, input []byte) ([]byte, error) {
