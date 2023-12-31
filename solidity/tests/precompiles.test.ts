@@ -2,7 +2,6 @@ import { ethers } from 'hardhat';
 import { BaseContract } from "ethers";
 import { createFheInstance } from './utils';
 import { AddTestType,
-    ReencryptTestType,
     LteTestType,
     SubTestType,
     MulTestType,
@@ -26,9 +25,9 @@ import { AddTestType,
     AsEboolTestType,
     AsEuint8TestType,
     AsEuint16TestType,
-    AsEuint32TestType
+    AsEuint32TestType,
+    SealoutputTestType
 } from './abis';
-import { SealoutputTest } from '../types';
 
 const deployContractFromSigner = async (con: any, signer: any, nonce?: number) => {
     return await con.deploy({
@@ -160,7 +159,7 @@ describe('Test SealOutput', () =>  {
     // We don't really need it as test but it is a test since it is async
     it(`Test Contract Deployment`, async () => {
         const baseContract = await deployContract('SealoutputTest');
-        contract = baseContract as SealoutputTest;
+        contract = baseContract as SealoutputTestType;
         contractAddress = await baseContract.getAddress();
         fheContract = await getFheContract(contractAddress);
 
@@ -174,8 +173,8 @@ describe('Test SealOutput', () =>  {
     for (const test of testCases) {
         it(`Test ${test}`, async () => {
             let plaintextInput = Math.floor(Math.random() * 1000) % 256;
-            let encryptedOutput = await contract.sealoutput(test, plaintextInput, fheContract.publicKey);
-            let decryptedOutput = fheContract.instance.decrypt(contractAddress, encryptedOutput);
+            let encryptedOutput = await contract.sealoutput(test, plaintextInput, fheContract.permit.sealingKey.publicKey);
+            let decryptedOutput = fheContract.instance.unseal(contractAddress, encryptedOutput);
 
             expect(decryptedOutput).toBe(plaintextInput);
         });

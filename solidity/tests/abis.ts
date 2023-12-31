@@ -2,7 +2,7 @@ import { Contract } from 'ethers';
 export interface AddTestType extends Contract {
     add: (test: string, a: bigint, b: bigint) => Promise<bigint>;
 }
-export interface SealoutputTest extends Contract {
+export interface SealoutputTestType extends Contract {
     sealoutput: (test: string, a: bigint, pubkey: Uint8Array) => Promise<Uint8Array>;
 }
 export interface LteTestType extends Contract {
