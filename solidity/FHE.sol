@@ -49,13 +49,13 @@ library Common {
 }
 
 library Impl {
-    function reencrypt(uint256 ciphertext, bytes32 publicKey) internal pure returns (bytes memory reencrypted) {
+    function sealoutput(uint256 ciphertext, bytes32 publicKey) internal pure returns (bytes memory reencrypted) {
         bytes32[2] memory input;
         input[0] = bytes32(ciphertext);
         input[1] = publicKey;
 
         // Call the reencrypt precompile.
-        reencrypted = FheOps(Precompiles.Fheos).reencrypt(bytes.concat(input[0], input[1]));
+        reencrypted = FheOps(Precompiles.Fheos).sealoutput(bytes.concat(input[0], input[1]));
 
         return reencrypted;
     }
@@ -109,7 +109,7 @@ library Impl {
     }
 }
 
-library TFHE {
+library FHE {
     euint8 public constant NIL8 = euint8.wrap(0);
     euint16 public constant NIL16 = euint16.wrap(0);
     euint32 public constant NIL32 = euint32.wrap(0);
@@ -201,57 +201,45 @@ library TFHE {
         uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).add);
         return euint32.wrap(result);
     }
-    /// @notice Performs the sealoutput operation on a ciphertext
-    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
-    /// @param input1 the input ciphertext
-    function sealoutput(ebool input1) internal pure returns (ebool) {
-        if (!isInitialized(input1)) {
-            revert UninitializedInputs();
-        }
-        uint256 unwrappedInput1 = ebool.unwrap(input1);
-        bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
-        bytes memory b = FheOps(Precompiles.Fheos).sealoutput(inputAsBytes);
-        uint256 result = Impl.getValue(b);
-        return ebool.wrap(result);
+    /// @notice performs the sealoutput function on a ebool ciphertext. This operation returns the plaintext value, sealed for the public key provided 
+    /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @param value Ciphertext to decrypt and seal
+    /// @param publicKey Public Key that will receive the sealed plaintext
+    /// @return Plaintext input, sealed for the owner of `publicKey`
+    function sealoutput(ebool value, bytes32 publicKey) internal pure returns (bytes memory) {
+        uint256 unwrapped = ebool.unwrap(value);
+
+        return Impl.sealoutput(unwrapped, publicKey);
     }
-    /// @notice Performs the sealoutput operation on a ciphertext
-    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
-    /// @param input1 the input ciphertext
-    function sealoutput(euint8 input1) internal pure returns (euint8) {
-        if (!isInitialized(input1)) {
-            revert UninitializedInputs();
-        }
-        uint256 unwrappedInput1 = euint8.unwrap(input1);
-        bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
-        bytes memory b = FheOps(Precompiles.Fheos).sealoutput(inputAsBytes);
-        uint256 result = Impl.getValue(b);
-        return euint8.wrap(result);
+    /// @notice performs the sealoutput function on a euint8 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
+    /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @param value Ciphertext to decrypt and seal
+    /// @param publicKey Public Key that will receive the sealed plaintext
+    /// @return Plaintext input, sealed for the owner of `publicKey`
+    function sealoutput(euint8 value, bytes32 publicKey) internal pure returns (bytes memory) {
+        uint256 unwrapped = euint8.unwrap(value);
+
+        return Impl.sealoutput(unwrapped, publicKey);
     }
-    /// @notice Performs the sealoutput operation on a ciphertext
-    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
-    /// @param input1 the input ciphertext
-    function sealoutput(euint16 input1) internal pure returns (euint16) {
-        if (!isInitialized(input1)) {
-            revert UninitializedInputs();
-        }
-        uint256 unwrappedInput1 = euint16.unwrap(input1);
-        bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
-        bytes memory b = FheOps(Precompiles.Fheos).sealoutput(inputAsBytes);
-        uint256 result = Impl.getValue(b);
-        return euint16.wrap(result);
+    /// @notice performs the sealoutput function on a euint16 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
+    /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @param value Ciphertext to decrypt and seal
+    /// @param publicKey Public Key that will receive the sealed plaintext
+    /// @return Plaintext input, sealed for the owner of `publicKey`
+    function sealoutput(euint16 value, bytes32 publicKey) internal pure returns (bytes memory) {
+        uint256 unwrapped = euint16.unwrap(value);
+
+        return Impl.sealoutput(unwrapped, publicKey);
     }
-    /// @notice Performs the sealoutput operation on a ciphertext
-    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
-    /// @param input1 the input ciphertext
-    function sealoutput(euint32 input1) internal pure returns (euint32) {
-        if (!isInitialized(input1)) {
-            revert UninitializedInputs();
-        }
-        uint256 unwrappedInput1 = euint32.unwrap(input1);
-        bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
-        bytes memory b = FheOps(Precompiles.Fheos).sealoutput(inputAsBytes);
-        uint256 result = Impl.getValue(b);
-        return euint32.wrap(result);
+    /// @notice performs the sealoutput function on a euint32 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
+    /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @param value Ciphertext to decrypt and seal
+    /// @param publicKey Public Key that will receive the sealed plaintext
+    /// @return Plaintext input, sealed for the owner of `publicKey`
+    function sealoutput(euint32 value, bytes32 publicKey) internal pure returns (bytes memory) {
+        uint256 unwrapped = euint32.unwrap(value);
+
+        return Impl.sealoutput(unwrapped, publicKey);
     }
     /// @notice Performs the decrypt operation on a ciphertext
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
