@@ -106,7 +106,7 @@ function analyzeGoFile(filePath) {
                                 if (trimmedLine.includes(keyfn.name)) {
                                     needsSameType = /lhs.UintType\s+!=\s+rhs.UintType/.test(trimmedLine);
                                     amount = keyfn.amount;
-                                    if (funcName === "reencrypt") {
+                                    if (funcName === "sealoutput") {
                                         // console.log(`func name: ${funcName}`)
                                         amount = 2;
                                         returnType = "bytes memory";

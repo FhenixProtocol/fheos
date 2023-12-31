@@ -1354,7 +1354,7 @@ library FHE {
     }
     
     /// @notice Converts a ebool to an ebool
-        function asEbool(ebool value) internal pure returns (ebool) {
+    function asEbool(ebool value) internal pure returns (ebool) {
         return ne(value, asEbool(0));
     }
     /// @notice Converts a ebool to an euint8
@@ -1371,7 +1371,7 @@ library FHE {
     }
     
     /// @notice Converts a euint8 to an ebool
-        function asEbool(euint8 value) internal pure returns (ebool) {
+    function asEbool(euint8 value) internal pure returns (ebool) {
         return ne(value, asEuint8(0));
     }
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an euint8
@@ -1394,7 +1394,7 @@ library FHE {
     }
     
     /// @notice Converts a euint16 to an ebool
-        function asEbool(euint16 value) internal pure returns (ebool) {
+    function asEbool(euint16 value) internal pure returns (ebool) {
         return ne(value, asEuint16(0));
     }
     /// @notice Converts a euint16 to an euint8
@@ -1417,7 +1417,7 @@ library FHE {
     }
     
     /// @notice Converts a euint32 to an ebool
-        function asEbool(euint32 value) internal pure returns (ebool) {
+    function asEbool(euint32 value) internal pure returns (ebool) {
         return ne(value, asEuint32(0));
     }
     /// @notice Converts a euint32 to an euint8

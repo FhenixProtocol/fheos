@@ -158,7 +158,7 @@ describe('Test SealOutput', () =>  {
 
     // We don't really need it as test but it is a test since it is async
     it(`Test Contract Deployment`, async () => {
-        const baseContract = await deployContract('SealOutput');
+        const baseContract = await deployContract('Sealoutput');
         contract = baseContract as ReencryptTestType;
         contractAddress = await baseContract.getAddress();
         fheContract = await getFheContract(contractAddress);
