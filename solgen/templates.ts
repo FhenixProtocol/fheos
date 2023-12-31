@@ -481,7 +481,7 @@ export function generateTestContract(name: string, testFunc: string, importTypes
     return `// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import {TFHE} from "../../FHE.sol";${importStatement}
+import {FHE} from "../../FHE.sol";${importStatement}
 import {Utils} from "./utils/Utils.sol";
 
 error TestNotFound(string test);
