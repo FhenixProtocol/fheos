@@ -21,6 +21,22 @@ type euint8 is uint256;
 type euint16 is uint256;
 type euint32 is uint256;
 
+struct inEbool {
+    bytes data;
+}
+
+struct inEuint8 {
+    bytes data;
+}
+
+struct inEuint16 {
+    bytes data;
+}
+
+struct inEuint32 {
+    bytes data;
+}
+
 error UninitializedInputs();
 
 library Common {
@@ -182,10 +198,14 @@ const castFromBytes = (name: string, toType: string): string => {
     return `Impl.verify(${name}, Common.${toType.toUpperCase()}_TFHE_GO)`;
 }
 
+const castFromInputType = (name: string, toType: string): string => {
+    return `FHE.as${capitalize(toType)}(${name}.data)`;
+}
+
 const castToEbool = (name: string, fromType: string): string => {
     return `
     \n    /// @notice Converts a ${fromType} to an ebool
-        function asEbool(${fromType} value) internal pure returns (ebool) {
+    function asEbool(${fromType} value) internal pure returns (ebool) {
         return ne(${name}, as${capitalize(fromType)}(0));
     }`;
 }
@@ -210,8 +230,18 @@ export const AsTypeFunction = (fromType: string, toType: string) => {
 
         return asEbool(sVal);
     }`;
-    }
-    else if (fromType === 'bytes memory') {
+    } else if (fromType.startsWith("in")) {
+        docString = `
+    /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an ${toType}
+    /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
+    /// @return a ciphertext representation of the input`;
+        castString = castFromInputType("value", toType);
+
+        return `${docString}
+    function as${capitalize(toType)}(${fromType} memory value) internal pure returns (${toType}) {
+        return ${castString};
+    }`;
+    } else if (fromType === 'bytes memory') {
         docString = `
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an ${toType}
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key

@@ -296,7 +296,10 @@ const main = async () => {
     for (let fromType of EInputType.concat('uint256', 'bytes memory')) {
         for (let toType of EInputType) {
             if (fromType === toType) {
-                continue;
+                // todo: this is a bit wierd, but I'm using this place to create asXXX functions for the cast from the input types
+                const inputTypeName = `in${capitalize(fromType)}`
+                outputFile += AsTypeFunction(inputTypeName, toType);
+
             }
 
             outputFile += AsTypeFunction(fromType, toType);

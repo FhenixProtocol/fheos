@@ -10,6 +10,22 @@ type euint8 is uint256;
 type euint16 is uint256;
 type euint32 is uint256;
 
+struct inEbool {
+    bytes data;
+}
+
+struct inEuint8 {
+    bytes data;
+}
+
+struct inEuint16 {
+    bytes data;
+}
+
+struct inEuint32 {
+    bytes data;
+}
+
 error UninitializedInputs();
 
 library Common {
@@ -1330,6 +1346,17 @@ library FHE {
     }
 
     // ********** TYPE CASTING ************* //
+    /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an ebool
+    /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
+    /// @return a ciphertext representation of the input
+    function asEbool(inEbool memory value) internal pure returns (ebool) {
+        return FHE.asEbool(value.data);
+    }
+    
+    /// @notice Converts a ebool to an ebool
+        function asEbool(ebool value) internal pure returns (ebool) {
+        return ne(value, asEbool(0));
+    }
     /// @notice Converts a ebool to an euint8
     function asEuint8(ebool value) internal pure returns (euint8) {
         return euint8.wrap(Impl.cast(ebool.unwrap(value), Common.EUINT8_TFHE_GO));
@@ -1346,6 +1373,16 @@ library FHE {
     /// @notice Converts a euint8 to an ebool
         function asEbool(euint8 value) internal pure returns (ebool) {
         return ne(value, asEuint8(0));
+    }
+    /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an euint8
+    /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
+    /// @return a ciphertext representation of the input
+    function asEuint8(inEuint8 memory value) internal pure returns (euint8) {
+        return FHE.asEuint8(value.data);
+    }
+    /// @notice Converts a euint8 to an euint8
+    function asEuint8(euint8 value) internal pure returns (euint8) {
+        return euint8.wrap(Impl.cast(euint8.unwrap(value), Common.EUINT8_TFHE_GO));
     }
     /// @notice Converts a euint8 to an euint16
     function asEuint16(euint8 value) internal pure returns (euint16) {
@@ -1364,6 +1401,16 @@ library FHE {
     function asEuint8(euint16 value) internal pure returns (euint8) {
         return euint8.wrap(Impl.cast(euint16.unwrap(value), Common.EUINT8_TFHE_GO));
     }
+    /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an euint16
+    /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
+    /// @return a ciphertext representation of the input
+    function asEuint16(inEuint16 memory value) internal pure returns (euint16) {
+        return FHE.asEuint16(value.data);
+    }
+    /// @notice Converts a euint16 to an euint16
+    function asEuint16(euint16 value) internal pure returns (euint16) {
+        return euint16.wrap(Impl.cast(euint16.unwrap(value), Common.EUINT16_TFHE_GO));
+    }
     /// @notice Converts a euint16 to an euint32
     function asEuint32(euint16 value) internal pure returns (euint32) {
         return euint32.wrap(Impl.cast(euint16.unwrap(value), Common.EUINT32_TFHE_GO));
@@ -1380,6 +1427,16 @@ library FHE {
     /// @notice Converts a euint32 to an euint16
     function asEuint16(euint32 value) internal pure returns (euint16) {
         return euint16.wrap(Impl.cast(euint32.unwrap(value), Common.EUINT16_TFHE_GO));
+    }
+    /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an euint32
+    /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
+    /// @return a ciphertext representation of the input
+    function asEuint32(inEuint32 memory value) internal pure returns (euint32) {
+        return FHE.asEuint32(value.data);
+    }
+    /// @notice Converts a euint32 to an euint32
+    function asEuint32(euint32 value) internal pure returns (euint32) {
+        return euint32.wrap(Impl.cast(euint32.unwrap(value), Common.EUINT32_TFHE_GO));
     }
     /// @notice Converts a uint256 to an ebool
     function asEbool(uint256 value) internal pure returns (ebool) {
