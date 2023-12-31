@@ -66,7 +66,7 @@ library Impl {
         input[1] = publicKey;
 
         // Call the reencrypt precompile.
-        reencrypted = FheOps(Precompiles.Fheos).sealoutput(bytes.concat(input[0], input[1]));
+        reencrypted = FheOps(Precompiles.Fheos).sealOutput(bytes.concat(input[0], input[1]));
 
         return reencrypted;
     }

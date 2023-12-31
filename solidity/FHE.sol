@@ -55,7 +55,7 @@ library Impl {
         input[1] = publicKey;
 
         // Call the reencrypt precompile.
-        reencrypted = FheOps(Precompiles.Fheos).sealoutput(bytes.concat(input[0], input[1]));
+        reencrypted = FheOps(Precompiles.Fheos).sealOutput(bytes.concat(input[0], input[1]));
 
         return reencrypted;
     }
@@ -1440,163 +1440,163 @@ library FHE {
 using {operatorAddEuint8 as +} for euint8 global;
 /// @notice Performs the add operation
 function operatorAddEuint8(euint8 lhs, euint8 rhs) pure returns (euint8) {
-    return TFHE.add(lhs, rhs);
+    return FHE.add(lhs, rhs);
 }
 
 using {operatorAddEuint16 as +} for euint16 global;
 /// @notice Performs the add operation
 function operatorAddEuint16(euint16 lhs, euint16 rhs) pure returns (euint16) {
-    return TFHE.add(lhs, rhs);
+    return FHE.add(lhs, rhs);
 }
 
 using {operatorAddEuint32 as +} for euint32 global;
 /// @notice Performs the add operation
 function operatorAddEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
-    return TFHE.add(lhs, rhs);
+    return FHE.add(lhs, rhs);
 }
 
 using {operatorSubEuint8 as -} for euint8 global;
 /// @notice Performs the sub operation
 function operatorSubEuint8(euint8 lhs, euint8 rhs) pure returns (euint8) {
-    return TFHE.sub(lhs, rhs);
+    return FHE.sub(lhs, rhs);
 }
 
 using {operatorSubEuint16 as -} for euint16 global;
 /// @notice Performs the sub operation
 function operatorSubEuint16(euint16 lhs, euint16 rhs) pure returns (euint16) {
-    return TFHE.sub(lhs, rhs);
+    return FHE.sub(lhs, rhs);
 }
 
 using {operatorSubEuint32 as -} for euint32 global;
 /// @notice Performs the sub operation
 function operatorSubEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
-    return TFHE.sub(lhs, rhs);
+    return FHE.sub(lhs, rhs);
 }
 
 using {operatorMulEuint8 as *} for euint8 global;
 /// @notice Performs the mul operation
 function operatorMulEuint8(euint8 lhs, euint8 rhs) pure returns (euint8) {
-    return TFHE.mul(lhs, rhs);
+    return FHE.mul(lhs, rhs);
 }
 
 using {operatorMulEuint16 as *} for euint16 global;
 /// @notice Performs the mul operation
 function operatorMulEuint16(euint16 lhs, euint16 rhs) pure returns (euint16) {
-    return TFHE.mul(lhs, rhs);
+    return FHE.mul(lhs, rhs);
 }
 
 using {operatorMulEuint32 as *} for euint32 global;
 /// @notice Performs the mul operation
 function operatorMulEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
-    return TFHE.mul(lhs, rhs);
+    return FHE.mul(lhs, rhs);
 }
 
 using {operatorDivEuint8 as /} for euint8 global;
 /// @notice Performs the div operation
 function operatorDivEuint8(euint8 lhs, euint8 rhs) pure returns (euint8) {
-    return TFHE.div(lhs, rhs);
+    return FHE.div(lhs, rhs);
 }
 
 using {operatorDivEuint16 as /} for euint16 global;
 /// @notice Performs the div operation
 function operatorDivEuint16(euint16 lhs, euint16 rhs) pure returns (euint16) {
-    return TFHE.div(lhs, rhs);
+    return FHE.div(lhs, rhs);
 }
 
 using {operatorDivEuint32 as /} for euint32 global;
 /// @notice Performs the div operation
 function operatorDivEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
-    return TFHE.div(lhs, rhs);
+    return FHE.div(lhs, rhs);
 }
 
 using {operatorOrEbool as |} for ebool global;
 /// @notice Performs the or operation
 function operatorOrEbool(ebool lhs, ebool rhs) pure returns (ebool) {
-    return TFHE.or(lhs, rhs);
+    return FHE.or(lhs, rhs);
 }
 
 using {operatorOrEuint8 as |} for euint8 global;
 /// @notice Performs the or operation
 function operatorOrEuint8(euint8 lhs, euint8 rhs) pure returns (euint8) {
-    return TFHE.or(lhs, rhs);
+    return FHE.or(lhs, rhs);
 }
 
 using {operatorOrEuint16 as |} for euint16 global;
 /// @notice Performs the or operation
 function operatorOrEuint16(euint16 lhs, euint16 rhs) pure returns (euint16) {
-    return TFHE.or(lhs, rhs);
+    return FHE.or(lhs, rhs);
 }
 
 using {operatorOrEuint32 as |} for euint32 global;
 /// @notice Performs the or operation
 function operatorOrEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
-    return TFHE.or(lhs, rhs);
+    return FHE.or(lhs, rhs);
 }
 
 using {operatorAndEbool as &} for ebool global;
 /// @notice Performs the and operation
 function operatorAndEbool(ebool lhs, ebool rhs) pure returns (ebool) {
-    return TFHE.and(lhs, rhs);
+    return FHE.and(lhs, rhs);
 }
 
 using {operatorAndEuint8 as &} for euint8 global;
 /// @notice Performs the and operation
 function operatorAndEuint8(euint8 lhs, euint8 rhs) pure returns (euint8) {
-    return TFHE.and(lhs, rhs);
+    return FHE.and(lhs, rhs);
 }
 
 using {operatorAndEuint16 as &} for euint16 global;
 /// @notice Performs the and operation
 function operatorAndEuint16(euint16 lhs, euint16 rhs) pure returns (euint16) {
-    return TFHE.and(lhs, rhs);
+    return FHE.and(lhs, rhs);
 }
 
 using {operatorAndEuint32 as &} for euint32 global;
 /// @notice Performs the and operation
 function operatorAndEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
-    return TFHE.and(lhs, rhs);
+    return FHE.and(lhs, rhs);
 }
 
 using {operatorXorEbool as ^} for ebool global;
 /// @notice Performs the xor operation
 function operatorXorEbool(ebool lhs, ebool rhs) pure returns (ebool) {
-    return TFHE.xor(lhs, rhs);
+    return FHE.xor(lhs, rhs);
 }
 
 using {operatorXorEuint8 as ^} for euint8 global;
 /// @notice Performs the xor operation
 function operatorXorEuint8(euint8 lhs, euint8 rhs) pure returns (euint8) {
-    return TFHE.xor(lhs, rhs);
+    return FHE.xor(lhs, rhs);
 }
 
 using {operatorXorEuint16 as ^} for euint16 global;
 /// @notice Performs the xor operation
 function operatorXorEuint16(euint16 lhs, euint16 rhs) pure returns (euint16) {
-    return TFHE.xor(lhs, rhs);
+    return FHE.xor(lhs, rhs);
 }
 
 using {operatorXorEuint32 as ^} for euint32 global;
 /// @notice Performs the xor operation
 function operatorXorEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
-    return TFHE.xor(lhs, rhs);
+    return FHE.xor(lhs, rhs);
 }
 
 using {operatorRemEuint8 as %} for euint8 global;
 /// @notice Performs the rem operation
 function operatorRemEuint8(euint8 lhs, euint8 rhs) pure returns (euint8) {
-    return TFHE.rem(lhs, rhs);
+    return FHE.rem(lhs, rhs);
 }
 
 using {operatorRemEuint16 as %} for euint16 global;
 /// @notice Performs the rem operation
 function operatorRemEuint16(euint16 lhs, euint16 rhs) pure returns (euint16) {
-    return TFHE.rem(lhs, rhs);
+    return FHE.rem(lhs, rhs);
 }
 
 using {operatorRemEuint32 as %} for euint32 global;
 /// @notice Performs the rem operation
 function operatorRemEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
-    return TFHE.rem(lhs, rhs);
+    return FHE.rem(lhs, rhs);
 }
 
 // ********** BINDING DEFS ************* //
@@ -1609,7 +1609,7 @@ library BindingsEbool {
     /// @param lhs input of type ebool
     /// @return the result of the eq
     function eq(ebool lhs, ebool rhs) internal pure returns (ebool) {
-        return TFHE.eq(lhs, rhs);
+        return FHE.eq(lhs, rhs);
     }
     
     /// @notice Performs the ne operation
@@ -1617,7 +1617,7 @@ library BindingsEbool {
     /// @param lhs input of type ebool
     /// @return the result of the ne
     function ne(ebool lhs, ebool rhs) internal pure returns (ebool) {
-        return TFHE.ne(lhs, rhs);
+        return FHE.ne(lhs, rhs);
     }
     
     /// @notice Performs the and operation
@@ -1625,7 +1625,7 @@ library BindingsEbool {
     /// @param lhs input of type ebool
     /// @return the result of the and
     function and(ebool lhs, ebool rhs) internal pure returns (ebool) {
-        return TFHE.and(lhs, rhs);
+        return FHE.and(lhs, rhs);
     }
     
     /// @notice Performs the or operation
@@ -1633,7 +1633,7 @@ library BindingsEbool {
     /// @param lhs input of type ebool
     /// @return the result of the or
     function or(ebool lhs, ebool rhs) internal pure returns (ebool) {
-        return TFHE.or(lhs, rhs);
+        return FHE.or(lhs, rhs);
     }
     
     /// @notice Performs the xor operation
@@ -1641,16 +1641,16 @@ library BindingsEbool {
     /// @param lhs input of type ebool
     /// @return the result of the xor
     function xor(ebool lhs, ebool rhs) internal pure returns (ebool) {
-        return TFHE.xor(lhs, rhs);
+        return FHE.xor(lhs, rhs);
     }
     function toU8(ebool value) internal pure returns (euint8) {
-        return TFHE.asEuint8(value);
+        return FHE.asEuint8(value);
     }
     function toU16(ebool value) internal pure returns (euint16) {
-        return TFHE.asEuint16(value);
+        return FHE.asEuint16(value);
     }
     function toU32(ebool value) internal pure returns (euint32) {
-        return TFHE.asEuint32(value);
+        return FHE.asEuint32(value);
     }
 }
 
@@ -1662,7 +1662,7 @@ library BindingsEuint8 {
     /// @param lhs input of type euint8
     /// @return the result of the add
     function add(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
-        return TFHE.add(lhs, rhs);
+        return FHE.add(lhs, rhs);
     }
     
     /// @notice Performs the mul operation
@@ -1670,7 +1670,7 @@ library BindingsEuint8 {
     /// @param lhs input of type euint8
     /// @return the result of the mul
     function mul(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
-        return TFHE.mul(lhs, rhs);
+        return FHE.mul(lhs, rhs);
     }
     
     /// @notice Performs the div operation
@@ -1678,7 +1678,7 @@ library BindingsEuint8 {
     /// @param lhs input of type euint8
     /// @return the result of the div
     function div(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
-        return TFHE.div(lhs, rhs);
+        return FHE.div(lhs, rhs);
     }
     
     /// @notice Performs the sub operation
@@ -1686,7 +1686,7 @@ library BindingsEuint8 {
     /// @param lhs input of type euint8
     /// @return the result of the sub
     function sub(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
-        return TFHE.sub(lhs, rhs);
+        return FHE.sub(lhs, rhs);
     }
     
     /// @notice Performs the eq operation
@@ -1694,7 +1694,7 @@ library BindingsEuint8 {
     /// @param lhs input of type euint8
     /// @return the result of the eq
     function eq(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
-        return TFHE.eq(lhs, rhs);
+        return FHE.eq(lhs, rhs);
     }
     
     /// @notice Performs the ne operation
@@ -1702,7 +1702,7 @@ library BindingsEuint8 {
     /// @param lhs input of type euint8
     /// @return the result of the ne
     function ne(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
-        return TFHE.ne(lhs, rhs);
+        return FHE.ne(lhs, rhs);
     }
     
     /// @notice Performs the and operation
@@ -1710,7 +1710,7 @@ library BindingsEuint8 {
     /// @param lhs input of type euint8
     /// @return the result of the and
     function and(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
-        return TFHE.and(lhs, rhs);
+        return FHE.and(lhs, rhs);
     }
     
     /// @notice Performs the or operation
@@ -1718,7 +1718,7 @@ library BindingsEuint8 {
     /// @param lhs input of type euint8
     /// @return the result of the or
     function or(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
-        return TFHE.or(lhs, rhs);
+        return FHE.or(lhs, rhs);
     }
     
     /// @notice Performs the xor operation
@@ -1726,7 +1726,7 @@ library BindingsEuint8 {
     /// @param lhs input of type euint8
     /// @return the result of the xor
     function xor(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
-        return TFHE.xor(lhs, rhs);
+        return FHE.xor(lhs, rhs);
     }
     
     /// @notice Performs the gt operation
@@ -1734,7 +1734,7 @@ library BindingsEuint8 {
     /// @param lhs input of type euint8
     /// @return the result of the gt
     function gt(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
-        return TFHE.gt(lhs, rhs);
+        return FHE.gt(lhs, rhs);
     }
     
     /// @notice Performs the gte operation
@@ -1742,7 +1742,7 @@ library BindingsEuint8 {
     /// @param lhs input of type euint8
     /// @return the result of the gte
     function gte(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
-        return TFHE.gte(lhs, rhs);
+        return FHE.gte(lhs, rhs);
     }
     
     /// @notice Performs the lt operation
@@ -1750,7 +1750,7 @@ library BindingsEuint8 {
     /// @param lhs input of type euint8
     /// @return the result of the lt
     function lt(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
-        return TFHE.lt(lhs, rhs);
+        return FHE.lt(lhs, rhs);
     }
     
     /// @notice Performs the lte operation
@@ -1758,7 +1758,7 @@ library BindingsEuint8 {
     /// @param lhs input of type euint8
     /// @return the result of the lte
     function lte(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
-        return TFHE.lte(lhs, rhs);
+        return FHE.lte(lhs, rhs);
     }
     
     /// @notice Performs the rem operation
@@ -1766,7 +1766,7 @@ library BindingsEuint8 {
     /// @param lhs input of type euint8
     /// @return the result of the rem
     function rem(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
-        return TFHE.rem(lhs, rhs);
+        return FHE.rem(lhs, rhs);
     }
     
     /// @notice Performs the max operation
@@ -1774,7 +1774,7 @@ library BindingsEuint8 {
     /// @param lhs input of type euint8
     /// @return the result of the max
     function max(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
-        return TFHE.max(lhs, rhs);
+        return FHE.max(lhs, rhs);
     }
     
     /// @notice Performs the min operation
@@ -1782,7 +1782,7 @@ library BindingsEuint8 {
     /// @param lhs input of type euint8
     /// @return the result of the min
     function min(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
-        return TFHE.min(lhs, rhs);
+        return FHE.min(lhs, rhs);
     }
     
     /// @notice Performs the shl operation
@@ -1790,7 +1790,7 @@ library BindingsEuint8 {
     /// @param lhs input of type euint8
     /// @return the result of the shl
     function shl(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
-        return TFHE.shl(lhs, rhs);
+        return FHE.shl(lhs, rhs);
     }
     
     /// @notice Performs the shr operation
@@ -1798,16 +1798,16 @@ library BindingsEuint8 {
     /// @param lhs input of type euint8
     /// @return the result of the shr
     function shr(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
-        return TFHE.shr(lhs, rhs);
+        return FHE.shr(lhs, rhs);
     }
     function toBool(euint8 value) internal pure returns (ebool) {
-        return TFHE.asEbool(value);
+        return FHE.asEbool(value);
     }
     function toU16(euint8 value) internal pure returns (euint16) {
-        return TFHE.asEuint16(value);
+        return FHE.asEuint16(value);
     }
     function toU32(euint8 value) internal pure returns (euint32) {
-        return TFHE.asEuint32(value);
+        return FHE.asEuint32(value);
     }
 }
 
@@ -1819,7 +1819,7 @@ library BindingsEuint16 {
     /// @param lhs input of type euint16
     /// @return the result of the add
     function add(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
-        return TFHE.add(lhs, rhs);
+        return FHE.add(lhs, rhs);
     }
     
     /// @notice Performs the mul operation
@@ -1827,7 +1827,7 @@ library BindingsEuint16 {
     /// @param lhs input of type euint16
     /// @return the result of the mul
     function mul(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
-        return TFHE.mul(lhs, rhs);
+        return FHE.mul(lhs, rhs);
     }
     
     /// @notice Performs the div operation
@@ -1835,7 +1835,7 @@ library BindingsEuint16 {
     /// @param lhs input of type euint16
     /// @return the result of the div
     function div(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
-        return TFHE.div(lhs, rhs);
+        return FHE.div(lhs, rhs);
     }
     
     /// @notice Performs the sub operation
@@ -1843,7 +1843,7 @@ library BindingsEuint16 {
     /// @param lhs input of type euint16
     /// @return the result of the sub
     function sub(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
-        return TFHE.sub(lhs, rhs);
+        return FHE.sub(lhs, rhs);
     }
     
     /// @notice Performs the eq operation
@@ -1851,7 +1851,7 @@ library BindingsEuint16 {
     /// @param lhs input of type euint16
     /// @return the result of the eq
     function eq(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
-        return TFHE.eq(lhs, rhs);
+        return FHE.eq(lhs, rhs);
     }
     
     /// @notice Performs the ne operation
@@ -1859,7 +1859,7 @@ library BindingsEuint16 {
     /// @param lhs input of type euint16
     /// @return the result of the ne
     function ne(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
-        return TFHE.ne(lhs, rhs);
+        return FHE.ne(lhs, rhs);
     }
     
     /// @notice Performs the and operation
@@ -1867,7 +1867,7 @@ library BindingsEuint16 {
     /// @param lhs input of type euint16
     /// @return the result of the and
     function and(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
-        return TFHE.and(lhs, rhs);
+        return FHE.and(lhs, rhs);
     }
     
     /// @notice Performs the or operation
@@ -1875,7 +1875,7 @@ library BindingsEuint16 {
     /// @param lhs input of type euint16
     /// @return the result of the or
     function or(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
-        return TFHE.or(lhs, rhs);
+        return FHE.or(lhs, rhs);
     }
     
     /// @notice Performs the xor operation
@@ -1883,7 +1883,7 @@ library BindingsEuint16 {
     /// @param lhs input of type euint16
     /// @return the result of the xor
     function xor(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
-        return TFHE.xor(lhs, rhs);
+        return FHE.xor(lhs, rhs);
     }
     
     /// @notice Performs the gt operation
@@ -1891,7 +1891,7 @@ library BindingsEuint16 {
     /// @param lhs input of type euint16
     /// @return the result of the gt
     function gt(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
-        return TFHE.gt(lhs, rhs);
+        return FHE.gt(lhs, rhs);
     }
     
     /// @notice Performs the gte operation
@@ -1899,7 +1899,7 @@ library BindingsEuint16 {
     /// @param lhs input of type euint16
     /// @return the result of the gte
     function gte(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
-        return TFHE.gte(lhs, rhs);
+        return FHE.gte(lhs, rhs);
     }
     
     /// @notice Performs the lt operation
@@ -1907,7 +1907,7 @@ library BindingsEuint16 {
     /// @param lhs input of type euint16
     /// @return the result of the lt
     function lt(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
-        return TFHE.lt(lhs, rhs);
+        return FHE.lt(lhs, rhs);
     }
     
     /// @notice Performs the lte operation
@@ -1915,7 +1915,7 @@ library BindingsEuint16 {
     /// @param lhs input of type euint16
     /// @return the result of the lte
     function lte(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
-        return TFHE.lte(lhs, rhs);
+        return FHE.lte(lhs, rhs);
     }
     
     /// @notice Performs the rem operation
@@ -1923,7 +1923,7 @@ library BindingsEuint16 {
     /// @param lhs input of type euint16
     /// @return the result of the rem
     function rem(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
-        return TFHE.rem(lhs, rhs);
+        return FHE.rem(lhs, rhs);
     }
     
     /// @notice Performs the max operation
@@ -1931,7 +1931,7 @@ library BindingsEuint16 {
     /// @param lhs input of type euint16
     /// @return the result of the max
     function max(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
-        return TFHE.max(lhs, rhs);
+        return FHE.max(lhs, rhs);
     }
     
     /// @notice Performs the min operation
@@ -1939,7 +1939,7 @@ library BindingsEuint16 {
     /// @param lhs input of type euint16
     /// @return the result of the min
     function min(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
-        return TFHE.min(lhs, rhs);
+        return FHE.min(lhs, rhs);
     }
     
     /// @notice Performs the shl operation
@@ -1947,7 +1947,7 @@ library BindingsEuint16 {
     /// @param lhs input of type euint16
     /// @return the result of the shl
     function shl(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
-        return TFHE.shl(lhs, rhs);
+        return FHE.shl(lhs, rhs);
     }
     
     /// @notice Performs the shr operation
@@ -1955,16 +1955,16 @@ library BindingsEuint16 {
     /// @param lhs input of type euint16
     /// @return the result of the shr
     function shr(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
-        return TFHE.shr(lhs, rhs);
+        return FHE.shr(lhs, rhs);
     }
     function toBool(euint16 value) internal pure returns (ebool) {
-        return TFHE.asEbool(value);
+        return FHE.asEbool(value);
     }
     function toU8(euint16 value) internal pure returns (euint8) {
-        return TFHE.asEuint8(value);
+        return FHE.asEuint8(value);
     }
     function toU32(euint16 value) internal pure returns (euint32) {
-        return TFHE.asEuint32(value);
+        return FHE.asEuint32(value);
     }
 }
 
@@ -1976,7 +1976,7 @@ library BindingsEuint32 {
     /// @param lhs input of type euint32
     /// @return the result of the add
     function add(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
-        return TFHE.add(lhs, rhs);
+        return FHE.add(lhs, rhs);
     }
     
     /// @notice Performs the mul operation
@@ -1984,7 +1984,7 @@ library BindingsEuint32 {
     /// @param lhs input of type euint32
     /// @return the result of the mul
     function mul(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
-        return TFHE.mul(lhs, rhs);
+        return FHE.mul(lhs, rhs);
     }
     
     /// @notice Performs the div operation
@@ -1992,7 +1992,7 @@ library BindingsEuint32 {
     /// @param lhs input of type euint32
     /// @return the result of the div
     function div(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
-        return TFHE.div(lhs, rhs);
+        return FHE.div(lhs, rhs);
     }
     
     /// @notice Performs the sub operation
@@ -2000,7 +2000,7 @@ library BindingsEuint32 {
     /// @param lhs input of type euint32
     /// @return the result of the sub
     function sub(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
-        return TFHE.sub(lhs, rhs);
+        return FHE.sub(lhs, rhs);
     }
     
     /// @notice Performs the eq operation
@@ -2008,7 +2008,7 @@ library BindingsEuint32 {
     /// @param lhs input of type euint32
     /// @return the result of the eq
     function eq(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
-        return TFHE.eq(lhs, rhs);
+        return FHE.eq(lhs, rhs);
     }
     
     /// @notice Performs the ne operation
@@ -2016,7 +2016,7 @@ library BindingsEuint32 {
     /// @param lhs input of type euint32
     /// @return the result of the ne
     function ne(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
-        return TFHE.ne(lhs, rhs);
+        return FHE.ne(lhs, rhs);
     }
     
     /// @notice Performs the and operation
@@ -2024,7 +2024,7 @@ library BindingsEuint32 {
     /// @param lhs input of type euint32
     /// @return the result of the and
     function and(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
-        return TFHE.and(lhs, rhs);
+        return FHE.and(lhs, rhs);
     }
     
     /// @notice Performs the or operation
@@ -2032,7 +2032,7 @@ library BindingsEuint32 {
     /// @param lhs input of type euint32
     /// @return the result of the or
     function or(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
-        return TFHE.or(lhs, rhs);
+        return FHE.or(lhs, rhs);
     }
     
     /// @notice Performs the xor operation
@@ -2040,7 +2040,7 @@ library BindingsEuint32 {
     /// @param lhs input of type euint32
     /// @return the result of the xor
     function xor(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
-        return TFHE.xor(lhs, rhs);
+        return FHE.xor(lhs, rhs);
     }
     
     /// @notice Performs the gt operation
@@ -2048,7 +2048,7 @@ library BindingsEuint32 {
     /// @param lhs input of type euint32
     /// @return the result of the gt
     function gt(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
-        return TFHE.gt(lhs, rhs);
+        return FHE.gt(lhs, rhs);
     }
     
     /// @notice Performs the gte operation
@@ -2056,7 +2056,7 @@ library BindingsEuint32 {
     /// @param lhs input of type euint32
     /// @return the result of the gte
     function gte(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
-        return TFHE.gte(lhs, rhs);
+        return FHE.gte(lhs, rhs);
     }
     
     /// @notice Performs the lt operation
@@ -2064,7 +2064,7 @@ library BindingsEuint32 {
     /// @param lhs input of type euint32
     /// @return the result of the lt
     function lt(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
-        return TFHE.lt(lhs, rhs);
+        return FHE.lt(lhs, rhs);
     }
     
     /// @notice Performs the lte operation
@@ -2072,7 +2072,7 @@ library BindingsEuint32 {
     /// @param lhs input of type euint32
     /// @return the result of the lte
     function lte(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
-        return TFHE.lte(lhs, rhs);
+        return FHE.lte(lhs, rhs);
     }
     
     /// @notice Performs the rem operation
@@ -2080,7 +2080,7 @@ library BindingsEuint32 {
     /// @param lhs input of type euint32
     /// @return the result of the rem
     function rem(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
-        return TFHE.rem(lhs, rhs);
+        return FHE.rem(lhs, rhs);
     }
     
     /// @notice Performs the max operation
@@ -2088,7 +2088,7 @@ library BindingsEuint32 {
     /// @param lhs input of type euint32
     /// @return the result of the max
     function max(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
-        return TFHE.max(lhs, rhs);
+        return FHE.max(lhs, rhs);
     }
     
     /// @notice Performs the min operation
@@ -2096,7 +2096,7 @@ library BindingsEuint32 {
     /// @param lhs input of type euint32
     /// @return the result of the min
     function min(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
-        return TFHE.min(lhs, rhs);
+        return FHE.min(lhs, rhs);
     }
     
     /// @notice Performs the shl operation
@@ -2104,7 +2104,7 @@ library BindingsEuint32 {
     /// @param lhs input of type euint32
     /// @return the result of the shl
     function shl(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
-        return TFHE.shl(lhs, rhs);
+        return FHE.shl(lhs, rhs);
     }
     
     /// @notice Performs the shr operation
@@ -2112,15 +2112,15 @@ library BindingsEuint32 {
     /// @param lhs input of type euint32
     /// @return the result of the shr
     function shr(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
-        return TFHE.shr(lhs, rhs);
+        return FHE.shr(lhs, rhs);
     }
     function toBool(euint32 value) internal pure returns (ebool) {
-        return TFHE.asEbool(value);
+        return FHE.asEbool(value);
     }
     function toU8(euint32 value) internal pure returns (euint8) {
-        return TFHE.asEuint8(value);
+        return FHE.asEuint8(value);
     }
     function toU16(euint32 value) internal pure returns (euint16) {
-        return TFHE.asEuint16(value);
+        return FHE.asEuint16(value);
     }
 }
