@@ -135,7 +135,7 @@ const generateSolidityTestContract = (metadata: FunctionMetadata): string[] => {
         return testContractReq();
     }
 
-    if (functionName === "reencrypt") {
+    if (functionName === "sealoutput") {
         return testContractReencrypt();
     }
 

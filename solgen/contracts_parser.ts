@@ -77,7 +77,7 @@ async function analyzeGoFile(filePath: string): Promise<FunctionAnalysis[] | nul
                 if (trimmedLine.includes(keyfn.name)) {
                     let needsSameType = /lhs.UintType\s+!=\s+rhs.UintType/.test(trimmedLine);
                     let amount = keyfn.amount;
-                    if (funcName === "reencrypt") {
+                    if (funcName === "sealoutput") {
                         // console.log(`func name: ${funcName}`)
                         amount = 2;
                         returnType = "bytes memory";
