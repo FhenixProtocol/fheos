@@ -35,7 +35,7 @@ jobs:
           cd go-tfhe && make build-rust
       - name: Install Dependencies
         run: |
-          git clone https://${{ secrets.GH_PAT }}@github.com/fhenixprotocol/fhenix.js && cd fhenix.js && git checkout origin fhenix.js
+          git clone https://${{ secrets.GH_PAT }}@github.com/fhenixprotocol/fhenix.js && cd fhenix.js && git checkout origin/fhenix.js
           make install
       - name: Make gen
         run: |
