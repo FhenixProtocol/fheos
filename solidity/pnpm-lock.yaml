@@ -6901,7 +6901,4 @@ packages:
       node-tfhe: 0.3.1
       sha3: 2.1.4
       tfhe: 0.3.1
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
     dev: true

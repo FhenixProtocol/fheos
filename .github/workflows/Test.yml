@@ -58,6 +58,7 @@ jobs:
           docker run -p 8547:8547 -p 8548:8548 -p 3000:3000 ghcr.io/fhenixprotocol/localfhenix:v0.0.0 &
       - name: Run tests
         run: |
+          git clone https://${{ secrets.GH_PAT }}@github.com/fhenixprotocol/fhenix.js
           make test
       
       - name: Package Contracts
