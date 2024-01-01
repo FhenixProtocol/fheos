@@ -568,7 +568,7 @@ export function testContractReencrypt() {
         
         revert TestNotFound(test);
     }`;
-    const abi = `export interface ReencryptTestType extends Contract {
+    const abi = `export interface SealoutputTestType extends Contract {
     sealoutput: (test: string, a: bigint, pubkey: Uint8Array) => Promise<Uint8Array>;
 }\n`
     return [generateTestContract("sealoutput", func), abi];
