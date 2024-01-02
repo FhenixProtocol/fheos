@@ -127,12 +127,6 @@ func Reencrypt(input []byte, tp *TxParams) ([]byte, error) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
-	if !tp.EthCall {
-		msg := "reencrypt only supported on EthCall"
-		logger.Error(msg)
-		return nil, vm.ErrExecutionReverted
-	}
-
 	if len(input) != 64 {
 		msg := "reencrypt input len must be 64 bytes"
 		logger.Error(msg, " input ", hex.EncodeToString(input), " len ", len(input))
@@ -169,12 +163,6 @@ func Decrypt(input []byte, tp *TxParams) (*big.Int, error) {
 	//solgen: output plaintext
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
-	}
-
-	if !tp.EthCall {
-		msg := "decrypt only supported on EthCall"
-		logger.Error(msg)
-		return nil, vm.ErrExecutionReverted
 	}
 
 	if len(input) != 32 {
@@ -381,12 +369,6 @@ func Req(input []byte, tp *TxParams) ([]byte, error) {
 	//solgen: return none
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
-	}
-
-	if tp.EthCall {
-		msg := "require not supported on EthCall"
-		logger.Error(msg)
-		return nil, vm.ErrExecutionReverted
 	}
 
 	if len(input) != 32 {
