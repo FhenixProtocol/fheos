@@ -385,7 +385,7 @@ func Req(input []byte, tp *TxParams) ([]byte, error) {
 	}
 	// If we are not committing to state, assume the require is true, avoiding any side effects
 	// (i.e. mutatiting the oracle DB).
-	if !tp.Commit {
+	if tp.GasEstimation {
 		return nil, nil
 	}
 
