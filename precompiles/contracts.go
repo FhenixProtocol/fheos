@@ -140,6 +140,10 @@ func Reencrypt(input []byte, tp *TxParams) ([]byte, error) {
 		return nil, vm.ErrExecutionReverted
 	}
 
+	if tp.GasEstimation {
+		return []byte{1}, nil
+	}
+
 	decryptedValue, err := tfhe.Decrypt(*ct)
 	if err != nil {
 		logger.Error("failed decrypting ciphertext ", "error ", err)
@@ -176,6 +180,10 @@ func Decrypt(input []byte, tp *TxParams) (*big.Int, error) {
 		msg := "decrypt unverified ciphertext handle"
 		logger.Error(msg, " input ", hex.EncodeToString(input))
 		return nil, vm.ErrExecutionReverted
+	}
+
+	if tp.GasEstimation {
+		return new(big.Int).SetUint64(1), nil
 	}
 
 	decryptedValue, err := tfhe.Decrypt(*ct)
