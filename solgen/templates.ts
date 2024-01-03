@@ -2,7 +2,7 @@ import {
     AllTypes,
     EInputType,
     EPlaintextType,
-    EUintType,
+    EUintType, SEALING_FUNCTION_NAME,
     UnderlyingTypes,
     valueIsEncrypted,
     valueIsPlaintext
@@ -12,30 +12,19 @@ export const preamble = () => {
     return `// SPDX-License-Identifier: BSD-3-Clause-Clear
 // solhint-disable one-contract-per-file
 
-pragma solidity >=0.8.13 <0.9.0;
+pragma solidity >=0.8.19 <0.9.0;
 
 import {Precompiles, FheOps} from "./FheOS.sol";
 
-type ebool is uint256;
-type euint8 is uint256;
-type euint16 is uint256;
-type euint32 is uint256;
+${EInputType.map((type) => {
+    return `type ${type} is uint256;`
+}).join("\n")}
 
-struct inEbool {
+${EInputType.map((type) => {
+return `struct in${capitalize(type)} {
     bytes data;
-}
-
-struct inEuint8 {
-    bytes data;
-}
-
-struct inEuint16 {
-    bytes data;
-}
-
-struct inEuint32 {
-    bytes data;
-}
+}`;
+}).join("\n")}
 
 error UninitializedInputs();
 
@@ -550,28 +539,28 @@ export function testContractReq() {
 }
 
 export function testContractReencrypt() {
-    let func = `function sealoutput(string calldata test, uint256 a, bytes32 pubkey) public pure returns (bytes memory reencrypted) {
-        if (Utils.cmp(test, "sealoutput(euint8)")) {
-            return FHE.sealoutput(FHE.asEuint8(a), pubkey);
-        } else if (Utils.cmp(test, "sealoutput(euint16)")) {
-            return FHE.sealoutput(FHE.asEuint16(a), pubkey);
-        } else if (Utils.cmp(test, "sealoutput(euint32)")) {
-            return FHE.sealoutput(FHE.asEuint32(a), pubkey);
-        } else if (Utils.cmp(test, "sealoutput(ebool)")) {
+    let func = `function ${SEALING_FUNCTION_NAME}(string calldata test, uint256 a, bytes32 pubkey) public pure returns (bytes memory reencrypted) {
+        if (Utils.cmp(test, "${SEALING_FUNCTION_NAME}(euint8)")) {
+            return FHE.${SEALING_FUNCTION_NAME}(FHE.asEuint8(a), pubkey);
+        } else if (Utils.cmp(test, "${SEALING_FUNCTION_NAME}(euint16)")) {
+            return FHE.${SEALING_FUNCTION_NAME}(FHE.asEuint16(a), pubkey);
+        } else if (Utils.cmp(test, "${SEALING_FUNCTION_NAME}(euint32)")) {
+            return FHE.${SEALING_FUNCTION_NAME}(FHE.asEuint32(a), pubkey);
+        } else if (Utils.cmp(test, "${SEALING_FUNCTION_NAME}(ebool)")) {
             bool b = true;
             if (a == 0) {
                 b = false;
             }
 
-            return FHE.sealoutput(FHE.asEbool(b), pubkey);
+            return FHE.${SEALING_FUNCTION_NAME}(FHE.asEbool(b), pubkey);
         } 
         
         revert TestNotFound(test);
     }`;
     const abi = `export interface SealoutputTestType extends Contract {
-    sealoutput: (test: string, a: bigint, pubkey: Uint8Array) => Promise<Uint8Array>;
+    ${SEALING_FUNCTION_NAME}: (test: string, a: bigint, pubkey: Uint8Array) => Promise<Uint8Array>;
 }\n`
-    return [generateTestContract("sealoutput", func), abi];
+    return [generateTestContract(SEALING_FUNCTION_NAME, func), abi];
 }
 
 export function testContract3Arg(name: string) {
