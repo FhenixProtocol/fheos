@@ -127,12 +127,6 @@ func Reencrypt(input []byte, tp *TxParams) ([]byte, error) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
-	if !tp.EthCall {
-		msg := "reencrypt only supported on EthCall"
-		logger.Error(msg)
-		return nil, vm.ErrExecutionReverted
-	}
-
 	if len(input) != 64 {
 		msg := "reencrypt input len must be 64 bytes"
 		logger.Error(msg, " input ", hex.EncodeToString(input), " len ", len(input))
@@ -144,6 +138,10 @@ func Reencrypt(input []byte, tp *TxParams) ([]byte, error) {
 		msg := "reencrypt unverified ciphertext handle"
 		logger.Error(msg, " input ", hex.EncodeToString(input))
 		return nil, vm.ErrExecutionReverted
+	}
+
+	if tp.GasEstimation {
+		return []byte{1}, nil
 	}
 
 	decryptedValue, err := tfhe.Decrypt(*ct)
@@ -171,12 +169,6 @@ func Decrypt(input []byte, tp *TxParams) (*big.Int, error) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
-	if !tp.EthCall {
-		msg := "decrypt only supported on EthCall"
-		logger.Error(msg)
-		return nil, vm.ErrExecutionReverted
-	}
-
 	if len(input) != 32 {
 		msg := "decrypt input len must be 32 bytes"
 		logger.Error(msg, " input ", hex.EncodeToString(input), " len ", len(input))
@@ -188,6 +180,10 @@ func Decrypt(input []byte, tp *TxParams) (*big.Int, error) {
 		msg := "decrypt unverified ciphertext handle"
 		logger.Error(msg, " input ", hex.EncodeToString(input))
 		return nil, vm.ErrExecutionReverted
+	}
+
+	if tp.GasEstimation {
+		return new(big.Int).SetUint64(1), nil
 	}
 
 	decryptedValue, err := tfhe.Decrypt(*ct)
@@ -383,12 +379,6 @@ func Req(input []byte, tp *TxParams) ([]byte, error) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
 
-	if tp.EthCall {
-		msg := "require not supported on EthCall"
-		logger.Error(msg)
-		return nil, vm.ErrExecutionReverted
-	}
-
 	if len(input) != 32 {
 		msg := "require input len must be 32 bytes"
 		logger.Error(msg, " input ", hex.EncodeToString(input), " len ", len(input))
@@ -403,7 +393,7 @@ func Req(input []byte, tp *TxParams) ([]byte, error) {
 	}
 	// If we are not committing to state, assume the require is true, avoiding any side effects
 	// (i.e. mutatiting the oracle DB).
-	if !tp.Commit {
+	if tp.GasEstimation {
 		return nil, nil
 	}
 
