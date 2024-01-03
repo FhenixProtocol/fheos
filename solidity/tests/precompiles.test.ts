@@ -94,7 +94,6 @@ describe('Test Add', () =>  {
     it(`Test Contract Deployment`, async () => {
         contract = await deployContract('AddTest') as AddTestType;
         expect(contract).toBeTruthy();
-
     });
 
     const testCases = [
@@ -149,6 +148,18 @@ describe('Test Add', () =>  {
             }
         }
     }
+
+    it(`Custom error test`, async () => {
+        try {
+            await contract.add("no such test", 1, 2)
+            fail();
+        } catch (error) {
+            const revertData = error.data
+            const decodedError = contract.interface.parseError(revertData);
+            expect(decodedError.name).toBe("TestNotFound");
+            expect(decodedError.args[0]).toBe("no such test");
+        }
+    });
 });
 
 describe('Test Reencrypt', () =>  {
