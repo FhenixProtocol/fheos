@@ -1,8 +1,8 @@
 .PHONY: install
 install:
-	cd precompiles && pnpm install
-	cd solgen && pnpm install
-	cd solidity && pnpm install
+	cd precompiles && pnpm install --frozen-lockfile=false
+	cd solgen && pnpm install --frozen-lockfile=false
+	cd solidity && pnpm install --frozen-lockfile=false
 
 .PHONY: gen
 gen:
