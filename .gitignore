@@ -4,3 +4,4 @@ precompiles/types/*
 precompiles/artifacts/*
 solgen/*.js
 build/
+solidity/types/*
