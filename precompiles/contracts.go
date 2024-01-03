@@ -161,7 +161,7 @@ func SealOutput(input []byte, tp *TxParams) ([]byte, error) {
 		return nil, vm.ErrExecutionReverted
 	}
 	logger.Debug("sealOutput success", " input ", hex.EncodeToString(input))
-	// FHENIX: Previously it was "return toEVMBytes(reencryptedValue), nil" but the decrypt function in Fhevm didn't support it so we removed the the toEVMBytes
+
 	return reencryptedValue, nil
 }
 

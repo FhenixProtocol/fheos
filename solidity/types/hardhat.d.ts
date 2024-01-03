@@ -58,6 +58,34 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.EqTest__factory>;
     getContractFactory(
+      name: "BindingsEbool",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.BindingsEbool__factory>;
+    getContractFactory(
+      name: "BindingsEuint16",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.BindingsEuint16__factory>;
+    getContractFactory(
+      name: "BindingsEuint32",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.BindingsEuint32__factory>;
+    getContractFactory(
+      name: "BindingsEuint8",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.BindingsEuint8__factory>;
+    getContractFactory(
+      name: "TFHE",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TFHE__factory>;
+    getContractFactory(
+      name: "FheOps",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.FheOps__factory>;
+    getContractFactory(
+      name: "Precompiles",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.Precompiles__factory>;
+    getContractFactory(
       name: "GtTest",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.GtTest__factory>;
@@ -97,6 +125,10 @@ declare module "hardhat/types/runtime" {
       name: "OrTest",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.OrTest__factory>;
+    getContractFactory(
+      name: "ReencryptTest",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ReencryptTest__factory>;
     getContractFactory(
       name: "RemTest",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -186,6 +218,41 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.EqTest>;
     getContractAt(
+      name: "BindingsEbool",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.BindingsEbool>;
+    getContractAt(
+      name: "BindingsEuint16",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.BindingsEuint16>;
+    getContractAt(
+      name: "BindingsEuint32",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.BindingsEuint32>;
+    getContractAt(
+      name: "BindingsEuint8",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.BindingsEuint8>;
+    getContractAt(
+      name: "TFHE",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TFHE>;
+    getContractAt(
+      name: "FheOps",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.FheOps>;
+    getContractAt(
+      name: "Precompiles",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.Precompiles>;
+    getContractAt(
       name: "GtTest",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
@@ -235,6 +302,11 @@ declare module "hardhat/types/runtime" {
       address: string | ethers.Addressable,
       signer?: ethers.Signer
     ): Promise<Contracts.OrTest>;
+    getContractAt(
+      name: "ReencryptTest",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ReencryptTest>;
     getContractAt(
       name: "RemTest",
       address: string | ethers.Addressable,
@@ -321,6 +393,34 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.EqTest>;
     deployContract(
+      name: "BindingsEbool",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.BindingsEbool>;
+    deployContract(
+      name: "BindingsEuint16",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.BindingsEuint16>;
+    deployContract(
+      name: "BindingsEuint32",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.BindingsEuint32>;
+    deployContract(
+      name: "BindingsEuint8",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.BindingsEuint8>;
+    deployContract(
+      name: "TFHE",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.TFHE>;
+    deployContract(
+      name: "FheOps",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.FheOps>;
+    deployContract(
+      name: "Precompiles",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.Precompiles>;
+    deployContract(
       name: "GtTest",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.GtTest>;
@@ -360,6 +460,10 @@ declare module "hardhat/types/runtime" {
       name: "OrTest",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.OrTest>;
+    deployContract(
+      name: "ReencryptTest",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.ReencryptTest>;
     deployContract(
       name: "RemTest",
       signerOrOptions?: ethers.Signer | DeployContractOptions
@@ -449,6 +553,41 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.EqTest>;
     deployContract(
+      name: "BindingsEbool",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.BindingsEbool>;
+    deployContract(
+      name: "BindingsEuint16",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.BindingsEuint16>;
+    deployContract(
+      name: "BindingsEuint32",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.BindingsEuint32>;
+    deployContract(
+      name: "BindingsEuint8",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.BindingsEuint8>;
+    deployContract(
+      name: "TFHE",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.TFHE>;
+    deployContract(
+      name: "FheOps",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.FheOps>;
+    deployContract(
+      name: "Precompiles",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.Precompiles>;
+    deployContract(
       name: "GtTest",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
@@ -498,6 +637,11 @@ declare module "hardhat/types/runtime" {
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.OrTest>;
+    deployContract(
+      name: "ReencryptTest",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.ReencryptTest>;
     deployContract(
       name: "RemTest",
       args: any[],

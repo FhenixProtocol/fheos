@@ -1,6 +1,6 @@
 import { ethers } from 'hardhat';
 import { BaseContract } from "ethers";
-import { createFheInstance } from './utils';
+import {createFheInstance, fromHexString} from './utils';
 import { AddTestType,
     LteTestType,
     SubTestType,
@@ -173,10 +173,9 @@ describe('Test SealOutput', () =>  {
     for (const test of testCases) {
         it(`Test ${test}`, async () => {
             let plaintextInput = Math.floor(Math.random() * 1000) % 256;
-            let encryptedOutput = await contract.sealoutput(test, plaintextInput, fheContract.permit.sealingKey.publicKey);
+            let encryptedOutput = await contract.sealoutput(test, plaintextInput, fromHexString(fheContract.permit.sealingKey.publicKey));
             let decryptedOutput = fheContract.instance.unseal(contractAddress, encryptedOutput);
-
-            expect(decryptedOutput).toBe(plaintextInput);
+            expect(decryptedOutput).toBe(BigInt(plaintextInput));
         });
     }
 });
@@ -1197,7 +1196,7 @@ describe('Test AsEbool', () =>  {
                 continue;
             }
 
-            const encInput = fheContract.instance.encrypt8(Number(testCase.input));
+            const encInput = fheContract.instance.encrypt_uint8(Number(testCase.input));
             let decryptedResult = await contract.castFromPreEncryptedToEbool(encInput);
             expect(decryptedResult).toBe(testCase.output);
         }
@@ -1249,7 +1248,7 @@ describe('Test AsEuint8', () =>  {
     });
 
     it(`From pre encrypted`, async () => {
-        const encInput = fheContract.instance.encrypt8(Number(value));
+        const encInput = fheContract.instance.encrypt_uint8(Number(value));
         let decryptedResult = await contract.castFromPreEncryptedToEuint8(encInput);
         expect(decryptedResult).toBe(value);
     });
@@ -1301,7 +1300,7 @@ describe('Test AsEuint16', () =>  {
     });
 
     it(`From pre encrypted`, async () => {
-        const encInput = fheContract.instance.encrypt16(Number(value));
+        const encInput = fheContract.instance.encrypt_uint16(Number(value));
         let decryptedResult = await contract.castFromPreEncryptedToEuint16(encInput);
         expect(decryptedResult).toBe(value);
     });
@@ -1353,7 +1352,7 @@ describe('Test AsEuint32', () =>  {
     });
 
     it(`From pre encrypted`, async () => {
-        const encInput = fheContract.instance.encrypt32(Number(value));
+        const encInput = fheContract.instance.encrypt_uint32(Number(value));
         let decryptedResult = await contract.castFromPreEncryptedToEuint32(encInput);
         expect(decryptedResult).toBe(value);
     });

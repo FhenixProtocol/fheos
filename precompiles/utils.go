@@ -39,7 +39,7 @@ type Precompile struct {
 type EthEncryptedReturn struct {
 	Version        string `json:"version"`
 	Nonce          string `json:"nonce"`
-	EphemPublicKey string `json:"ephem_public_key"`
+	EphemPublicKey string `json:"ephemPublicKey"`
 	Ciphertext     string `json:"ciphertext"`
 }
 

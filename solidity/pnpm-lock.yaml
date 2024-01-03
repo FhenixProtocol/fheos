@@ -1,4 +1,4 @@
-lockfileVersion: '6.0'
+lockfileVersion: '6.1'
 
 settings:
   autoInstallPeers: true
@@ -75,8 +75,8 @@ devDependencies:
     specifier: ^6.9.0
     version: 6.9.1
   fhenix.js:
-    specifier: file:../fhenix.js
-    version: file:../fhenix.js
+    specifier: file:../../fhenix.js
+    version: file:../../fhenix.js
   fs-extra:
     specifier: ^10.1.0
     version: 10.1.0
@@ -2882,11 +2882,6 @@ packages:
     engines: {node: '>=14'}
     dev: true
 
-  /commander@11.1.0:
-    resolution: {integrity: sha512-yPVavfyCcRhmorC7rWlkHn15b4wDVgVmBA7kV4QVBsF7kv/9TKJAbAXVTxvTnwP8HHKjRCJDClKbciiYS7p0DQ==}
-    engines: {node: '>=16'}
-    dev: true
-
   /commander@3.0.2:
     resolution: {integrity: sha512-Gar0ASD4BDyKC4hl4DwHqDrmvjoxWKZigVnAbn5H1owvm4CxCPdb0HQDehwNYMJpla5+M2tPmPARzhtYuwpHow==}
     dev: true
@@ -3003,10 +2998,6 @@ packages:
 
   /crypt@0.0.2:
     resolution: {integrity: sha512-mCxBlsHFYh9C+HVpiEacem8FEBnMXgU9gy4zmNC+SXAZNB/1idgp/aulFJ4FgCi7GPEVbfyng092GqL2k2rmow==}
-    dev: true
-
-  /crypto-js@4.2.0:
-    resolution: {integrity: sha512-KALDyEYgpY+Rlob/iriUtjV6d5Eq+Y191A5g4UqLAi8CyGP9N1+FdVbkc1SxKc2r4YAYqG8JzO2KGL+AizD70Q==}
     dev: true
 
   /death@1.1.0:
@@ -5004,16 +4995,6 @@ packages:
       type-check: 0.4.0
     dev: true
 
-  /libsodium-wrappers@0.7.13:
-    resolution: {integrity: sha512-kasvDsEi/r1fMzKouIDv7B8I6vNmknXwGiYodErGuESoFTohGSKZplFtVxZqHaoQ217AynyIFgnOVRitpHs0Qw==}
-    dependencies:
-      libsodium: 0.7.13
-    dev: true
-
-  /libsodium@0.7.13:
-    resolution: {integrity: sha512-mK8ju0fnrKXXfleL53vtp9xiPq5hKM0zbDQtcxQIsSmxNgSxqCj6R7Hl9PkrNe2j29T4yoDaF7DJLK9/i5iWUw==}
-    dev: true
-
   /lines-and-columns@1.2.4:
     resolution: {integrity: sha512-7ylylesZQ/PV29jhEDl3Ufjo6ZX7gCqJr5F7PKrqc93v7fzSymt1BpwEU8nAUXs8qzzvqhbjhK5QZg6Mt/HkBg==}
     dev: true
@@ -5997,12 +5978,6 @@ packages:
       crypt: 0.0.2
     dev: true
 
-  /sha3@2.1.4:
-    resolution: {integrity: sha512-S8cNxbyb0UGUM2VhRD4Poe5N58gJnJsLJ5vC7FYWGUmGhcsj4++WaIOBFVDxlG0W3To6xBuiRh+i0Qp2oNCOtg==}
-    dependencies:
-      buffer: 6.0.3
-    dev: true
-
   /shebang-command@2.0.0:
     resolution: {integrity: sha512-kHxr2zZpYtdmrN1qDjrrX/Z1rR1kG8Dx+gkpK1G4eXmvXswmcE1hTWBWYUzlraYw1/yZp6YuDY77YtvbN0dmDA==}
     engines: {node: '>=8'}
@@ -6888,17 +6863,17 @@ packages:
       ethers: 5.7.2
     dev: true
 
-  file:../fhenix.js:
-    resolution: {directory: ../fhenix.js, type: directory}
-    name: fhenix.js
-    hasBin: true
+  file:../../fhenix.js:
+    resolution: {directory: ../../fhenix.js, type: directory}
+    name: fhenixjs
+    version: 0.2.1
     dependencies:
-      commander: 11.1.0
-      crypto-js: 4.2.0
       ethers: 6.9.1
-      libsodium: 0.7.13
-      libsodium-wrappers: 0.7.13
       node-tfhe: 0.3.1
-      sha3: 2.1.4
       tfhe: 0.3.1
+      tweetnacl: 1.0.3
+      tweetnacl-util: 0.15.1
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
     dev: true
