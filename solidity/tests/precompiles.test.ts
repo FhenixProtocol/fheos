@@ -1,8 +1,7 @@
 import { ethers } from 'hardhat';
 import { BaseContract } from "ethers";
-import { createFheInstance } from './utils';
+import {createFheInstance, fromHexString} from './utils';
 import { AddTestType,
-    ReencryptTestType,
     LteTestType,
     SubTestType,
     MulTestType,
@@ -26,7 +25,8 @@ import { AddTestType,
     AsEboolTestType,
     AsEuint8TestType,
     AsEuint16TestType,
-    AsEuint32TestType
+    AsEuint32TestType,
+    SealoutputTestType
 } from './abis';
 
 const deployContractFromSigner = async (con: any, signer: any, nonce?: number) => {
@@ -151,15 +151,15 @@ describe('Test Add', () =>  {
     }
 });
 
-describe('Test Reencrypt', () =>  {
+describe('Test SealOutput', () =>  {
     let contract;
     let fheContract;
     let contractAddress;
 
     // We don't really need it as test but it is a test since it is async
     it(`Test Contract Deployment`, async () => {
-        const baseContract = await deployContract('ReencryptTest');
-        contract = baseContract as ReencryptTestType;
+        const baseContract = await deployContract('SealoutputTest');
+        contract = baseContract as SealoutputTestType;
         contractAddress = await baseContract.getAddress();
         fheContract = await getFheContract(contractAddress);
 
@@ -168,15 +168,14 @@ describe('Test Reencrypt', () =>  {
 
     });
 
-    const testCases = ["reencrypt(euint8)", "reencrypt(euint16)", "reencrypt(euint32)"];
+    const testCases = ["sealoutput(euint8)", "sealoutput(euint16)", "sealoutput(euint32)"];
 
     for (const test of testCases) {
         it(`Test ${test}`, async () => {
             let plaintextInput = Math.floor(Math.random() * 1000) % 256;
-            let encryptedOutput = await contract.reencrypt(test, plaintextInput, fheContract.publicKey);
-            let decryptedOutput = fheContract.instance.decrypt(contractAddress, encryptedOutput);
-
-            expect(decryptedOutput).toBe(plaintextInput);
+            let encryptedOutput = await contract.sealoutput(test, plaintextInput, fromHexString(fheContract.permit.sealingKey.publicKey));
+            let decryptedOutput = fheContract.instance.unseal(contractAddress, encryptedOutput);
+            expect(decryptedOutput).toBe(BigInt(plaintextInput));
         });
     }
 });
@@ -1197,7 +1196,7 @@ describe('Test AsEbool', () =>  {
                 continue;
             }
 
-            const encInput = fheContract.instance.encrypt8(Number(testCase.input));
+            const encInput = fheContract.instance.encrypt_uint8(Number(testCase.input));
             let decryptedResult = await contract.castFromPreEncryptedToEbool(encInput);
             expect(decryptedResult).toBe(testCase.output);
         }
@@ -1249,7 +1248,7 @@ describe('Test AsEuint8', () =>  {
     });
 
     it(`From pre encrypted`, async () => {
-        const encInput = fheContract.instance.encrypt8(Number(value));
+        const encInput = fheContract.instance.encrypt_uint8(Number(value));
         let decryptedResult = await contract.castFromPreEncryptedToEuint8(encInput);
         expect(decryptedResult).toBe(value);
     });
@@ -1301,7 +1300,7 @@ describe('Test AsEuint16', () =>  {
     });
 
     it(`From pre encrypted`, async () => {
-        const encInput = fheContract.instance.encrypt16(Number(value));
+        const encInput = fheContract.instance.encrypt_uint16(Number(value));
         let decryptedResult = await contract.castFromPreEncryptedToEuint16(encInput);
         expect(decryptedResult).toBe(value);
     });
@@ -1353,7 +1352,7 @@ describe('Test AsEuint32', () =>  {
     });
 
     it(`From pre encrypted`, async () => {
-        const encInput = fheContract.instance.encrypt32(Number(value));
+        const encInput = fheContract.instance.encrypt_uint32(Number(value));
         let decryptedResult = await contract.castFromPreEncryptedToEuint32(encInput);
         expect(decryptedResult).toBe(value);
     });
