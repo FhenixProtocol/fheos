@@ -1,19 +1,12 @@
 package precompiles
 
 import (
-	"crypto/rand"
-	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"math/big"
-	"os"
-
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 	tfhe "github.com/fhenixprotocol/go-tfhe"
-	"golang.org/x/crypto/nacl/box"
 )
 
 type TxParams struct {
@@ -34,57 +27,6 @@ func TxParamsFromEVM(evm *vm.EVM) TxParams {
 type Precompile struct {
 	Metadata *bind.MetaData
 	Address  common.Address
-}
-
-type EthEncryptedReturn struct {
-	Version        string `json:"version"`
-	Nonce          string `json:"nonce"`
-	EphemPublicKey string `json:"ephemPublicKey"`
-	Ciphertext     string `json:"ciphertext"`
-}
-
-func encryptForUser(value *big.Int, userPublicKey []byte) ([]byte, error) {
-
-	ephemeralPub, ephemeralPriv, err := box.GenerateKey(rand.Reader)
-	if err != nil {
-		return nil, err
-	}
-
-	nonce := make([]byte, 24)
-	_, err = rand.Read(nonce)
-	if err != nil {
-		return nil, err
-	}
-
-	encrypted := box.Seal(nil, value.Bytes(), (*[24]byte)(nonce), (*[32]byte)(userPublicKey), ephemeralPriv)
-	////encrypted, err := box.SealAnonymous(nil, value.Bytes(), (*[32]byte)(userPublicKey), rand.Reader)
-	//if err != nil {
-	//	return nil, err
-	//}
-
-	encryptedReturnValue := EthEncryptedReturn{
-		Version:        "x25519-xsalsa20-poly1305",
-		Nonce:          base64.StdEncoding.EncodeToString(nonce),
-		EphemPublicKey: base64.StdEncoding.EncodeToString(ephemeralPub[:]),
-		Ciphertext:     base64.StdEncoding.EncodeToString(encrypted),
-	}
-
-	return json.Marshal(&encryptedReturnValue)
-}
-
-func encryptToUserKey(value *big.Int, pubKey []byte) ([]byte, error) {
-	ct, err := encryptForUser(value, pubKey)
-	if err != nil {
-		return nil, err
-	}
-
-	// TODO: for testing
-	err = os.WriteFile("/tmp/public_encrypt_result", ct, 0o644)
-	if err != nil {
-		return nil, err
-	}
-
-	return ct, nil
 }
 
 func getCiphertext(ciphertextHash tfhe.Hash) *tfhe.Ciphertext {
