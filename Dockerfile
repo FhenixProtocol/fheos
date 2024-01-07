@@ -18,7 +18,7 @@ RUN go mod tidy
 
 RUN go build -gcflags "all=-N -l" -ldflags="-X github.com/offchainlabs/nitro/cmd/util/confighelpers.version= -X github.com/offchainlabs/nitro/cmd/util/confighelpers.datetime= -X github.com/offchainlabs/nitro/cmd/util/confighelpers.modified=" -o target/bin/nitro "/workspace/cmd/nitro"
 
-FROM ghcr.io/fhenixprotocol/fhenix-node-dev:v0.0.7-standalone
+FROM ghcr.io/fhenixprotocol/fhenix-node-dev:v0.0.9-standalone
 
 COPY --from=winning /workspace/fheos/go-tfhe/internal/api/amd64/libtfhe_wrapper.x86_64.so /usr/lib/libtfhe_wrapper.x86_64.so
 COPY --from=winning /workspace/target/bin/nitro /usr/local/bin/
