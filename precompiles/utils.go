@@ -2,6 +2,8 @@ package precompiles
 
 import (
 	"crypto/rand"
+	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
@@ -34,16 +36,44 @@ type Precompile struct {
 	Address  common.Address
 }
 
-func classicalPublicKeyEncrypt(value *big.Int, userPublicKey []byte) ([]byte, error) {
-	encrypted, err := box.SealAnonymous(nil, value.Bytes(), (*[32]byte)(userPublicKey), rand.Reader)
+type EthEncryptedReturn struct {
+	Version        string `json:"version"`
+	Nonce          string `json:"nonce"`
+	EphemPublicKey string `json:"ephemPublicKey"`
+	Ciphertext     string `json:"ciphertext"`
+}
+
+func encryptForUser(value *big.Int, userPublicKey []byte) ([]byte, error) {
+
+	ephemeralPub, ephemeralPriv, err := box.GenerateKey(rand.Reader)
 	if err != nil {
 		return nil, err
 	}
-	return encrypted, nil
+
+	nonce := make([]byte, 24)
+	_, err = rand.Read(nonce)
+	if err != nil {
+		return nil, err
+	}
+
+	encrypted := box.Seal(nil, value.Bytes(), (*[24]byte)(nonce), (*[32]byte)(userPublicKey), ephemeralPriv)
+	////encrypted, err := box.SealAnonymous(nil, value.Bytes(), (*[32]byte)(userPublicKey), rand.Reader)
+	//if err != nil {
+	//	return nil, err
+	//}
+
+	encryptedReturnValue := EthEncryptedReturn{
+		Version:        "x25519-xsalsa20-poly1305",
+		Nonce:          base64.StdEncoding.EncodeToString(nonce),
+		EphemPublicKey: base64.StdEncoding.EncodeToString(ephemeralPub[:]),
+		Ciphertext:     base64.StdEncoding.EncodeToString(encrypted),
+	}
+
+	return json.Marshal(&encryptedReturnValue)
 }
 
 func encryptToUserKey(value *big.Int, pubKey []byte) ([]byte, error) {
-	ct, err := classicalPublicKeyEncrypt(value, pubKey)
+	ct, err := encryptForUser(value, pubKey)
 	if err != nil {
 		return nil, err
 	}

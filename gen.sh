@@ -15,8 +15,7 @@ cp FheOs_gen.sol precompiles/contracts/FheOs.sol
 mv FheOs_gen.sol solidity/FheOS.sol
 cd precompiles
 rm -rf artifacts
-yarn
-yarn build
+pnpm build
 rm -r ./contracts/
 cd ../
 go run gen.go 2 $OUTPUT

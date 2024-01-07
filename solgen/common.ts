@@ -5,6 +5,8 @@ export type EUintType = 'ebool' | 'euint8' | 'euint16' | 'euint32';
 export type PlaintextType = 'bool' | 'uint8' | 'uint16' | 'uint32' | 'uint64' | 'uint128' | 'uint256';
 export type AllTypes = PlaintextType | EUintType | 'bytes memory' | "bytes32" | "uint8" | "encrypted" | "plaintext" | "none";
 
+export const SEALING_FUNCTION_NAME = "sealoutput";
+
 export const UnderlyingTypes: Record<EUintType, string> = {
     euint8: 'uint256',
     euint16: 'uint256',
