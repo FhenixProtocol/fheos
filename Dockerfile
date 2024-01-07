@@ -1,4 +1,4 @@
-FROM ghcr.io/fhenixprotocol/nitro/fhenix-node-builder:latest as winning
+FROM ghcr.io/fhenixprotocol/nitro/fhenix-node-builder:v0.0.9-beta1 as winning
 
 RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
 RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
@@ -13,6 +13,8 @@ WORKDIR fheos
 RUN ./gen.sh
 
 WORKDIR /workspace
+
+RUN go mod tidy
 
 RUN go build -gcflags "all=-N -l" -ldflags="-X github.com/offchainlabs/nitro/cmd/util/confighelpers.version= -X github.com/offchainlabs/nitro/cmd/util/confighelpers.datetime= -X github.com/offchainlabs/nitro/cmd/util/confighelpers.modified=" -o target/bin/nitro "/workspace/cmd/nitro"
 
