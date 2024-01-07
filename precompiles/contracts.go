@@ -145,16 +145,11 @@ func SealOutput(input []byte, tp *TxParams) ([]byte, error) {
 	}
 
 	pubKey := input[32:64]
-	// todo (eshel): possibly cast decrypted value to big.Int
-	reencryptedValue, err := tfhe.Reencrypt(*ct, pubKey)
+	reencryptedValue, err := tfhe.SealOutput(*ct, pubKey)
 	if err != nil {
 		logger.Error("sealOutput failed to encrypt to user key", " err ", err)
 		return nil, vm.ErrExecutionReverted
 	}
-	// Cast decrypted value to big.Int
-	// todo (eshel) remove:
-	//decryptedValue, err := tfhe.Decrypt(*ct)
-	//reencryptedValue, err := encryptToUserKey(bgDecrypted, pubKey)
 
 	logger.Debug("sealOutput success", " input ", hex.EncodeToString(input))
 	return reencryptedValue, nil
