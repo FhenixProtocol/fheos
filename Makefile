@@ -1,14 +1,14 @@
 .PHONY: install
 install:
-	cd precompiles && yarn install
-	cd solgen && npm install
-	cd solidity && pnpm install
+	cd precompiles && pnpm install --frozen-lockfile=false
+	cd solgen && pnpm install --frozen-lockfile=false
+	cd solidity && pnpm install --frozen-lockfile=false
 
 .PHONY: gen
 gen:
 	./gen.sh
 	rm solidity/tests/contracts/*.sol || true
-	cd solgen && npm run build
+	cd solgen && pnpm build
 
 .PHONY: compile
 compile:
@@ -36,7 +36,7 @@ test: check_network_is_running compile-go-tfhe gen compile
 	cp solidity/.env.example solidity/.env
 	cd solidity && pnpm install
 	cd solidity && pnpm compile
-	cd solidity && npm test
+	cd solidity && pnpm test
 
 .PHONY: clean
 clean:

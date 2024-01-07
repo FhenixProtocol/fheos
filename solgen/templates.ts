@@ -2,7 +2,7 @@ import {
     AllTypes,
     EInputType,
     EPlaintextType,
-    EUintType,
+    EUintType, SEALING_FUNCTION_NAME,
     UnderlyingTypes,
     valueIsEncrypted,
     valueIsPlaintext
@@ -12,14 +12,19 @@ export const preamble = () => {
     return `// SPDX-License-Identifier: BSD-3-Clause-Clear
 // solhint-disable one-contract-per-file
 
-pragma solidity >=0.8.13 <0.9.0;
+pragma solidity >=0.8.19 <0.9.0;
 
 import {Precompiles, FheOps} from "./FheOS.sol";
 
-type ebool is uint256;
-type euint8 is uint256;
-type euint16 is uint256;
-type euint32 is uint256;
+${EInputType.map((type) => {
+    return `type ${type} is uint256;`
+}).join("\n")}
+
+${EInputType.map((type) => {
+return `struct in${capitalize(type)} {
+    bytes data;
+}`;
+}).join("\n")}
 
 error UninitializedInputs();
 
@@ -60,13 +65,13 @@ library Common {
 }
 
 library Impl {
-    function reencrypt(uint256 ciphertext, bytes32 publicKey) internal pure returns (bytes memory reencrypted) {
+    function sealoutput(uint256 ciphertext, bytes32 publicKey) internal pure returns (bytes memory reencrypted) {
         bytes32[2] memory input;
         input[0] = bytes32(ciphertext);
         input[1] = publicKey;
 
         // Call the reencrypt precompile.
-        reencrypted = FheOps(Precompiles.Fheos).reencrypt(bytes.concat(input[0], input[1]));
+        reencrypted = FheOps(Precompiles.Fheos).sealOutput(bytes.concat(input[0], input[1]));
 
         return reencrypted;
     }
@@ -120,7 +125,7 @@ library Impl {
     }
 }
 
-library TFHE {
+library FHE {
     euint8 public constant NIL8 = euint8.wrap(0);
     euint16 public constant NIL16 = euint16.wrap(0);
     euint32 public constant NIL32 = euint32.wrap(0);
@@ -182,10 +187,14 @@ const castFromBytes = (name: string, toType: string): string => {
     return `Impl.verify(${name}, Common.${toType.toUpperCase()}_TFHE_GO)`;
 }
 
+const castFromInputType = (name: string, toType: string): string => {
+    return `FHE.as${capitalize(toType)}(${name}.data)`;
+}
+
 const castToEbool = (name: string, fromType: string): string => {
     return `
     \n    /// @notice Converts a ${fromType} to an ebool
-        function asEbool(${fromType} value) internal pure returns (ebool) {
+    function asEbool(${fromType} value) internal pure returns (ebool) {
         return ne(${name}, as${capitalize(fromType)}(0));
     }`;
 }
@@ -210,8 +219,18 @@ export const AsTypeFunction = (fromType: string, toType: string) => {
 
         return asEbool(sVal);
     }`;
-    }
-    else if (fromType === 'bytes memory') {
+    } else if (fromType.startsWith("in")) {
+        docString = `
+    /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an ${toType}
+    /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
+    /// @return a ciphertext representation of the input`;
+        castString = castFromInputType("value", toType);
+
+        return `${docString}
+    function as${capitalize(toType)}(${fromType} memory value) internal pure returns (${toType}) {
+        return ${castString};
+    }`;
+    } else if (fromType === 'bytes memory') {
         docString = `
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an ${toType}
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
@@ -237,7 +256,7 @@ function TypeCastTestingFunction(fromType: string, fromTypeForTs: string, toType
     let testType = fromTypeEncrypted? fromTypeEncrypted : fromType;
     testType = testType === 'bytes memory' ? 'PreEncrypted' : capitalize(testType);
     testType = testType === 'Uint256' ? 'Plaintext' : testType;
-    const encryptedVal = fromTypeEncrypted ? `TFHE.as${capitalize(fromTypeEncrypted)}(val)` : "val";
+    const encryptedVal = fromTypeEncrypted ? `FHE.as${capitalize(fromTypeEncrypted)}(val)` : "val";
     let retTypeTs = (retType === 'bool') ? 'boolean' : retType;
     retTypeTs = retTypeTs.includes("uint") ? 'bigint' : retTypeTs;
 
@@ -246,15 +265,15 @@ function TypeCastTestingFunction(fromType: string, fromTypeForTs: string, toType
 
     if (testType === 'PreEncrypted' || testType === 'Plaintext') {
         func += `function castFrom${testType}To${to}(${fromType} val) public pure returns (${retType}) {
-        return TFHE.decrypt(TFHE.as${to}(${encryptedVal}));
+        return FHE.decrypt(FHE.as${to}(${encryptedVal}));
     }`;
         abi = `    castFrom${testType}To${to}: (val: ${fromTypeForTs}) => Promise<${retTypeTs}>;\n`;
     } else {
         func += `function castFrom${testType}To${to}(${fromType} val, string calldata test) public pure returns (${retType}) {
         if (Utils.cmp(test, "bound")) {
-            return TFHE.decrypt(${encryptedVal}.to${shortenType(toType)}());
+            return FHE.decrypt(${encryptedVal}.to${shortenType(toType)}());
         } else if (Utils.cmp(test, "regular")) {
-            return TFHE.decrypt(TFHE.as${to}(${encryptedVal}));
+            return FHE.decrypt(FHE.as${to}(${encryptedVal}));
         }
         revert TestNotFound(test);
     }`;
@@ -371,37 +390,37 @@ export function SolTemplate2Arg(name: string, input1: AllTypes, input2: AllTypes
 export function testContract2ArgBoolRes(name: string, isBoolean: boolean) {
     let func = `function ${name}(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
         if (Utils.cmp(test, "${name}(euint8,euint8)")) {
-            if (TFHE.decrypt(TFHE.${name}(TFHE.asEuint8(a), TFHE.asEuint8(b)))) {
+            if (FHE.decrypt(FHE.${name}(FHE.asEuint8(a), FHE.asEuint8(b)))) {
                 return 1;
             }
 
             return 0;
         } else if (Utils.cmp(test, "${name}(euint16,euint16)")) {
-            if (TFHE.decrypt(TFHE.${name}(TFHE.asEuint16(a), TFHE.asEuint16(b)))) {
+            if (FHE.decrypt(FHE.${name}(FHE.asEuint16(a), FHE.asEuint16(b)))) {
                 return 1;
             }
 
             return 0;
         } else if (Utils.cmp(test, "${name}(euint32,euint32)")) {
-            if (TFHE.decrypt(TFHE.${name}(TFHE.asEuint32(a), TFHE.asEuint32(b)))) {
+            if (FHE.decrypt(FHE.${name}(FHE.asEuint32(a), FHE.asEuint32(b)))) {
                 return 1;
             }
 
             return 0;
         } else if (Utils.cmp(test, "euint8.${name}(euint8)")) {
-            if (TFHE.decrypt(TFHE.asEuint8(a).${name}(TFHE.asEuint8(b)))) {
+            if (FHE.decrypt(FHE.asEuint8(a).${name}(FHE.asEuint8(b)))) {
                 return 1;
             }
 
             return 0;
         } else if (Utils.cmp(test, "euint16.${name}(euint16)")) {
-            if (TFHE.decrypt(TFHE.asEuint16(a).${name}(TFHE.asEuint16(b)))) {
+            if (FHE.decrypt(FHE.asEuint16(a).${name}(FHE.asEuint16(b)))) {
                 return 1;
             }
 
             return 0;
         } else if (Utils.cmp(test, "euint32.${name}(euint32)")) {
-            if (TFHE.decrypt(TFHE.asEuint32(a).${name}(TFHE.asEuint32(b)))) {
+            if (FHE.decrypt(FHE.asEuint32(a).${name}(FHE.asEuint32(b)))) {
                 return 1;
             }
 
@@ -417,7 +436,7 @@ export function testContract2ArgBoolRes(name: string, isBoolean: boolean) {
             if (b == 0) {
                 bBool = false;
             }
-            if (TFHE.decrypt(TFHE.${name}(TFHE.asEbool(aBool), TFHE.asEbool(bBool)))) {
+            if (FHE.decrypt(FHE.${name}(FHE.asEbool(aBool), FHE.asEbool(bBool)))) {
                 return 1;
             }
 
@@ -431,7 +450,7 @@ export function testContract2ArgBoolRes(name: string, isBoolean: boolean) {
             if (b == 0) {
                 bBool = false;
             }
-            if (TFHE.decrypt(TFHE.asEbool(aBool).${name}(TFHE.asEbool(bBool)))) {
+            if (FHE.decrypt(FHE.asEbool(aBool).${name}(FHE.asEbool(bBool)))) {
                 return 1;
             }
             return 0;
@@ -450,18 +469,18 @@ export function testContract2ArgBoolRes(name: string, isBoolean: boolean) {
 export function testContract1Arg(name: string) {
     let func = `function ${name}(string calldata test, uint256 a) public pure returns (uint256 output) {
         if (Utils.cmp(test, "${name}(euint8)")) {
-            return TFHE.decrypt(TFHE.${name}(TFHE.asEuint8(a)));
+            return FHE.decrypt(FHE.${name}(FHE.asEuint8(a)));
         } else if (Utils.cmp(test, "${name}(euint16)")) {
-            return TFHE.decrypt(TFHE.${name}(TFHE.asEuint16(a)));
+            return FHE.decrypt(FHE.${name}(FHE.asEuint16(a)));
         } else if (Utils.cmp(test, "${name}(euint32)")) {
-            return TFHE.decrypt(TFHE.${name}(TFHE.asEuint32(a)));
+            return FHE.decrypt(FHE.${name}(FHE.asEuint32(a)));
         } else if (Utils.cmp(test, "${name}(ebool)")) {
             bool aBool = true;
             if (a == 0) {
                 aBool = false;
             }
 
-            if (TFHE.decrypt(TFHE.${name}(TFHE.asEbool(aBool)))) {
+            if (FHE.decrypt(FHE.${name}(FHE.asEbool(aBool)))) {
                 return 1;
             }
 
@@ -481,7 +500,7 @@ export function generateTestContract(name: string, testFunc: string, importTypes
     return `// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import {TFHE} from "../../FHE.sol";${importStatement}
+import {FHE} from "../../FHE.sol";${importStatement}
 import {Utils} from "./utils/Utils.sol";
 
 error TestNotFound(string test);
@@ -498,17 +517,17 @@ export function testContractReq() {
     // Req is failing on EthCall so we need to make it as tx for now
     let func = `function req(string calldata test, uint256 a) public {
         if (Utils.cmp(test, "req(euint8)")) {
-            TFHE.req(TFHE.asEuint8(a));
+            FHE.req(FHE.asEuint8(a));
         } else if (Utils.cmp(test, "req(euint16)")) {
-            TFHE.req(TFHE.asEuint16(a));
+            FHE.req(FHE.asEuint16(a));
         } else if (Utils.cmp(test, "req(euint32)")) {
-            TFHE.req(TFHE.asEuint32(a));
+            FHE.req(FHE.asEuint32(a));
         } else if (Utils.cmp(test, "req(ebool)")) {
             bool b = true;
             if (a == 0) {
                 b = false;
             }
-            TFHE.req(TFHE.asEbool(b));
+            FHE.req(FHE.asEbool(b));
         } else {
             revert TestNotFound(test);
         }
@@ -520,39 +539,39 @@ export function testContractReq() {
 }
 
 export function testContractReencrypt() {
-    let func = `function reencrypt(string calldata test, uint256 a, bytes32 pubkey) public pure returns (bytes memory reencrypted) {
-        if (Utils.cmp(test, "reencrypt(euint8)")) {
-            return TFHE.reencrypt(TFHE.asEuint8(a), pubkey);
-        } else if (Utils.cmp(test, "reencrypt(euint16)")) {
-            return TFHE.reencrypt(TFHE.asEuint16(a), pubkey);
-        } else if (Utils.cmp(test, "reencrypt(euint32)")) {
-            return TFHE.reencrypt(TFHE.asEuint32(a), pubkey);
-        } else if (Utils.cmp(test, "reencrypt(ebool)")) {
+    let func = `function ${SEALING_FUNCTION_NAME}(string calldata test, uint256 a, bytes32 pubkey) public pure returns (bytes memory reencrypted) {
+        if (Utils.cmp(test, "${SEALING_FUNCTION_NAME}(euint8)")) {
+            return FHE.${SEALING_FUNCTION_NAME}(FHE.asEuint8(a), pubkey);
+        } else if (Utils.cmp(test, "${SEALING_FUNCTION_NAME}(euint16)")) {
+            return FHE.${SEALING_FUNCTION_NAME}(FHE.asEuint16(a), pubkey);
+        } else if (Utils.cmp(test, "${SEALING_FUNCTION_NAME}(euint32)")) {
+            return FHE.${SEALING_FUNCTION_NAME}(FHE.asEuint32(a), pubkey);
+        } else if (Utils.cmp(test, "${SEALING_FUNCTION_NAME}(ebool)")) {
             bool b = true;
             if (a == 0) {
                 b = false;
             }
 
-            return TFHE.reencrypt(TFHE.asEbool(b), pubkey);
+            return FHE.${SEALING_FUNCTION_NAME}(FHE.asEbool(b), pubkey);
         } 
         
         revert TestNotFound(test);
     }`;
-    const abi = `export interface ReencryptTestType extends Contract {
-    reencrypt: (test: string, a: bigint, pubkey: Uint8Array) => Promise<Uint8Array>;
+    const abi = `export interface SealoutputTestType extends Contract {
+    ${SEALING_FUNCTION_NAME}: (test: string, a: bigint, pubkey: Uint8Array) => Promise<Uint8Array>;
 }\n`
-    return [generateTestContract("reencrypt", func), abi];
+    return [generateTestContract(SEALING_FUNCTION_NAME, func), abi];
 }
 
 export function testContract3Arg(name: string) {
     let func = `function ${name}(string calldata test, bool c, uint256 a, uint256 b) public pure returns (uint256 output) {
-        ebool condition = TFHE.asEbool(c);
+        ebool condition = FHE.asEbool(c);
         if (Utils.cmp(test, "${name}: euint8")) {
-            return TFHE.decrypt(TFHE.${name}(condition, TFHE.asEuint8(a), TFHE.asEuint8(b)));
+            return FHE.decrypt(FHE.${name}(condition, FHE.asEuint8(a), FHE.asEuint8(b)));
         } else if (Utils.cmp(test, "${name}: euint16")) {
-            return TFHE.decrypt(TFHE.${name}(condition, TFHE.asEuint16(a), TFHE.asEuint16(b)));
+            return FHE.decrypt(FHE.${name}(condition, FHE.asEuint16(a), FHE.asEuint16(b)));
         } else if (Utils.cmp(test, "${name}: euint32")) {
-            return TFHE.decrypt(TFHE.${name}(condition, TFHE.asEuint32(a), TFHE.asEuint32(b)));
+            return FHE.decrypt(FHE.${name}(condition, FHE.asEuint32(a), FHE.asEuint32(b)));
         } else if (Utils.cmp(test, "${name}: ebool")) {
             bool aBool = true;
             bool bBool = true;
@@ -563,7 +582,7 @@ export function testContract3Arg(name: string) {
                 bBool = false;
             }
 
-            if(TFHE.decrypt(TFHE.${name}(condition, TFHE.asEbool(aBool), TFHE.asEbool(bBool)))) {
+            if(FHE.decrypt(FHE.${name}(condition, FHE.asEbool(aBool), FHE.asEbool(bBool)))) {
                 return 1;
             }
             return 0;
@@ -580,25 +599,25 @@ export function testContract3Arg(name: string) {
 export function testContract2Arg(name: string, isBoolean: boolean, op?: string) {
     let func = `function ${name}(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
         if (Utils.cmp(test, "${name}(euint8,euint8)")) {
-            return TFHE.decrypt(TFHE.${name}(TFHE.asEuint8(a), TFHE.asEuint8(b)));
+            return FHE.decrypt(FHE.${name}(FHE.asEuint8(a), FHE.asEuint8(b)));
         } else if (Utils.cmp(test, "${name}(euint16,euint16)")) {
-            return TFHE.decrypt(TFHE.${name}(TFHE.asEuint16(a), TFHE.asEuint16(b)));
+            return FHE.decrypt(FHE.${name}(FHE.asEuint16(a), FHE.asEuint16(b)));
         } else if (Utils.cmp(test, "${name}(euint32,euint32)")) {
-            return TFHE.decrypt(TFHE.${name}(TFHE.asEuint32(a), TFHE.asEuint32(b)));
+            return FHE.decrypt(FHE.${name}(FHE.asEuint32(a), FHE.asEuint32(b)));
         } else if (Utils.cmp(test, "euint8.${name}(euint8)")) {
-            return TFHE.decrypt(TFHE.asEuint8(a).${name}(TFHE.asEuint8(b)));
+            return FHE.decrypt(FHE.asEuint8(a).${name}(FHE.asEuint8(b)));
         } else if (Utils.cmp(test, "euint16.${name}(euint16)")) {
-            return TFHE.decrypt(TFHE.asEuint16(a).${name}(TFHE.asEuint16(b)));
+            return FHE.decrypt(FHE.asEuint16(a).${name}(FHE.asEuint16(b)));
         } else if (Utils.cmp(test, "euint32.${name}(euint32)")) {
-            return TFHE.decrypt(TFHE.asEuint32(a).${name}(TFHE.asEuint32(b)));
+            return FHE.decrypt(FHE.asEuint32(a).${name}(FHE.asEuint32(b)));
         }`;
     if (op) {
         func += ` else if (Utils.cmp(test, "euint8 ${op} euint8")) {
-            return TFHE.decrypt(TFHE.asEuint8(a) ${op} TFHE.asEuint8(b));
+            return FHE.decrypt(FHE.asEuint8(a) ${op} FHE.asEuint8(b));
         } else if (Utils.cmp(test, "euint16 ${op} euint16")) {
-            return TFHE.decrypt(TFHE.asEuint16(a) ${op} TFHE.asEuint16(b));
+            return FHE.decrypt(FHE.asEuint16(a) ${op} FHE.asEuint16(b));
         } else if (Utils.cmp(test, "euint32 ${op} euint32")) {
-            return TFHE.decrypt(TFHE.asEuint32(a) ${op} TFHE.asEuint32(b));
+            return FHE.decrypt(FHE.asEuint32(a) ${op} FHE.asEuint32(b));
         }`;
     }
     if (isBoolean) {
@@ -611,7 +630,7 @@ export function testContract2Arg(name: string, isBoolean: boolean, op?: string) 
             if (b == 0) {
                 bBool = false;
             }
-            if (TFHE.decrypt(TFHE.${name}(TFHE.asEbool(aBool), TFHE.asEbool(bBool)))) {
+            if (FHE.decrypt(FHE.${name}(FHE.asEbool(aBool), FHE.asEbool(bBool)))) {
                 return 1;
             }
             return 0;
@@ -624,7 +643,7 @@ export function testContract2Arg(name: string, isBoolean: boolean, op?: string) 
             if (b == 0) {
                 bBool = false;
             }
-            if (TFHE.decrypt(TFHE.asEbool(aBool).${name}(TFHE.asEbool(bBool)))) {
+            if (FHE.decrypt(FHE.asEbool(aBool).${name}(FHE.asEbool(bBool)))) {
                 return 1;
             }
             return 0;
@@ -639,7 +658,7 @@ export function testContract2Arg(name: string, isBoolean: boolean, op?: string) 
             if (b == 0) {
                 bBool = false;
             }
-            if (TFHE.decrypt(TFHE.asEbool(aBool) ${op} TFHE.asEbool(bBool))) {
+            if (FHE.decrypt(FHE.asEbool(aBool) ${op} FHE.asEbool(bBool))) {
                 return 1;
             }
             return 0;
@@ -766,7 +785,7 @@ export const OperatorOverloadDecl = (funcName: string, op: string, forType: EUin
     return `\nusing {${opOverloadName} as ${op}} for ${forType} global;
 /// @notice Performs the ${funcName} operation
 function ${opOverloadName}(${funcParams}) pure returns (${returnType}) {
-    return TFHE.${funcName}(${unaryParameters});
+    return FHE.${funcName}(${unaryParameters});
 }\n`;
 }
 
@@ -796,7 +815,7 @@ export const OperatorBinding = (funcName: string, forType: string, unary: boolea
     return `
     ${docString}
     function ${funcName}(${funcParams}) internal pure returns (${returnType}) {
-        return TFHE.${funcName}(${unaryParameters});
+        return FHE.${funcName}(${unaryParameters});
     }`;
 }
 
@@ -807,6 +826,6 @@ const shortenType = (type: string) => {
 export const CastBinding = (thisType: string, targetType: string) => {
     return `
     function to${shortenType(targetType)}(${thisType} value) internal pure returns (${targetType}) {
-        return TFHE.as${capitalize(targetType)}(value);
+        return FHE.as${capitalize(targetType)}(value);
     }`;
 }
