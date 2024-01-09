@@ -1,4 +1,4 @@
-import {FhenixClient, getPermit, Permit} from "fhenix.js";
+import {FhenixClient, getPermit, Permit} from "fhenixjs";
 import { ethers } from 'hardhat';
 
 export interface FheContract {
