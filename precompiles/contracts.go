@@ -144,22 +144,14 @@ func SealOutput(input []byte, tp *TxParams) ([]byte, error) {
 		return []byte{1}, nil
 	}
 
-	decryptedValue, err := tfhe.Decrypt(*ct)
-	if err != nil {
-		logger.Error("failed decrypting ciphertext ", "error ", err)
-		return nil, vm.ErrExecutionReverted
-	}
-
-	// Cast decrypted value to big.Int
-	bgDecrypted := new(big.Int).SetUint64(decryptedValue)
 	pubKey := input[32:64]
-	reencryptedValue, err := encryptToUserKey(bgDecrypted, pubKey)
+	reencryptedValue, err := tfhe.SealOutput(*ct, pubKey)
 	if err != nil {
 		logger.Error("sealOutput failed to encrypt to user key", " err ", err)
 		return nil, vm.ErrExecutionReverted
 	}
-	logger.Debug("sealOutput success", " input ", hex.EncodeToString(input))
 
+	logger.Debug("sealOutput success", " input ", hex.EncodeToString(input))
 	return reencryptedValue, nil
 }
 
