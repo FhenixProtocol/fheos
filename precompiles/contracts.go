@@ -4,13 +4,17 @@ import (
 	"encoding/hex"
 	"math/big"
 	"runtime"
+	"time"
 	"sync"
-
+	"fmt"
+	"github.com/ethereum/go-ethereum/metrics"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/sirupsen/logrus"
 
-	tfhe "github.com/fhenixprotocol/go-tfhe"
+	"github.com/fhenixprotocol/go-tfhe"
 )
+
+const fheMetricsName = "fheos"
 
 var logger *logrus.Logger
 
@@ -52,8 +56,20 @@ func getFunctionName() string {
 	return funcName
 }
 
-// ============================
+// ================= PRECOMPILES ===========
+
 func Add(input []byte, tp *TxParams) ([]byte, error) {
+	if metrics.Enabled {
+		caller := getFunctionName()
+		h := fmt.Sprintf("%s/%s", fheMetricsName, caller)
+		defer func(start time.Time) {
+			sampler := func() metrics.Sample {
+				return metrics.NewBoundedHistogramSample()
+			}
+			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+		}(time.Now())
+	}
+
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
@@ -78,17 +94,34 @@ func Add(input []byte, tp *TxParams) ([]byte, error) {
 	result, err := lhs.Add(rhs)
 	if err != nil {
 		logger.Error("fheAdd failed ", " err ", err)
+		if metrics.Enabled {
+			metrics.GetOrRegisterCounter(fheMetricsName+"/"+getFunctionName()+"/error/fhe_failure/", nil).Inc(1)
+		}
 		return nil, vm.ErrExecutionReverted
 	}
 
 	importCiphertext(result)
 
 	resultHash := result.Hash()
+	if metrics.Enabled {
+		metrics.GetOrRegisterCounter(fheMetricsName+"/"+getFunctionName()+"/success/total/", nil).Inc(1)
+	}
 	logger.Debug("fheAdd success ", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), " result ", resultHash.Hex())
 	return resultHash[:], nil
 }
 
 func Verify(input []byte, tp *TxParams) ([]byte, error) {
+	if metrics.Enabled {
+		caller := getFunctionName()
+		h := fmt.Sprintf("%s/%s", fheMetricsName, caller)
+		defer func(start time.Time) {
+			sampler := func() metrics.Sample {
+				return metrics.NewBoundedHistogramSample()
+			}
+			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+		}(time.Now())
+	}
+
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
@@ -105,10 +138,13 @@ func Verify(input []byte, tp *TxParams) ([]byte, error) {
 	ct, err := tfhe.NewCipherTextFromBytes(ctBytes, ctType, true /* TODO: not sure + shouldn't be hardcoded */)
 	if err != nil {
 		logger.Error("verifyCiphertext failed to deserialize input ciphertext",
-			" err ", err,
-			" len ", len(ctBytes),
-			" ctBytes64 ", hex.EncodeToString(ctBytes[:minInt(len(ctBytes), 64)]))
-		return nil, vm.ErrExecutionReverted
+			"err", err,
+			"len", len(ctBytes),
+			"ctBytes64", hex.EncodeToString(ctBytes[:minInt(len(ctBytes), 64)]))
+		if metrics.Enabled {
+			metrics.GetOrRegisterCounter(fheMetricsName+"/"+getFunctionName()+"/error/fhe_failure/", nil).Inc(1)
+		}
+		return nil, ErrExecutionReverted
 	}
 	ctHash := ct.Hash()
 	importCiphertext(ct)
@@ -118,11 +154,25 @@ func Verify(input []byte, tp *TxParams) ([]byte, error) {
 			" ctHash ", ctHash.Hex(),
 			" ctBytes64 ", hex.EncodeToString(ctBytes[:minInt(len(ctBytes), 64)]))
 	}
+	if metrics.Enabled {
+		metrics.GetOrRegisterCounter(fheMetricsName+"/"+getFunctionName()+"/success/total/", nil).Inc(1)
+	}
 	return ctHash[:], nil
 }
 
 func SealOutput(input []byte, tp *TxParams) ([]byte, error) {
 	//solgen: bool math
+	if metrics.Enabled {
+		caller := getFunctionName()
+		h := fmt.Sprintf("%s/%s", fheMetricsName, caller)
+		defer func(start time.Time) {
+			sampler := func() metrics.Sample {
+				return metrics.NewBoundedHistogramSample()
+			}
+			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+		}(time.Now())
+	}
+
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
@@ -159,7 +209,9 @@ func SealOutput(input []byte, tp *TxParams) ([]byte, error) {
 		return nil, vm.ErrExecutionReverted
 	}
 	logger.Debug("sealOutput success", " input ", hex.EncodeToString(input))
-
+	if metrics.Enabled {
+		metrics.GetOrRegisterCounter(fheMetricsName+"/"+getFunctionName()+"/success/total/", nil).Inc(1)
+	}
 	return reencryptedValue, nil
 }
 
@@ -201,6 +253,18 @@ func Decrypt(input []byte, tp *TxParams) (*big.Int, error) {
 
 func Lte(input []byte, tp *TxParams) ([]byte, error) {
 	//solgen: return ebool
+
+	if metrics.Enabled {
+		caller := getFunctionName()
+		h := fmt.Sprintf("%s/%s", fheMetricsName, caller)
+		defer func(start time.Time) {
+			sampler := func() metrics.Sample {
+				return metrics.NewBoundedHistogramSample()
+			}
+			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+		}(time.Now())
+	}
+
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
@@ -225,6 +289,9 @@ func Lte(input []byte, tp *TxParams) ([]byte, error) {
 
 	result, err := lhs.Lte(rhs)
 	if err != nil {
+		if metrics.Enabled {
+			metrics.GetOrRegisterCounter(fheMetricsName+"/"+getFunctionName()+"/error/fhe_failure/", nil).Inc(1)
+		}
 		logger.Error("fheLte failed ", " err ", err)
 		return nil, vm.ErrExecutionReverted
 	}
@@ -232,10 +299,24 @@ func Lte(input []byte, tp *TxParams) ([]byte, error) {
 
 	resultHash := result.Hash()
 	logger.Debug("fheLte success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), " result ", resultHash.Hex())
+	if metrics.Enabled {
+		metrics.GetOrRegisterCounter(fheMetricsName+"/"+getFunctionName()+"/success/total/", nil).Inc(1)
+	}
 	return resultHash[:], nil
 }
 
 func Sub(input []byte, tp *TxParams) ([]byte, error) {
+	if metrics.Enabled {
+		caller := getFunctionName()
+		h := fmt.Sprintf("%s/%s", fheMetricsName, caller)
+		defer func(start time.Time) {
+			sampler := func() metrics.Sample {
+				return metrics.NewBoundedHistogramSample()
+			}
+			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+		}(time.Now())
+	}
+
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
@@ -270,6 +351,17 @@ func Sub(input []byte, tp *TxParams) ([]byte, error) {
 }
 
 func Mul(input []byte, tp *TxParams) ([]byte, error) {
+	if metrics.Enabled {
+		caller := getFunctionName()
+		h := fmt.Sprintf("%s/%s", fheMetricsName, caller)
+		defer func(start time.Time) {
+			sampler := func() metrics.Sample {
+				return metrics.NewBoundedHistogramSample()
+			}
+			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+		}(time.Now())
+	}
+
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
@@ -293,6 +385,9 @@ func Mul(input []byte, tp *TxParams) ([]byte, error) {
 
 	result, err := lhs.Mul(rhs)
 	if err != nil {
+		if metrics.Enabled {
+			metrics.GetOrRegisterCounter(fheMetricsName+"/"+getFunctionName()+"/error/fhe_failure/", nil).Inc(1)
+		}
 		logger.Error("fheMul failed", " err ", err)
 		return nil, vm.ErrExecutionReverted
 	}
@@ -305,6 +400,17 @@ func Mul(input []byte, tp *TxParams) ([]byte, error) {
 
 func Lt(input []byte, tp *TxParams) ([]byte, error) {
 	//solgen: return ebool
+	if metrics.Enabled {
+		caller := getFunctionName()
+		h := fmt.Sprintf("%s/%s", fheMetricsName, caller)
+		defer func(start time.Time) {
+			sampler := func() metrics.Sample {
+				return metrics.NewBoundedHistogramSample()
+			}
+			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+		}(time.Now())
+	}
+
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
@@ -329,16 +435,33 @@ func Lt(input []byte, tp *TxParams) ([]byte, error) {
 	result, err := lhs.Lt(rhs)
 	if err != nil {
 		logger.Error("fheLt failed", " err ", err)
+		if metrics.Enabled {
+			metrics.GetOrRegisterCounter(fheMetricsName+"/"+getFunctionName()+"/error/fhe_failure/", nil).Inc(1)
+		}
 		return nil, vm.ErrExecutionReverted
 	}
 	importCiphertext(result)
 
 	resultHash := result.Hash()
 	logger.Debug("fheLt success ", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), " result ", resultHash.Hex())
+	if metrics.Enabled {
+		metrics.GetOrRegisterCounter(fheMetricsName+"/"+getFunctionName()+"/success/total/", nil).Inc(1)
+	}
 	return resultHash[:], nil
 }
 
 func Select(input []byte, tp *TxParams) ([]byte, error) {
+	if metrics.Enabled {
+		caller := getFunctionName()
+		h := fmt.Sprintf("%s/%s", fheMetricsName, caller)
+		defer func(start time.Time) {
+			sampler := func() metrics.Sample {
+				return metrics.NewBoundedHistogramSample()
+			}
+			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+		}(time.Now())
+	}
+
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
@@ -369,12 +492,27 @@ func Select(input []byte, tp *TxParams) ([]byte, error) {
 
 	resultHash := result.Hash()
 	logger.Debug("select success ", " control ", control.Hash().Hex(), " ifTrue ", ifTrue.Hash().Hex(), " ifFalse ", ifTrue.Hash().Hex(), " result ", resultHash.Hex())
+	if metrics.Enabled {
+		metrics.GetOrRegisterCounter(fheMetricsName+"/"+getFunctionName()+"/success/total/", nil).Inc(1)
+	}
 	return resultHash[:], nil
 }
 
 func Req(input []byte, tp *TxParams) ([]byte, error) {
 	//solgen: input encrypted
 	//solgen: return none
+
+	if metrics.Enabled {
+		caller := getFunctionName()
+		h := fmt.Sprintf("%s/%s", fheMetricsName, caller)
+		defer func(start time.Time) {
+			sampler := func() metrics.Sample {
+				return metrics.NewBoundedHistogramSample()
+			}
+			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+		}(time.Now())
+	}
+
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
@@ -404,11 +542,24 @@ func Req(input []byte, tp *TxParams) ([]byte, error) {
 		logger.Error(msg)
 		return nil, vm.ErrExecutionReverted
 	}
-
+	if metrics.Enabled {
+		metrics.GetOrRegisterCounter(fheMetricsName+"/"+getFunctionName()+"/success/total/", nil).Inc(1)
+	}
 	return nil, nil
 }
 
 func Cast(input []byte, tp *TxParams) ([]byte, error) {
+	if metrics.Enabled {
+		caller := getFunctionName()
+		h := fmt.Sprintf("%s/%s", fheMetricsName, caller)
+		defer func(start time.Time) {
+			sampler := func() metrics.Sample {
+				return metrics.NewBoundedHistogramSample()
+			}
+			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+		}(time.Now())
+	}
+
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
@@ -445,11 +596,24 @@ func Cast(input []byte, tp *TxParams) ([]byte, error) {
 			" ctHash ", resHash.Hex(),
 		)
 	}
-
+	if metrics.Enabled {
+		metrics.GetOrRegisterCounter(fheMetricsName+"/"+getFunctionName()+"/success/total/", nil).Inc(1)
+	}
 	return resHash[:], nil
 }
 
 func TrivialEncrypt(input []byte, tp *TxParams) ([]byte, error) {
+	if metrics.Enabled {
+		caller := getFunctionName()
+		h := fmt.Sprintf("%s/%s", fheMetricsName, caller)
+		defer func(start time.Time) {
+			sampler := func() metrics.Sample {
+				return metrics.NewBoundedHistogramSample()
+			}
+			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+		}(time.Now())
+	}
+
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", getFunctionName())
 	}
@@ -481,10 +645,24 @@ func TrivialEncrypt(input []byte, tp *TxParams) ([]byte, error) {
 			" ctHash ", ctHash.Hex(),
 			" valueToEncrypt ", valueToEncrypt.Uint64())
 	}
+	if metrics.Enabled {
+		metrics.GetOrRegisterCounter(fheMetricsName+"/"+getFunctionName()+"/success/total/", nil).Inc(1)
+	}
 	return ctHash[:], nil
 }
 
 func Div(input []byte, tp *TxParams) ([]byte, error) {
+	if metrics.Enabled {
+		caller := getFunctionName()
+		h := fmt.Sprintf("%s/%s", fheMetricsName, caller)
+		defer func(start time.Time) {
+			sampler := func() metrics.Sample {
+				return metrics.NewBoundedHistogramSample()
+			}
+			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+		}(time.Now())
+	}
+
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
@@ -508,6 +686,9 @@ func Div(input []byte, tp *TxParams) ([]byte, error) {
 
 	result, err := lhs.Div(rhs)
 	if err != nil {
+		if metrics.Enabled {
+			metrics.GetOrRegisterCounter(fheMetricsName+"/"+getFunctionName()+"/error/fhe_failure/", nil).Inc(1)
+		}
 		logger.Error("fheDiv failed", " err ", err)
 		return nil, vm.ErrExecutionReverted
 	}
@@ -521,6 +702,17 @@ func Div(input []byte, tp *TxParams) ([]byte, error) {
 
 func Gt(input []byte, tp *TxParams) ([]byte, error) {
 	//solgen: return ebool
+	if metrics.Enabled {
+		caller := getFunctionName()
+		h := fmt.Sprintf("%s/%s", fheMetricsName, caller)
+		defer func(start time.Time) {
+			sampler := func() metrics.Sample {
+				return metrics.NewBoundedHistogramSample()
+			}
+			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+		}(time.Now())
+	}
+
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
@@ -544,6 +736,9 @@ func Gt(input []byte, tp *TxParams) ([]byte, error) {
 
 	result, err := lhs.Gt(rhs)
 	if err != nil {
+		if metrics.Enabled {
+			metrics.GetOrRegisterCounter(fheMetricsName+"/"+getFunctionName()+"/error/fhe_failure/", nil).Inc(1)
+		}
 		logger.Error("fheGt failed", " err ", err)
 		return nil, vm.ErrExecutionReverted
 	}
@@ -552,11 +747,25 @@ func Gt(input []byte, tp *TxParams) ([]byte, error) {
 	ctHash := result.Hash()
 
 	logger.Debug("fheGt success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), " result ", ctHash.Hex())
+	if metrics.Enabled {
+		metrics.GetOrRegisterCounter(fheMetricsName+"/"+getFunctionName()+"/success/total/", nil).Inc(1)
+	}
 	return ctHash[:], nil
 }
 
 func Gte(input []byte, tp *TxParams) ([]byte, error) {
 	//solgen: return ebool
+	if metrics.Enabled {
+		caller := getFunctionName()
+		h := fmt.Sprintf("%s/%s", fheMetricsName, caller)
+		defer func(start time.Time) {
+			sampler := func() metrics.Sample {
+				return metrics.NewBoundedHistogramSample()
+			}
+			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+		}(time.Now())
+	}
+
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
@@ -580,6 +789,9 @@ func Gte(input []byte, tp *TxParams) ([]byte, error) {
 
 	result, err := lhs.Gte(rhs)
 	if err != nil {
+		if metrics.Enabled {
+			metrics.GetOrRegisterCounter(fheMetricsName+"/"+getFunctionName()+"/error/fhe_failure/", nil).Inc(1)
+		}
 		logger.Error("fheGte failed", " err ", err)
 		return nil, vm.ErrExecutionReverted
 	}
@@ -588,10 +800,24 @@ func Gte(input []byte, tp *TxParams) ([]byte, error) {
 	ctHash := result.Hash()
 
 	logger.Debug("fheGte success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), " result ", ctHash.Hex())
+	if metrics.Enabled {
+		metrics.GetOrRegisterCounter(fheMetricsName+"/"+getFunctionName()+"/success/total/", nil).Inc(1)
+	}
 	return ctHash[:], nil
 }
 
 func Rem(input []byte, tp *TxParams) ([]byte, error) {
+	if metrics.Enabled {
+		caller := getFunctionName()
+		h := fmt.Sprintf("%s/%s", fheMetricsName, caller)
+		defer func(start time.Time) {
+			sampler := func() metrics.Sample {
+				return metrics.NewBoundedHistogramSample()
+			}
+			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+		}(time.Now())
+	}
+
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
@@ -615,6 +841,9 @@ func Rem(input []byte, tp *TxParams) ([]byte, error) {
 
 	result, err := lhs.Rem(rhs)
 	if err != nil {
+		if metrics.Enabled {
+			metrics.GetOrRegisterCounter(fheMetricsName+"/"+getFunctionName()+"/error/fhe_failure/", nil).Inc(1)
+		}
 		logger.Error("fheRem failed", " err ", err)
 		return nil, vm.ErrExecutionReverted
 	}
@@ -623,11 +852,25 @@ func Rem(input []byte, tp *TxParams) ([]byte, error) {
 	ctHash := result.Hash()
 
 	logger.Debug("fheRem success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), " result ", ctHash.Hex())
+	if metrics.Enabled {
+		metrics.GetOrRegisterCounter(fheMetricsName+"/"+getFunctionName()+"/success/total/", nil).Inc(1)
+	}
 	return ctHash[:], nil
 }
 
 func And(input []byte, tp *TxParams) ([]byte, error) {
 	//solgen: bool math
+	if metrics.Enabled {
+		caller := getFunctionName()
+		h := fmt.Sprintf("%s/%s", fheMetricsName, caller)
+		defer func(start time.Time) {
+			sampler := func() metrics.Sample {
+				return metrics.NewBoundedHistogramSample()
+			}
+			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+		}(time.Now())
+	}
+
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
@@ -651,6 +894,9 @@ func And(input []byte, tp *TxParams) ([]byte, error) {
 
 	result, err := lhs.And(rhs)
 	if err != nil {
+		if metrics.Enabled {
+			metrics.GetOrRegisterCounter(fheMetricsName+"/"+getFunctionName()+"/error/fhe_failure/", nil).Inc(1)
+		}
 		logger.Error("fheAnd failed", " err ", err)
 		return nil, vm.ErrExecutionReverted
 	}
@@ -659,11 +905,25 @@ func And(input []byte, tp *TxParams) ([]byte, error) {
 	ctHash := result.Hash()
 
 	logger.Debug("fheAnd success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), " result ", ctHash.Hex())
+	if metrics.Enabled {
+		metrics.GetOrRegisterCounter(fheMetricsName+"/"+getFunctionName()+"/success/total/", nil).Inc(1)
+	}
 	return ctHash[:], nil
 }
 
 func Or(input []byte, tp *TxParams) ([]byte, error) {
 	//solgen: bool math
+	if metrics.Enabled {
+		caller := getFunctionName()
+		h := fmt.Sprintf("%s/%s", fheMetricsName, caller)
+		defer func(start time.Time) {
+			sampler := func() metrics.Sample {
+				return metrics.NewBoundedHistogramSample()
+			}
+			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+		}(time.Now())
+	}
+
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
@@ -687,6 +947,9 @@ func Or(input []byte, tp *TxParams) ([]byte, error) {
 
 	result, err := lhs.Or(rhs)
 	if err != nil {
+		if metrics.Enabled {
+			metrics.GetOrRegisterCounter(fheMetricsName+"/"+getFunctionName()+"/error/fhe_failure/", nil).Inc(1)
+		}
 		logger.Error("fheOr failed", " err ", err)
 		return nil, vm.ErrExecutionReverted
 	}
@@ -695,11 +958,25 @@ func Or(input []byte, tp *TxParams) ([]byte, error) {
 	ctHash := result.Hash()
 
 	logger.Debug("fheOr success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), " result ", ctHash.Hex())
+	if metrics.Enabled {
+		metrics.GetOrRegisterCounter(fheMetricsName+"/"+getFunctionName()+"/success/total/", nil).Inc(1)
+	}
 	return ctHash[:], nil
 }
 
 func Xor(input []byte, tp *TxParams) ([]byte, error) {
 	//solgen: bool math
+	if metrics.Enabled {
+		caller := getFunctionName()
+		h := fmt.Sprintf("%s/%s", fheMetricsName, caller)
+		defer func(start time.Time) {
+			sampler := func() metrics.Sample {
+				return metrics.NewBoundedHistogramSample()
+			}
+			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+		}(time.Now())
+	}
+
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
@@ -723,6 +1000,9 @@ func Xor(input []byte, tp *TxParams) ([]byte, error) {
 
 	result, err := lhs.Xor(rhs)
 	if err != nil {
+		if metrics.Enabled {
+			metrics.GetOrRegisterCounter(fheMetricsName+"/"+getFunctionName()+"/error/fhe_failure/", nil).Inc(1)
+		}
 		logger.Error("fheXor failed", " err ", err)
 		return nil, vm.ErrExecutionReverted
 	}
@@ -731,12 +1011,26 @@ func Xor(input []byte, tp *TxParams) ([]byte, error) {
 	ctHash := result.Hash()
 
 	logger.Debug("fheXor success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), " result ", ctHash.Hex())
+	if metrics.Enabled {
+		metrics.GetOrRegisterCounter(fheMetricsName+"/"+getFunctionName()+"/success/total/", nil).Inc(1)
+	}
 	return ctHash[:], nil
 }
 
 func Eq(input []byte, tp *TxParams) ([]byte, error) {
 	//solgen: bool math
 	//solgen: return ebool
+	if metrics.Enabled {
+		caller := getFunctionName()
+		h := fmt.Sprintf("%s/%s", fheMetricsName, caller)
+		defer func(start time.Time) {
+			sampler := func() metrics.Sample {
+				return metrics.NewBoundedHistogramSample()
+			}
+			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+		}(time.Now())
+	}
+
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
@@ -760,6 +1054,9 @@ func Eq(input []byte, tp *TxParams) ([]byte, error) {
 
 	result, err := lhs.Eq(rhs)
 	if err != nil {
+		if metrics.Enabled {
+			metrics.GetOrRegisterCounter(fheMetricsName+"/"+getFunctionName()+"/error/fhe_failure/", nil).Inc(1)
+		}
 		logger.Error("fheEq failed", " err ", err)
 		return nil, vm.ErrExecutionReverted
 	}
@@ -768,12 +1065,26 @@ func Eq(input []byte, tp *TxParams) ([]byte, error) {
 	ctHash := result.Hash()
 
 	logger.Debug("fheEq success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), " result ", ctHash.Hex())
+	if metrics.Enabled {
+		metrics.GetOrRegisterCounter(fheMetricsName+"/"+getFunctionName()+"/success/total/", nil).Inc(1)
+	}
 	return ctHash[:], nil
 }
 
 func Ne(input []byte, tp *TxParams) ([]byte, error) {
 	//solgen: bool math
 	//solgen: return ebool
+	if metrics.Enabled {
+		caller := getFunctionName()
+		h := fmt.Sprintf("%s/%s", fheMetricsName, caller)
+		defer func(start time.Time) {
+			sampler := func() metrics.Sample {
+				return metrics.NewBoundedHistogramSample()
+			}
+			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+		}(time.Now())
+	}
+
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
@@ -797,6 +1108,9 @@ func Ne(input []byte, tp *TxParams) ([]byte, error) {
 
 	result, err := lhs.Ne(rhs)
 	if err != nil {
+		if metrics.Enabled {
+			metrics.GetOrRegisterCounter(fheMetricsName+"/"+getFunctionName()+"/error/fhe_failure/", nil).Inc(1)
+		}
 		logger.Error("fheNe failed", " err ", err)
 		return nil, vm.ErrExecutionReverted
 	}
@@ -805,10 +1119,24 @@ func Ne(input []byte, tp *TxParams) ([]byte, error) {
 	ctHash := result.Hash()
 
 	logger.Debug("fheNe success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), "result", ctHash.Hex())
+	if metrics.Enabled {
+		metrics.GetOrRegisterCounter(fheMetricsName+"/"+getFunctionName()+"/success/total/", nil).Inc(1)
+	}
 	return ctHash[:], nil
 }
 
 func Min(input []byte, tp *TxParams) ([]byte, error) {
+	if metrics.Enabled {
+		caller := getFunctionName()
+		h := fmt.Sprintf("%s/%s", fheMetricsName, caller)
+		defer func(start time.Time) {
+			sampler := func() metrics.Sample {
+				return metrics.NewBoundedHistogramSample()
+			}
+			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+		}(time.Now())
+	}
+
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
@@ -832,6 +1160,9 @@ func Min(input []byte, tp *TxParams) ([]byte, error) {
 
 	result, err := lhs.Min(rhs)
 	if err != nil {
+		if metrics.Enabled {
+			metrics.GetOrRegisterCounter(fheMetricsName+"/"+getFunctionName()+"/error/fhe_failure/", nil).Inc(1)
+		}
 		logger.Error("fheMin failed", " err ", err)
 		return nil, vm.ErrExecutionReverted
 	}
@@ -840,10 +1171,24 @@ func Min(input []byte, tp *TxParams) ([]byte, error) {
 	ctHash := result.Hash()
 
 	logger.Debug("fheMin success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), "result", ctHash.Hex())
+	if metrics.Enabled {
+		metrics.GetOrRegisterCounter(fheMetricsName+"/"+getFunctionName()+"/success/total/", nil).Inc(1)
+	}
 	return ctHash[:], nil
 }
 
 func Max(input []byte, tp *TxParams) ([]byte, error) {
+	if metrics.Enabled {
+		caller := getFunctionName()
+		h := fmt.Sprintf("%s/%s", fheMetricsName, caller)
+		defer func(start time.Time) {
+			sampler := func() metrics.Sample {
+				return metrics.NewBoundedHistogramSample()
+			}
+			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+		}(time.Now())
+	}
+
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
@@ -867,6 +1212,9 @@ func Max(input []byte, tp *TxParams) ([]byte, error) {
 
 	result, err := lhs.Max(rhs)
 	if err != nil {
+		if metrics.Enabled {
+			metrics.GetOrRegisterCounter(fheMetricsName+"/"+getFunctionName()+"/error/fhe_failure/", nil).Inc(1)
+		}
 		logger.Error("fheMax failed", " err ", err)
 		return nil, vm.ErrExecutionReverted
 	}
@@ -875,10 +1223,24 @@ func Max(input []byte, tp *TxParams) ([]byte, error) {
 	ctHash := result.Hash()
 
 	logger.Debug("fheMax success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), "result", ctHash.Hex())
+	if metrics.Enabled {
+		metrics.GetOrRegisterCounter(fheMetricsName+"/"+getFunctionName()+"/success/total/", nil).Inc(1)
+	}
 	return ctHash[:], nil
 }
 
 func Shl(input []byte, tp *TxParams) ([]byte, error) {
+	if metrics.Enabled {
+		caller := getFunctionName()
+		h := fmt.Sprintf("%s/%s", fheMetricsName, caller)
+		defer func(start time.Time) {
+			sampler := func() metrics.Sample {
+				return metrics.NewBoundedHistogramSample()
+			}
+			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+		}(time.Now())
+	}
+
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
@@ -902,6 +1264,9 @@ func Shl(input []byte, tp *TxParams) ([]byte, error) {
 
 	result, err := lhs.Shl(rhs)
 	if err != nil {
+		if metrics.Enabled {
+			metrics.GetOrRegisterCounter(fheMetricsName+"/"+getFunctionName()+"/error/fhe_failure/", nil).Inc(1)
+		}
 		logger.Error("fheShl failed", " err ", err)
 		return nil, vm.ErrExecutionReverted
 	}
@@ -910,10 +1275,24 @@ func Shl(input []byte, tp *TxParams) ([]byte, error) {
 	ctHash := result.Hash()
 
 	logger.Debug("fheShl success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), "result", ctHash.Hex())
+	if metrics.Enabled {
+		metrics.GetOrRegisterCounter(fheMetricsName+"/"+getFunctionName()+"/success/total/", nil).Inc(1)
+	}
 	return ctHash[:], nil
 }
 
 func Shr(input []byte, tp *TxParams) ([]byte, error) {
+	if metrics.Enabled {
+		caller := getFunctionName()
+		h := fmt.Sprintf("%s/%s", fheMetricsName, caller)
+		defer func(start time.Time) {
+			sampler := func() metrics.Sample {
+				return metrics.NewBoundedHistogramSample()
+			}
+			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+		}(time.Now())
+	}
+
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", getFunctionName())
 	}
@@ -937,6 +1316,9 @@ func Shr(input []byte, tp *TxParams) ([]byte, error) {
 
 	result, err := lhs.Shr(rhs)
 	if err != nil {
+		if metrics.Enabled {
+			metrics.GetOrRegisterCounter(fheMetricsName+"/"+getFunctionName()+"/error/fhe_failure/", nil).Inc(1)
+		}
 		logger.Error("fheShr failed", " err ", err)
 		return nil, vm.ErrExecutionReverted
 	}
@@ -945,6 +1327,9 @@ func Shr(input []byte, tp *TxParams) ([]byte, error) {
 	ctHash := result.Hash()
 
 	logger.Debug("fheShr success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), "result", ctHash.Hex())
+	if metrics.Enabled {
+		metrics.GetOrRegisterCounter(fheMetricsName+"/"+getFunctionName()+"/success/total/", nil).Inc(1)
+	}
 	return ctHash[:], nil
 }
 
