@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"runtime"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -17,6 +18,27 @@ type TxParams struct {
 	Commit        bool
 	GasEstimation bool
 	EthCall       bool
+}
+
+type GasBurner interface {
+	Burn(amount uint64) error
+	Burned() uint64
+}
+
+type DataType uint64
+
+const (
+	version DataType = iota
+	ct
+)
+
+type Storage interface {
+	Put(t DataType, key []byte, val []byte) error
+	Get(t DataType, key []byte) ([]byte, error)
+	GetVersion() (uint64, error)
+	PutVersion(v uint64) error
+	PutCt(h tfhe.Hash, cipher *tfhe.Ciphertext) error
+	GetCt(h tfhe.Hash) (*tfhe.Ciphertext, error)
 }
 
 func TxParamsFromEVM(evm *vm.EVM) TxParams {
@@ -57,7 +79,6 @@ func getCiphertext(state *FheosState, ciphertextHash tfhe.Hash) *tfhe.Ciphertext
 		return nil
 	}
 
-	// Will return nil if the ciphertext is not found
 	return ct
 }
 
@@ -97,7 +118,29 @@ func get3VerifiedOperands(state *FheosState, input []byte) (control *tfhe.Cipher
 	return
 }
 
+func printCallStack() {
+	// Set the size of the stack trace
+	const size = 4
+	// Create a slice to hold the stack trace
+	var pcs [size]uintptr
+
+	// Retrieve the stack trace
+	n := runtime.Callers(0, pcs[:])
+
+	// Print each stack frame
+	for i := 0; i < n; i++ {
+		// Retrieve information about the function
+		funcName := runtime.FuncForPC(pcs[i]).Name()
+		file, line := runtime.FuncForPC(pcs[i]).FileLine(pcs[i])
+
+		// Print the stack frame information
+		fmt.Printf("%s:%d %s()\n", file, line, funcName)
+	}
+}
+
 func importCiphertext(state *FheosState, ct *tfhe.Ciphertext) error {
+	printCallStack()
+
 	err := state.SetCiphertext(ct)
 	if err != nil {
 		logger.Error("failed importing ciphertext to state: ", err)

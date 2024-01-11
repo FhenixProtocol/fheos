@@ -1,131 +1,108 @@
 package precompiles
 
 import (
-	"bytes"
-	"encoding/gob"
 	"errors"
-	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/fhenixprotocol/go-tfhe"
-)
-
-const (
-	versionOffset = iota + 30
-	ctOffset
 )
 
 type FheosState struct {
 	FheosVersion uint64
-	CtStorage    BytesStorage
-	Burner       GasBurner
+	Storage      Storage
 }
 
-func encodeMap(m map[tfhe.Hash]tfhe.Ciphertext) ([]byte, error) {
-	b := new(bytes.Buffer)
-	encoder := gob.NewEncoder(b)
-
-	err := encoder.Encode(m)
-	if err != nil {
-		return nil, err
-	}
-
-	return b.Bytes(), nil
-}
-
-func (fs *FheosState) GetCiphertextMap() (map[tfhe.Hash]tfhe.Ciphertext, error) {
-	ctMap := make(map[tfhe.Hash]tfhe.Ciphertext)
-	serialized, err := fs.CtStorage.Get()
-
-	if err != nil {
-		return ctMap, err
-	}
-
-	decoder := gob.NewDecoder(bytes.NewReader(serialized))
-	err = decoder.Decode(&ctMap)
-	if err != nil {
-		return ctMap, err
-	}
-
-	return ctMap, nil
-}
-
-func (fs *FheosState) SetCiphertextMap(ctMap *map[tfhe.Hash]tfhe.Ciphertext) error {
-	encoded, err := encodeMap(*ctMap)
-	if err != nil {
-		return err
-	}
-
-	return fs.CtStorage.Set(encoded)
-}
+const FheosVersion = uint64(1)
 
 func (fs *FheosState) GetCiphertext(hash tfhe.Hash) (*tfhe.Ciphertext, error) {
-	ctMap, err := fs.GetCiphertextMap()
-	if err != nil {
-		return nil, err
-	}
-
-	ct, ok := ctMap[hash]
-	if !ok {
-		return nil, nil
-	}
-
-	return &ct, nil
+	return fs.Storage.GetCt(hash)
 }
 
 func (fs *FheosState) SetCiphertext(ct *tfhe.Ciphertext) error {
-	ctMap, err := fs.GetCiphertextMap()
-	if err != nil {
-		return err
-	}
-
-	_, ok := ctMap[ct.Hash()]
-	if ok {
-		return nil
-	}
-
-	ctMap[ct.Hash()] = *ct
-	return fs.SetCiphertextMap(&ctMap)
+	return fs.Storage.PutCt(ct.Hash(), ct)
 }
 
-func InitializeFheosState(stateDB vm.StateDB, burner GasBurner) (*FheosState, error) {
-	storage := NewStorage(stateDB, burner)
-	fheosVersion, err := storage.GetUint64ByUint64(versionOffset)
+func InitializeFheosState(burner GasBurner) (*FheosState, error) {
+	storage := InitStorage(burner)
+
+	if storage == nil {
+		logger.Error("failed to open storage for fheos state")
+		return nil, errors.New("failed to open storage for fheos state")
+	}
+
+	err := storage.PutVersion(FheosVersion)
 	if err != nil {
-		return nil, err
-	}
-	if fheosVersion != 0 {
-		return nil, errors.New("fheos state is already initialized")
+		logger.Error("failed to write version into fheos db ", err)
+		return nil, errors.New("failed to write version into fheos db ")
 	}
 
-	_ = storage.SetUint64ByUint64(versionOffset, 1)
-
-	b, err := encodeMap(make(map[tfhe.Hash]tfhe.Ciphertext))
-	if err != nil {
-		return nil, err
-	}
-
-	ctStorage := storage.OpenBytesStorage([]byte{ctOffset})
-	_ = ctStorage.Set(b)
-
-	aState, err := OpenFheosState(stateDB, burner)
-	if err != nil {
-		return nil, err
-	}
-
-	return aState, nil
-}
-
-func OpenFheosState(stateDB vm.StateDB, burner GasBurner) (*FheosState, error) {
-	storage := NewStorage(stateDB, burner)
-	fheosVersion, err := storage.GetUint64ByUint64(versionOffset)
-	if err != nil {
-		return nil, err
-	}
-	if fheosVersion == 0 {
-		return nil, errors.New("fheos state is uninitialized")
-	}
 	return &FheosState{
-		fheosVersion,
-		storage.OpenBytesStorage([]byte{ctOffset}),
-		burner,
+		FheosVersion,
+		storage,
+	}, nil
+
+}
+
+func OpenFheosState(burner GasBurner) (*FheosState, error) {
+	storage := InitStorage(burner)
+	version, err := storage.GetVersion()
+	if err != nil {
+		logger.Error("failed to read version from fheos db ", err)
+		return nil, err
+	}
+
+	if version != FheosVersion {
+		logger.Error("fheos version is corrupted")
+		return nil, errors.New("fheos version is corrupted")
+	}
+
+	return &FheosState{
+		version,
+		storage,
 	}, nil
 }
+
+// The following functions are useful for future implementation of storage based on geth
+// The reason we are not using them now is because they store the entire map as bytes on every set
+// which is not efficient for large maps - not even for a few ciphertexts.
+//func InitializeFheosState(stateDB vm.StateDB, burner GasBurner) (*FheosState, error) {
+//	storage := NewStorage(stateDB, burner)
+//	fheosVersion, err := storage.GetUint64ByUint64(versionOffset)
+//	if err != nil {
+//		return nil, err
+//	}
+//	if fheosVersion != 0 {
+//		return nil, errors.New("fheos state is already initialized")
+//	}
+//
+//	_ = storage.SetUint64ByUint64(versionOffset, 1)
+//
+//	b, err := encodeMap(make(map[tfhe.Hash]tfhe.Ciphertext))
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	ctStorage := storage.OpenBytesStorage([]byte{ctOffset})
+//	_ = ctStorage.Set(b)
+//
+//	aState, err := OpenFheosState(stateDB, burner)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	return aState, nil
+//}
+//
+//func OpenFheosState(stateDB vm.StateDB, burner GasBurner) (*FheosState, error) {
+//	storage := NewStorage(stateDB, burner)
+//	fheosVersion, err := storage.GetUint64ByUint64(versionOffset)
+//	if err != nil {
+//		return nil, err
+//	}
+//	if fheosVersion == 0 {
+//		return nil, errors.New("fheos state is uninitialized")
+//	}
+//	return &FheosState{
+//		fheosVersion,
+//		storage.OpenBytesStorage([]byte{ctOffset}),
+//		burner,
+//	}, nil
+//}

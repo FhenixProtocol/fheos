@@ -1,11 +1,12 @@
 // Copyright 2021-2022, Offchain Labs, Inc.
 // For license information, see https://github.com/nitro/blob/master/LICENSE
 
-package precompiles
+package arbitrum
 
-// FHENIX: this file can't be moved to "Arbitrum" package as it will cause import cycle
+// Currently unused
 
 import (
+	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -43,9 +44,10 @@ func NewStorage(statedb vm.StateDB, burner GasBurner) *Storage {
 	account := common.HexToAddress("0xA4B06FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
 	statedb.SetNonce(account, 1) // setting the nonce ensures Geth won't treat the storage as empty
 	return &Storage{
-		account: account,
-		db:      statedb,
-		burner:  burner,
+		account:    account,
+		db:         statedb,
+		storageKey: []byte{},
+		burner:     burner,
 	}
 }
 
@@ -167,6 +169,7 @@ func (store *Storage) ClearBytes() error {
 }
 
 func (store *Storage) SetBytes(b []byte) error {
+	fmt.Printf("LIORRRRR SetByetes, len is %v\n", len(b))
 	err := store.ClearBytes()
 	if err != nil {
 		return err

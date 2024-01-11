@@ -1076,6 +1076,7 @@ func Shr(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 
 func Not(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 	functionName := "not"
+
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", functionName)
 	}
