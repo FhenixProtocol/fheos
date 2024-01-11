@@ -5,7 +5,7 @@ set -e
 FHE_OPS_DEST=${1:-"../precompiles"}
 OUTPUT=${2:-"chains/arbitrum"}
 
-GEN_FHEOPS=${3:-"true"}
+GEN_FHEOPS=${3:-"false"}
 
 go run gen.go 1
 if [ ! -e precompiles/contracts ]; then
