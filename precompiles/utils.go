@@ -146,7 +146,7 @@ func get3VerifiedOperands(state *FheosState, input []byte) (control *tfhe.Cipher
 	return
 }
 
-func importCiphertext(state *FheosState, ct *tfhe.Ciphertext) *tfhe.Ciphertext {
+func importCiphertext(state *FheosState, ct *tfhe.Ciphertext) error {
 	err := state.SetCiphertext(ct)
 	if err != nil {
 		logger.Error("failed importing ciphertext to state: ", err)
@@ -191,8 +191,5 @@ const (
 )
 
 func isValidType(t byte) bool {
-	if uint8(t) < uint8(FheUint8) || uint8(t) > uint8(FheUint32) {
-		return false
-	}
-	return true
+	return t >= uint8(FheUint8) && t <= uint8(FheUint32)
 }
