@@ -4,12 +4,8 @@ import (
 	"encoding/hex"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"math/big"
-	"runtime"
-	"sync"
 
-	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/sirupsen/logrus"
-	"math/big"
 
 	tfhe "github.com/fhenixprotocol/go-tfhe"
 )

@@ -6,14 +6,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math/big"
-	"runtime"
-
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 	tfhe "github.com/fhenixprotocol/go-tfhe"
 	"golang.org/x/crypto/nacl/box"
+	"math/big"
 )
 
 type TxParams struct {
@@ -148,7 +146,7 @@ func get3VerifiedOperands(state *FheosState, input []byte) (control *tfhe.Cipher
 	return
 }
 
-func importCiphertext(ct *tfhe.Ciphertext) *tfhe.Ciphertext {
+func importCiphertext(state *FheosState, ct *tfhe.Ciphertext) *tfhe.Ciphertext {
 	err := state.SetCiphertext(ct)
 	if err != nil {
 		logger.Error("failed importing ciphertext to state: ", err)
