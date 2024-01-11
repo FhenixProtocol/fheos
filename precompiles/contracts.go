@@ -3,6 +3,11 @@ package precompiles
 import (
 	"encoding/hex"
 	"github.com/ethereum/go-ethereum/core/vm"
+	"math/big"
+	"runtime"
+	"sync"
+
+	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/sirupsen/logrus"
 	"math/big"
 
@@ -112,9 +117,9 @@ func Verify(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 	return ctHash[:], nil
 }
 
-func Reencrypt(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
+func SealOutput(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 	//solgen: bool math
-	functionName := "reencrypt"
+	functionName := "sealOutput"
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", functionName)
@@ -134,9 +139,13 @@ func Reencrypt(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 
 	ct := getCiphertext(state, tfhe.BytesToHash(input[0:32]))
 	if ct == nil {
-		msg := "reencrypt unverified ciphertext handle"
+		msg := "sealOutput unverified ciphertext handle"
 		logger.Error(msg, " input ", hex.EncodeToString(input))
 		return nil, vm.ErrExecutionReverted
+	}
+
+	if tp.GasEstimation {
+		return []byte{1}, nil
 	}
 
 	decryptedValue, err := tfhe.Decrypt(*ct)
@@ -153,8 +162,9 @@ func Reencrypt(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 		logger.Error(functionName, " failed to encrypt to user key", " err ", err)
 		return nil, vm.ErrExecutionReverted
 	}
+
 	logger.Debug(functionName, " success", " input ", hex.EncodeToString(input))
-	// FHENIX: Previously it was "return toEVMBytes(reencryptedValue), nil" but the decrypt function in Fhevm didn't support it so we removed the the toEVMBytes
+
 	return reencryptedValue, nil
 }
 
@@ -164,12 +174,6 @@ func Decrypt(input []byte, tp *TxParams, state *FheosState) (*big.Int, error) {
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", functionName)
-	}
-
-	if !tp.EthCall {
-		msg := functionName + " only supported on EthCall"
-		logger.Error(msg)
-		return nil, vm.ErrExecutionReverted
 	}
 
 	if len(input) != 32 {
@@ -183,6 +187,10 @@ func Decrypt(input []byte, tp *TxParams, state *FheosState) (*big.Int, error) {
 		msg := functionName + " unverified ciphertext handle"
 		logger.Error(msg, " input ", hex.EncodeToString(input))
 		return nil, vm.ErrExecutionReverted
+	}
+
+	if tp.GasEstimation {
+		return new(big.Int).SetUint64(1), nil
 	}
 
 	decryptedValue, err := tfhe.Decrypt(*ct)
@@ -412,12 +420,6 @@ func Req(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 		logger.Info("starting new precompiled contract function ", functionName)
 	}
 
-	if tp.EthCall {
-		msg := functionName + " not supported on EthCall"
-		logger.Error(msg)
-		return nil, vm.ErrExecutionReverted
-	}
-
 	if len(input) != 32 {
 		msg := functionName + " input len must be 32 bytes"
 		logger.Error(msg, " input ", hex.EncodeToString(input), " len ", len(input))
@@ -432,7 +434,7 @@ func Req(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 	}
 	// If we are not committing to state, assume the require is true, avoiding any side effects
 	// (i.e. mutatiting the oracle DB).
-	if !tp.Commit {
+	if tp.GasEstimation {
 		return nil, nil
 	}
 
@@ -732,6 +734,7 @@ func And(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 		logger.Error(functionName+" failed", " err ", err)
 		return nil, vm.ErrExecutionReverted
 	}
+
 	err = importCiphertext(state, result)
 	if err != nil {
 		logger.Error(functionName, " failed ", " err ", err)
@@ -774,6 +777,7 @@ func Or(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 		logger.Error(functionName+" failed", " err ", err)
 		return nil, vm.ErrExecutionReverted
 	}
+
 	err = importCiphertext(state, result)
 	if err != nil {
 		logger.Error(functionName, " failed ", " err ", err)
@@ -1059,8 +1063,8 @@ func Shr(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 
 	result, err := lhs.Shr(rhs)
 	if err != nil {
-		logger.Error(functionName+" failed", " err ", err)
-		return nil, vm.ErrExecutionReverted
+		logger.Error("fheShr failed", " err ", err)
+		return nil, err
 	}
 	err = importCiphertext(state, result)
 	if err != nil {
@@ -1118,6 +1122,7 @@ func GetNetworkPublicKey(tp *TxParams, _ *FheosState) ([]byte, error) {
 
 	pk, err := tfhe.PublicKey()
 	if err != nil {
+		logger.Error("could not get public key", " err ", err)
 		return nil, vm.ErrExecutionReverted
 	}
 

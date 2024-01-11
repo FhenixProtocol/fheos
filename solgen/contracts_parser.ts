@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import {SEALING_FUNCTION_NAME} from "./common";
 
 type ParamTypes = "encrypted" | "uint8" | "plaintext" | "bytes32";
 
@@ -77,7 +78,7 @@ async function analyzeGoFile(filePath: string): Promise<FunctionAnalysis[] | nul
                 if (trimmedLine.includes(keyfn.name)) {
                     let needsSameType = /lhs.UintType\s+!=\s+rhs.UintType/.test(trimmedLine);
                     let amount = keyfn.amount;
-                    if (funcName === "reencrypt") {
+                    if (funcName === SEALING_FUNCTION_NAME) {
                         // console.log(`func name: ${funcName}`)
                         amount = 2;
                         returnType = "bytes memory";

@@ -109,11 +109,13 @@ func CreateTemplate(dirPath string) {
 	defer outFile.Close()
 
 	outFile.WriteString(`// SPDX-License-Identifier: BSD-3-Clause-Clear
+// solhint-disable one-contract-per-file
 pragma solidity >=0.8.13 <0.9.0;
 
 library Precompiles {
-   address public constant Fheos = address(128);
-   uint256 public constant FhePubKey = 68;
+    //solhint-disable const-name-snakecase
+    address public constant Fheos = address(128);
+    uint256 public constant FhePubKey = 68;
 }
 `)
 
@@ -181,7 +183,7 @@ interface FheOps {
 				Ret = strings.Replace(Ret, ",", "", 1)
 			}
 
-			outLine := "\tfunction " + uncapitalizeFirstLetter(Name) + "("
+			outLine := "    function " + uncapitalizeFirstLetter(Name) + "("
 			for count, param := range params {
 				if param.Type == "[]byte" {
 					param.Type = "bytes memory"
