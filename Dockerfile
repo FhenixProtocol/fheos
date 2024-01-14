@@ -17,7 +17,7 @@ WORKDIR fheos
 
 RUN ./gen.sh
 
-WORKDIR /workspace
+WORKDIR /workspacegas.
 
 COPY nitro-overrides/precompiles/FheOps.go precompiles/FheOps.go
 
