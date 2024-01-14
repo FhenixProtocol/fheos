@@ -56,7 +56,7 @@ func closeDB(db *leveldb.DB) {
 		panic(err)
 	}
 
-	logger.Info("fheos db closed")
+	logger.Debug("fheos db closed")
 }
 func (store LevelDbStorage) Put(t DataType, key []byte, val []byte) error {
 	db := store.OpenDB(false)
