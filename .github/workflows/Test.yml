@@ -17,6 +17,10 @@ jobs:
         with:
           submodules: recursive
           token: ${{ secrets.GH_PAT }}
+      - name: Extract branch name
+        shell: bash
+        run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+        id: extract_branch
       - uses: actions/setup-go@v4
         with:
           go-version: 1.21
@@ -51,6 +55,8 @@ jobs:
         with:
           file: Dockerfile
           context: .
+          build-args: |
+            BRANCH=${{ steps.extract_branch.outputs.branch }}
           tags: ghcr.io/fhenixprotocol/localfhenix:v0.0.0
       - name: Run Local Dev Image
         run: |
