@@ -418,7 +418,12 @@ type FheOps struct {
 `)
 	defer file.Close()
 	for _, op := range operations {
-		template := GenerateFHEOperationTemplate(op.ReturnType)
+		var template *template.Template
+		if strings.Contains(op.Name, "GetNetworkPublicKey") {
+			template = GenerateFHEOperationNoGasTemplate()
+		} else {
+			template = GenerateFHEOperationTemplate()
+		}
 		err = template.Execute(file, op)
 		if err != nil {
 			fmt.Println("Error writing")
@@ -449,7 +454,7 @@ type Argument struct {
 	Type         string `json:"type"`
 }
 
-func GenerateFHEOperationTemplate(returnType string) *template.Template {
+func GenerateFHEOperationNoGasTemplate() *template.Template {
 	templateText := `
 func (con FheOps) {{.Name}}(c ctx, evm mech{{.Inputs}}) ({{.ReturnType}}, error) {
 	tp := fheos.TxParamsFromEVM(evm)
@@ -457,15 +462,29 @@ func (con FheOps) {{.Name}}(c ctx, evm mech{{.Inputs}}) ({{.ReturnType}}, error)
 }
 `
 
-	if returnType == "void" {
-		templateText = `
-func (con FheOps) {{.Name}}(c ctx, evm mech{{.Inputs}}) error {
+	tmpl, err := template.New("functionTemplate").Parse(templateText)
+	if err != nil {
+		fmt.Printf("Error parsing template: %s\n", err)
+		return nil
+	}
+
+	return tmpl
+}
+
+func GenerateFHEOperationTemplate() *template.Template {
+	templateText := `
+func (con FheOps) {{.Name}}(c ctx, evm mech{{.Inputs}}) ({{.ReturnType}}, error) {
 	tp := fheos.TxParamsFromEVM(evm)
-	fheos.{{.Name}}({{.InnerInputs}}&tp, c.FheosState)
-	return nil
+	ret, gas, err := fheos.{{.Name}}({{.InnerInputs}}&tp, c.FheosState)
+	
+	if err != nil {
+		return ret, err
+	}
+
+	err = c.Burn(gas)
+	return ret, err
 }
 `
-	}
 
 	tmpl, err := template.New("functionTemplate").Parse(templateText)
 	if err != nil {
