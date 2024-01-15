@@ -7,231 +7,235 @@ import "github.com/fhenixprotocol/go-tfhe"
 // 1M / 4800ms = 209 gas per 1ms
 
 func getGasForPrecompile(precompileName string, uintType tfhe.UintType) uint64 {
+	return getRawPrecompileGas(precompileName, uintType) * 209
+}
+
+func getRawPrecompileGas(precompileName string, uintType tfhe.UintType) uint64 {
 	switch precompileName {
 	case "add":
 		switch uintType {
 		case tfhe.Uint8:
-			return 7315 // 35 * 209
+			return 35
 		case tfhe.Uint16:
-			return 17257 // 73 * 209
+			return 73
 		case tfhe.Uint32:
-			return 34067 // 163 * 209
+			return 163
 		}
 	case "verify":
 		switch uintType {
 		case tfhe.Uint8:
-			return 9196 // 44 * 209
+			return 44
 		case tfhe.Uint16:
-			return 9196 // 44 * 209
+			return 44
 		case tfhe.Uint32:
-			return 9196 // 44 * 209
+			return 44
 		}
 	case "sealOutput":
 		switch uintType {
 		case tfhe.Uint8:
-			return 4807 // 23 * 209
+			return 23
 		case tfhe.Uint16:
-			return 4807 // 23 * 209
+			return 23
 		case tfhe.Uint32:
-			return 4807 // 23 * 209
+			return 23
 		}
 	case "decrypt": // No test, roughly estimated as sealOutput - trivialEncrypt
 		switch uintType {
 		case tfhe.Uint8:
-			return 3762 // 18 * 209
+			return 18
 		case tfhe.Uint16:
-			return 3762 // 18 * 209
+			return 18
 		case tfhe.Uint32:
-			return 3762 // 18 * 209
+			return 18
 		}
 	case "lte":
 		switch uintType {
 		case tfhe.Uint8:
-			return 3762 // 18 * 209
+			return 18
 		case tfhe.Uint16:
-			return 6061 // 29 * 209
+			return 29
 		case tfhe.Uint32:
-			return 8987 // 43 * 209
+			return 43
 		}
 	case "sub":
 		switch uintType {
 		case tfhe.Uint8:
-			return 7315 // 35 * 209
+			return 35
 		case tfhe.Uint16:
-			return 17257 // 73 * 209
+			return 73
 		case tfhe.Uint32:
-			return 34067 // 163 * 209
+			return 163
 		}
 	case "mul":
 		switch uintType {
 		case tfhe.Uint8:
-			return 19646 // 94 * 209
+			return 94
 		case tfhe.Uint16:
-			return 64999 // 311 * 209
+			return 311
 		case tfhe.Uint32:
-			return 235543 // 1127 * 209
+			return 1127
 		}
 	case "lt":
 		switch uintType {
 		case tfhe.Uint8:
-			return 4598 // 22 * 209
+			return 22
 		case tfhe.Uint16:
-			return 7524 // 36 * 209
+			return 36
 		case tfhe.Uint32:
-			return 12540 // 60 * 209
+			return 60
 		}
 	case "select":
 		switch uintType {
 		case tfhe.Uint8:
-			return 44726 // 214 * 209
+			return 214
 		case tfhe.Uint16:
-			return 66044 // 316 * 209
+			return 316
 		case tfhe.Uint32:
-			return 114741 // 549 * 209
+			return 549
 		}
 	case "require": // Took the values when there was no crash as for crash gas is irrelevant as it will be reverted
 		switch uintType {
 		case tfhe.Uint8:
-			return 13585 // 65 * 209
+			return 65
 		case tfhe.Uint16:
-			return 13585 // 65 * 209
+			return 65
 		case tfhe.Uint32:
-			return 13585 // 65 * 209
+			return 65
 		}
 	case "trivialEncrypt":
 		switch uintType {
 		case tfhe.Uint8:
-			return 1045 // 5 * 209
+			return 5
 		case tfhe.Uint16:
-			return 1045 // 5 * 209
+			return 5
 		case tfhe.Uint32:
-			return 1045 // 5 * 209
+			return 5
 		}
 	case "div":
 		switch uintType {
 		case tfhe.Uint8:
-			return 93423 // 447 * 209
+			return 447
 		case tfhe.Uint16:
-			return 273790 // 1310 * 209
+			return 1310
 		case tfhe.Uint32:
-			return 1003200 // 4800 * 209
+			return 4800
 		}
 	case "gt":
 		switch uintType {
 		case tfhe.Uint8:
-			return 4389 // 21 * 209
+			return 21
 		case tfhe.Uint16:
-			return 6061 // 29 * 209
+			return 29
 		case tfhe.Uint32:
-			return 9405 // 45 * 209
+			return 45
 		}
 	case "gte":
 		switch uintType {
 		case tfhe.Uint8:
-			return 4389 // 21 * 209
+			return 21
 		case tfhe.Uint16:
-			return 6061 // 29 * 209
+			return 29
 		case tfhe.Uint32:
-			return 9405 // 45 * 209
+			return 45
 		}
 	case "rem":
 		switch uintType {
 		case tfhe.Uint8:
-			return 93423 // 447 * 209
+			return 447
 		case tfhe.Uint16:
-			return 273790 // 1310 * 209
+			return 1310
 		case tfhe.Uint32:
-			return 1003200 // 4800 * 209
+			return 4800
 		}
 	case "and":
 		switch uintType {
 		case tfhe.Uint8:
-			return 2717 // 13 * 209
+			return 13
 		case tfhe.Uint16:
-			return 4389 // 21 * 209
+			return 21
 		case tfhe.Uint32:
-			return 7942 // 38 * 209
+			return 38
 		}
 	case "or":
 		switch uintType {
 		case tfhe.Uint8:
-			return 2717 // 13 * 209
+			return 13
 		case tfhe.Uint16:
-			return 4389 // 21 * 209
+			return 21
 		case tfhe.Uint32:
-			return 7942 // 38 * 209
+			return 38
 		}
 	case "xor":
 		switch uintType {
 		case tfhe.Uint8:
-			return 2717 // 13 * 209
+			return 13
 		case tfhe.Uint16:
-			return 4389 // 21 * 209
+			return 21
 		case tfhe.Uint32:
-			return 7942 // 38 * 209
+			return 38
 		}
 	case "eq":
 		switch uintType {
 		case tfhe.Uint8:
-			return 3762 // 18 * 209
+			return 18
 		case tfhe.Uint16:
-			return 5225 // 25 * 209
+			return 25
 		case tfhe.Uint32:
-			return 10450 // 50 * 209
+			return 50
 		}
 	case "ne":
 		switch uintType {
 		case tfhe.Uint8:
-			return 3762 // 18 * 209
+			return 18
 		case tfhe.Uint16:
-			return 5225 // 25 * 209
+			return 25
 		case tfhe.Uint32:
-			return 10450 // 50 * 209
+			return 50
 		}
 	case "min":
 		switch uintType {
 		case tfhe.Uint8:
-			return 8569 // 41 * 209
+			return 41
 		case tfhe.Uint16:
-			return 15675 // 75 * 209
+			return 75
 		case tfhe.Uint32:
-			return 28215 // 135 * 209
+			return 135
 		}
 	case "max":
 		switch uintType {
 		case tfhe.Uint8:
-			return 8569 // 41 * 209
+			return 41
 		case tfhe.Uint16:
-			return 15675 // 75 * 209
+			return 75
 		case tfhe.Uint32:
-			return 88198 // 135 * 209
+			return 135
 		}
 	case "shl":
 		switch uintType {
 		case tfhe.Uint8:
-			return 17138 // 82 * 209
+			return 82
 		case tfhe.Uint16:
-			return 39710 // 190 * 209
+			return 190
 		case tfhe.Uint32:
-			return 88198 // 422 * 209
+			return 422
 		}
 	case "shr":
 		switch uintType {
 		case tfhe.Uint8:
-			return 17138 // 82 * 209
+			return 82
 		case tfhe.Uint16:
-			return 39710 // 190 * 209
+			return 190
 		case tfhe.Uint32:
-			return 88198 // 422 * 209
+			return 422
 		}
 	case "not":
 		switch uintType {
 		case tfhe.Uint8:
-			return 2508 // 12 * 209
+			return 12
 		case tfhe.Uint16:
-			return 4598 // 22 * 209
+			return 22
 		case tfhe.Uint32:
-			return 7524 // 36 * 209
+			return 36
 		}
 	default:
 		panic("invalid precompile name")

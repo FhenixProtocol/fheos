@@ -475,14 +475,14 @@ func GenerateFHEOperationTemplate() *template.Template {
 	templateText := `
 func (con FheOps) {{.Name}}(c ctx, evm mech{{.Inputs}}) ({{.ReturnType}}, error) {
 	tp := fheos.TxParamsFromEVM(evm)
-	v, g, e := fheos.{{.Name}}({{.InnerInputs}}&tp, c.FheosState)
+	ret, gas, err := fheos.{{.Name}}({{.InnerInputs}}&tp, c.FheosState)
 	
-	if e != nil {
-		return v, e
+	if err != nil {
+		return ret, err
 	}
 
-	e = c.Burn(g)
-	return v, e
+	err = c.Burn(gas)
+	return ret, err
 }
 `
 
