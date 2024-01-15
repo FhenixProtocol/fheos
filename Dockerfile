@@ -1,4 +1,9 @@
-FROM ghcr.io/fhenixprotocol/nitro/fhenix-node-builder:v0.0.9-beta1 as winning
+ARG BRANCH=latest
+ARG DOCKER_NAME=ghcr.io/fhenixprotocol/nitro/fhenix-node-builder:$BRANCH
+
+FROM $DOCKER_NAME as winning
+
+RUN echo $DOCKER_NAME
 
 RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
 RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
@@ -24,3 +29,6 @@ FROM ghcr.io/fhenixprotocol/fhenix-node-dev:v0.0.9-standalone
 
 COPY --from=winning /workspace/fheos/go-tfhe/internal/api/amd64/libtfhe_wrapper.x86_64.so /usr/lib/libtfhe_wrapper.x86_64.so
 COPY --from=winning /workspace/target/bin/nitro /usr/local/bin/
+
+RUN mkdir -p /home/user/fhenix/fheosdb
+COPY --chown=user:user nitro-overrides/fheosdb/* /home/user/fhenix/fheosdb/
