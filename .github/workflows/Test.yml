@@ -51,8 +51,6 @@ jobs:
         with:
           file: Dockerfile
           context: .
-          build-args: |
-            BRANCH=v100.100.100-lior
           tags: ghcr.io/fhenixprotocol/localfhenix:v0.0.0
       - name: Run Local Dev Image
         run: |
