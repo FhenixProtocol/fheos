@@ -47,7 +47,7 @@ func closeDB(db *leveldb.DB) {
 
 	logger.Debug("fheos db closed")
 }
-func (store LevelDbStorage) Put(t DataType, key []byte, val []byte, isTx bool) error {
+func (store LevelDbStorage) Put(t DataType, key []byte, val []byte) error {
 	db := store.OpenDB(false)
 	defer closeDB(db)
 
@@ -61,15 +61,10 @@ func (store LevelDbStorage) Put(t DataType, key []byte, val []byte, isTx bool) e
 		return err
 	}
 
-	if isTx {
-		// Currently we don't charge gas per storage action as we charge a global gas value per precompile
-		// This will be here for future use if needed
-	}
-
 	return nil
 }
 
-func (store LevelDbStorage) Get(t DataType, key []byte, isTx bool) ([]byte, error) {
+func (store LevelDbStorage) Get(t DataType, key []byte) ([]byte, error) {
 	db := store.OpenDB(true)
 	defer closeDB(db)
 
@@ -83,16 +78,11 @@ func (store LevelDbStorage) Get(t DataType, key []byte, isTx bool) ([]byte, erro
 		return nil, err
 	}
 
-	if isTx {
-		// Currently we don't charge gas per storage action as we charge a global gas value per precompile
-		// This will be here for future use if needed
-	}
-
 	return val, nil
 }
 
 func (store LevelDbStorage) GetVersion() (uint64, error) {
-	v, err := store.Get(version, []byte{}, false)
+	v, err := store.Get(version, []byte{})
 	if err != nil {
 		return 0, err
 	}
@@ -104,10 +94,10 @@ func (store LevelDbStorage) PutVersion(v uint64) error {
 	vb := make([]byte, 8)
 	binary.BigEndian.PutUint64(vb, v)
 
-	return store.Put(version, []byte{}, vb, false)
+	return store.Put(version, []byte{}, vb)
 }
 
-func (store LevelDbStorage) PutCt(h tfhe.Hash, cipher *tfhe.Ciphertext, isTx bool) error {
+func (store LevelDbStorage) PutCt(h tfhe.Hash, cipher *tfhe.Ciphertext) error {
 	var cipherBuffer bytes.Buffer
 	enc := gob.NewEncoder(&cipherBuffer)
 	err := enc.Encode(*cipher)
@@ -116,11 +106,11 @@ func (store LevelDbStorage) PutCt(h tfhe.Hash, cipher *tfhe.Ciphertext, isTx boo
 		return err
 	}
 
-	return store.Put(ct, h[:], cipherBuffer.Bytes(), isTx)
+	return store.Put(ct, h[:], cipherBuffer.Bytes())
 }
 
-func (store LevelDbStorage) GetCt(h tfhe.Hash, isTx bool) (*tfhe.Ciphertext, error) {
-	v, err := store.Get(ct, h[:], isTx)
+func (store LevelDbStorage) GetCt(h tfhe.Hash) (*tfhe.Ciphertext, error) {
+	v, err := store.Get(ct, h[:])
 	if err != nil {
 		return nil, err
 	}

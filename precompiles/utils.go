@@ -33,12 +33,12 @@ const (
 )
 
 type Storage interface {
-	Put(t DataType, key []byte, val []byte, isTx bool) error
-	Get(t DataType, key []byte, isTx bool) ([]byte, error)
+	Put(t DataType, key []byte, val []byte) error
+	Get(t DataType, key []byte) ([]byte, error)
 	GetVersion() (uint64, error)
 	PutVersion(v uint64) error
-	PutCt(h tfhe.Hash, cipher *tfhe.Ciphertext, isTx bool) error
-	GetCt(h tfhe.Hash, isTx bool) (*tfhe.Ciphertext, error)
+	PutCt(h tfhe.Hash, cipher *tfhe.Ciphertext) error
+	GetCt(h tfhe.Hash) (*tfhe.Ciphertext, error)
 }
 
 func TxParamsFromEVM(evm *vm.EVM) TxParams {
@@ -100,8 +100,8 @@ func encryptToUserKey(value *big.Int, pubKey []byte) ([]byte, error) {
 	return ct, nil
 }
 
-func getCiphertext(state *FheosState, ciphertextHash tfhe.Hash, isTx bool) *tfhe.Ciphertext {
-	ct, err := state.GetCiphertext(ciphertextHash, isTx)
+func getCiphertext(state *FheosState, ciphertextHash tfhe.Hash) *tfhe.Ciphertext {
+	ct, err := state.GetCiphertext(ciphertextHash)
 	if err != nil {
 		logger.Error("reading ciphertext from state resulted with error: ", err)
 		return nil
@@ -110,15 +110,15 @@ func getCiphertext(state *FheosState, ciphertextHash tfhe.Hash, isTx bool) *tfhe
 	return ct
 }
 
-func get2VerifiedOperands(state *FheosState, input []byte, isTx bool) (lhs *tfhe.Ciphertext, rhs *tfhe.Ciphertext, err error) {
+func get2VerifiedOperands(state *FheosState, input []byte) (lhs *tfhe.Ciphertext, rhs *tfhe.Ciphertext, err error) {
 	if len(input) != 64 {
 		return nil, nil, errors.New("input needs to contain two 256-bit sized values")
 	}
-	lhs = getCiphertext(state, tfhe.BytesToHash(input[0:32]), isTx)
+	lhs = getCiphertext(state, tfhe.BytesToHash(input[0:32]))
 	if lhs == nil {
 		return nil, nil, errors.New("unverified ciphertext handle")
 	}
-	rhs = getCiphertext(state, tfhe.BytesToHash(input[32:64]), isTx)
+	rhs = getCiphertext(state, tfhe.BytesToHash(input[32:64]))
 	if rhs == nil {
 		return nil, nil, errors.New("unverified ciphertext handle")
 	}
@@ -126,19 +126,19 @@ func get2VerifiedOperands(state *FheosState, input []byte, isTx bool) (lhs *tfhe
 	return
 }
 
-func get3VerifiedOperands(state *FheosState, input []byte, isTx bool) (control *tfhe.Ciphertext, ifTrue *tfhe.Ciphertext, ifFalse *tfhe.Ciphertext, err error) {
+func get3VerifiedOperands(state *FheosState, input []byte) (control *tfhe.Ciphertext, ifTrue *tfhe.Ciphertext, ifFalse *tfhe.Ciphertext, err error) {
 	if len(input) != 96 {
 		return nil, nil, nil, errors.New("input needs to contain three 256-bit sized values and 1 8-bit value")
 	}
-	control = getCiphertext(state, tfhe.BytesToHash(input[0:32]), isTx)
+	control = getCiphertext(state, tfhe.BytesToHash(input[0:32]))
 	if control == nil {
 		return nil, nil, nil, errors.New("unverified ciphertext handle")
 	}
-	ifTrue = getCiphertext(state, tfhe.BytesToHash(input[32:64]), isTx)
+	ifTrue = getCiphertext(state, tfhe.BytesToHash(input[32:64]))
 	if ifTrue == nil {
 		return nil, nil, nil, errors.New("unverified ciphertext handle")
 	}
-	ifFalse = getCiphertext(state, tfhe.BytesToHash(input[64:96]), isTx)
+	ifFalse = getCiphertext(state, tfhe.BytesToHash(input[64:96]))
 	if ifFalse == nil {
 		return nil, nil, nil, errors.New("unverified ciphertext handle")
 	}
@@ -146,8 +146,8 @@ func get3VerifiedOperands(state *FheosState, input []byte, isTx bool) (control *
 	return
 }
 
-func importCiphertext(state *FheosState, ct *tfhe.Ciphertext, isTx bool) error {
-	err := state.SetCiphertext(ct, isTx)
+func importCiphertext(state *FheosState, ct *tfhe.Ciphertext) error {
+	err := state.SetCiphertext(ct)
 	if err != nil {
 		logger.Error("failed importing ciphertext to state: ", err)
 		return err
@@ -162,7 +162,7 @@ func importRandomCiphertext(state *FheosState, t tfhe.UintType) ([]byte, error) 
 		return nil, errors.New(fmt.Sprintf("failed creating random ciphertext of size: %d", t))
 	}
 
-	err = importCiphertext(state, ct, true)
+	err = importCiphertext(state, ct)
 	if err != nil {
 		return nil, err
 	}
