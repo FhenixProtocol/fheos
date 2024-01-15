@@ -162,7 +162,7 @@ func importRandomCiphertext(state *FheosState, t tfhe.UintType) ([]byte, error) 
 		return nil, errors.New(fmt.Sprintf("failed creating random ciphertext of size: %d", t))
 	}
 
-	err = importCiphertext(state, ct, false)
+	err = importCiphertext(state, ct, true)
 	if err != nil {
 		return nil, err
 	}

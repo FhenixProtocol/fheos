@@ -34,7 +34,7 @@ func shouldPrintPrecompileInfo(tp *TxParams) bool {
 }
 
 func isTx(tp *TxParams) bool {
-	return !tp.EthCall || tp.GasEstimation
+	return !tp.EthCall
 }
 
 // ============================

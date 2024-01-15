@@ -62,7 +62,8 @@ func (store LevelDbStorage) Put(t DataType, key []byte, val []byte, isTx bool) e
 	}
 
 	if isTx {
-		//return store.burner.Burn(StorageWriteCost)
+		// Currently we don't charge gas per storage action as we charge a global gas value per precompile
+		// This will be here for future use if needed
 	}
 
 	return nil
@@ -83,10 +84,8 @@ func (store LevelDbStorage) Get(t DataType, key []byte, isTx bool) ([]byte, erro
 	}
 
 	if isTx {
-		//err = store.burner.Burn(StorageReadCost)
-		//if err != nil {
-		//	return nil, err
-		//}
+		// Currently we don't charge gas per storage action as we charge a global gas value per precompile
+		// This will be here for future use if needed
 	}
 
 	return val, nil
