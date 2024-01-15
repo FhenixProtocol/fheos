@@ -19,17 +19,6 @@ const DBPath = "/home/user/fhenix/fheosdb"
 const StorageReadCost = params.SloadGasEIP2200
 const StorageWriteCost = params.SstoreSetGasEIP2200
 
-func storageWriteCost(t DataType) uint64 {
-	switch t {
-	case version:
-		return 0
-	case ct:
-		return StorageWriteCost
-	}
-
-	return 0
-}
-
 func InitStorage(burner GasBurner) Storage {
 	storage := LevelDbStorage{
 		dbPath: DBPath,
@@ -58,7 +47,7 @@ func closeDB(db *leveldb.DB) {
 
 	logger.Debug("fheos db closed")
 }
-func (store LevelDbStorage) Put(t DataType, key []byte, val []byte) error {
+func (store LevelDbStorage) Put(t DataType, key []byte, val []byte, isTx bool) error {
 	db := store.OpenDB(false)
 	defer closeDB(db)
 
@@ -72,27 +61,39 @@ func (store LevelDbStorage) Put(t DataType, key []byte, val []byte) error {
 		return err
 	}
 
-	gas := storageWriteCost(t)
-	if gas > 0 {
-		return store.burner.Burn(gas)
+	if isTx {
+		//return store.burner.Burn(StorageWriteCost)
 	}
 
 	return nil
 }
 
-func (store LevelDbStorage) Get(t DataType, key []byte) ([]byte, error) {
-	db := store.OpenDB(false)
+func (store LevelDbStorage) Get(t DataType, key []byte, isTx bool) ([]byte, error) {
+	db := store.OpenDB(true)
 	defer closeDB(db)
 
 	tb := make([]byte, 8)
 	binary.BigEndian.PutUint64(tb, uint64(t))
 	extendedKey := append(tb, key...)
 
-	return db.Get(extendedKey, nil)
+	val, err := db.Get(extendedKey, nil)
+	if err != nil {
+		logger.Error("failed to read from fheos db ", err)
+		return nil, err
+	}
+
+	if isTx {
+		//err = store.burner.Burn(StorageReadCost)
+		//if err != nil {
+		//	return nil, err
+		//}
+	}
+
+	return val, nil
 }
 
 func (store LevelDbStorage) GetVersion() (uint64, error) {
-	v, err := store.Get(version, []byte{})
+	v, err := store.Get(version, []byte{}, false)
 	if err != nil {
 		return 0, err
 	}
@@ -104,10 +105,10 @@ func (store LevelDbStorage) PutVersion(v uint64) error {
 	vb := make([]byte, 8)
 	binary.BigEndian.PutUint64(vb, v)
 
-	return store.Put(version, []byte{}, vb)
+	return store.Put(version, []byte{}, vb, false)
 }
 
-func (store LevelDbStorage) PutCt(h tfhe.Hash, cipher *tfhe.Ciphertext) error {
+func (store LevelDbStorage) PutCt(h tfhe.Hash, cipher *tfhe.Ciphertext, isTx bool) error {
 	var cipherBuffer bytes.Buffer
 	enc := gob.NewEncoder(&cipherBuffer)
 	err := enc.Encode(*cipher)
@@ -116,11 +117,11 @@ func (store LevelDbStorage) PutCt(h tfhe.Hash, cipher *tfhe.Ciphertext) error {
 		return err
 	}
 
-	return store.Put(ct, h[:], cipherBuffer.Bytes())
+	return store.Put(ct, h[:], cipherBuffer.Bytes(), isTx)
 }
 
-func (store LevelDbStorage) GetCt(h tfhe.Hash) (*tfhe.Ciphertext, error) {
-	v, err := store.Get(ct, h[:])
+func (store LevelDbStorage) GetCt(h tfhe.Hash, isTx bool) (*tfhe.Ciphertext, error) {
+	v, err := store.Get(ct, h[:], isTx)
 	if err != nil {
 		return nil, err
 	}

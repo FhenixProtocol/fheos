@@ -12,12 +12,12 @@ type FheosState struct {
 
 const FheosVersion = uint64(1)
 
-func (fs *FheosState) GetCiphertext(hash tfhe.Hash) (*tfhe.Ciphertext, error) {
-	return fs.Storage.GetCt(hash)
+func (fs *FheosState) GetCiphertext(hash tfhe.Hash, isTx bool) (*tfhe.Ciphertext, error) {
+	return fs.Storage.GetCt(hash, isTx)
 }
 
-func (fs *FheosState) SetCiphertext(ct *tfhe.Ciphertext) error {
-	return fs.Storage.PutCt(ct.Hash(), ct)
+func (fs *FheosState) SetCiphertext(ct *tfhe.Ciphertext, isTx bool) error {
+	return fs.Storage.PutCt(ct.Hash(), ct, isTx)
 }
 
 func InitializeFheosState(burner GasBurner) (*FheosState, error) {

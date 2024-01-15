@@ -33,14 +33,20 @@ func shouldPrintPrecompileInfo(tp *TxParams) bool {
 	return tp.Commit && !tp.GasEstimation
 }
 
+func isTx(tp *TxParams) bool {
+	return !tp.EthCall || tp.GasEstimation
+}
+
 // ============================
 func Add(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 	functionName := "add"
+	isTx := isTx(tp)
+
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(state, input)
+	lhs, rhs, err := get2VerifiedOperands(state, input, isTx)
 	if err != nil {
 		logger.Error(functionName, " inputs not verified ", " err ", err, " input ", hex.EncodeToString(input))
 		return nil, vm.ErrExecutionReverted
@@ -63,7 +69,7 @@ func Add(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 		return nil, vm.ErrExecutionReverted
 	}
 
-	err = importCiphertext(state, result)
+	err = importCiphertext(state, result, isTx)
 	if err != nil {
 		logger.Error(functionName, " failed ", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -76,6 +82,8 @@ func Add(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 
 func Verify(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 	functionName := "verify"
+	isTx := isTx(tp)
+
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", functionName)
 	}
@@ -99,7 +107,7 @@ func Verify(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 	}
 
 	ctHash := ct.Hash()
-	err = importCiphertext(state, ct)
+	err = importCiphertext(state, ct, isTx)
 	if err != nil {
 		logger.Error(functionName, " failed ", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -116,15 +124,10 @@ func Verify(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 func SealOutput(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 	//solgen: bool math
 	functionName := "sealOutput"
+	isTx := isTx(tp)
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", functionName)
-	}
-
-	if !tp.EthCall {
-		msg := functionName + " only supported on EthCall"
-		logger.Error(msg)
-		return nil, vm.ErrExecutionReverted
 	}
 
 	if len(input) != 64 {
@@ -133,7 +136,7 @@ func SealOutput(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 		return nil, vm.ErrExecutionReverted
 	}
 
-	ct := getCiphertext(state, tfhe.BytesToHash(input[0:32]))
+	ct := getCiphertext(state, tfhe.BytesToHash(input[0:32]), isTx)
 	if ct == nil {
 		msg := "sealOutput unverified ciphertext handle"
 		logger.Error(msg, " input ", hex.EncodeToString(input))
@@ -167,6 +170,7 @@ func SealOutput(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 func Decrypt(input []byte, tp *TxParams, state *FheosState) (*big.Int, error) {
 	//solgen: output plaintext
 	functionName := "decrypt"
+	isTx := isTx(tp)
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", functionName)
@@ -178,7 +182,7 @@ func Decrypt(input []byte, tp *TxParams, state *FheosState) (*big.Int, error) {
 		return nil, vm.ErrExecutionReverted
 	}
 
-	ct := getCiphertext(state, tfhe.BytesToHash(input[0:32]))
+	ct := getCiphertext(state, tfhe.BytesToHash(input[0:32]), isTx)
 	if ct == nil {
 		msg := functionName + " unverified ciphertext handle"
 		logger.Error(msg, " input ", hex.EncodeToString(input))
@@ -205,12 +209,13 @@ func Decrypt(input []byte, tp *TxParams, state *FheosState) (*big.Int, error) {
 func Lte(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 	//solgen: return ebool
 	functionName := "lte"
+	isTx := isTx(tp)
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(state, input)
+	lhs, rhs, err := get2VerifiedOperands(state, input, isTx)
 	if err != nil {
 		logger.Error(functionName, " inputs not verified", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -234,7 +239,7 @@ func Lte(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 		return nil, vm.ErrExecutionReverted
 	}
 
-	err = importCiphertext(state, result)
+	err = importCiphertext(state, result, isTx)
 	if err != nil {
 		logger.Error(functionName, " failed ", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -247,11 +252,13 @@ func Lte(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 
 func Sub(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 	functionName := "sub"
+	isTx := isTx(tp)
+
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(state, input)
+	lhs, rhs, err := get2VerifiedOperands(state, input, isTx)
 	if err != nil {
 		logger.Error(functionName, " inputs not verified", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -274,7 +281,7 @@ func Sub(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 		return nil, vm.ErrExecutionReverted
 	}
 
-	err = importCiphertext(state, result)
+	err = importCiphertext(state, result, isTx)
 	if err != nil {
 		logger.Error(functionName, " failed ", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -287,11 +294,13 @@ func Sub(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 
 func Mul(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 	functionName := "mul"
+	isTx := isTx(tp)
+
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(state, input)
+	lhs, rhs, err := get2VerifiedOperands(state, input, isTx)
 	if err != nil {
 		logger.Error(functionName, " inputs not verified", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -314,7 +323,7 @@ func Mul(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 		return nil, vm.ErrExecutionReverted
 	}
 
-	err = importCiphertext(state, result)
+	err = importCiphertext(state, result, isTx)
 	if err != nil {
 		logger.Error(functionName, " failed ", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -328,12 +337,13 @@ func Mul(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 func Lt(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 	//solgen: return ebool
 	functionName := "lt"
+	isTx := isTx(tp)
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(state, input)
+	lhs, rhs, err := get2VerifiedOperands(state, input, isTx)
 	if err != nil {
 		logger.Error(functionName, " inputs not verified", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -356,7 +366,7 @@ func Lt(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 		return nil, vm.ErrExecutionReverted
 	}
 
-	err = importCiphertext(state, result)
+	err = importCiphertext(state, result, isTx)
 	if err != nil {
 		logger.Error(functionName, " failed ", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -369,11 +379,13 @@ func Lt(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 
 func Select(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 	functionName := "select"
+	isTx := isTx(tp)
+
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", functionName)
 	}
 
-	control, ifTrue, ifFalse, err := get3VerifiedOperands(state, input)
+	control, ifTrue, ifFalse, err := get3VerifiedOperands(state, input, isTx)
 	if err != nil {
 		logger.Error(functionName, " inputs not verified input len: ", len(input), " err: ", err)
 		return nil, vm.ErrExecutionReverted
@@ -396,7 +408,7 @@ func Select(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 		return nil, vm.ErrExecutionReverted
 	}
 
-	err = importCiphertext(state, result)
+	err = importCiphertext(state, result, isTx)
 	if err != nil {
 		logger.Error(functionName, " failed ", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -411,6 +423,7 @@ func Req(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 	//solgen: input encrypted
 	//solgen: return none
 	functionName := "require"
+	isTx := isTx(tp)
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", functionName)
@@ -422,7 +435,7 @@ func Req(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 		return nil, vm.ErrExecutionReverted
 	}
 
-	ct := getCiphertext(state, tfhe.BytesToHash(input))
+	ct := getCiphertext(state, tfhe.BytesToHash(input), isTx)
 	if ct == nil {
 		msg := functionName + " unverified handle"
 		logger.Error(msg, " input ", hex.EncodeToString(input))
@@ -447,6 +460,8 @@ func Req(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 
 func Cast(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 	functionName := "cast"
+	isTx := isTx(tp)
+
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", functionName)
 	}
@@ -462,7 +477,7 @@ func Cast(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 		return importRandomCiphertext(state, castToType)
 	}
 
-	ct := getCiphertext(state, tfhe.BytesToHash(input[0:32]))
+	ct := getCiphertext(state, tfhe.BytesToHash(input[0:32]), isTx)
 	if ct == nil {
 		logger.Error(functionName + " input not verified")
 		return nil, vm.ErrExecutionReverted
@@ -477,7 +492,7 @@ func Cast(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 
 	resHash := res.Hash()
 
-	err = importCiphertext(state, res)
+	err = importCiphertext(state, res, isTx)
 	if err != nil {
 		logger.Error(functionName, " failed ", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -494,6 +509,7 @@ func Cast(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 
 func TrivialEncrypt(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 	functionName := "trivialEncrypt"
+	isTx := isTx(tp)
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", functionName)
@@ -520,7 +536,7 @@ func TrivialEncrypt(input []byte, tp *TxParams, state *FheosState) ([]byte, erro
 	}
 
 	ctHash := ct.Hash()
-	err = importCiphertext(state, ct)
+	err = importCiphertext(state, ct, isTx)
 	if err != nil {
 		logger.Error(functionName, " failed ", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -536,11 +552,13 @@ func TrivialEncrypt(input []byte, tp *TxParams, state *FheosState) ([]byte, erro
 
 func Div(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 	functionName := "div"
+	isTx := isTx(tp)
+
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(state, input)
+	lhs, rhs, err := get2VerifiedOperands(state, input, isTx)
 	if err != nil {
 		logger.Error(functionName, " inputs not verified", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -563,7 +581,7 @@ func Div(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 		return nil, vm.ErrExecutionReverted
 	}
 
-	err = importCiphertext(state, result)
+	err = importCiphertext(state, result, isTx)
 	if err != nil {
 		logger.Error(functionName, " failed ", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -578,12 +596,13 @@ func Div(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 func Gt(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 	//solgen: return ebool
 	functionName := "gt"
+	isTx := isTx(tp)
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(state, input)
+	lhs, rhs, err := get2VerifiedOperands(state, input, isTx)
 	if err != nil {
 		logger.Error(functionName, " inputs not verified", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -606,7 +625,7 @@ func Gt(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 		return nil, vm.ErrExecutionReverted
 	}
 
-	err = importCiphertext(state, result)
+	err = importCiphertext(state, result, isTx)
 	if err != nil {
 		logger.Error(functionName, " failed ", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -621,12 +640,13 @@ func Gt(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 func Gte(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 	//solgen: return ebool
 	functionName := "gte"
+	isTx := isTx(tp)
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(state, input)
+	lhs, rhs, err := get2VerifiedOperands(state, input, isTx)
 	if err != nil {
 		logger.Error(functionName+" inputs not verified", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -648,7 +668,7 @@ func Gte(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 		logger.Error(functionName+" failed", " err ", err)
 		return nil, vm.ErrExecutionReverted
 	}
-	err = importCiphertext(state, result)
+	err = importCiphertext(state, result, isTx)
 	if err != nil {
 		logger.Error(functionName, " failed ", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -662,11 +682,13 @@ func Gte(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 
 func Rem(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 	functionName := "rem"
+	isTx := isTx(tp)
+
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(state, input)
+	lhs, rhs, err := get2VerifiedOperands(state, input, isTx)
 	if err != nil {
 		logger.Error(functionName+" inputs not verified", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -688,7 +710,7 @@ func Rem(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 		logger.Error(functionName+" failed", " err ", err)
 		return nil, vm.ErrExecutionReverted
 	}
-	err = importCiphertext(state, result)
+	err = importCiphertext(state, result, isTx)
 	if err != nil {
 		logger.Error(functionName, " failed ", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -703,12 +725,13 @@ func Rem(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 func And(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 	//solgen: bool math
 	functionName := "and"
+	isTx := isTx(tp)
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(state, input)
+	lhs, rhs, err := get2VerifiedOperands(state, input, isTx)
 	if err != nil {
 		logger.Error(functionName+" inputs not verified", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -731,7 +754,7 @@ func And(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 		return nil, vm.ErrExecutionReverted
 	}
 
-	err = importCiphertext(state, result)
+	err = importCiphertext(state, result, isTx)
 	if err != nil {
 		logger.Error(functionName, " failed ", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -746,12 +769,13 @@ func And(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 func Or(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 	//solgen: bool math
 	functionName := "or"
+	isTx := isTx(tp)
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(state, input)
+	lhs, rhs, err := get2VerifiedOperands(state, input, isTx)
 	if err != nil {
 		logger.Error(functionName+" inputs not verified", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -774,7 +798,7 @@ func Or(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 		return nil, vm.ErrExecutionReverted
 	}
 
-	err = importCiphertext(state, result)
+	err = importCiphertext(state, result, isTx)
 	if err != nil {
 		logger.Error(functionName, " failed ", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -789,12 +813,13 @@ func Or(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 func Xor(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 	//solgen: bool math
 	functionName := "xor"
+	isTx := isTx(tp)
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(state, input)
+	lhs, rhs, err := get2VerifiedOperands(state, input, isTx)
 	if err != nil {
 		logger.Error(functionName+" inputs not verified", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -816,7 +841,7 @@ func Xor(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 		logger.Error(functionName+" failed", " err ", err)
 		return nil, vm.ErrExecutionReverted
 	}
-	err = importCiphertext(state, result)
+	err = importCiphertext(state, result, isTx)
 	if err != nil {
 		logger.Error(functionName, " failed ", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -832,12 +857,13 @@ func Eq(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 	//solgen: bool math
 	//solgen: return ebool
 	functionName := "eq"
+	isTx := isTx(tp)
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(state, input)
+	lhs, rhs, err := get2VerifiedOperands(state, input, isTx)
 	if err != nil {
 		logger.Error(functionName+" inputs not verified", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -859,7 +885,7 @@ func Eq(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 		logger.Error(functionName+" failed", " err ", err)
 		return nil, vm.ErrExecutionReverted
 	}
-	err = importCiphertext(state, result)
+	err = importCiphertext(state, result, isTx)
 	if err != nil {
 		logger.Error(functionName, " failed ", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -875,12 +901,13 @@ func Ne(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 	//solgen: bool math
 	//solgen: return ebool
 	functionName := "ne"
+	isTx := isTx(tp)
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(state, input)
+	lhs, rhs, err := get2VerifiedOperands(state, input, isTx)
 	if err != nil {
 		logger.Error(functionName+" inputs not verified", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -902,7 +929,7 @@ func Ne(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 		logger.Error(functionName+" failed", " err ", err)
 		return nil, vm.ErrExecutionReverted
 	}
-	err = importCiphertext(state, result)
+	err = importCiphertext(state, result, isTx)
 	if err != nil {
 		logger.Error(functionName, " failed ", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -916,11 +943,13 @@ func Ne(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 
 func Min(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 	functionName := "min"
+	isTx := isTx(tp)
+
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(state, input)
+	lhs, rhs, err := get2VerifiedOperands(state, input, isTx)
 	if err != nil {
 		logger.Error(functionName+" inputs not verified", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -942,7 +971,7 @@ func Min(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 		logger.Error(functionName+" failed", " err ", err)
 		return nil, vm.ErrExecutionReverted
 	}
-	err = importCiphertext(state, result)
+	err = importCiphertext(state, result, isTx)
 	if err != nil {
 		logger.Error(functionName, " failed ", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -956,11 +985,13 @@ func Min(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 
 func Max(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 	functionName := "max"
+	isTx := isTx(tp)
+
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(state, input)
+	lhs, rhs, err := get2VerifiedOperands(state, input, isTx)
 	if err != nil {
 		logger.Error(functionName+" inputs not verified", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -982,7 +1013,7 @@ func Max(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 		logger.Error(functionName+" failed", " err ", err)
 		return nil, vm.ErrExecutionReverted
 	}
-	err = importCiphertext(state, result)
+	err = importCiphertext(state, result, isTx)
 	if err != nil {
 		logger.Error(functionName, " failed ", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -996,11 +1027,13 @@ func Max(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 
 func Shl(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 	functionName := "shl"
+	isTx := isTx(tp)
+
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(state, input)
+	lhs, rhs, err := get2VerifiedOperands(state, input, isTx)
 	if err != nil {
 		logger.Error(functionName+" inputs not verified", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -1022,7 +1055,7 @@ func Shl(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 		logger.Error(functionName+" failed", " err ", err)
 		return nil, vm.ErrExecutionReverted
 	}
-	err = importCiphertext(state, result)
+	err = importCiphertext(state, result, isTx)
 	if err != nil {
 		logger.Error(functionName, " failed ", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -1036,11 +1069,13 @@ func Shl(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 
 func Shr(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 	functionName := "shr"
+	isTx := isTx(tp)
+
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(state, input)
+	lhs, rhs, err := get2VerifiedOperands(state, input, isTx)
 	if err != nil {
 		logger.Error(functionName+" inputs not verified", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -1062,7 +1097,7 @@ func Shr(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 		logger.Error("fheShr failed", " err ", err)
 		return nil, err
 	}
-	err = importCiphertext(state, result)
+	err = importCiphertext(state, result, isTx)
 	if err != nil {
 		logger.Error(functionName, " failed ", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -1076,12 +1111,13 @@ func Shr(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 
 func Not(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 	functionName := "not"
+	isTx := isTx(tp)
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", functionName)
 	}
 
-	ct := getCiphertext(state, tfhe.BytesToHash(input[0:32]))
+	ct := getCiphertext(state, tfhe.BytesToHash(input[0:32]), isTx)
 	if ct == nil {
 		msg := "not unverified ciphertext handle"
 		logger.Error(msg, "input", hex.EncodeToString(input))
@@ -1099,7 +1135,7 @@ func Not(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 		return nil, vm.ErrExecutionReverted
 	}
 
-	err = importCiphertext(state, result)
+	err = importCiphertext(state, result, isTx)
 	if err != nil {
 		logger.Error(functionName, " failed ", " err ", err)
 		return nil, vm.ErrExecutionReverted
@@ -1112,6 +1148,7 @@ func Not(input []byte, tp *TxParams, state *FheosState) ([]byte, error) {
 
 func GetNetworkPublicKey(tp *TxParams, _ *FheosState) ([]byte, error) {
 	functionName := "getNetworkPublicKey"
+
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new function get network public key:", functionName)
 	}
