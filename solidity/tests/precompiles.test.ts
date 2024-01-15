@@ -470,13 +470,18 @@ describe('Test Req', () =>  {
         for (const testCase of test.cases) {
             it(`Test ${test.function}${testCase.name}`, async () => {
                 let hadEvaluationFailure = false;
+                let err = "";
                 try {
                     await contract.req(test.function, BigInt(testCase.a));
                 } catch (e) {
                     console.log(e);
-                    hadEvaluationFailure = `${e}`.includes("execution reverted");
+                    hadEvaluationFailure = true;
+                    err = `${e}`;
                 }
                 expect(hadEvaluationFailure).toBe(testCase.shouldCrash);
+                if (hadEvaluationFailure) {
+                    expect(err.includes("execution reverted")).toBe(true);
+                }
             });
         }
     }
