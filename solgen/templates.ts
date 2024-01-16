@@ -352,8 +352,11 @@ export function SolTemplate2Arg(name: string, input1: AllTypes, input2: AllTypes
             let input2Cast = input1 === input2 ? variableName2 : `${asEuintFuncName(input1)}(${variableName2})`;
             //
             funcBody += `
-        if (!isInitialized(${variableName1}) || !isInitialized(${variableName2})) {
-            revert UninitializedInputs();
+        if (!isInitialized(${variableName1})) {
+            ${variableName1} = ${asEuintFuncName(input1)}(0);
+        }
+        if (!isInitialized(${variableName2})) {
+            ${variableName2} = ${asEuintFuncName(input1)}(0);
         }
         ${UnderlyingTypes[input1]} unwrappedInput1 = ${unwrapType(input1, variableName1)};
         ${UnderlyingTypes[input1]} unwrappedInput2 = ${unwrapType(input1, `${input2Cast}`)};
@@ -373,6 +376,9 @@ export function SolTemplate2Arg(name: string, input1: AllTypes, input2: AllTypes
         else if (input2 === "bytes32") {
             // **** Value 1 is encrypted, value 2 is bytes32 - this is basically reencrypt/wrapForUser
             funcBody += `
+        if (!isInitialized(${variableName1})) {
+            ${variableName1} = ${asEuintFuncName(input1)}(0);
+        }
         ${UnderlyingTypes[input1]} unwrapped = ${unwrapType(input1, variableName1)};
 
         return Impl.${name}(unwrapped, ${variableName2});`;
@@ -705,9 +711,10 @@ export function SolTemplate1Arg(name: string, input1: AllTypes, returnType: AllT
     funcBody += `function ${name}(${input1} input1) internal pure ${returnStr} {`;
 
     if (valueIsEncrypted(input1)) {
+        // Get the proper function
         funcBody += `
         if (!isInitialized(input1)) {
-            revert UninitializedInputs();
+            input1 = ${asEuintFuncName(input1)}(0);
         }`;
         let unwrap = `${UnderlyingTypes[input1]} unwrappedInput1 = ${unwrapType(input1, "input1")};`;
         let getResult = (inputName: string) => `FheOps(Precompiles.Fheos).${name}(${inputName});`;
@@ -753,8 +760,14 @@ export function SolTemplate3Arg(name: string, input1: AllTypes, input2: AllTypes
 
             return `\n
     function ${name}(${input1} input1, ${input2} input2, ${input3} input3) internal pure returns (${returnType}) {
-        if (!isInitialized(input1) || !isInitialized(input2) || !isInitialized(input3)) {
-            revert UninitializedInputs();
+        if (!isInitialized(input1)) {
+            input1 = ${asEuintFuncName(input1)}(0);
+        }
+        if (!isInitialized(input2)) {
+            input2 = ${asEuintFuncName(input2)}(0);
+        }
+        if (!isInitialized(input3)) {
+            input3 = ${asEuintFuncName(input3)}(0);
         }
 
         ${UnderlyingTypes[input1]} unwrappedInput1 = ${unwrapType(input1, "input1")};
