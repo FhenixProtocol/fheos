@@ -189,6 +189,10 @@ interface FheOps {
 					param.Type = "bytes memory"
 				}
 
+				if param.Type == "byte" {
+					param.Type = "uint8"
+				}
+
 				if param.Type == "*big.Int" {
 					param.Type = "uint256"
 				}
@@ -197,14 +201,10 @@ interface FheOps {
 					continue
 				}
 
-				if param.Type == "*FheosState" {
-					continue
-				}
-
 				outLine += param.Type + " " + param.Name
 
-				// Is it the last (Ignoring the TxParams and the FheosState)
-				if count < len(params)-3 {
+				// Is it the last (Ignoring the TxParams)
+				if count < len(params)-2 {
 					outLine += ", "
 				}
 			}
@@ -349,6 +349,7 @@ func Gen(parent string, output string) {
 	for _, f := range functions {
 		parameters := ""
 		innerParameters := ""
+
 		if len(f.Inputs) > 0 {
 			parameters += ", "
 		}
@@ -356,6 +357,10 @@ func Gen(parent string, output string) {
 			t := arg.Type
 			if t == "bytes" {
 				t = "[]byte"
+			}
+
+			if t == "uint8" {
+				t = "byte"
 			}
 
 			if t == "uint256" {
@@ -366,14 +371,9 @@ func Gen(parent string, output string) {
 				continue
 			}
 
-			if t == "*FheosState" {
-				continue
-			}
-
 			parameters += fmt.Sprintf("%s %s", arg.Name, t)
 			innerParameters += arg.Name
-			// Is it the last (Ignoring the TxParams and FheosState)
-			if count < (len(f.Inputs) - 3) {
+			if count < (len(f.Inputs) - 1) {
 				parameters += ", "
 			}
 			innerParameters += ", "
@@ -458,7 +458,7 @@ func GenerateFHEOperationNoGasTemplate() *template.Template {
 	templateText := `
 func (con FheOps) {{.Name}}(c ctx, evm mech{{.Inputs}}) ({{.ReturnType}}, error) {
 	tp := fheos.TxParamsFromEVM(evm)
-	return fheos.{{.Name}}({{.InnerInputs}}&tp, c.FheosState)
+	return fheos.{{.Name}}({{.InnerInputs}}&tp)
 }
 `
 
@@ -475,7 +475,7 @@ func GenerateFHEOperationTemplate() *template.Template {
 	templateText := `
 func (con FheOps) {{.Name}}(c ctx, evm mech{{.Inputs}}) ({{.ReturnType}}, error) {
 	tp := fheos.TxParamsFromEVM(evm)
-	ret, gas, err := fheos.{{.Name}}({{.InnerInputs}}&tp, c.FheosState)
+	ret, gas, err := fheos.{{.Name}}({{.InnerInputs}}&tp)
 	
 	if err != nil {
 		return ret, err

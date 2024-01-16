@@ -15,9 +15,9 @@ interface FunctionAnalysis {
 
 // helps us know how many input parameters there are
 const specificFunctions = [
-    {name: 'get3VerifiedOperands', amount: 3, paramTypes: ["encrypted", "encrypted", "encrypted"]},
-    {name: 'get2VerifiedOperands', amount: 2, paramTypes: ["encrypted", "uint8", "plaintext"]},
-    {name: 'getCiphertext', amount: 1, paramTypes: ["encrypted"]},
+    {name: 'get3VerifiedOperands(', amount: 3, paramTypes: ["encrypted", "encrypted", "encrypted"]},
+    {name: 'get2VerifiedOperands(', amount: 2, paramTypes: ["encrypted", "uint8", "plaintext"]},
+    {name: 'getCiphertext(', amount: 1, paramTypes: ["encrypted"]},
     {name: 'tfhe.UintType(', amount: 1, paramTypes: ["encrypted"]}
 ];
 
@@ -43,7 +43,6 @@ async function analyzeGoFile(filePath: string): Promise<FunctionAnalysis[] | nul
 
     for (const line of lines) {
         const trimmedLine = line.trim();
-        //console.log(`testing: ${trimmedLine}`)
         if (isInsideHighLevelFunction) {
             if (solgenCommentRegex.test(trimmedLine)) {
                 if (solgenReturnsComment.test(trimmedLine)) {
@@ -75,7 +74,8 @@ async function analyzeGoFile(filePath: string): Promise<FunctionAnalysis[] | nul
 
             // Look for specific functions within high-level function
             for (const keyfn of specificFunctions) {
-                if (trimmedLine.includes(keyfn.name)) {
+                // skip tfhe.UintType(utype) because it will not indicate the input types
+                if (trimmedLine.includes(keyfn.name) && !trimmedLine.includes("tfhe.UintType(utype)")) {
                     let needsSameType = /lhs.UintType\s+!=\s+rhs.UintType/.test(trimmedLine);
                     let amount = keyfn.amount;
                     if (funcName === SEALING_FUNCTION_NAME) {
@@ -91,14 +91,16 @@ async function analyzeGoFile(filePath: string): Promise<FunctionAnalysis[] | nul
                         continue;
                     }
 
-                    specificFunctionAnalysis.push({
+                    const analysis : FunctionAnalysis = {
                         name: funcName,
                         paramsCount: amount,
                         needsSameType: needsSameType,
                         returnType: returnType,
                         inputTypes: inputs.slice(0, amount),
                         isBooleanMathOp : isBooleanMathOp
-                    });
+                    }
+
+                    specificFunctionAnalysis.push(analysis);
                 }
             }
         } else if (highLevelFunctionRegex.test(trimmedLine)) {

@@ -38,6 +38,10 @@ test: check_network_is_running compile-go-tfhe gen compile
 	cd solidity && pnpm compile
 	cd solidity && pnpm test
 
+.PHONY: build
+build:
+	go build -o build/main ./cmd/
+
 .PHONY: clean
 clean:
-	rm solidity/*
+	rm -r build/*

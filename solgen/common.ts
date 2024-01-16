@@ -14,6 +14,13 @@ export const UnderlyingTypes: Record<EUintType, string> = {
     ebool: 'uint256',
 };
 
+export const UintTypes: Record<EUintType, Number> = {
+    euint8: 0,
+    euint16: 1,
+    euint32: 2,
+    ebool: 0,
+};
+
 interface OperatorMap {
     operator: string | null,
     func: string,

@@ -34,31 +34,38 @@ func shouldPrintPrecompileInfo(tp *TxParams) bool {
 }
 
 // ============================
-func Add(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) {
+func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
 	functionName := "add"
+
+	if !isValidType(utype) {
+		logger.Error("invalid ciphertext type ", utype)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	uintType := tfhe.UintType(utype)
+
+	gas := getGasForPrecompile(functionName, uintType)
+	if tp.GasEstimation {
+		return state.EZero[utype], gas, nil
+	}
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(state, input)
+	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
 	if err != nil {
-		logger.Error(functionName, " inputs not verified ", " err ", err, " input ", hex.EncodeToString(input))
+		logger.Error(functionName, " inputs not verified", " err ", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	if lhs.UintType != rhs.UintType {
+	if lhs.UintType != rhs.UintType || (lhs.UintType != uintType) {
 		msg := functionName + " operand type mismatch"
 		logger.Error(msg, " lhs ", lhs.UintType, " rhs ", rhs.UintType)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	gas := getGasForPrecompile(functionName, rhs.UintType)
 	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	if tp.GasEstimation {
-		res, err := importRandomCiphertext(state, lhs.UintType)
-		return res, gas, err
-	}
 
 	result, err := lhs.Add(rhs)
 	if err != nil {
@@ -73,39 +80,36 @@ func Add(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) 
 	}
 
 	resultHash := result.Hash()
+
 	logger.Debug(functionName, " success ", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), " result ", resultHash.Hex())
 	return resultHash[:], gas, nil
 }
 
-func Verify(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) {
+func Verify(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 	functionName := "verify"
+
+	if !isValidType(utype) {
+		logger.Error("invalid ciphertext type ", utype)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	uintType := tfhe.UintType(utype)
+
+	gas := getGasForPrecompile(functionName, uintType)
+	if tp.GasEstimation {
+		return state.EZero[utype], gas, nil
+	}
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", functionName)
 	}
 
-	if len(input) <= 1 {
-		msg := functionName + " RequiredGas() input needs to contain a ciphertext and one byte for its type"
-		logger.Error(msg, " len ", len(input))
-		return nil, 0, vm.ErrExecutionReverted
-	}
-
-	ctBytes := input[:len(input)-1]
-	ctType := tfhe.UintType(input[len(input)-1])
-
-	ct, err := tfhe.NewCipherTextFromBytes(ctBytes, ctType, true /* TODO: not sure + shouldn't be hardcoded */)
+	ct, err := tfhe.NewCipherTextFromBytes(input, uintType, true /* TODO: not sure + shouldn't be hardcoded */)
 	if err != nil {
 		logger.Error(functionName, " failed to deserialize input ciphertext",
 			" err ", err,
-			" len ", len(ctBytes),
-			" ctBytes64 ", hex.EncodeToString(ctBytes[:minInt(len(ctBytes), 64)]))
+			" len ", len(input))
 		return nil, 0, vm.ErrExecutionReverted
-	}
-
-	gas := getGasForPrecompile(functionName, ctType)
-	if tp.GasEstimation {
-		res, err := importRandomCiphertext(state, ctType)
-		return res, gas, err
 	}
 
 	ctHash := ct.Hash()
@@ -115,38 +119,47 @@ func Verify(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, erro
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	if tp.Commit {
-		logger.Debug(functionName, " success ",
-			" ctHash ", ctHash.Hex(),
-			" ctBytes64 ", hex.EncodeToString(ctBytes[:minInt(len(ctBytes), 64)]))
-	}
+	logger.Debug(functionName, " success ", " ctHash ", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
-func SealOutput(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) {
+func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) ([]byte, uint64, error) {
 	//solgen: bool math
 	functionName := "sealOutput"
+
+	if !isValidType(utype) {
+		logger.Error("invalid ciphertext type ", utype)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	uintType := tfhe.UintType(utype)
+
+	gas := getGasForPrecompile(functionName, uintType)
+	if tp.GasEstimation {
+		return state.EZero[utype], gas, nil
+	}
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", functionName)
 	}
 
-	if len(input) != 64 {
-		msg := functionName + " input len must be 64 bytes"
-		logger.Error(msg, " input ", hex.EncodeToString(input), " len ", len(input))
+	if len(ctHash) != 32 {
+		msg := functionName + " ciphertext's hashes need to be 32 bytes long"
+		logger.Error(msg, " ciphertxt's hash is: ", hex.EncodeToString(ctHash), " of len ", len(ctHash))
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	ct := getCiphertext(state, tfhe.BytesToHash(input[0:32]))
+	if len(pk) != 32 {
+		msg := functionName + " public key need to be 32 bytes long"
+		logger.Error(msg, " public key is: ", hex.EncodeToString(pk), " of len ", len(pk))
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	ct := getCiphertext(state, tfhe.BytesToHash(ctHash))
 	if ct == nil {
-		msg := "sealOutput unverified ciphertext handle"
-		logger.Error(msg, " input ", hex.EncodeToString(input))
+		msg := functionName + " unverified ciphertext handle"
+		logger.Error(msg, " ciphertext's hash: ", hex.EncodeToString(ctHash))
 		return nil, 0, vm.ErrExecutionReverted
-	}
-	gas := getGasForPrecompile(functionName, ct.UintType)
-
-	if tp.GasEstimation {
-		return []byte{1}, gas, nil
 	}
 
 	decryptedValue, err := tfhe.Decrypt(*ct)
@@ -157,21 +170,32 @@ func SealOutput(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, 
 
 	// Cast decrypted value to big.Int
 	bgDecrypted := new(big.Int).SetUint64(decryptedValue)
-	pubKey := input[32:64]
-	reencryptedValue, err := encryptToUserKey(bgDecrypted, pubKey)
+	reencryptedValue, err := encryptToUserKey(bgDecrypted, pk)
 	if err != nil {
 		logger.Error(functionName, " failed to encrypt to user key", " err ", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	logger.Debug(functionName, " success", " input ", hex.EncodeToString(input))
+	logger.Debug(functionName, " success", " ciphertext's hash ", hex.EncodeToString(ctHash), " public key ", hex.EncodeToString(pk))
 
 	return reencryptedValue, gas, nil
 }
 
-func Decrypt(input []byte, tp *TxParams, state *FheosState) (*big.Int, uint64, error) {
+func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
 	//solgen: output plaintext
 	functionName := "decrypt"
+
+	if !isValidType(utype) {
+		logger.Error("invalid ciphertext type ", utype)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	uintType := tfhe.UintType(utype)
+
+	gas := getGasForPrecompile(functionName, uintType)
+	if tp.GasEstimation {
+		return big.NewInt(0), gas, nil
+	}
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", functionName)
@@ -183,16 +207,11 @@ func Decrypt(input []byte, tp *TxParams, state *FheosState) (*big.Int, uint64, e
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	ct := getCiphertext(state, tfhe.BytesToHash(input[0:32]))
+	ct := getCiphertext(state, tfhe.BytesToHash(input))
 	if ct == nil {
 		msg := functionName + " unverified ciphertext handle"
 		logger.Error(msg, " input ", hex.EncodeToString(input))
 		return nil, 0, vm.ErrExecutionReverted
-	}
-	gas := getGasForPrecompile(functionName, ct.UintType)
-
-	if tp.GasEstimation {
-		return new(big.Int).SetUint64(1), gas, nil
 	}
 
 	decryptedValue, err := tfhe.Decrypt(*ct)
@@ -208,15 +227,27 @@ func Decrypt(input []byte, tp *TxParams, state *FheosState) (*big.Int, uint64, e
 
 }
 
-func Lte(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) {
+func Lte(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
 	//solgen: return ebool
 	functionName := "lte"
+
+	if !isValidType(utype) {
+		logger.Error("invalid ciphertext type ", utype)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	uintType := tfhe.UintType(utype)
+
+	gas := getGasForPrecompile(functionName, uintType)
+	if tp.GasEstimation {
+		return state.EZero[utype], gas, nil
+	}
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(state, input)
+	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
 	if err != nil {
 		logger.Error(functionName, " inputs not verified", " err ", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -226,14 +257,6 @@ func Lte(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) 
 		msg := functionName + " operand type mismatch"
 		logger.Error(msg, " lhs ", lhs.UintType, " rhs ", rhs.UintType)
 		return nil, 0, vm.ErrExecutionReverted
-	}
-
-	gas := getGasForPrecompile(functionName, rhs.UintType)
-	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	if tp.GasEstimation {
-		res, err := importRandomCiphertext(state, lhs.UintType)
-		return res, gas, err
-
 	}
 
 	result, err := lhs.Lte(rhs)
@@ -253,14 +276,26 @@ func Lte(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) 
 	return resultHash[:], gas, nil
 }
 
-func Sub(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) {
+func Sub(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
 	functionName := "sub"
+
+	if !isValidType(utype) {
+		logger.Error("invalid ciphertext type ", utype)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	uintType := tfhe.UintType(utype)
+
+	gas := getGasForPrecompile(functionName, uintType)
+	if tp.GasEstimation {
+		return state.EZero[utype], gas, nil
+	}
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(state, input)
+	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
 	if err != nil {
 		logger.Error(functionName, " inputs not verified", " err ", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -270,13 +305,6 @@ func Sub(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) 
 		msg := functionName + " operand type mismatch"
 		logger.Error(msg, " lhs ", lhs.UintType, " rhs ", rhs.UintType)
 		return nil, 0, vm.ErrExecutionReverted
-	}
-
-	gas := getGasForPrecompile(functionName, rhs.UintType)
-	// // If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	if tp.GasEstimation {
-		res, err := importRandomCiphertext(state, lhs.UintType)
-		return res, gas, err
 	}
 
 	result, err := lhs.Sub(rhs)
@@ -296,14 +324,26 @@ func Sub(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) 
 	return resultHash[:], gas, nil
 }
 
-func Mul(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) {
+func Mul(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
 	functionName := "mul"
+
+	if !isValidType(utype) {
+		logger.Error("invalid ciphertext type ", utype)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	uintType := tfhe.UintType(utype)
+
+	gas := getGasForPrecompile(functionName, uintType)
+	if tp.GasEstimation {
+		return state.EZero[utype], gas, nil
+	}
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(state, input)
+	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
 	if err != nil {
 		logger.Error(functionName, " inputs not verified", " err ", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -313,13 +353,6 @@ func Mul(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) 
 		msg := functionName + " operand type mismatch"
 		logger.Error(msg, " lhs ", lhs.UintType, " rhs ", rhs.UintType)
 		return nil, 0, vm.ErrExecutionReverted
-	}
-
-	gas := getGasForPrecompile(functionName, rhs.UintType)
-	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	if tp.GasEstimation {
-		res, err := importRandomCiphertext(state, lhs.UintType)
-		return res, gas, err
 	}
 
 	result, err := lhs.Mul(rhs)
@@ -339,15 +372,27 @@ func Mul(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) 
 	return ctHash[:], gas, nil
 }
 
-func Lt(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) {
+func Lt(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
 	//solgen: return ebool
 	functionName := "lt"
+
+	if !isValidType(utype) {
+		logger.Error("invalid ciphertext type ", utype)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	uintType := tfhe.UintType(utype)
+
+	gas := getGasForPrecompile(functionName, uintType)
+	if tp.GasEstimation {
+		return state.EZero[utype], gas, nil
+	}
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(state, input)
+	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
 	if err != nil {
 		logger.Error(functionName, " inputs not verified", " err ", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -357,13 +402,6 @@ func Lt(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) {
 		msg := functionName + " operand type mismatch"
 		logger.Error(msg, " lhs ", lhs.UintType, " rhs ", rhs.UintType)
 		return nil, 0, vm.ErrExecutionReverted
-	}
-
-	gas := getGasForPrecompile(functionName, rhs.UintType)
-	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	if tp.GasEstimation {
-		res, err := importRandomCiphertext(state, lhs.UintType)
-		return res, gas, err
 	}
 
 	result, err := lhs.Lt(rhs)
@@ -383,30 +421,35 @@ func Lt(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) {
 	return resultHash[:], gas, nil
 }
 
-func Select(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) {
+func Select(utype byte, controlHash []byte, ifTrueHash []byte, ifFalseHash []byte, tp *TxParams) ([]byte, uint64, error) {
 	functionName := "select"
+
+	if !isValidType(utype) {
+		logger.Error("invalid ciphertext type ", utype)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	uintType := tfhe.UintType(utype)
+
+	gas := getGasForPrecompile(functionName, uintType)
+	if tp.GasEstimation {
+		return state.EZero[utype], gas, nil
+	}
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", functionName)
 	}
 
-	control, ifTrue, ifFalse, err := get3VerifiedOperands(state, input)
+	control, ifTrue, ifFalse, err := get3VerifiedOperands(state, controlHash, ifTrueHash, ifFalseHash)
 	if err != nil {
-		logger.Error(functionName, " inputs not verified input len: ", len(input), " err: ", err)
+		logger.Error(functionName, " inputs not verified control len: ", len(controlHash), " ifTrue len: ", len(ifTrueHash), " ifFalse len: ", len(ifFalseHash), " err: ", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	if ifTrue.UintType != ifFalse.UintType {
+	if uintType != ifTrue.UintType || ifTrue.UintType != ifFalse.UintType {
 		msg := functionName + " operands type mismatch"
 		logger.Error(msg, " ifTrue ", ifTrue.UintType, " ifFalse ", ifFalse.UintType)
 		return nil, 0, vm.ErrExecutionReverted
-	}
-
-	gas := getGasForPrecompile(functionName, ifTrue.UintType)
-	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	if tp.GasEstimation {
-		res, err := importRandomCiphertext(state, ifTrue.UintType)
-		return res, gas, err
 	}
 
 	result, err := control.Cmux(ifTrue, ifFalse)
@@ -426,10 +469,22 @@ func Select(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, erro
 	return resultHash[:], gas, nil
 }
 
-func Req(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) {
+func Req(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 	//solgen: input encrypted
 	//solgen: return none
 	functionName := "require"
+
+	if !isValidType(utype) {
+		logger.Error("invalid ciphertext type ", utype)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	uintType := tfhe.UintType(utype)
+
+	gas := getGasForPrecompile(functionName, uintType)
+	if tp.GasEstimation {
+		return state.EZero[utype], gas, nil
+	}
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", functionName)
@@ -447,12 +502,6 @@ func Req(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) 
 		logger.Error(msg, " input ", hex.EncodeToString(input))
 		return nil, 0, vm.ErrExecutionReverted
 	}
-	// If we are not committing to state, assume the require is true, avoiding any side effects
-	gas := getGasForPrecompile(functionName, ct.UintType)
-	// (i.e. mutatiting the oracle DB).
-	if tp.GasEstimation {
-		return nil, gas, nil
-	}
 
 	ev := evaluateRequire(ct)
 
@@ -465,31 +514,37 @@ func Req(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) 
 	return nil, gas, nil
 }
 
-func Cast(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) {
+func Cast(utype byte, input []byte, toType byte, tp *TxParams) ([]byte, uint64, error) {
 	functionName := "cast"
+
+	if !isValidType(utype) {
+		logger.Error("invalid ciphertext type ", utype)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	uintType := tfhe.UintType(utype)
+
+	gas := getGasForPrecompile(functionName, uintType)
+	if tp.GasEstimation {
+		return state.EZero[utype], gas, nil
+	}
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", functionName)
 	}
 
-	if !isValidType(input[32]) {
+	if !isValidType(toType) {
 		logger.Error("invalid type to cast to")
 		return nil, 0, vm.ErrExecutionReverted
 	}
-	castToType := tfhe.UintType(input[32])
 
-	gas := getGasForPrecompile(functionName, castToType)
-	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	if tp.GasEstimation {
-		res, err := importRandomCiphertext(state, castToType)
-		return res, gas, err
-	}
-
-	ct := getCiphertext(state, tfhe.BytesToHash(input[0:32]))
+	ct := getCiphertext(state, tfhe.BytesToHash(input))
 	if ct == nil {
 		logger.Error(functionName + " input not verified")
 		return nil, 0, vm.ErrExecutionReverted
 	}
+
+	castToType := tfhe.UintType(toType)
 
 	res, err := ct.Cast(castToType)
 	if err != nil {
@@ -515,28 +570,33 @@ func Cast(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error)
 	return resHash[:], gas, nil
 }
 
-func TrivialEncrypt(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) {
+func TrivialEncrypt(input []byte, toType byte, tp *TxParams) ([]byte, uint64, error) {
 	functionName := "trivialEncrypt"
+
+	if !isValidType(toType) {
+		logger.Error("invalid ciphertext type ", toType)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	uintType := tfhe.UintType(toType)
+
+	gas := getGasForPrecompile(functionName, uintType)
+	if tp.GasEstimation {
+		return state.EZero[toType], gas, nil
+	}
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", functionName)
 	}
 
-	if len(input) != 33 {
-		msg := functionName + " input len must be 33 bytes"
+	if len(input) != 32 {
+		msg := functionName + " input len must be 32 bytes"
 		logger.Error(msg, " input ", hex.EncodeToString(input), " len ", len(input))
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	valueToEncrypt := *new(big.Int).SetBytes(input[0:32])
-	encryptToType := tfhe.UintType(input[32])
-
-	gas := getGasForPrecompile(functionName, encryptToType)
-	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	if tp.GasEstimation {
-		res, err := importRandomCiphertext(state, encryptToType)
-		return res, gas, err
-	}
+	valueToEncrypt := *new(big.Int).SetBytes(input)
+	encryptToType := tfhe.UintType(toType)
 
 	ct, err := tfhe.NewCipherTextTrivial(valueToEncrypt, encryptToType)
 	if err != nil {
@@ -559,14 +619,26 @@ func TrivialEncrypt(input []byte, tp *TxParams, state *FheosState) ([]byte, uint
 	return ctHash[:], gas, nil
 }
 
-func Div(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) {
+func Div(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
 	functionName := "div"
+
+	if !isValidType(utype) {
+		logger.Error("invalid ciphertext type ", utype)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	uintType := tfhe.UintType(utype)
+
+	gas := getGasForPrecompile(functionName, uintType)
+	if tp.GasEstimation {
+		return state.EZero[utype], gas, nil
+	}
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(state, input)
+	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
 	if err != nil {
 		logger.Error(functionName, " inputs not verified", " err ", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -576,13 +648,6 @@ func Div(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) 
 		msg := functionName + " operand type mismatch"
 		logger.Error(msg, " lhs ", lhs.UintType, " rhs ", rhs.UintType)
 		return nil, 0, vm.ErrExecutionReverted
-	}
-
-	gas := getGasForPrecompile(functionName, rhs.UintType)
-	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	if tp.GasEstimation {
-		res, err := importRandomCiphertext(state, lhs.UintType)
-		return res, gas, err
 	}
 
 	result, err := lhs.Div(rhs)
@@ -603,15 +668,27 @@ func Div(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) 
 	return ctHash[:], gas, nil
 }
 
-func Gt(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) {
+func Gt(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
 	//solgen: return ebool
 	functionName := "gt"
+
+	if !isValidType(utype) {
+		logger.Error("invalid ciphertext type ", utype)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	uintType := tfhe.UintType(utype)
+
+	gas := getGasForPrecompile(functionName, uintType)
+	if tp.GasEstimation {
+		return state.EZero[utype], gas, nil
+	}
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(state, input)
+	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
 	if err != nil {
 		logger.Error(functionName, " inputs not verified", " err ", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -621,13 +698,6 @@ func Gt(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) {
 		msg := functionName + " operand type mismatch"
 		logger.Error(msg, " lhs ", lhs.UintType, " rhs ", rhs.UintType)
 		return nil, 0, vm.ErrExecutionReverted
-	}
-
-	gas := getGasForPrecompile(functionName, rhs.UintType)
-	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	if tp.GasEstimation {
-		res, err := importRandomCiphertext(state, lhs.UintType)
-		return res, gas, err
 	}
 
 	result, err := lhs.Gt(rhs)
@@ -648,15 +718,27 @@ func Gt(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) {
 	return ctHash[:], gas, nil
 }
 
-func Gte(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) {
+func Gte(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
 	//solgen: return ebool
 	functionName := "gte"
+
+	if !isValidType(utype) {
+		logger.Error("invalid ciphertext type ", utype)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	uintType := tfhe.UintType(utype)
+
+	gas := getGasForPrecompile(functionName, uintType)
+	if tp.GasEstimation {
+		return state.EZero[utype], gas, nil
+	}
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(state, input)
+	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
 	if err != nil {
 		logger.Error(functionName+" inputs not verified", " err ", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -666,13 +748,6 @@ func Gte(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) 
 		msg := functionName + " operand type mismatch"
 		logger.Error(msg, " lhs ", lhs.UintType, " rhs ", rhs.UintType)
 		return nil, 0, vm.ErrExecutionReverted
-	}
-
-	gas := getGasForPrecompile(functionName, rhs.UintType)
-	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	if tp.GasEstimation {
-		res, err := importRandomCiphertext(state, lhs.UintType)
-		return res, gas, err
 	}
 
 	result, err := lhs.Gte(rhs)
@@ -692,14 +767,26 @@ func Gte(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) 
 	return ctHash[:], gas, nil
 }
 
-func Rem(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) {
+func Rem(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
 	functionName := "rem"
+
+	if !isValidType(utype) {
+		logger.Error("invalid ciphertext type ", utype)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	uintType := tfhe.UintType(utype)
+
+	gas := getGasForPrecompile(functionName, uintType)
+	if tp.GasEstimation {
+		return state.EZero[utype], gas, nil
+	}
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(state, input)
+	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
 	if err != nil {
 		logger.Error(functionName+" inputs not verified", " err ", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -709,13 +796,6 @@ func Rem(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) 
 		msg := functionName + " operand type mismatch"
 		logger.Error(msg, " lhs ", lhs.UintType, " rhs ", rhs.UintType)
 		return nil, 0, vm.ErrExecutionReverted
-	}
-
-	gas := getGasForPrecompile(functionName, rhs.UintType)
-	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	if tp.GasEstimation {
-		res, err := importRandomCiphertext(state, lhs.UintType)
-		return res, gas, err
 	}
 
 	result, err := lhs.Rem(rhs)
@@ -735,15 +815,27 @@ func Rem(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) 
 	return ctHash[:], gas, nil
 }
 
-func And(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) {
+func And(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
 	//solgen: bool math
 	functionName := "and"
+
+	if !isValidType(utype) {
+		logger.Error("invalid ciphertext type ", utype)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	uintType := tfhe.UintType(utype)
+
+	gas := getGasForPrecompile(functionName, uintType)
+	if tp.GasEstimation {
+		return state.EZero[utype], gas, nil
+	}
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(state, input)
+	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
 	if err != nil {
 		logger.Error(functionName+" inputs not verified", " err ", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -753,13 +845,6 @@ func And(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) 
 		msg := functionName + " operand type mismatch"
 		logger.Error(msg, " lhs ", lhs.UintType, " rhs ", rhs.UintType)
 		return nil, 0, vm.ErrExecutionReverted
-	}
-
-	gas := getGasForPrecompile(functionName, rhs.UintType)
-	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	if tp.GasEstimation {
-		res, err := importRandomCiphertext(state, lhs.UintType)
-		return res, gas, err
 	}
 
 	result, err := lhs.And(rhs)
@@ -780,15 +865,27 @@ func And(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) 
 	return ctHash[:], gas, nil
 }
 
-func Or(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) {
+func Or(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
 	//solgen: bool math
 	functionName := "or"
+
+	if !isValidType(utype) {
+		logger.Error("invalid ciphertext type ", utype)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	uintType := tfhe.UintType(utype)
+
+	gas := getGasForPrecompile(functionName, uintType)
+	if tp.GasEstimation {
+		return state.EZero[utype], gas, nil
+	}
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(state, input)
+	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
 	if err != nil {
 		logger.Error(functionName+" inputs not verified", " err ", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -798,13 +895,6 @@ func Or(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) {
 		msg := functionName + " operand type mismatch"
 		logger.Error(msg, " lhs ", lhs.UintType, " rhs ", rhs.UintType)
 		return nil, 0, vm.ErrExecutionReverted
-	}
-
-	gas := getGasForPrecompile(functionName, rhs.UintType)
-	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	if tp.GasEstimation {
-		res, err := importRandomCiphertext(state, lhs.UintType)
-		return res, gas, err
 	}
 
 	result, err := lhs.Or(rhs)
@@ -825,15 +915,27 @@ func Or(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) {
 	return ctHash[:], gas, nil
 }
 
-func Xor(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) {
+func Xor(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
 	//solgen: bool math
 	functionName := "xor"
+
+	if !isValidType(utype) {
+		logger.Error("invalid ciphertext type ", utype)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	uintType := tfhe.UintType(utype)
+
+	gas := getGasForPrecompile(functionName, uintType)
+	if tp.GasEstimation {
+		return state.EZero[utype], gas, nil
+	}
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(state, input)
+	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
 	if err != nil {
 		logger.Error(functionName+" inputs not verified", " err ", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -843,13 +945,6 @@ func Xor(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) 
 		msg := functionName + " operand type mismatch"
 		logger.Error(msg, " lhs ", lhs.UintType, " rhs ", rhs.UintType)
 		return nil, 0, vm.ErrExecutionReverted
-	}
-
-	gas := getGasForPrecompile(functionName, rhs.UintType)
-	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	if tp.GasEstimation {
-		res, err := importRandomCiphertext(state, lhs.UintType)
-		return res, gas, err
 	}
 
 	result, err := lhs.Xor(rhs)
@@ -869,16 +964,28 @@ func Xor(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) 
 	return ctHash[:], gas, nil
 }
 
-func Eq(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) {
+func Eq(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
 	//solgen: bool math
 	//solgen: return ebool
 	functionName := "eq"
+
+	if !isValidType(utype) {
+		logger.Error("invalid ciphertext type ", utype)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	uintType := tfhe.UintType(utype)
+
+	gas := getGasForPrecompile(functionName, uintType)
+	if tp.GasEstimation {
+		return state.EZero[utype], gas, nil
+	}
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(state, input)
+	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
 	if err != nil {
 		logger.Error(functionName+" inputs not verified", " err ", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -888,13 +995,6 @@ func Eq(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) {
 		msg := functionName + " operand type mismatch"
 		logger.Error(msg, " lhs ", lhs.UintType, " rhs ", rhs.UintType)
 		return nil, 0, vm.ErrExecutionReverted
-	}
-
-	gas := getGasForPrecompile(functionName, rhs.UintType)
-	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	if tp.GasEstimation {
-		res, err := importRandomCiphertext(state, lhs.UintType)
-		return res, gas, err
 	}
 
 	result, err := lhs.Eq(rhs)
@@ -914,16 +1014,28 @@ func Eq(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) {
 	return ctHash[:], gas, nil
 }
 
-func Ne(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) {
+func Ne(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
 	//solgen: bool math
 	//solgen: return ebool
 	functionName := "ne"
+
+	if !isValidType(utype) {
+		logger.Error("invalid ciphertext type ", utype)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	uintType := tfhe.UintType(utype)
+
+	gas := getGasForPrecompile(functionName, uintType)
+	if tp.GasEstimation {
+		return state.EZero[utype], gas, nil
+	}
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(state, input)
+	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
 	if err != nil {
 		logger.Error(functionName+" inputs not verified", " err ", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -933,13 +1045,6 @@ func Ne(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) {
 		msg := functionName + " operand type mismatch"
 		logger.Error(msg, " lhs ", lhs.UintType, " rhs ", rhs.UintType)
 		return nil, 0, vm.ErrExecutionReverted
-	}
-
-	gas := getGasForPrecompile(functionName, rhs.UintType)
-	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	if tp.GasEstimation {
-		res, err := importRandomCiphertext(state, lhs.UintType)
-		return res, gas, err
 	}
 
 	result, err := lhs.Ne(rhs)
@@ -959,14 +1064,26 @@ func Ne(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) {
 	return ctHash[:], gas, nil
 }
 
-func Min(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) {
+func Min(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
 	functionName := "min"
+
+	if !isValidType(utype) {
+		logger.Error("invalid ciphertext type ", utype)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	uintType := tfhe.UintType(utype)
+
+	gas := getGasForPrecompile(functionName, uintType)
+	if tp.GasEstimation {
+		return state.EZero[utype], gas, nil
+	}
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(state, input)
+	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
 	if err != nil {
 		logger.Error(functionName+" inputs not verified", " err ", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -976,13 +1093,6 @@ func Min(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) 
 		msg := functionName + " operand type mismatch"
 		logger.Error(msg, " lhs ", lhs.UintType, " rhs ", rhs.UintType)
 		return nil, 0, vm.ErrExecutionReverted
-	}
-
-	gas := getGasForPrecompile(functionName, rhs.UintType)
-	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	if tp.GasEstimation {
-		res, err := importRandomCiphertext(state, lhs.UintType)
-		return res, gas, err
 	}
 
 	result, err := lhs.Min(rhs)
@@ -1002,14 +1112,26 @@ func Min(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) 
 	return ctHash[:], gas, nil
 }
 
-func Max(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) {
+func Max(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
 	functionName := "max"
+
+	if !isValidType(utype) {
+		logger.Error("invalid ciphertext type ", utype)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	uintType := tfhe.UintType(utype)
+
+	gas := getGasForPrecompile(functionName, uintType)
+	if tp.GasEstimation {
+		return state.EZero[utype], gas, nil
+	}
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(state, input)
+	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
 	if err != nil {
 		logger.Error(functionName+" inputs not verified", " err ", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -1019,13 +1141,6 @@ func Max(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) 
 		msg := functionName + " operand type mismatch"
 		logger.Error(msg, " lhs ", lhs.UintType, " rhs ", rhs.UintType)
 		return nil, 0, vm.ErrExecutionReverted
-	}
-
-	gas := getGasForPrecompile(functionName, rhs.UintType)
-	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	if tp.GasEstimation {
-		res, err := importRandomCiphertext(state, lhs.UintType)
-		return res, gas, err
 	}
 
 	result, err := lhs.Max(rhs)
@@ -1045,14 +1160,26 @@ func Max(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) 
 	return ctHash[:], gas, nil
 }
 
-func Shl(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) {
+func Shl(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
 	functionName := "shl"
+
+	if !isValidType(utype) {
+		logger.Error("invalid ciphertext type ", utype)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	uintType := tfhe.UintType(utype)
+
+	gas := getGasForPrecompile(functionName, uintType)
+	if tp.GasEstimation {
+		return state.EZero[utype], gas, nil
+	}
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(state, input)
+	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
 	if err != nil {
 		logger.Error(functionName+" inputs not verified", " err ", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -1062,13 +1189,6 @@ func Shl(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) 
 		msg := functionName + " operand type mismatch"
 		logger.Error(msg, " lhs ", lhs.UintType, " rhs ", rhs.UintType)
 		return nil, 0, vm.ErrExecutionReverted
-	}
-
-	gas := getGasForPrecompile(functionName, rhs.UintType)
-	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	if tp.GasEstimation {
-		res, err := importRandomCiphertext(state, lhs.UintType)
-		return res, gas, err
 	}
 
 	result, err := lhs.Shl(rhs)
@@ -1088,14 +1208,26 @@ func Shl(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) 
 	return ctHash[:], gas, nil
 }
 
-func Shr(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) {
+func Shr(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
 	functionName := "shr"
+
+	if !isValidType(utype) {
+		logger.Error("invalid ciphertext type ", utype)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	uintType := tfhe.UintType(utype)
+
+	gas := getGasForPrecompile(functionName, uintType)
+	if tp.GasEstimation {
+		return state.EZero[utype], gas, nil
+	}
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function ", functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(state, input)
+	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
 	if err != nil {
 		logger.Error(functionName+" inputs not verified", " err ", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -1105,13 +1237,6 @@ func Shr(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) 
 		msg := functionName + " operand type mismatch"
 		logger.Error(msg, " lhs ", lhs.UintType, " rhs ", rhs.UintType)
 		return nil, 0, vm.ErrExecutionReverted
-	}
-
-	gas := getGasForPrecompile(functionName, rhs.UintType)
-	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	if tp.GasEstimation {
-		res, err := importRandomCiphertext(state, lhs.UintType)
-		return res, gas, err
 	}
 
 	result, err := lhs.Shr(rhs)
@@ -1131,25 +1256,30 @@ func Shr(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) 
 	return ctHash[:], gas, nil
 }
 
-func Not(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) {
+func Not(utype byte, value []byte, tp *TxParams) ([]byte, uint64, error) {
 	functionName := "not"
+
+	if !isValidType(utype) {
+		logger.Error("invalid ciphertext type ", utype)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	uintType := tfhe.UintType(utype)
+
+	gas := getGasForPrecompile(functionName, uintType)
+	if tp.GasEstimation {
+		return state.EZero[utype], gas, nil
+	}
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", functionName)
 	}
 
-	ct := getCiphertext(state, tfhe.BytesToHash(input[0:32]))
+	ct := getCiphertext(state, tfhe.BytesToHash(value))
 	if ct == nil {
 		msg := "not unverified ciphertext handle"
-		logger.Error(msg, "input", hex.EncodeToString(input))
+		logger.Error(msg, "input", hex.EncodeToString(value))
 		return nil, 0, vm.ErrExecutionReverted
-	}
-
-	gas := getGasForPrecompile(functionName, ct.UintType)
-	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
-	if tp.GasEstimation {
-		res, err := importRandomCiphertext(state, ct.UintType)
-		return res, gas, err
 	}
 
 	result, err := ct.Not()
@@ -1169,7 +1299,7 @@ func Not(input []byte, tp *TxParams, state *FheosState) ([]byte, uint64, error) 
 	return resultHash[:], gas, nil
 }
 
-func GetNetworkPublicKey(tp *TxParams, _ *FheosState) ([]byte, error) {
+func GetNetworkPublicKey(tp *TxParams) ([]byte, error) {
 	functionName := "getNetworkPublicKey"
 
 	if shouldPrintPrecompileInfo(tp) {

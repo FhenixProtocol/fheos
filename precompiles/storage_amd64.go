@@ -8,6 +8,7 @@ import (
 	"github.com/fhenixprotocol/go-tfhe"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/opt"
+	"os"
 )
 
 type LevelDbStorage struct {
@@ -19,9 +20,18 @@ const DBPath = "/home/user/fhenix/fheosdb"
 const StorageReadCost = params.SloadGasEIP2200
 const StorageWriteCost = params.SstoreSetGasEIP2200
 
+func getDbPath() string {
+	dbPath := os.Getenv("FHEOS_DB_PATH")
+	if dbPath == "" {
+		return DBPath
+	}
+
+	return dbPath
+}
+
 func InitStorage(burner GasBurner) Storage {
 	storage := LevelDbStorage{
-		dbPath: DBPath,
+		dbPath: getDbPath(),
 		burner: burner,
 	}
 
