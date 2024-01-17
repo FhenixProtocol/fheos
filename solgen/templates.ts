@@ -304,7 +304,7 @@ export function AsTypeTestingContract(type: string) {
   let funcs = "";
   let abi = `export interface As${capitalize(
     type
-  )}TestType extends Contract {\n`;
+  )}TestType extends BaseContract {\n`;
   for (const fromType of EInputType.concat("uint256", "bytes memory")) {
     if (type === fromType) {
       continue;
@@ -510,7 +510,9 @@ export function testContract2ArgBoolRes(name: string, isBoolean: boolean) {
         revert TestNotFound(test);
     }`;
 
-  const abi = `export interface ${capitalize(name)}TestType extends Contract {
+  const abi = `export interface ${capitalize(
+    name
+  )}TestType extends BaseContract {
     ${name}: (test: string, a: bigint, b: bigint) => Promise<bigint>;
 }\n`;
   return [generateTestContract(name, func), abi];
@@ -539,7 +541,9 @@ export function testContract1Arg(name: string) {
         
         revert TestNotFound(test);
     }`;
-  const abi = `export interface ${capitalize(name)}TestType extends Contract {
+  const abi = `export interface ${capitalize(
+    name
+  )}TestType extends BaseContract {
     ${name}: (test: string, a: bigint) => Promise<bigint>;
 }\n`;
   return [generateTestContract(name, func), abi];
@@ -588,8 +592,8 @@ export function testContractReq() {
             revert TestNotFound(test);
         }
     }`;
-  const abi = `export interface ReqTestType extends Contract {
-    req: (test: string, a: bigint) => Promise<()>;
+  const abi = `export interface ReqTestType extends BaseContract {
+    req: (test: string, a: bigint) => Promise<{}>;
 }\n`;
   return [generateTestContract("req", func), abi];
 }
@@ -613,7 +617,7 @@ export function testContractReencrypt() {
         
         revert TestNotFound(test);
     }`;
-  const abi = `export interface SealoutputTestType extends Contract {
+  const abi = `export interface SealoutputTestType extends BaseContract {
     ${SEALING_FUNCTION_NAME}: (test: string, a: bigint, pubkey: Uint8Array) => Promise<Uint8Array>;
 }\n`;
   return [generateTestContract(SEALING_FUNCTION_NAME, func), abi];
@@ -646,7 +650,9 @@ export function testContract3Arg(name: string) {
         
         revert TestNotFound(test);
     }`;
-  const abi = `export interface ${capitalize(name)}TestType extends Contract {
+  const abi = `export interface ${capitalize(
+    name
+  )}TestType extends BaseContract {
     ${name}: (test: string, c: boolean, a: bigint, b: bigint) => Promise<bigint>;
 }\n`;
   return [generateTestContract(name, func, true), abi];
@@ -729,14 +735,16 @@ export function testContract2Arg(
     
         revert TestNotFound(test);
     }`;
-  const abi = `export interface ${capitalize(name)}TestType extends Contract {
+  const abi = `export interface ${capitalize(
+    name
+  )}TestType extends BaseContract {
     ${name}: (test: string, a: bigint, b: bigint) => Promise<bigint>;
 }\n`;
   return [generateTestContract(name, func), abi];
 }
 
 export function genAbiFile(abi: string) {
-  return `import { Contract } from 'ethers';\n${abi}\n\n`;
+  return `import { BaseContract } from 'ethers';\n${abi}\n\n`;
 }
 
 export function SolTemplate1Arg(
