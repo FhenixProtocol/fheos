@@ -94,7 +94,6 @@ describe('Test Add', () =>  {
     it(`Test Contract Deployment`, async () => {
         contract = await deployContract('AddTest') as AddTestType;
         expect(contract).toBeTruthy();
-
     });
 
     const testCases = [
@@ -149,6 +148,18 @@ describe('Test Add', () =>  {
             }
         }
     }
+
+    it(`Custom error test`, async () => {
+        try {
+            await contract.add("no such test", 1, 2)
+            fail();
+        } catch (error) {
+            const revertData = error.data
+            const decodedError = contract.interface.parseError(revertData);
+            expect(decodedError.name).toBe("TestNotFound");
+            expect(decodedError.args[0]).toBe("no such test");
+        }
+    });
 });
 
 describe('Test SealOutput', () =>  {
@@ -470,13 +481,18 @@ describe('Test Req', () =>  {
         for (const testCase of test.cases) {
             it(`Test ${test.function}${testCase.name}`, async () => {
                 let hadEvaluationFailure = false;
+                let err = "";
                 try {
                     await contract.req(test.function, BigInt(testCase.a));
                 } catch (e) {
                     console.log(e);
-                    hadEvaluationFailure = `${e}`.includes("execution reverted");
+                    hadEvaluationFailure = true;
+                    err = `${e}`;
                 }
                 expect(hadEvaluationFailure).toBe(testCase.shouldCrash);
+                if (hadEvaluationFailure) {
+                    expect(err.includes("execution reverted")).toBe(true);
+                }
             });
         }
     }
