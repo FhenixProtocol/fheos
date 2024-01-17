@@ -2,13 +2,11 @@
 
 pragma solidity >=0.8.19 <0.9.0;
 
-import '../../FHE.sol';
+import { FHE, euint8 } from "../../FHE.sol";
 
 contract Counter {
   euint8 private counter;
-  mapping(uint256 => euint8) counterMapping;
-
-  ebool private boolean = FHE.asEbool(true);
+  mapping(uint256 => euint8) private counterMapping;
 
   function add(bytes calldata encryptedValue) public {
     euint8 value = FHE.asEuint8(encryptedValue);
