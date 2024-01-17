@@ -111,6 +111,15 @@ func getRawPrecompileGas(precompileName string, uintType tfhe.UintType) uint64 {
 		case tfhe.Uint32:
 			return 5
 		}
+	case "cast":
+		switch uintType {
+		case tfhe.Uint8:
+			return 5
+		case tfhe.Uint16:
+			return 5
+		case tfhe.Uint32:
+			return 5
+		}
 	case "div":
 		switch uintType {
 		case tfhe.Uint8:
