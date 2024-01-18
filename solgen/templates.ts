@@ -28,8 +28,6 @@ ${EInputType.map((type) => {
 }`;
 }).join("\n")}
 
-error UninitializedInputs();
-
 library Common {
     // Values used to communicate types to the runtime.
     uint8 internal constant EBOOL_TFHE_GO = 0;
@@ -387,8 +385,11 @@ export function SolTemplate2Arg(
           : `${asEuintFuncName(input1)}(${variableName2})`;
       //
       funcBody += `
-        if (!isInitialized(${variableName1}) || !isInitialized(${variableName2})) {
-            revert UninitializedInputs();
+        if (!isInitialized(${variableName1})) {
+            ${variableName1} = ${asEuintFuncName(input1)}(0);
+        }
+        if (!isInitialized(${variableName2})) {
+            ${variableName2} = ${asEuintFuncName(input1)}(0);
         }
         ${UnderlyingTypes[input1]} unwrappedInput1 = ${unwrapType(
         input1,
@@ -413,6 +414,9 @@ export function SolTemplate2Arg(
     } else if (input2 === "bytes32") {
       // **** Value 1 is encrypted, value 2 is bytes32 - this is basically reencrypt/wrapForUser
       funcBody += `
+        if (!isInitialized(${variableName1})) {
+            ${variableName1} = ${asEuintFuncName(input1)}(0);
+        }
         ${UnderlyingTypes[input1]} unwrapped = ${unwrapType(
         input1,
         variableName1

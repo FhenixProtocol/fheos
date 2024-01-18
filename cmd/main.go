@@ -10,25 +10,9 @@ import (
 	"path/filepath"
 )
 
-type MockGasBurner struct{}
-
-func (b MockGasBurner) Burn(_ uint64) error {
-	return nil
-}
-
-func (b MockGasBurner) Burned() uint64 {
-	return 0
-}
-
 func initFheosState() error {
-	if os.Getenv("FHEOS_DB_PATH") == "" {
-		err := os.Setenv("FHEOS_DB_PATH", "./fheosdb")
-		if err != nil {
-			return err
-		}
-	}
 
-	err := precompiles.InitializeFheosState(MockGasBurner{})
+	err := precompiles.InitializeFheosState()
 	if err != nil {
 		return err
 	}
@@ -84,12 +68,19 @@ func initFheos() (*precompiles.TxParams, error) {
 		return nil, err
 	}
 
+	if os.Getenv("FHEOS_DB_PATH") == "" {
+		err := os.Setenv("FHEOS_DB_PATH", "./fheosdb")
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	err = precompiles.InitFheos(&tfhe.ConfigDefault)
 	if err != nil {
 		return nil, err
 	}
 
-	err = initFheosState()
+	err = os.Setenv("FHEOS_DB_PATH", "")
 	if err != nil {
 		return nil, err
 	}
@@ -132,42 +123,33 @@ func serialize2Params(lhs *big.Int, rhs *big.Int) []byte {
 	return serialized
 }
 
-func main() {
+type operationFunc func(t byte, lhs, rhs []byte, txParams *precompiles.TxParams) ([]byte, uint64, error)
 
-	var rootCmd = &cobra.Command{Use: "fheos"}
-
-	var initState = &cobra.Command{
-		Use:   "init-state",
-		Short: "Initialize fheos state",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			initLogger()
-			err := initFheosState()
-			return err
-		},
-	}
-
-	var lhs uint32
-	var rhs uint32
+func setupOperationCommand(use, short string, op operationFunc) *cobra.Command {
+	var lhs, rhs uint32
 	var t uint8
-	var add = &cobra.Command{
-		Use:   "add",
-		Short: "add two numbers",
+
+	cmd := &cobra.Command{
+		Use:   use,
+		Short: short,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			txParams, err := initFheos()
 			defer removeDb()
 			if err != nil {
 				return err
 			}
+
 			elhs, err := encrypt(lhs, t, txParams)
 			if err != nil {
 				return err
 			}
+
 			erhs, err := encrypt(rhs, t, txParams)
 			if err != nil {
 				return err
 			}
 
-			result, _, err := precompiles.Add(t, elhs, erhs, txParams)
+			result, _, err := op(t, elhs, erhs, txParams)
 			if err != nil {
 				return err
 			}
@@ -187,15 +169,52 @@ func main() {
 				return err
 			}
 
-			fmt.Printf("Added %d with %d and the result was %d\n", dlhs, drhs, decrypted)
+			action := "operated" // You can choose a better word based on your operations
+			fmt.Printf("%s (%+v aka %d) with (%+v aka %d) and the result was (%+v aka %d)\n", action, elhs, dlhs, erhs, drhs, result, decrypted)
 			return nil
 		},
 	}
-	add.Flags().Uint32VarP(&lhs, "lhs", "l", 0, "lhs")
-	add.Flags().Uint32VarP(&rhs, "rhs", "r", 0, "rhs")
-	add.Flags().Uint8VarP(&t, "utype", "t", 0, "uint type(0-uint8, 1-uint16, 2-uint32)")
 
-	rootCmd.AddCommand(initState, add)
+	cmd.Flags().Uint32VarP(&lhs, "lhs", "l", 0, "lhs")
+	cmd.Flags().Uint32VarP(&rhs, "rhs", "r", 0, "rhs")
+	cmd.Flags().Uint8VarP(&t, "utype", "t", 0, "uint type(0-uint8, 1-uint16, 2-uint32)")
+
+	return cmd
+}
+
+func main() {
+
+	var rootCmd = &cobra.Command{Use: "fheos"}
+
+	var initState = &cobra.Command{
+		Use:   "init-state",
+		Short: "Initialize fheos state",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			_, err := initFheos()
+			return err
+		},
+	}
+
+	var add = setupOperationCommand("add", "add two numbers", precompiles.Add)
+	var sub = setupOperationCommand("sub", "subtract two numbers", precompiles.Sub)
+	var lte = setupOperationCommand("lte", "lte two numbers", precompiles.Lte)
+	var mul = setupOperationCommand("mul", "mul two numbers", precompiles.Mul)
+	var lt = setupOperationCommand("lt", "lt two numbers", precompiles.Lt)
+	var div = setupOperationCommand("div", "div two numbers", precompiles.Div)
+	var gt = setupOperationCommand("gt", "gt two numbers", precompiles.Gt)
+	var gte = setupOperationCommand("gte", "gte two numbers", precompiles.Gte)
+	var rem = setupOperationCommand("rem", "rem two numbers", precompiles.Rem)
+	var and = setupOperationCommand("and", "and two numbers", precompiles.And)
+	var or = setupOperationCommand("or", "or two numbers", precompiles.Or)
+	var xor = setupOperationCommand("xor", "xor two numbers", precompiles.Xor)
+	var eq = setupOperationCommand("eq", "eq two numbers", precompiles.Eq)
+	var ne = setupOperationCommand("ne", "ne two numbers", precompiles.Ne)
+	var min = setupOperationCommand("min", "min two numbers", precompiles.Min)
+	var max = setupOperationCommand("max", "max two numbers", precompiles.Max)
+	var shl = setupOperationCommand("shl", "shl two numbers", precompiles.Shl)
+	var shr = setupOperationCommand("shr", "shr two numbers", precompiles.Shr)
+
+	rootCmd.AddCommand(initState, add, sub, lte, sub, mul, lt, div, gt, gte, rem, and, or, xor, eq, ne, min, max, shl, shr)
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
