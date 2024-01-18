@@ -165,11 +165,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function add(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint8(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint8(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
@@ -184,11 +181,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function add(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint16(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint16(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
@@ -203,11 +197,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function add(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint32(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint32(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
@@ -221,9 +212,6 @@ library FHE {
     /// @param publicKey Public Key that will receive the sealed plaintext
     /// @return Plaintext input, sealed for the owner of `publicKey`
     function sealoutput(ebool value, bytes32 publicKey) internal pure returns (bytes memory) {
-        if (!isInitialized(value)) {
-            value = asEbool(0);
-        }
         uint256 unwrapped = ebool.unwrap(value);
 
         return Impl.sealoutput(0, unwrapped, publicKey);
@@ -234,9 +222,6 @@ library FHE {
     /// @param publicKey Public Key that will receive the sealed plaintext
     /// @return Plaintext input, sealed for the owner of `publicKey`
     function sealoutput(euint8 value, bytes32 publicKey) internal pure returns (bytes memory) {
-        if (!isInitialized(value)) {
-            value = asEuint8(0);
-        }
         uint256 unwrapped = euint8.unwrap(value);
 
         return Impl.sealoutput(0, unwrapped, publicKey);
@@ -247,9 +232,6 @@ library FHE {
     /// @param publicKey Public Key that will receive the sealed plaintext
     /// @return Plaintext input, sealed for the owner of `publicKey`
     function sealoutput(euint16 value, bytes32 publicKey) internal pure returns (bytes memory) {
-        if (!isInitialized(value)) {
-            value = asEuint16(0);
-        }
         uint256 unwrapped = euint16.unwrap(value);
 
         return Impl.sealoutput(1, unwrapped, publicKey);
@@ -260,9 +242,6 @@ library FHE {
     /// @param publicKey Public Key that will receive the sealed plaintext
     /// @return Plaintext input, sealed for the owner of `publicKey`
     function sealoutput(euint32 value, bytes32 publicKey) internal pure returns (bytes memory) {
-        if (!isInitialized(value)) {
-            value = asEuint32(0);
-        }
         uint256 unwrapped = euint32.unwrap(value);
 
         return Impl.sealoutput(2, unwrapped, publicKey);
@@ -322,11 +301,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function lte(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint8(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint8(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
@@ -341,11 +317,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function lte(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint16(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint16(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
@@ -360,11 +333,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function lte(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint32(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint32(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
@@ -379,11 +349,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function sub(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint8(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint8(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
@@ -398,11 +365,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function sub(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint16(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint16(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
@@ -417,11 +381,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function sub(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint32(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint32(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
@@ -436,11 +397,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function mul(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint8(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint8(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
@@ -455,11 +413,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function mul(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint16(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint16(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
@@ -474,11 +429,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function mul(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint32(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint32(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
@@ -493,11 +445,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function lt(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint8(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint8(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
@@ -512,11 +461,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function lt(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint16(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint16(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
@@ -531,11 +477,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function lt(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint32(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint32(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
@@ -670,11 +613,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function div(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint8(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint8(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
@@ -689,11 +629,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function div(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint16(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint16(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
@@ -708,11 +645,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function div(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint32(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint32(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
@@ -727,11 +661,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function gt(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint8(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint8(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
@@ -746,11 +677,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function gt(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint16(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint16(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
@@ -765,11 +693,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function gt(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint32(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint32(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
@@ -784,11 +709,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function gte(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint8(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint8(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
@@ -803,11 +725,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function gte(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint16(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint16(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
@@ -822,11 +741,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function gte(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint32(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint32(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
@@ -841,11 +757,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function rem(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint8(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint8(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
@@ -860,11 +773,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function rem(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint16(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint16(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
@@ -879,11 +789,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function rem(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint32(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint32(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
@@ -898,11 +805,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function and(ebool lhs, ebool rhs) internal pure returns (ebool) {
-        if (!isInitialized(lhs)) {
-            lhs = asEbool(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEbool(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = ebool.unwrap(lhs);
         uint256 unwrappedInput2 = ebool.unwrap(rhs);
@@ -917,11 +821,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function and(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint8(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint8(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
@@ -936,11 +837,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function and(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint16(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint16(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
@@ -955,11 +853,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function and(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint32(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint32(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
@@ -974,11 +869,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function or(ebool lhs, ebool rhs) internal pure returns (ebool) {
-        if (!isInitialized(lhs)) {
-            lhs = asEbool(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEbool(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = ebool.unwrap(lhs);
         uint256 unwrappedInput2 = ebool.unwrap(rhs);
@@ -993,11 +885,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function or(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint8(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint8(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
@@ -1012,11 +901,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function or(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint16(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint16(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
@@ -1031,11 +917,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function or(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint32(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint32(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
@@ -1050,11 +933,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function xor(ebool lhs, ebool rhs) internal pure returns (ebool) {
-        if (!isInitialized(lhs)) {
-            lhs = asEbool(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEbool(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = ebool.unwrap(lhs);
         uint256 unwrappedInput2 = ebool.unwrap(rhs);
@@ -1069,11 +949,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function xor(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint8(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint8(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
@@ -1088,11 +965,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function xor(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint16(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint16(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
@@ -1107,11 +981,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function xor(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint32(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint32(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
@@ -1126,11 +997,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function eq(ebool lhs, ebool rhs) internal pure returns (ebool) {
-        if (!isInitialized(lhs)) {
-            lhs = asEbool(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEbool(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = ebool.unwrap(lhs);
         uint256 unwrappedInput2 = ebool.unwrap(rhs);
@@ -1145,11 +1013,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function eq(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint8(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint8(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
@@ -1164,11 +1029,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function eq(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint16(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint16(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
@@ -1183,11 +1045,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function eq(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint32(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint32(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
@@ -1202,11 +1061,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function ne(ebool lhs, ebool rhs) internal pure returns (ebool) {
-        if (!isInitialized(lhs)) {
-            lhs = asEbool(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEbool(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = ebool.unwrap(lhs);
         uint256 unwrappedInput2 = ebool.unwrap(rhs);
@@ -1221,11 +1077,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function ne(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint8(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint8(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
@@ -1240,11 +1093,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function ne(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint16(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint16(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
@@ -1259,11 +1109,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function ne(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint32(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint32(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
@@ -1278,11 +1125,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function min(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint8(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint8(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
@@ -1297,11 +1141,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function min(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint16(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint16(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
@@ -1316,11 +1157,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function min(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint32(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint32(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
@@ -1335,11 +1173,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function max(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint8(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint8(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
@@ -1354,11 +1189,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function max(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint16(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint16(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
@@ -1373,11 +1205,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function max(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint32(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint32(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
@@ -1392,11 +1221,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function shl(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint8(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint8(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
@@ -1411,11 +1237,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function shl(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint16(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint16(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
@@ -1430,11 +1253,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function shl(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint32(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint32(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
@@ -1449,11 +1269,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function shr(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint8(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint8(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
@@ -1468,11 +1285,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function shr(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint16(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint16(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
@@ -1487,11 +1301,8 @@ library FHE {
     /// @param rhs The second input
     /// @return The result of the operation
     function shr(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
-        if (!isInitialized(lhs)) {
-            lhs = asEuint32(0);
-        }
-        if (!isInitialized(rhs)) {
-            rhs = asEuint32(0);
+        if (!isInitialized(lhs) || !isInitialized(rhs)) {
+            revert UninitializedInputs();
         }
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);

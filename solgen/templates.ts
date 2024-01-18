@@ -505,7 +505,9 @@ export function testContract2ArgBoolRes(name: string, isBoolean: boolean) {
         revert TestNotFound(test);
     }`;
 
-  const abi = `export interface ${capitalize(name)}TestType extends BaseContract {
+  const abi = `export interface ${capitalize(
+    name
+  )}TestType extends BaseContract {
     ${name}: (test: string, a: bigint, b: bigint) => Promise<bigint>;
 }\n`;
   return [generateTestContract(name, func), abi];
@@ -534,7 +536,9 @@ export function testContract1Arg(name: string) {
         
         revert TestNotFound(test);
     }`;
-  const abi = `export interface ${capitalize(name)}TestType extends BaseContract {
+  const abi = `export interface ${capitalize(
+    name
+  )}TestType extends BaseContract {
     ${name}: (test: string, a: bigint) => Promise<bigint>;
 }\n`;
   return [generateTestContract(name, func), abi];
@@ -777,7 +781,7 @@ export function SolTemplate1Arg(
       "input1"
     )};`;
     let getResult = (inputName: string) =>
-      `FheOps(Precompiles.Fheos).${name}(${inputName});`;
+      `FheOps(Precompiles.Fheos).${name}(${UintTypes[input1]}, ${inputName});`;
 
     if (valueIsEncrypted(returnType)) {
       // input and return type are encrypted - not/neg other unary functions
@@ -855,9 +859,9 @@ export function SolTemplate3Arg(
         `input3`
       )};
 
-        ${
-          UnderlyingTypes[returnType]
-        } result = Impl.${name}(unwrappedInput1, unwrappedInput2, unwrappedInput3);
+        ${UnderlyingTypes[returnType]} result = Impl.${name}(${
+        UintTypes[input2]
+      }, unwrappedInput1, unwrappedInput2, unwrappedInput3);
         return ${wrapType(returnType, "result")};
     }`;
     } else {
