@@ -55,14 +55,6 @@ func removeDb() error {
 	return os.Setenv("FHEOS_DB_PATH", "")
 }
 
-func initConfig() error {
-	return precompiles.InitTfheConfig(&tfhe.ConfigDefault)
-}
-
-func initLogger() {
-	precompiles.InitLogger()
-}
-
 func generateKeys() error {
 	if _, err := os.Stat("./keys/"); os.IsNotExist(err) {
 		err := os.Mkdir("./keys/", 0755)
@@ -87,14 +79,12 @@ func generateKeys() error {
 }
 
 func initFheos() (*precompiles.TxParams, error) {
-	initLogger()
-
 	err := generateKeys()
 	if err != nil {
 		return nil, err
 	}
 
-	err = initConfig()
+	err = precompiles.InitFheos(&tfhe.ConfigDefault)
 	if err != nil {
 		return nil, err
 	}

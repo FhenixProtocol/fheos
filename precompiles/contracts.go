@@ -17,7 +17,7 @@ func InitLogger() {
 	tfhe.InitLogger(getDefaultLogLevel())
 }
 
-func InitTfheConfig(tfheConfig *tfhe.Config) error {
+func initTfheConfig(tfheConfig *tfhe.Config) error {
 	err := tfhe.InitTfhe(tfheConfig)
 	if err != nil {
 		logger.Error("Failed to init tfhe config with error: ", err)
@@ -25,6 +25,21 @@ func InitTfheConfig(tfheConfig *tfhe.Config) error {
 	}
 
 	logger.Info("Successfully initialized tfhe config to be: ", tfheConfig)
+
+	return nil
+}
+
+func InitFheos(tfheConfig *tfhe.Config) error {
+	InitLogger()
+	err := initTfheConfig(tfheConfig)
+	if err != nil {
+		return err
+	}
+
+	err = InitializeFheosState()
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

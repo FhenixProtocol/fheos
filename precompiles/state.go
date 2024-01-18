@@ -23,8 +23,8 @@ func (fs *FheosState) SetCiphertext(ct *tfhe.Ciphertext) error {
 	return fs.Storage.PutCt(ct.Hash(), ct)
 }
 
-func createFheosState(storage *Storage, version uint64) (*FheosState, error) {
-	state := FheosState{
+func createFheosState(storage *Storage, version uint64) error {
+	state = &FheosState{
 		version,
 		*storage,
 		nil,
@@ -44,17 +44,17 @@ func createFheosState(storage *Storage, version uint64) (*FheosState, error) {
 		ezero[i], _, err = TrivialEncrypt(zero, byte(i), &tempTp)
 		if err != nil {
 			logger.Error("failed to encrypt 0 for ezero ", i, err)
-			return nil, err
+			return err
 		}
 	}
 
 	state.EZero = ezero
 
-	return &state, nil
+	return nil
 }
 
-func InitializeFheosState(burner GasBurner) error {
-	storage := InitStorage(burner)
+func InitializeFheosState() error {
+	storage := InitStorage()
 
 	if storage == nil {
 		logger.Error("failed to open storage for fheos state")
@@ -67,7 +67,8 @@ func InitializeFheosState(burner GasBurner) error {
 		return errors.New("failed to write version into fheos db")
 	}
 
-	state, err = createFheosState(&storage, FheosVersion)
+	err = createFheosState(&storage, FheosVersion)
+
 	if err != nil {
 		logger.Error("failed to create fheos state ", err)
 		return errors.New("failed to create fheos state")

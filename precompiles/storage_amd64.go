@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/gob"
-	"github.com/ethereum/go-ethereum/params"
 	"github.com/fhenixprotocol/go-tfhe"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/opt"
@@ -13,12 +12,9 @@ import (
 
 type LevelDbStorage struct {
 	dbPath string
-	burner GasBurner
 }
 
 const DBPath = "/home/user/fhenix/fheosdb"
-const StorageReadCost = params.SloadGasEIP2200
-const StorageWriteCost = params.SstoreSetGasEIP2200
 
 func getDbPath() string {
 	dbPath := os.Getenv("FHEOS_DB_PATH")
@@ -29,10 +25,9 @@ func getDbPath() string {
 	return dbPath
 }
 
-func InitStorage(burner GasBurner) Storage {
+func InitStorage() Storage {
 	storage := LevelDbStorage{
 		dbPath: getDbPath(),
-		burner: burner,
 	}
 
 	return storage
