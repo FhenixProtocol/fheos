@@ -106,6 +106,7 @@ jobs:
           git add contracts/FheOS.sol
           git commit -m "FheOS updated - pushing new contracts and scripts"
       - name: Create Pull Request
+        continue-on-error: true
         id: cpr
         uses: peter-evans/create-pull-request@v5
         with:
