@@ -7,7 +7,6 @@ install:
 .PHONY: gen
 gen:
 	./gen.sh
-	rm solidity/tests/contracts/*.sol || true
 	cd solgen && pnpm build
 
 .PHONY: compile
