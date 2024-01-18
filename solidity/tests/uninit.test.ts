@@ -1,25 +1,25 @@
-import { Counter } from '../types/tests/contracts/Counter';
-import { createFheInstance, deployContract } from './utils';
+import { Counter } from "../types/tests/contracts/Counter";
+import { createFheInstance, deployContract } from "./utils";
 
-describe('Test Unitialized Variables', () => {
+describe("Test Unitialized Variables", () => {
   let contract: Counter;
   let contractAddr: string;
 
-  it('Contract Deployment', async () => {
-    contract = (await deployContract('Counter')) as Counter;
+  it("Contract Deployment", async () => {
+    contract = (await deployContract("Counter")) as Counter;
     expect(contract).toBeTruthy();
     contractAddr = await contract.getAddress();
     expect(contractAddr).toBeTruthy();
   });
 
-  it('Test reading uninitialized state variable', async () => {
+  it("Test reading uninitialized state variable", async () => {
     const { instance, permit } = await createFheInstance(contractAddr);
     const encCounter = await contract.getCounter(permit.publicKey);
     const counter = await instance.unseal(contractAddr, encCounter);
     expect(Number(counter)).toEqual(0);
   });
 
-  it('Test using uninitialized state variable', async () => {
+  it("Test using uninitialized state variable", async () => {
     const { instance, permit } = await createFheInstance(contractAddr);
 
     const encAmount = instance.encrypt_uint8(33);
@@ -30,7 +30,7 @@ describe('Test Unitialized Variables', () => {
     expect(Number(counter)).toEqual(33); // Uninitialized state variable should be considered as 0
   });
 
-  it('Test reading uninitialized mapping state variable', async () => {
+  it("Test reading uninitialized mapping state variable", async () => {
     const { instance, permit } = await createFheInstance(contractAddr);
 
     let encCounter = await contract.getCounterMapping(
@@ -46,7 +46,7 @@ describe('Test Unitialized Variables', () => {
     expect(Number(counter)).toEqual(0);
   });
 
-  it('Test using uninitialized mapping state variable', async () => {
+  it("Test using uninitialized mapping state variable", async () => {
     const { instance, permit } = await createFheInstance(contractAddr);
 
     const encAmount = instance.encrypt_uint8(34);
