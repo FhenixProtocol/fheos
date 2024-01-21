@@ -1019,8 +1019,8 @@ func (_FheOps *FheOpsCallerSession) Xor(utype uint8, lhsHash []byte, rhsHash []b
 
 // PrecompilesMetaData contains all meta data concerning the Precompiles contract.
 var PrecompilesMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[],\"name\":\"FhePubKey\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"Fheos\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
-	Bin: "0x610151610053600b82828239805160001a607314610046577f4e487b7100000000000000000000000000000000000000000000000000000000600052600060045260246000fd5b30600052607381538281f3fe73000000000000000000000000000000000000000030146080604052600436106100405760003560e01c806313d8d46414610045578063d9c55b1714610063575b600080fd5b61004d610081565b60405161005a91906100cc565b60405180910390f35b61006b610086565b6040516100789190610100565b60405180910390f35b608081565b604481565b600073ffffffffffffffffffffffffffffffffffffffff82169050919050565b60006100b68261008b565b9050919050565b6100c6816100ab565b82525050565b60006020820190506100e160008301846100bd565b92915050565b6000819050919050565b6100fa816100e7565b82525050565b600060208201905061011560008301846100f1565b9291505056fea26469706673582212201b09ae698c194b0b29ebc2637fa84fd02659f959e6888baa8344ee581b65709664736f6c63430008130033",
+	ABI: "[{\"inputs\":[],\"name\":\"Fheos\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
+	Bin: "0x60e3610052600b82828239805160001a607314610045577f4e487b7100000000000000000000000000000000000000000000000000000000600052600060045260246000fd5b30600052607381538281f3fe730000000000000000000000000000000000000000301460806040526004361060335760003560e01c806313d8d464146038575b600080fd5b603e6052565b604051604991906094565b60405180910390f35b608081565b600073ffffffffffffffffffffffffffffffffffffffff82169050919050565b60006080826057565b9050919050565b608e816077565b82525050565b600060208201905060a760008301846087565b9291505056fea26469706673582212204a9f21d3fa9bd375417eceff63c8129af8fa4075e3d9606fe87a953d19a814e564736f6c63430008130033",
 }
 
 // PrecompilesABI is the input ABI used to generate the binding from.
@@ -1188,37 +1188,6 @@ func (_Precompiles *PrecompilesTransactorRaw) Transfer(opts *bind.TransactOpts) 
 // Transact invokes the (paid) contract method with params as input values.
 func (_Precompiles *PrecompilesTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
 	return _Precompiles.Contract.contract.Transact(opts, method, params...)
-}
-
-// FhePubKey is a free data retrieval call binding the contract method 0xd9c55b17.
-//
-// Solidity: function FhePubKey() view returns(uint256)
-func (_Precompiles *PrecompilesCaller) FhePubKey(opts *bind.CallOpts) (*big.Int, error) {
-	var out []interface{}
-	err := _Precompiles.contract.Call(opts, &out, "FhePubKey")
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// FhePubKey is a free data retrieval call binding the contract method 0xd9c55b17.
-//
-// Solidity: function FhePubKey() view returns(uint256)
-func (_Precompiles *PrecompilesSession) FhePubKey() (*big.Int, error) {
-	return _Precompiles.Contract.FhePubKey(&_Precompiles.CallOpts)
-}
-
-// FhePubKey is a free data retrieval call binding the contract method 0xd9c55b17.
-//
-// Solidity: function FhePubKey() view returns(uint256)
-func (_Precompiles *PrecompilesCallerSession) FhePubKey() (*big.Int, error) {
-	return _Precompiles.Contract.FhePubKey(&_Precompiles.CallOpts)
 }
 
 // Fheos is a free data retrieval call binding the contract method 0x13d8d464.
