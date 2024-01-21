@@ -490,7 +490,7 @@ func Req(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
-		return state.EZero[utype], gas, nil
+		return nil, gas, nil
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
