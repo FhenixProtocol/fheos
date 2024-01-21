@@ -8,9 +8,12 @@ import (
 type FheosState struct {
 	FheosVersion uint64
 	Storage      Storage
+	EZero        [][]byte // Preencrypted 0s for each uint type
 }
 
 const FheosVersion = uint64(1)
+
+var state *FheosState = nil
 
 func (fs *FheosState) GetCiphertext(hash tfhe.Hash) (*tfhe.Ciphertext, error) {
 	return fs.Storage.GetCt(hash)
@@ -20,44 +23,58 @@ func (fs *FheosState) SetCiphertext(ct *tfhe.Ciphertext) error {
 	return fs.Storage.PutCt(ct.Hash(), ct)
 }
 
-func InitializeFheosState(burner GasBurner) (*FheosState, error) {
-	storage := InitStorage(burner)
+func createFheosState(storage *Storage, version uint64) error {
+	state = &FheosState{
+		version,
+		*storage,
+		nil,
+	}
+
+	tempTp := TxParams{
+		Commit:        false,
+		GasEstimation: false,
+		EthCall:       true,
+	}
+
+	zero := make([]byte, 32)
+	var err error
+	ezero := make([][]byte, 3)
+
+	for i := 0; i < 3; i++ {
+		ezero[i], _, err = TrivialEncrypt(zero, byte(i), &tempTp)
+		if err != nil {
+			logger.Error("failed to encrypt 0 for ezero ", i, err)
+			return err
+		}
+	}
+
+	state.EZero = ezero
+
+	return nil
+}
+
+func InitializeFheosState() error {
+	storage := InitStorage()
 
 	if storage == nil {
 		logger.Error("failed to open storage for fheos state")
-		return nil, errors.New("failed to open storage for fheos state")
+		return errors.New("failed to open storage for fheos state")
 	}
 
 	err := storage.PutVersion(FheosVersion)
 	if err != nil {
 		logger.Error("failed to write version into fheos db ", err)
-		return nil, errors.New("failed to write version into fheos db ")
+		return errors.New("failed to write version into fheos db")
 	}
 
-	return &FheosState{
-		FheosVersion,
-		storage,
-	}, nil
+	err = createFheosState(&storage, FheosVersion)
 
-}
-
-func OpenFheosState(burner GasBurner) (*FheosState, error) {
-	storage := InitStorage(burner)
-	version, err := storage.GetVersion()
 	if err != nil {
-		logger.Error("failed to read version from fheos db ", err)
-		return nil, err
+		logger.Error("failed to create fheos state ", err)
+		return errors.New("failed to create fheos state")
 	}
 
-	if version != FheosVersion {
-		logger.Error("fheos version is corrupted")
-		return nil, errors.New("fheos version is corrupted")
-	}
-
-	return &FheosState{
-		version,
-		storage,
-	}, nil
+	return nil
 }
 
 // The following functions are useful for future implementation of storage based on geth

@@ -5,6 +5,7 @@ import {
   EUintType,
   SEALING_FUNCTION_NAME,
   UnderlyingTypes,
+  UintTypes,
   valueIsEncrypted,
   valueIsPlaintext,
 } from "./common";
@@ -26,8 +27,6 @@ ${EInputType.map((type) => {
     bytes data;
 }`;
 }).join("\n")}
-
-error UninitializedInputs();
 
 library Common {
     // Values used to communicate types to the runtime.
@@ -63,37 +62,35 @@ library Common {
     function bigIntToUint256(uint256 i) internal pure returns (uint256) {
         return i;
     }
+    
+    function toBytes(uint256 x) internal pure returns (bytes memory b) {
+        b = new bytes(32);
+        assembly { mstore(add(b, 32), x) }
+    }
+    
 }
 
 library Impl {
-    function sealoutput(uint256 ciphertext, bytes32 publicKey) internal pure returns (bytes memory reencrypted) {
-        bytes32[2] memory input;
-        input[0] = bytes32(ciphertext);
-        input[1] = publicKey;
-
-        // Call the reencrypt precompile.
-        reencrypted = FheOps(Precompiles.Fheos).sealOutput(bytes.concat(input[0], input[1]));
+    function sealoutput(uint8 utype, uint256 ciphertext, bytes32 publicKey) internal pure returns (bytes memory reencrypted) {
+        // Call the sealoutput precompile.
+        reencrypted = FheOps(Precompiles.Fheos).sealOutput(utype, Common.toBytes(ciphertext), bytes.concat(publicKey));
 
         return reencrypted;
     }
 
     function verify(bytes memory _ciphertextBytes, uint8 _toType) internal pure returns (uint256 result) {
-        bytes memory input = bytes.concat(_ciphertextBytes, bytes1(_toType));
-
         bytes memory output;
 
         // Call the verify precompile.
-        output = FheOps(Precompiles.Fheos).verify(input);
+        output = FheOps(Precompiles.Fheos).verify(_toType, _ciphertextBytes);
         result = getValue(output);
     }
 
-    function cast(uint256 ciphertext, uint8 toType) internal pure returns (uint256 result) {
-        bytes memory input = bytes.concat(bytes32(ciphertext), bytes1(toType));
-
+    function cast(uint8 utype, uint256 ciphertext, uint8 toType) internal pure returns (uint256 result) {
         bytes memory output;
 
         // Call the cast precompile.
-        output = FheOps(Precompiles.Fheos).cast(input);
+        output = FheOps(Precompiles.Fheos).cast(utype, Common.toBytes(ciphertext), toType);
         result = getValue(output);
     }
 
@@ -104,23 +101,19 @@ library Impl {
     }
 
     function trivialEncrypt(uint256 value, uint8 toType) internal pure returns (uint256 result) {
-        bytes memory input = bytes.concat(bytes32(value), bytes1(toType));
-
         bytes memory output;
 
         // Call the trivialEncrypt precompile.
-        output = FheOps(Precompiles.Fheos).trivialEncrypt(input);
+        output = FheOps(Precompiles.Fheos).trivialEncrypt(Common.toBytes(value), toType);
 
         result = getValue(output);
     }
 
-    function select(uint256 control, uint256 ifTrue, uint256 ifFalse) internal pure returns (uint256 result) {
-        bytes memory input = bytes.concat(bytes32(control), bytes32(ifTrue), bytes32(ifFalse));
-
+    function select(uint8 utype, uint256 control, uint256 ifTrue, uint256 ifFalse) internal pure returns (uint256 result) {
         bytes memory output;
 
         // Call the trivialEncrypt precompile.
-        output = FheOps(Precompiles.Fheos).select(input);
+        output = FheOps(Precompiles.Fheos).select(utype, Common.toBytes(control), Common.toBytes(ifTrue), Common.toBytes(ifFalse));
 
         result = getValue(output);
     }
@@ -156,20 +149,18 @@ library FHE {
             value := mload(add(a, 0x20))
         }
     }
-
+    
     function mathHelper(
+        uint8 utype,
         uint256 lhs,
         uint256 rhs,
-        function(bytes memory) external pure returns (bytes memory) impl
+        function(uint8, bytes memory, bytes memory) external pure returns (bytes memory) impl
     ) internal pure returns (uint256 result) {
-        bytes memory input = bytes.concat(bytes32(lhs), bytes32(rhs));
-
         bytes memory output;
-        // Call the add precompile.
-
-        output = impl(input);
+        output = impl(utype, Common.toBytes(lhs), Common.toBytes(rhs));
         result = getValue(output);
-    }`;
+    }
+    `;
 };
 
 export const PostFix = () => {
@@ -181,7 +172,13 @@ const castFromEncrypted = (
   toType: string,
   name: string
 ): string => {
-  return `Impl.cast(${fromType}.unwrap(${name}), Common.${toType.toUpperCase()}_TFHE_GO)`;
+  if (!valueIsEncrypted(toType)) {
+    console.log(`Unsupported type for casting: ${toType}`);
+    process.exit(1);
+  }
+  return `Impl.cast(${
+    UintTypes[toType]
+  }, ${fromType}.unwrap(${name}), Common.${toType.toUpperCase()}_TFHE_GO)`;
 };
 
 const castFromPlaintext = (name: string, toType: string): string => {
@@ -405,13 +402,13 @@ export function SolTemplate2Arg(
 `;
       if (valueIsEncrypted(returnType)) {
         funcBody += `
-        ${
-          UnderlyingTypes[returnType]
-        } result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).${name});
+        ${UnderlyingTypes[returnType]} result = mathHelper(${
+          UintTypes[input1]
+        }, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).${name});
         return ${wrapType(returnType, "result")};`;
       } else {
         funcBody += `
-        ${returnType} result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).${name});
+        ${returnType} result = mathHelper(${UintTypes[input1]}, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).${name});
         return result;`;
       }
     } else if (input2 === "bytes32") {
@@ -425,7 +422,9 @@ export function SolTemplate2Arg(
         variableName1
       )};
 
-        return Impl.${name}(unwrapped, ${variableName2});`;
+        return Impl.${name}(${
+        UintTypes[input1]
+      }, unwrapped, ${variableName2});`;
     }
   } else {
     // don't support input 1 is plaintext
@@ -786,13 +785,13 @@ export function SolTemplate1Arg(
       "input1"
     )};`;
     let getResult = (inputName: string) =>
-      `FheOps(Precompiles.Fheos).${name}(${inputName});`;
+      `FheOps(Precompiles.Fheos).${name}(${UintTypes[input1]}, ${inputName});`;
 
     if (valueIsEncrypted(returnType)) {
       // input and return type are encrypted - not/neg other unary functions
       funcBody += `
         ${unwrap}
-        bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
+        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
         bytes memory b = ${getResult("inputAsBytes")}
         uint256 result = Impl.getValue(b);
         return ${wrapType(returnType, "result")};
@@ -801,7 +800,7 @@ export function SolTemplate1Arg(
       // this is essentially req
       funcBody += `
         ${unwrap}
-        bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
+        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
         ${getResult("inputAsBytes")}
     }`;
     } else if (valueIsPlaintext(returnType)) {
@@ -810,7 +809,7 @@ export function SolTemplate1Arg(
       let outputConvertor = `Common.bigIntTo${returnTypeCamelCase}(result);`;
       funcBody += `
         ${unwrap}
-        bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
+        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
         uint256 result = ${getResult("inputAsBytes")}
         return ${outputConvertor}
     }`;
@@ -864,9 +863,9 @@ export function SolTemplate3Arg(
         `input3`
       )};
 
-        ${
-          UnderlyingTypes[returnType]
-        } result = Impl.${name}(unwrappedInput1, unwrappedInput2, unwrappedInput3);
+        ${UnderlyingTypes[returnType]} result = Impl.${name}(${
+        UintTypes[input2]
+      }, unwrappedInput1, unwrappedInput2, unwrappedInput3);
         return ${wrapType(returnType, "result")};
     }`;
     } else {
