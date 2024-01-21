@@ -23,8 +23,6 @@ struct inEuint32 {
     bytes data;
 }
 
-error UninitializedInputs();
-
 library Common {
     // Values used to communicate types to the runtime.
     uint8 internal constant EBOOL_TFHE_GO = 0;
@@ -59,37 +57,35 @@ library Common {
     function bigIntToUint256(uint256 i) internal pure returns (uint256) {
         return i;
     }
+    
+    function toBytes(uint256 x) internal pure returns (bytes memory b) {
+        b = new bytes(32);
+        assembly { mstore(add(b, 32), x) }
+    }
+    
 }
 
 library Impl {
-    function sealoutput(uint256 ciphertext, bytes32 publicKey) internal pure returns (bytes memory reencrypted) {
-        bytes32[2] memory input;
-        input[0] = bytes32(ciphertext);
-        input[1] = publicKey;
-
-        // Call the reencrypt precompile.
-        reencrypted = FheOps(Precompiles.Fheos).sealOutput(bytes.concat(input[0], input[1]));
+    function sealoutput(uint8 utype, uint256 ciphertext, bytes32 publicKey) internal pure returns (bytes memory reencrypted) {
+        // Call the sealoutput precompile.
+        reencrypted = FheOps(Precompiles.Fheos).sealOutput(utype, Common.toBytes(ciphertext), bytes.concat(publicKey));
 
         return reencrypted;
     }
 
     function verify(bytes memory _ciphertextBytes, uint8 _toType) internal pure returns (uint256 result) {
-        bytes memory input = bytes.concat(_ciphertextBytes, bytes1(_toType));
-
         bytes memory output;
 
         // Call the verify precompile.
-        output = FheOps(Precompiles.Fheos).verify(input);
+        output = FheOps(Precompiles.Fheos).verify(_toType, _ciphertextBytes);
         result = getValue(output);
     }
 
-    function cast(uint256 ciphertext, uint8 toType) internal pure returns (uint256 result) {
-        bytes memory input = bytes.concat(bytes32(ciphertext), bytes1(toType));
-
+    function cast(uint8 utype, uint256 ciphertext, uint8 toType) internal pure returns (uint256 result) {
         bytes memory output;
 
         // Call the cast precompile.
-        output = FheOps(Precompiles.Fheos).cast(input);
+        output = FheOps(Precompiles.Fheos).cast(utype, Common.toBytes(ciphertext), toType);
         result = getValue(output);
     }
 
@@ -100,23 +96,19 @@ library Impl {
     }
 
     function trivialEncrypt(uint256 value, uint8 toType) internal pure returns (uint256 result) {
-        bytes memory input = bytes.concat(bytes32(value), bytes1(toType));
-
         bytes memory output;
 
         // Call the trivialEncrypt precompile.
-        output = FheOps(Precompiles.Fheos).trivialEncrypt(input);
+        output = FheOps(Precompiles.Fheos).trivialEncrypt(Common.toBytes(value), toType);
 
         result = getValue(output);
     }
 
-    function select(uint256 control, uint256 ifTrue, uint256 ifFalse) internal pure returns (uint256 result) {
-        bytes memory input = bytes.concat(bytes32(control), bytes32(ifTrue), bytes32(ifFalse));
-
+    function select(uint8 utype, uint256 control, uint256 ifTrue, uint256 ifFalse) internal pure returns (uint256 result) {
         bytes memory output;
 
         // Call the trivialEncrypt precompile.
-        output = FheOps(Precompiles.Fheos).select(input);
+        output = FheOps(Precompiles.Fheos).select(utype, Common.toBytes(control), Common.toBytes(ifTrue), Common.toBytes(ifFalse));
 
         result = getValue(output);
     }
@@ -152,20 +144,18 @@ library FHE {
             value := mload(add(a, 0x20))
         }
     }
-
+    
     function mathHelper(
+        uint8 utype,
         uint256 lhs,
         uint256 rhs,
-        function(bytes memory) external pure returns (bytes memory) impl
+        function(uint8, bytes memory, bytes memory) external pure returns (bytes memory) impl
     ) internal pure returns (uint256 result) {
-        bytes memory input = bytes.concat(bytes32(lhs), bytes32(rhs));
-
         bytes memory output;
-        // Call the add precompile.
-
-        output = impl(input);
+        output = impl(utype, Common.toBytes(lhs), Common.toBytes(rhs));
         result = getValue(output);
     }
+    
     /// @notice This functions performs the add operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
     ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
@@ -182,7 +172,7 @@ library FHE {
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).add);
+        uint256 result = mathHelper(Common.EUINT8_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).add);
         return euint8.wrap(result);
     }
     /// @notice This functions performs the add operation
@@ -201,7 +191,7 @@ library FHE {
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).add);
+        uint256 result = mathHelper(Common.EUINT16_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).add);
         return euint16.wrap(result);
     }
     /// @notice This functions performs the add operation
@@ -220,7 +210,7 @@ library FHE {
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).add);
+        uint256 result = mathHelper(Common.EUINT32_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).add);
         return euint32.wrap(result);
     }
     /// @notice performs the sealoutput function on a ebool ciphertext. This operation returns the plaintext value, sealed for the public key provided 
@@ -234,7 +224,7 @@ library FHE {
         }
         uint256 unwrapped = ebool.unwrap(value);
 
-        return Impl.sealoutput(unwrapped, publicKey);
+        return Impl.sealoutput(Common.EBOOL_TFHE_GO, unwrapped, publicKey);
     }
     /// @notice performs the sealoutput function on a euint8 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
     /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
@@ -247,7 +237,7 @@ library FHE {
         }
         uint256 unwrapped = euint8.unwrap(value);
 
-        return Impl.sealoutput(unwrapped, publicKey);
+        return Impl.sealoutput(Common.EUINT8_TFHE_GO, unwrapped, publicKey);
     }
     /// @notice performs the sealoutput function on a euint16 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
     /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
@@ -260,7 +250,7 @@ library FHE {
         }
         uint256 unwrapped = euint16.unwrap(value);
 
-        return Impl.sealoutput(unwrapped, publicKey);
+        return Impl.sealoutput(Common.EUINT16_TFHE_GO, unwrapped, publicKey);
     }
     /// @notice performs the sealoutput function on a euint32 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
     /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
@@ -273,7 +263,7 @@ library FHE {
         }
         uint256 unwrapped = euint32.unwrap(value);
 
-        return Impl.sealoutput(unwrapped, publicKey);
+        return Impl.sealoutput(Common.EUINT32_TFHE_GO, unwrapped, publicKey);
     }
     /// @notice Performs the decrypt operation on a ciphertext
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
@@ -283,8 +273,8 @@ library FHE {
             input1 = asEbool(0);
         }
         uint256 unwrappedInput1 = ebool.unwrap(input1);
-        bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
-        uint256 result = FheOps(Precompiles.Fheos).decrypt(inputAsBytes);
+        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
+        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EBOOL_TFHE_GO, inputAsBytes);
         return Common.bigIntToBool(result);
     }
     /// @notice Performs the decrypt operation on a ciphertext
@@ -295,8 +285,8 @@ library FHE {
             input1 = asEuint8(0);
         }
         uint256 unwrappedInput1 = euint8.unwrap(input1);
-        bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
-        uint256 result = FheOps(Precompiles.Fheos).decrypt(inputAsBytes);
+        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
+        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EUINT8_TFHE_GO, inputAsBytes);
         return Common.bigIntToUint8(result);
     }
     /// @notice Performs the decrypt operation on a ciphertext
@@ -307,8 +297,8 @@ library FHE {
             input1 = asEuint16(0);
         }
         uint256 unwrappedInput1 = euint16.unwrap(input1);
-        bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
-        uint256 result = FheOps(Precompiles.Fheos).decrypt(inputAsBytes);
+        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
+        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EUINT16_TFHE_GO, inputAsBytes);
         return Common.bigIntToUint16(result);
     }
     /// @notice Performs the decrypt operation on a ciphertext
@@ -319,8 +309,8 @@ library FHE {
             input1 = asEuint32(0);
         }
         uint256 unwrappedInput1 = euint32.unwrap(input1);
-        bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
-        uint256 result = FheOps(Precompiles.Fheos).decrypt(inputAsBytes);
+        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
+        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EUINT32_TFHE_GO, inputAsBytes);
         return Common.bigIntToUint32(result);
     }
     /// @notice This functions performs the lte operation
@@ -339,7 +329,7 @@ library FHE {
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lte);
+        uint256 result = mathHelper(Common.EUINT8_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lte);
         return ebool.wrap(result);
     }
     /// @notice This functions performs the lte operation
@@ -358,7 +348,7 @@ library FHE {
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lte);
+        uint256 result = mathHelper(Common.EUINT16_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lte);
         return ebool.wrap(result);
     }
     /// @notice This functions performs the lte operation
@@ -377,7 +367,7 @@ library FHE {
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lte);
+        uint256 result = mathHelper(Common.EUINT32_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lte);
         return ebool.wrap(result);
     }
     /// @notice This functions performs the sub operation
@@ -396,7 +386,7 @@ library FHE {
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).sub);
+        uint256 result = mathHelper(Common.EUINT8_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).sub);
         return euint8.wrap(result);
     }
     /// @notice This functions performs the sub operation
@@ -415,7 +405,7 @@ library FHE {
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).sub);
+        uint256 result = mathHelper(Common.EUINT16_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).sub);
         return euint16.wrap(result);
     }
     /// @notice This functions performs the sub operation
@@ -434,7 +424,7 @@ library FHE {
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).sub);
+        uint256 result = mathHelper(Common.EUINT32_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).sub);
         return euint32.wrap(result);
     }
     /// @notice This functions performs the mul operation
@@ -453,7 +443,7 @@ library FHE {
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).mul);
+        uint256 result = mathHelper(Common.EUINT8_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).mul);
         return euint8.wrap(result);
     }
     /// @notice This functions performs the mul operation
@@ -472,7 +462,7 @@ library FHE {
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).mul);
+        uint256 result = mathHelper(Common.EUINT16_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).mul);
         return euint16.wrap(result);
     }
     /// @notice This functions performs the mul operation
@@ -491,7 +481,7 @@ library FHE {
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).mul);
+        uint256 result = mathHelper(Common.EUINT32_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).mul);
         return euint32.wrap(result);
     }
     /// @notice This functions performs the lt operation
@@ -510,7 +500,7 @@ library FHE {
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lt);
+        uint256 result = mathHelper(Common.EUINT8_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lt);
         return ebool.wrap(result);
     }
     /// @notice This functions performs the lt operation
@@ -529,7 +519,7 @@ library FHE {
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lt);
+        uint256 result = mathHelper(Common.EUINT16_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lt);
         return ebool.wrap(result);
     }
     /// @notice This functions performs the lt operation
@@ -548,7 +538,7 @@ library FHE {
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lt);
+        uint256 result = mathHelper(Common.EUINT32_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lt);
         return ebool.wrap(result);
     }
 
@@ -567,7 +557,7 @@ library FHE {
         uint256 unwrappedInput2 = ebool.unwrap(input2);
         uint256 unwrappedInput3 = ebool.unwrap(input3);
 
-        uint256 result = Impl.select(unwrappedInput1, unwrappedInput2, unwrappedInput3);
+        uint256 result = Impl.select(Common.EBOOL_TFHE_GO, unwrappedInput1, unwrappedInput2, unwrappedInput3);
         return ebool.wrap(result);
     }
 
@@ -586,7 +576,7 @@ library FHE {
         uint256 unwrappedInput2 = euint8.unwrap(input2);
         uint256 unwrappedInput3 = euint8.unwrap(input3);
 
-        uint256 result = Impl.select(unwrappedInput1, unwrappedInput2, unwrappedInput3);
+        uint256 result = Impl.select(Common.EUINT8_TFHE_GO, unwrappedInput1, unwrappedInput2, unwrappedInput3);
         return euint8.wrap(result);
     }
 
@@ -605,7 +595,7 @@ library FHE {
         uint256 unwrappedInput2 = euint16.unwrap(input2);
         uint256 unwrappedInput3 = euint16.unwrap(input3);
 
-        uint256 result = Impl.select(unwrappedInput1, unwrappedInput2, unwrappedInput3);
+        uint256 result = Impl.select(Common.EUINT16_TFHE_GO, unwrappedInput1, unwrappedInput2, unwrappedInput3);
         return euint16.wrap(result);
     }
 
@@ -624,7 +614,7 @@ library FHE {
         uint256 unwrappedInput2 = euint32.unwrap(input2);
         uint256 unwrappedInput3 = euint32.unwrap(input3);
 
-        uint256 result = Impl.select(unwrappedInput1, unwrappedInput2, unwrappedInput3);
+        uint256 result = Impl.select(Common.EUINT32_TFHE_GO, unwrappedInput1, unwrappedInput2, unwrappedInput3);
         return euint32.wrap(result);
     }
     /// @notice Performs the req operation on a ciphertext
@@ -635,8 +625,8 @@ library FHE {
             input1 = asEbool(0);
         }
         uint256 unwrappedInput1 = ebool.unwrap(input1);
-        bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
-        FheOps(Precompiles.Fheos).req(inputAsBytes);
+        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
+        FheOps(Precompiles.Fheos).req(Common.EBOOL_TFHE_GO, inputAsBytes);
     }
     /// @notice Performs the req operation on a ciphertext
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
@@ -646,8 +636,8 @@ library FHE {
             input1 = asEuint8(0);
         }
         uint256 unwrappedInput1 = euint8.unwrap(input1);
-        bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
-        FheOps(Precompiles.Fheos).req(inputAsBytes);
+        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
+        FheOps(Precompiles.Fheos).req(Common.EUINT8_TFHE_GO, inputAsBytes);
     }
     /// @notice Performs the req operation on a ciphertext
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
@@ -657,8 +647,8 @@ library FHE {
             input1 = asEuint16(0);
         }
         uint256 unwrappedInput1 = euint16.unwrap(input1);
-        bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
-        FheOps(Precompiles.Fheos).req(inputAsBytes);
+        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
+        FheOps(Precompiles.Fheos).req(Common.EUINT16_TFHE_GO, inputAsBytes);
     }
     /// @notice Performs the req operation on a ciphertext
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
@@ -668,8 +658,8 @@ library FHE {
             input1 = asEuint32(0);
         }
         uint256 unwrappedInput1 = euint32.unwrap(input1);
-        bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
-        FheOps(Precompiles.Fheos).req(inputAsBytes);
+        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
+        FheOps(Precompiles.Fheos).req(Common.EUINT32_TFHE_GO, inputAsBytes);
     }
     /// @notice This functions performs the div operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
@@ -687,7 +677,7 @@ library FHE {
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).div);
+        uint256 result = mathHelper(Common.EUINT8_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).div);
         return euint8.wrap(result);
     }
     /// @notice This functions performs the div operation
@@ -706,7 +696,7 @@ library FHE {
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).div);
+        uint256 result = mathHelper(Common.EUINT16_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).div);
         return euint16.wrap(result);
     }
     /// @notice This functions performs the div operation
@@ -725,7 +715,7 @@ library FHE {
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).div);
+        uint256 result = mathHelper(Common.EUINT32_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).div);
         return euint32.wrap(result);
     }
     /// @notice This functions performs the gt operation
@@ -744,7 +734,7 @@ library FHE {
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gt);
+        uint256 result = mathHelper(Common.EUINT8_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gt);
         return ebool.wrap(result);
     }
     /// @notice This functions performs the gt operation
@@ -763,7 +753,7 @@ library FHE {
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gt);
+        uint256 result = mathHelper(Common.EUINT16_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gt);
         return ebool.wrap(result);
     }
     /// @notice This functions performs the gt operation
@@ -782,7 +772,7 @@ library FHE {
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gt);
+        uint256 result = mathHelper(Common.EUINT32_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gt);
         return ebool.wrap(result);
     }
     /// @notice This functions performs the gte operation
@@ -801,7 +791,7 @@ library FHE {
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gte);
+        uint256 result = mathHelper(Common.EUINT8_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gte);
         return ebool.wrap(result);
     }
     /// @notice This functions performs the gte operation
@@ -820,7 +810,7 @@ library FHE {
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gte);
+        uint256 result = mathHelper(Common.EUINT16_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gte);
         return ebool.wrap(result);
     }
     /// @notice This functions performs the gte operation
@@ -839,7 +829,7 @@ library FHE {
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gte);
+        uint256 result = mathHelper(Common.EUINT32_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gte);
         return ebool.wrap(result);
     }
     /// @notice This functions performs the rem operation
@@ -858,7 +848,7 @@ library FHE {
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).rem);
+        uint256 result = mathHelper(Common.EUINT8_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).rem);
         return euint8.wrap(result);
     }
     /// @notice This functions performs the rem operation
@@ -877,7 +867,7 @@ library FHE {
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).rem);
+        uint256 result = mathHelper(Common.EUINT16_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).rem);
         return euint16.wrap(result);
     }
     /// @notice This functions performs the rem operation
@@ -896,7 +886,7 @@ library FHE {
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).rem);
+        uint256 result = mathHelper(Common.EUINT32_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).rem);
         return euint32.wrap(result);
     }
     /// @notice This functions performs the and operation
@@ -915,7 +905,7 @@ library FHE {
         uint256 unwrappedInput1 = ebool.unwrap(lhs);
         uint256 unwrappedInput2 = ebool.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).and);
+        uint256 result = mathHelper(Common.EBOOL_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).and);
         return ebool.wrap(result);
     }
     /// @notice This functions performs the and operation
@@ -934,7 +924,7 @@ library FHE {
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).and);
+        uint256 result = mathHelper(Common.EUINT8_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).and);
         return euint8.wrap(result);
     }
     /// @notice This functions performs the and operation
@@ -953,7 +943,7 @@ library FHE {
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).and);
+        uint256 result = mathHelper(Common.EUINT16_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).and);
         return euint16.wrap(result);
     }
     /// @notice This functions performs the and operation
@@ -972,7 +962,7 @@ library FHE {
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).and);
+        uint256 result = mathHelper(Common.EUINT32_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).and);
         return euint32.wrap(result);
     }
     /// @notice This functions performs the or operation
@@ -991,7 +981,7 @@ library FHE {
         uint256 unwrappedInput1 = ebool.unwrap(lhs);
         uint256 unwrappedInput2 = ebool.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).or);
+        uint256 result = mathHelper(Common.EBOOL_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).or);
         return ebool.wrap(result);
     }
     /// @notice This functions performs the or operation
@@ -1010,7 +1000,7 @@ library FHE {
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).or);
+        uint256 result = mathHelper(Common.EUINT8_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).or);
         return euint8.wrap(result);
     }
     /// @notice This functions performs the or operation
@@ -1029,7 +1019,7 @@ library FHE {
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).or);
+        uint256 result = mathHelper(Common.EUINT16_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).or);
         return euint16.wrap(result);
     }
     /// @notice This functions performs the or operation
@@ -1048,7 +1038,7 @@ library FHE {
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).or);
+        uint256 result = mathHelper(Common.EUINT32_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).or);
         return euint32.wrap(result);
     }
     /// @notice This functions performs the xor operation
@@ -1067,7 +1057,7 @@ library FHE {
         uint256 unwrappedInput1 = ebool.unwrap(lhs);
         uint256 unwrappedInput2 = ebool.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).xor);
+        uint256 result = mathHelper(Common.EBOOL_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).xor);
         return ebool.wrap(result);
     }
     /// @notice This functions performs the xor operation
@@ -1086,7 +1076,7 @@ library FHE {
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).xor);
+        uint256 result = mathHelper(Common.EUINT8_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).xor);
         return euint8.wrap(result);
     }
     /// @notice This functions performs the xor operation
@@ -1105,7 +1095,7 @@ library FHE {
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).xor);
+        uint256 result = mathHelper(Common.EUINT16_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).xor);
         return euint16.wrap(result);
     }
     /// @notice This functions performs the xor operation
@@ -1124,7 +1114,7 @@ library FHE {
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).xor);
+        uint256 result = mathHelper(Common.EUINT32_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).xor);
         return euint32.wrap(result);
     }
     /// @notice This functions performs the eq operation
@@ -1143,7 +1133,7 @@ library FHE {
         uint256 unwrappedInput1 = ebool.unwrap(lhs);
         uint256 unwrappedInput2 = ebool.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).eq);
+        uint256 result = mathHelper(Common.EBOOL_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).eq);
         return ebool.wrap(result);
     }
     /// @notice This functions performs the eq operation
@@ -1162,7 +1152,7 @@ library FHE {
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).eq);
+        uint256 result = mathHelper(Common.EUINT8_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).eq);
         return ebool.wrap(result);
     }
     /// @notice This functions performs the eq operation
@@ -1181,7 +1171,7 @@ library FHE {
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).eq);
+        uint256 result = mathHelper(Common.EUINT16_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).eq);
         return ebool.wrap(result);
     }
     /// @notice This functions performs the eq operation
@@ -1200,7 +1190,7 @@ library FHE {
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).eq);
+        uint256 result = mathHelper(Common.EUINT32_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).eq);
         return ebool.wrap(result);
     }
     /// @notice This functions performs the ne operation
@@ -1219,7 +1209,7 @@ library FHE {
         uint256 unwrappedInput1 = ebool.unwrap(lhs);
         uint256 unwrappedInput2 = ebool.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ne);
+        uint256 result = mathHelper(Common.EBOOL_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ne);
         return ebool.wrap(result);
     }
     /// @notice This functions performs the ne operation
@@ -1238,7 +1228,7 @@ library FHE {
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ne);
+        uint256 result = mathHelper(Common.EUINT8_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ne);
         return ebool.wrap(result);
     }
     /// @notice This functions performs the ne operation
@@ -1257,7 +1247,7 @@ library FHE {
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ne);
+        uint256 result = mathHelper(Common.EUINT16_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ne);
         return ebool.wrap(result);
     }
     /// @notice This functions performs the ne operation
@@ -1276,7 +1266,7 @@ library FHE {
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ne);
+        uint256 result = mathHelper(Common.EUINT32_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ne);
         return ebool.wrap(result);
     }
     /// @notice This functions performs the min operation
@@ -1295,7 +1285,7 @@ library FHE {
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).min);
+        uint256 result = mathHelper(Common.EUINT8_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).min);
         return euint8.wrap(result);
     }
     /// @notice This functions performs the min operation
@@ -1314,7 +1304,7 @@ library FHE {
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).min);
+        uint256 result = mathHelper(Common.EUINT16_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).min);
         return euint16.wrap(result);
     }
     /// @notice This functions performs the min operation
@@ -1333,7 +1323,7 @@ library FHE {
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).min);
+        uint256 result = mathHelper(Common.EUINT32_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).min);
         return euint32.wrap(result);
     }
     /// @notice This functions performs the max operation
@@ -1352,7 +1342,7 @@ library FHE {
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).max);
+        uint256 result = mathHelper(Common.EUINT8_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).max);
         return euint8.wrap(result);
     }
     /// @notice This functions performs the max operation
@@ -1371,7 +1361,7 @@ library FHE {
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).max);
+        uint256 result = mathHelper(Common.EUINT16_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).max);
         return euint16.wrap(result);
     }
     /// @notice This functions performs the max operation
@@ -1390,7 +1380,7 @@ library FHE {
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).max);
+        uint256 result = mathHelper(Common.EUINT32_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).max);
         return euint32.wrap(result);
     }
     /// @notice This functions performs the shl operation
@@ -1409,7 +1399,7 @@ library FHE {
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shl);
+        uint256 result = mathHelper(Common.EUINT8_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shl);
         return euint8.wrap(result);
     }
     /// @notice This functions performs the shl operation
@@ -1428,7 +1418,7 @@ library FHE {
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shl);
+        uint256 result = mathHelper(Common.EUINT16_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shl);
         return euint16.wrap(result);
     }
     /// @notice This functions performs the shl operation
@@ -1447,7 +1437,7 @@ library FHE {
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shl);
+        uint256 result = mathHelper(Common.EUINT32_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shl);
         return euint32.wrap(result);
     }
     /// @notice This functions performs the shr operation
@@ -1466,7 +1456,7 @@ library FHE {
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shr);
+        uint256 result = mathHelper(Common.EUINT8_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shr);
         return euint8.wrap(result);
     }
     /// @notice This functions performs the shr operation
@@ -1485,7 +1475,7 @@ library FHE {
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shr);
+        uint256 result = mathHelper(Common.EUINT16_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shr);
         return euint16.wrap(result);
     }
     /// @notice This functions performs the shr operation
@@ -1504,7 +1494,7 @@ library FHE {
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
-        uint256 result = mathHelper(unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shr);
+        uint256 result = mathHelper(Common.EUINT32_TFHE_GO, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shr);
         return euint32.wrap(result);
     }
 
@@ -1523,8 +1513,8 @@ library FHE {
             input1 = asEuint8(0);
         }
         uint256 unwrappedInput1 = euint8.unwrap(input1);
-        bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
-        bytes memory b = FheOps(Precompiles.Fheos).not(inputAsBytes);
+        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
+        bytes memory b = FheOps(Precompiles.Fheos).not(Common.EUINT8_TFHE_GO, inputAsBytes);
         uint256 result = Impl.getValue(b);
         return euint8.wrap(result);
     }
@@ -1536,8 +1526,8 @@ library FHE {
             input1 = asEuint16(0);
         }
         uint256 unwrappedInput1 = euint16.unwrap(input1);
-        bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
-        bytes memory b = FheOps(Precompiles.Fheos).not(inputAsBytes);
+        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
+        bytes memory b = FheOps(Precompiles.Fheos).not(Common.EUINT16_TFHE_GO, inputAsBytes);
         uint256 result = Impl.getValue(b);
         return euint16.wrap(result);
     }
@@ -1549,8 +1539,8 @@ library FHE {
             input1 = asEuint32(0);
         }
         uint256 unwrappedInput1 = euint32.unwrap(input1);
-        bytes memory inputAsBytes = bytes.concat(bytes32(unwrappedInput1));
-        bytes memory b = FheOps(Precompiles.Fheos).not(inputAsBytes);
+        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
+        bytes memory b = FheOps(Precompiles.Fheos).not(Common.EUINT32_TFHE_GO, inputAsBytes);
         uint256 result = Impl.getValue(b);
         return euint32.wrap(result);
     }
@@ -1564,15 +1554,15 @@ library FHE {
     }
     /// @notice Converts a ebool to an euint8
     function asEuint8(ebool value) internal pure returns (euint8) {
-        return euint8.wrap(Impl.cast(ebool.unwrap(value), Common.EUINT8_TFHE_GO));
+        return euint8.wrap(Impl.cast(Common.EUINT8_TFHE_GO, ebool.unwrap(value), Common.EUINT8_TFHE_GO));
     }
     /// @notice Converts a ebool to an euint16
     function asEuint16(ebool value) internal pure returns (euint16) {
-        return euint16.wrap(Impl.cast(ebool.unwrap(value), Common.EUINT16_TFHE_GO));
+        return euint16.wrap(Impl.cast(Common.EUINT16_TFHE_GO, ebool.unwrap(value), Common.EUINT16_TFHE_GO));
     }
     /// @notice Converts a ebool to an euint32
     function asEuint32(ebool value) internal pure returns (euint32) {
-        return euint32.wrap(Impl.cast(ebool.unwrap(value), Common.EUINT32_TFHE_GO));
+        return euint32.wrap(Impl.cast(Common.EUINT32_TFHE_GO, ebool.unwrap(value), Common.EUINT32_TFHE_GO));
     }
     
     /// @notice Converts a euint8 to an ebool
@@ -1587,11 +1577,11 @@ library FHE {
     }
     /// @notice Converts a euint8 to an euint16
     function asEuint16(euint8 value) internal pure returns (euint16) {
-        return euint16.wrap(Impl.cast(euint8.unwrap(value), Common.EUINT16_TFHE_GO));
+        return euint16.wrap(Impl.cast(Common.EUINT16_TFHE_GO, euint8.unwrap(value), Common.EUINT16_TFHE_GO));
     }
     /// @notice Converts a euint8 to an euint32
     function asEuint32(euint8 value) internal pure returns (euint32) {
-        return euint32.wrap(Impl.cast(euint8.unwrap(value), Common.EUINT32_TFHE_GO));
+        return euint32.wrap(Impl.cast(Common.EUINT32_TFHE_GO, euint8.unwrap(value), Common.EUINT32_TFHE_GO));
     }
     
     /// @notice Converts a euint16 to an ebool
@@ -1600,7 +1590,7 @@ library FHE {
     }
     /// @notice Converts a euint16 to an euint8
     function asEuint8(euint16 value) internal pure returns (euint8) {
-        return euint8.wrap(Impl.cast(euint16.unwrap(value), Common.EUINT8_TFHE_GO));
+        return euint8.wrap(Impl.cast(Common.EUINT8_TFHE_GO, euint16.unwrap(value), Common.EUINT8_TFHE_GO));
     }
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an euint16
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
@@ -1610,7 +1600,7 @@ library FHE {
     }
     /// @notice Converts a euint16 to an euint32
     function asEuint32(euint16 value) internal pure returns (euint32) {
-        return euint32.wrap(Impl.cast(euint16.unwrap(value), Common.EUINT32_TFHE_GO));
+        return euint32.wrap(Impl.cast(Common.EUINT32_TFHE_GO, euint16.unwrap(value), Common.EUINT32_TFHE_GO));
     }
     
     /// @notice Converts a euint32 to an ebool
@@ -1619,11 +1609,11 @@ library FHE {
     }
     /// @notice Converts a euint32 to an euint8
     function asEuint8(euint32 value) internal pure returns (euint8) {
-        return euint8.wrap(Impl.cast(euint32.unwrap(value), Common.EUINT8_TFHE_GO));
+        return euint8.wrap(Impl.cast(Common.EUINT8_TFHE_GO, euint32.unwrap(value), Common.EUINT8_TFHE_GO));
     }
     /// @notice Converts a euint32 to an euint16
     function asEuint16(euint32 value) internal pure returns (euint16) {
-        return euint16.wrap(Impl.cast(euint32.unwrap(value), Common.EUINT16_TFHE_GO));
+        return euint16.wrap(Impl.cast(Common.EUINT16_TFHE_GO, euint32.unwrap(value), Common.EUINT16_TFHE_GO));
     }
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an euint32
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key

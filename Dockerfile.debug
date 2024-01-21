@@ -1,4 +1,9 @@
-FROM ghcr.io/fhenixprotocol/nitro/fhenix-node-builder@sha256:78e993720077ff49972a5818765597a6425949c7477b040db04c82b0803d2d96 as winning
+ARG BRANCH=latest
+ARG DOCKER_NAME=ghcr.io/fhenixprotocol/nitro/fhenix-node-builder:$BRANCH
+
+FROM $DOCKER_NAME as winning
+
+RUN echo $DOCKER_NAME
 
 RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
 RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
@@ -22,11 +27,13 @@ RUN CGO_ENABLED=0 go install -ldflags "-s -w -extldflags '-static'" github.com/g
 
 RUN go build -gcflags "all=-N -l" -ldflags="-X github.com/offchainlabs/nitro/cmd/util/confighelpers.version= -X github.com/offchainlabs/nitro/cmd/util/confighelpers.datetime= -X github.com/offchainlabs/nitro/cmd/util/confighelpers.modified=" -o target/bin/nitro "/workspace/cmd/nitro"
 
-
-FROM ghcr.io/fhenixprotocol/fhenix-node-dev:v0.0.7-standalone
+FROM ghcr.io/fhenixprotocol/fhenix-node-dev:v0.0.9-standalone
 
 COPY --from=winning /workspace/fheos/go-tfhe/internal/api/amd64/libtfhe_wrapper.x86_64.so /usr/lib/libtfhe_wrapper.x86_64.so
 COPY --from=winning /workspace/target/bin/nitro /usr/local/bin/
+
+RUN mkdir -p /home/user/fhenix/fheosdb
+COPY --chown=user:user nitro-overrides/fheosdb/* /home/user/fhenix/fheosdb/
 
 ENV GOROOT=/usr/local/go
 ENV GOPATH=/go/
@@ -43,3 +50,4 @@ RUN sudo chown user:user /go
 RUN CGO_ENABLED=0 go install -ldflags "-s -w -extldflags '-static'" github.com/go-delve/delve/cmd/dlv@latest
 
 ENTRYPOINT ["/go/bin/dlv", "--listen=:4001", "--headless=true", "--log=true", "--accept-multiclient", "--api-version=2", "exec", "/usr/local/bin/nitro", "--", "--conf.file", "/config/sequencer_config.json", "--node.dangerous.no-l1-listener", "--node.feed.output.enable", "--node.feed.output.port", "9642", "--http.api", "net,web3,eth,txpool,debug", "--node.seq-coordinator.my-url", "ws://sequencer:8548", "--graphql.enable", "--graphql.vhosts", "*", "--graphql.corsdomain", "*"]
+
