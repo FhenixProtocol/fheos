@@ -4,12 +4,11 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/gob"
-	"sync"
-	"github.com/ethereum/go-ethereum/params"
 	"github.com/fhenixprotocol/go-tfhe"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/opt"
 	"os"
+	"sync"
 )
 
 var LevelDbLock sync.RWMutex
