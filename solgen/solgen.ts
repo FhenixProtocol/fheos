@@ -225,6 +225,7 @@ const parseFunctionDefinition = (funcDef: string): ParsedFunction => {
     }
 
     const [, functionName, inputs, outputType] = match;
+
     const inputTypes = inputs.split(',').map(input => {
         return input.trim().split(/\s+/).pop();
     });

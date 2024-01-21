@@ -4,31 +4,45 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/gob"
-	"github.com/ethereum/go-ethereum/params"
 	"github.com/fhenixprotocol/go-tfhe"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/opt"
+	"os"
+	"sync"
 )
+
+var LevelDbLock sync.RWMutex
 
 type LevelDbStorage struct {
 	dbPath string
-	burner GasBurner
 }
 
 const DBPath = "/home/user/fhenix/fheosdb"
-const StorageReadCost = params.SloadGasEIP2200
-const StorageWriteCost = params.SstoreSetGasEIP2200
 
-func InitStorage(burner GasBurner) Storage {
+func getDbPath() string {
+	dbPath := os.Getenv("FHEOS_DB_PATH")
+	if dbPath == "" {
+		return DBPath
+	}
+
+	return dbPath
+}
+
+func InitStorage() Storage {
 	storage := LevelDbStorage{
-		dbPath: DBPath,
-		burner: burner,
+		dbPath: getDbPath(),
 	}
 
 	return storage
 }
 
 func (store LevelDbStorage) OpenDB(readonly bool) *leveldb.DB {
+	if readonly {
+		LevelDbLock.RLock()
+	} else {
+		LevelDbLock.Lock()
+	}
+
 	db, err := leveldb.OpenFile(store.dbPath, &opt.Options{ReadOnly: readonly})
 	if err != nil {
 		logger.Error("failed to open fheos db ", err)
@@ -38,7 +52,13 @@ func (store LevelDbStorage) OpenDB(readonly bool) *leveldb.DB {
 	return db
 }
 
-func closeDB(db *leveldb.DB) {
+func closeDB(db *leveldb.DB, readonly bool) {
+	if readonly {
+		defer LevelDbLock.RUnlock()
+	} else {
+		defer LevelDbLock.Unlock()
+	}
+
 	err := db.Close()
 	if err != nil {
 		logger.Error("failed to close fheos db ", err)
@@ -49,7 +69,7 @@ func closeDB(db *leveldb.DB) {
 }
 func (store LevelDbStorage) Put(t DataType, key []byte, val []byte) error {
 	db := store.OpenDB(false)
-	defer closeDB(db)
+	defer closeDB(db, false)
 
 	tb := make([]byte, 8)
 	binary.BigEndian.PutUint64(tb, uint64(t))
@@ -66,7 +86,7 @@ func (store LevelDbStorage) Put(t DataType, key []byte, val []byte) error {
 
 func (store LevelDbStorage) Get(t DataType, key []byte) ([]byte, error) {
 	db := store.OpenDB(true)
-	defer closeDB(db)
+	defer closeDB(db, true)
 
 	tb := make([]byte, 8)
 	binary.BigEndian.PutUint64(tb, uint64(t))

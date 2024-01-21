@@ -2,7 +2,6 @@ package precompiles
 
 import (
 	"errors"
-	"fmt"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
@@ -59,16 +58,16 @@ func getCiphertext(state *FheosState, ciphertextHash tfhe.Hash) *tfhe.Ciphertext
 
 	return ct
 }
-
-func get2VerifiedOperands(state *FheosState, input []byte) (lhs *tfhe.Ciphertext, rhs *tfhe.Ciphertext, err error) {
-	if len(input) != 64 {
-		return nil, nil, errors.New("input needs to contain two 256-bit sized values")
+func get2VerifiedOperands(state *FheosState, lhsHash []byte, rhsHash []byte) (lhs *tfhe.Ciphertext, rhs *tfhe.Ciphertext, err error) {
+	if len(lhsHash) != 32 || len(rhsHash) != 32 {
+		return nil, nil, errors.New("ciphertext's hashes need to be 32 bytes long")
 	}
-	lhs = getCiphertext(state, tfhe.BytesToHash(input[0:32]))
+
+	lhs = getCiphertext(state, tfhe.BytesToHash(lhsHash))
 	if lhs == nil {
 		return nil, nil, errors.New("unverified ciphertext handle")
 	}
-	rhs = getCiphertext(state, tfhe.BytesToHash(input[32:64]))
+	rhs = getCiphertext(state, tfhe.BytesToHash(rhsHash))
 	if rhs == nil {
 		return nil, nil, errors.New("unverified ciphertext handle")
 	}
@@ -76,19 +75,20 @@ func get2VerifiedOperands(state *FheosState, input []byte) (lhs *tfhe.Ciphertext
 	return
 }
 
-func get3VerifiedOperands(state *FheosState, input []byte) (control *tfhe.Ciphertext, ifTrue *tfhe.Ciphertext, ifFalse *tfhe.Ciphertext, err error) {
-	if len(input) != 96 {
-		return nil, nil, nil, errors.New("input needs to contain three 256-bit sized values and 1 8-bit value")
+func get3VerifiedOperands(state *FheosState, controlHash []byte, ifTrueHash []byte, ifFalseHash []byte) (control *tfhe.Ciphertext, ifTrue *tfhe.Ciphertext, ifFalse *tfhe.Ciphertext, err error) {
+	if len(controlHash) != 32 || len(ifTrueHash) != 32 || len(ifFalseHash) != 32 {
+		return nil, nil, nil, errors.New("ciphertext's hashes need to be 32 bytes long")
 	}
-	control = getCiphertext(state, tfhe.BytesToHash(input[0:32]))
+
+	control = getCiphertext(state, tfhe.BytesToHash(controlHash))
 	if control == nil {
 		return nil, nil, nil, errors.New("unverified ciphertext handle")
 	}
-	ifTrue = getCiphertext(state, tfhe.BytesToHash(input[32:64]))
+	ifTrue = getCiphertext(state, tfhe.BytesToHash(ifTrueHash))
 	if ifTrue == nil {
 		return nil, nil, nil, errors.New("unverified ciphertext handle")
 	}
-	ifFalse = getCiphertext(state, tfhe.BytesToHash(input[64:96]))
+	ifFalse = getCiphertext(state, tfhe.BytesToHash(ifFalseHash))
 	if ifFalse == nil {
 		return nil, nil, nil, errors.New("unverified ciphertext handle")
 	}
@@ -105,22 +105,6 @@ func importCiphertext(state *FheosState, ct *tfhe.Ciphertext) error {
 
 	return nil
 }
-
-func importRandomCiphertext(state *FheosState, t tfhe.UintType) ([]byte, error) {
-	ct, err := tfhe.NewRandomCipherText(t)
-	if err != nil {
-		return nil, errors.New(fmt.Sprintf("failed creating random ciphertext of size: %d", t))
-	}
-
-	err = importCiphertext(state, ct)
-	if err != nil {
-		return nil, err
-	}
-
-	ctHash := ct.Hash()
-	return ctHash[:], nil
-}
-
 func minInt(a int, b int) int {
 	if a < b {
 		return a

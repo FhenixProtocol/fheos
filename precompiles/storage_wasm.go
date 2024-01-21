@@ -7,7 +7,7 @@ import (
 type WasmStorage struct {
 }
 
-func InitStorage(burner GasBurner) Storage {
+func InitStorage() Storage {
 	return WasmStorage{}
 }
 
