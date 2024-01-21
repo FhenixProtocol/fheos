@@ -66,7 +66,7 @@ func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function:" + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
@@ -117,7 +117,7 @@ func Verify(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function:" + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	ct, err := tfhe.NewCipherTextFromBytes(input, uintType, true /* TODO: not sure + shouldn't be hardcoded */)
@@ -156,7 +156,7 @@ func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) ([]byte, uin
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function:" + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	if len(ctHash) != 32 {
@@ -206,7 +206,7 @@ func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function:" + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	if len(input) != 32 {
@@ -251,7 +251,7 @@ func Lte(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function:" + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
@@ -299,7 +299,7 @@ func Sub(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function:" + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
@@ -347,7 +347,7 @@ func Mul(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function:" + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
@@ -396,7 +396,7 @@ func Lt(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function:" + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
@@ -444,7 +444,7 @@ func Select(utype byte, controlHash []byte, ifTrueHash []byte, ifFalseHash []byt
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function:" + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	control, ifTrue, ifFalse, err := get3VerifiedOperands(state, controlHash, ifTrueHash, ifFalseHash)
@@ -494,7 +494,7 @@ func Req(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function:" + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	if len(input) != 32 {
@@ -537,7 +537,7 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams) ([]byte, uint64, 
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function:" + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	if !isValidType(toType) {
@@ -591,7 +591,7 @@ func TrivialEncrypt(input []byte, toType byte, tp *TxParams) ([]byte, uint64, er
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function:" + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	if len(input) != 32 {
@@ -638,7 +638,7 @@ func Div(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function:" + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
@@ -688,7 +688,7 @@ func Gt(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function:" + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
@@ -738,7 +738,7 @@ func Gte(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function:" + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
@@ -786,7 +786,7 @@ func Rem(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function:" + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
@@ -835,7 +835,7 @@ func And(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function:" + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
@@ -885,7 +885,7 @@ func Or(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function:" + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
@@ -935,7 +935,7 @@ func Xor(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function:" + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
@@ -985,7 +985,7 @@ func Eq(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function:" + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
@@ -1035,7 +1035,7 @@ func Ne(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function:" + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
@@ -1083,7 +1083,7 @@ func Min(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function:" + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
@@ -1131,7 +1131,7 @@ func Max(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function:" + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
@@ -1179,7 +1179,7 @@ func Shl(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function:" + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
@@ -1227,7 +1227,7 @@ func Shr(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function:" + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
@@ -1275,7 +1275,7 @@ func Not(utype byte, value []byte, tp *TxParams) ([]byte, uint64, error) {
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function:" + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	ct := getCiphertext(state, tfhe.BytesToHash(value))
@@ -1306,7 +1306,7 @@ func GetNetworkPublicKey(tp *TxParams) ([]byte, error) {
 	functionName := "getNetworkPublicKey"
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function:" + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	pk, err := tfhe.PublicKey()
