@@ -3,17 +3,16 @@ package precompiles
 import (
 	"encoding/hex"
 	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ethereum/go-ethereum/log"
 	"math/big"
-
-	"github.com/sirupsen/logrus"
 
 	tfhe "github.com/fhenixprotocol/go-tfhe"
 )
 
-var logger *logrus.Logger
+var logger log.Logger
 
 func InitLogger() {
-	logger = newLogger()
+	logger = log.Root().New("fheos")
 	tfhe.InitLogger(getDefaultLogLevel())
 }
 
