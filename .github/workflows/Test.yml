@@ -107,6 +107,7 @@ jobs:
           git commit -m "FheOS updated - pushing new contracts and scripts"
       - name: Create Pull Request
         id: cpr
+        continue-on-error: true
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GH_PAT }}
