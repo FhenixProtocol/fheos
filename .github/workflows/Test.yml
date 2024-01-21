@@ -101,6 +101,7 @@ jobs:
           rm contracts.tar
           mv temp_extraction/solidity/FHE.sol temp_extraction/solidity/FheOS.sol contracts/
       - name: Commit Changes
+        continue-on-error: true
         run: |
           git add contracts/FHE.sol
           git add contracts/FheOS.sol
