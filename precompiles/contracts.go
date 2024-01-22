@@ -605,6 +605,14 @@ func TrivialEncrypt(input []byte, toType byte, tp *TxParams) ([]byte, uint64, er
 	valueToEncrypt := *new(big.Int).SetBytes(input)
 	encryptToType := tfhe.UintType(toType)
 
+	// Optimize trivial encrypts of zero since we already have trivially encrypted zeros
+	// Trivial encryption of zero is common because it is done for every uninitialized ciphertext
+	if state.EZero != nil && valueToEncrypt.Cmp(big.NewInt(0)) == 0 {
+		// return trivial ciphertext
+		return state.EZero[toType], gas, nil
+
+	}
+
 	ct, err := tfhe.NewCipherTextTrivial(valueToEncrypt, encryptToType)
 	if err != nil {
 		logger.Error("failed to create trivial encrypted value")
