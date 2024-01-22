@@ -607,7 +607,7 @@ func TrivialEncrypt(input []byte, toType byte, tp *TxParams) ([]byte, uint64, er
 
 	// Optimize trivial encrypts of zero since we already have trivially encrypted zeros
 	// Trivial encryption of zero is common because it is done for every uninitialized ciphertext
-	if valueToEncrypt.Cmp(big.NewInt(0)) == 0 {
+	if state.EZero != nil && valueToEncrypt.Cmp(big.NewInt(0)) == 0 {
 		// return trivial ciphertext
 		return state.EZero[toType], gas, nil
 

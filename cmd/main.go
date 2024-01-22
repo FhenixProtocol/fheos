@@ -7,23 +7,7 @@ import (
 	"github.com/spf13/cobra"
 	"math/big"
 	"os"
-	"path/filepath"
 )
-
-func initFheosState() error {
-
-	err := precompiles.InitializeFheosState()
-	if err != nil {
-		return err
-	}
-
-	err = os.Remove(filepath.Join(os.Getenv("FHEOS_DB_PATH"), "LOCK"))
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
 
 func removeDb() error {
 	env := os.Getenv("FHEOS_DB_PATH")
