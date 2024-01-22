@@ -36,10 +36,13 @@ func (con FheOps) Add(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 
 	err = c.Burn(gas)
 
-	if err == nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Add/success/total/", nil).Inc(1)
-	} else if err != nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Add/error/fhe_failure/", nil).Inc(1)
+	if metrics.Enabled {
+	        metricPath := "/Add/success/total/"
+	        if err != nil {
+	             metricPath := "/Add/error/fhe_gas_failure/"
+	        } 
+		
+		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
 	}
 
 	return ret, err
