@@ -15,7 +15,7 @@ func InitLogger() {
 	logger = log.Root().New("module", "fheos")
 	//todo (eshel): remove log
 	logger.Info("Initialized logger for fheos")
-	tfhe.InitLogger(getDefaultLogLevel())
+	tfhe.SetLogger(log.Root().New("module", "go-tfhe"))
 }
 
 func initTfheConfig(tfheConfig *tfhe.Config) error {
