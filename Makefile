@@ -24,14 +24,13 @@ compile-go-tfhe:
   			cd go-tfhe && make build; \
 	fi
 
-# check_network_is_running:
-# 	if [ -z $$(netstat -tln | grep ":8547") ]; then \
-# 		echo "FHENIX NETWORK IS NOT LISTENING ON PORT 8547."; \
-# 		exit 1; \
-# 	fi
+check_network_is_running:
+	@echo "Checking connection to 127.0.0.1:8547..."
+	@nc -z -v 127.0.0.1 8547 2>/dev/null || (echo "Connection failed to localfhenix" && false)
+	@echo "connected"
 
 .PHONY: test
-test: compile-go-tfhe gen compile
+test: check_network_is_running compile-go-tfhe gen compile
 	cp solidity/.env.example solidity/.env
 	cd solidity && pnpm install
 	cd solidity && pnpm test
