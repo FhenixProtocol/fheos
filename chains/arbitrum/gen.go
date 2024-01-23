@@ -500,10 +500,13 @@ func (con FheOps) {{.Name}}(c ctx, evm mech{{.Inputs}}) ({{.ReturnType}}, error)
 
 	err = c.Burn(gas)
 
-	if err == nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/{{.Name}}/success/total/", nil).Inc(1)
-	} else if err != nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/{{.Name}}/error/fhe_failure/", nil).Inc(1)
+	if metrics.Enabled {
+	        metricPath := "/{{.Name}}/success/total/"
+	        if err != nil {
+	             metricPath = "/{{.Name}}/error/fhe_gas_failure/"
+	        } 
+
+		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
 	}
 
 	return ret, err

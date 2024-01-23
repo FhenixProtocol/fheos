@@ -37,11 +37,11 @@ func (con FheOps) Add(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	err = c.Burn(gas)
 
 	if metrics.Enabled {
-	        metricPath := "/Add/success/total/"
-	        if err != nil {
-	             metricPath := "/Add/error/fhe_gas_failure/"
-	        } 
-		
+		metricPath := "/Add/success/total/"
+		if err != nil {
+			metricPath = "/Add/error/fhe_gas_failure/"
+		}
+
 		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
 	}
 
@@ -72,10 +72,13 @@ func (con FheOps) And(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 
 	err = c.Burn(gas)
 
-	if err == nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/And/success/total/", nil).Inc(1)
-	} else if err != nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/And/error/fhe_failure/", nil).Inc(1)
+	if metrics.Enabled {
+		metricPath := "/And/success/total/"
+		if err != nil {
+			metricPath = "/And/error/fhe_gas_failure/"
+		}
+
+		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -105,10 +108,13 @@ func (con FheOps) Cast(c ctx, evm mech, utype byte, input []byte, toType byte) (
 
 	err = c.Burn(gas)
 
-	if err == nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Cast/success/total/", nil).Inc(1)
-	} else if err != nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Cast/error/fhe_failure/", nil).Inc(1)
+	if metrics.Enabled {
+		metricPath := "/Cast/success/total/"
+		if err != nil {
+			metricPath = "/Cast/error/fhe_gas_failure/"
+		}
+
+		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -138,10 +144,13 @@ func (con FheOps) Decrypt(c ctx, evm mech, utype byte, input []byte) (*big.Int, 
 
 	err = c.Burn(gas)
 
-	if err == nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Decrypt/success/total/", nil).Inc(1)
-	} else if err != nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Decrypt/error/fhe_failure/", nil).Inc(1)
+	if metrics.Enabled {
+		metricPath := "/Decrypt/success/total/"
+		if err != nil {
+			metricPath = "/Decrypt/error/fhe_gas_failure/"
+		}
+
+		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -171,10 +180,13 @@ func (con FheOps) Div(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 
 	err = c.Burn(gas)
 
-	if err == nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Div/success/total/", nil).Inc(1)
-	} else if err != nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Div/error/fhe_failure/", nil).Inc(1)
+	if metrics.Enabled {
+		metricPath := "/Div/success/total/"
+		if err != nil {
+			metricPath = "/Div/error/fhe_gas_failure/"
+		}
+
+		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -204,10 +216,13 @@ func (con FheOps) Eq(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 
 	err = c.Burn(gas)
 
-	if err == nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Eq/success/total/", nil).Inc(1)
-	} else if err != nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Eq/error/fhe_failure/", nil).Inc(1)
+	if metrics.Enabled {
+		metricPath := "/Eq/success/total/"
+		if err != nil {
+			metricPath = "/Eq/error/fhe_gas_failure/"
+		}
+
+		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -243,10 +258,13 @@ func (con FheOps) Gt(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 
 	err = c.Burn(gas)
 
-	if err == nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Gt/success/total/", nil).Inc(1)
-	} else if err != nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Gt/error/fhe_failure/", nil).Inc(1)
+	if metrics.Enabled {
+		metricPath := "/Gt/success/total/"
+		if err != nil {
+			metricPath = "/Gt/error/fhe_gas_failure/"
+		}
+
+		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -276,10 +294,13 @@ func (con FheOps) Gte(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 
 	err = c.Burn(gas)
 
-	if err == nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Gte/success/total/", nil).Inc(1)
-	} else if err != nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Gte/error/fhe_failure/", nil).Inc(1)
+	if metrics.Enabled {
+		metricPath := "/Gte/success/total/"
+		if err != nil {
+			metricPath = "/Gte/error/fhe_gas_failure/"
+		}
+
+		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -309,10 +330,13 @@ func (con FheOps) Lt(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 
 	err = c.Burn(gas)
 
-	if err == nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Lt/success/total/", nil).Inc(1)
-	} else if err != nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Lt/error/fhe_failure/", nil).Inc(1)
+	if metrics.Enabled {
+		metricPath := "/Lt/success/total/"
+		if err != nil {
+			metricPath = "/Lt/error/fhe_gas_failure/"
+		}
+
+		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -342,10 +366,13 @@ func (con FheOps) Lte(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 
 	err = c.Burn(gas)
 
-	if err == nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Lte/success/total/", nil).Inc(1)
-	} else if err != nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Lte/error/fhe_failure/", nil).Inc(1)
+	if metrics.Enabled {
+		metricPath := "/Lte/success/total/"
+		if err != nil {
+			metricPath = "/Lte/error/fhe_gas_failure/"
+		}
+
+		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -375,10 +402,13 @@ func (con FheOps) Max(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 
 	err = c.Burn(gas)
 
-	if err == nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Max/success/total/", nil).Inc(1)
-	} else if err != nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Max/error/fhe_failure/", nil).Inc(1)
+	if metrics.Enabled {
+		metricPath := "/Max/success/total/"
+		if err != nil {
+			metricPath = "/Max/error/fhe_gas_failure/"
+		}
+
+		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -408,10 +438,13 @@ func (con FheOps) Min(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 
 	err = c.Burn(gas)
 
-	if err == nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Min/success/total/", nil).Inc(1)
-	} else if err != nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Min/error/fhe_failure/", nil).Inc(1)
+	if metrics.Enabled {
+		metricPath := "/Min/success/total/"
+		if err != nil {
+			metricPath = "/Min/error/fhe_gas_failure/"
+		}
+
+		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -441,10 +474,13 @@ func (con FheOps) Mul(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 
 	err = c.Burn(gas)
 
-	if err == nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Mul/success/total/", nil).Inc(1)
-	} else if err != nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Mul/error/fhe_failure/", nil).Inc(1)
+	if metrics.Enabled {
+		metricPath := "/Mul/success/total/"
+		if err != nil {
+			metricPath = "/Mul/error/fhe_gas_failure/"
+		}
+
+		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -474,10 +510,13 @@ func (con FheOps) Ne(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 
 	err = c.Burn(gas)
 
-	if err == nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Ne/success/total/", nil).Inc(1)
-	} else if err != nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Ne/error/fhe_failure/", nil).Inc(1)
+	if metrics.Enabled {
+		metricPath := "/Ne/success/total/"
+		if err != nil {
+			metricPath = "/Ne/error/fhe_gas_failure/"
+		}
+
+		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -507,10 +546,13 @@ func (con FheOps) Not(c ctx, evm mech, utype byte, value []byte) ([]byte, error)
 
 	err = c.Burn(gas)
 
-	if err == nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Not/success/total/", nil).Inc(1)
-	} else if err != nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Not/error/fhe_failure/", nil).Inc(1)
+	if metrics.Enabled {
+		metricPath := "/Not/success/total/"
+		if err != nil {
+			metricPath = "/Not/error/fhe_gas_failure/"
+		}
+
+		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -540,10 +582,13 @@ func (con FheOps) Or(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 
 	err = c.Burn(gas)
 
-	if err == nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Or/success/total/", nil).Inc(1)
-	} else if err != nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Or/error/fhe_failure/", nil).Inc(1)
+	if metrics.Enabled {
+		metricPath := "/Or/success/total/"
+		if err != nil {
+			metricPath = "/Or/error/fhe_gas_failure/"
+		}
+
+		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -573,10 +618,13 @@ func (con FheOps) Rem(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 
 	err = c.Burn(gas)
 
-	if err == nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Rem/success/total/", nil).Inc(1)
-	} else if err != nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Rem/error/fhe_failure/", nil).Inc(1)
+	if metrics.Enabled {
+		metricPath := "/Rem/success/total/"
+		if err != nil {
+			metricPath = "/Rem/error/fhe_gas_failure/"
+		}
+
+		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -606,10 +654,13 @@ func (con FheOps) Req(c ctx, evm mech, utype byte, input []byte) ([]byte, error)
 
 	err = c.Burn(gas)
 
-	if err == nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Req/success/total/", nil).Inc(1)
-	} else if err != nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Req/error/fhe_failure/", nil).Inc(1)
+	if metrics.Enabled {
+		metricPath := "/Req/success/total/"
+		if err != nil {
+			metricPath = "/Req/error/fhe_gas_failure/"
+		}
+
+		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -639,10 +690,13 @@ func (con FheOps) SealOutput(c ctx, evm mech, utype byte, ctHash []byte, pk []by
 
 	err = c.Burn(gas)
 
-	if err == nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/SealOutput/success/total/", nil).Inc(1)
-	} else if err != nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/SealOutput/error/fhe_failure/", nil).Inc(1)
+	if metrics.Enabled {
+		metricPath := "/SealOutput/success/total/"
+		if err != nil {
+			metricPath = "/SealOutput/error/fhe_gas_failure/"
+		}
+
+		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -672,10 +726,13 @@ func (con FheOps) Select(c ctx, evm mech, utype byte, controlHash []byte, ifTrue
 
 	err = c.Burn(gas)
 
-	if err == nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Select/success/total/", nil).Inc(1)
-	} else if err != nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Select/error/fhe_failure/", nil).Inc(1)
+	if metrics.Enabled {
+		metricPath := "/Select/success/total/"
+		if err != nil {
+			metricPath = "/Select/error/fhe_gas_failure/"
+		}
+
+		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -705,10 +762,13 @@ func (con FheOps) Shl(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 
 	err = c.Burn(gas)
 
-	if err == nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Shl/success/total/", nil).Inc(1)
-	} else if err != nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Shl/error/fhe_failure/", nil).Inc(1)
+	if metrics.Enabled {
+		metricPath := "/Shl/success/total/"
+		if err != nil {
+			metricPath = "/Shl/error/fhe_gas_failure/"
+		}
+
+		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -738,10 +798,13 @@ func (con FheOps) Shr(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 
 	err = c.Burn(gas)
 
-	if err == nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Shr/success/total/", nil).Inc(1)
-	} else if err != nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Shr/error/fhe_failure/", nil).Inc(1)
+	if metrics.Enabled {
+		metricPath := "/Shr/success/total/"
+		if err != nil {
+			metricPath = "/Shr/error/fhe_gas_failure/"
+		}
+
+		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -771,10 +834,13 @@ func (con FheOps) Sub(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 
 	err = c.Burn(gas)
 
-	if err == nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Sub/success/total/", nil).Inc(1)
-	} else if err != nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Sub/error/fhe_failure/", nil).Inc(1)
+	if metrics.Enabled {
+		metricPath := "/Sub/success/total/"
+		if err != nil {
+			metricPath = "/Sub/error/fhe_gas_failure/"
+		}
+
+		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -804,10 +870,13 @@ func (con FheOps) TrivialEncrypt(c ctx, evm mech, input []byte, toType byte) ([]
 
 	err = c.Burn(gas)
 
-	if err == nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/TrivialEncrypt/success/total/", nil).Inc(1)
-	} else if err != nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/TrivialEncrypt/error/fhe_failure/", nil).Inc(1)
+	if metrics.Enabled {
+		metricPath := "/TrivialEncrypt/success/total/"
+		if err != nil {
+			metricPath = "/TrivialEncrypt/error/fhe_gas_failure/"
+		}
+
+		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -837,10 +906,13 @@ func (con FheOps) Verify(c ctx, evm mech, utype byte, input []byte) ([]byte, err
 
 	err = c.Burn(gas)
 
-	if err == nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Verify/success/total/", nil).Inc(1)
-	} else if err != nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Verify/error/fhe_failure/", nil).Inc(1)
+	if metrics.Enabled {
+		metricPath := "/Verify/success/total/"
+		if err != nil {
+			metricPath = "/Verify/error/fhe_gas_failure/"
+		}
+
+		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -870,10 +942,13 @@ func (con FheOps) Xor(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 
 	err = c.Burn(gas)
 
-	if err == nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Xor/success/total/", nil).Inc(1)
-	} else if err != nil && metrics.Enabled {
-		metrics.GetOrRegisterCounter("fheos"+"/Xor/error/fhe_failure/", nil).Inc(1)
+	if metrics.Enabled {
+		metricPath := "/Xor/success/total/"
+		if err != nil {
+			metricPath = "/Xor/error/fhe_gas_failure/"
+		}
+
+		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
 	}
 
 	return ret, err
