@@ -75,8 +75,8 @@ devDependencies:
     specifier: ^6.9.0
     version: 6.9.1
   fhenixjs:
-    specifier: ^0.0.3
-    version: 0.0.3
+    specifier: ^0.1.0-beta.2
+    version: 0.1.0-beta.2
   fs-extra:
     specifier: ^10.1.0
     version: 10.1.0
@@ -3587,8 +3587,8 @@ packages:
       bser: 2.1.1
     dev: true
 
-  /fhenixjs@0.0.3:
-    resolution: {integrity: sha512-3uG9m4pme/eMx2ytnyoqsffvWL9FzoR94t2frz7IJmtHPizgxKTExsBpHH3V2OUP4X/njBsVyd2JK7XUqNT1eQ==}
+  /fhenixjs@0.1.0-beta.2:
+    resolution: {integrity: sha512-mHTNijKARjIse/dYgzWkfjpbBUwk3CS9m2sXl68lluyfaqUXzeOSzHXfYPxt8VVNhwP9bm7R5GdUYbxMI+Otwg==}
     dependencies:
       ethers: 6.9.1
       node-tfhe: 0.3.1

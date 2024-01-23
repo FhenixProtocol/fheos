@@ -15,7 +15,7 @@ export async function createFheInstance(
   // Get the chainId
   //const fhenix = await provider.getNetwork();
   //const chainId = fhenix.chainId;
-  let instance = await FhenixClient.Create({ provider });
+  let instance = new FhenixClient({ provider });
   const permit = await getPermit(contractAddress, provider);
   instance.storePermit(permit);
   // // workaround for call not working the first time on a fresh chain
