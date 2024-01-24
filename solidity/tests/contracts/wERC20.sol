@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {FHE, euint32, inEuint32, ebool} from "../../FHE.sol";
+import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { FHE, euint32, inEuint32 } from "../../FHE.sol";
 import { Permissioned, Permission } from "@fhenixprotocol/contracts/access/Permission.sol";
+
+error ErrorInsufficientFunds();
 
 contract WrappingERC20 is ERC20, Permissioned {
 
@@ -22,7 +24,9 @@ contract WrappingERC20 is ERC20, Permissioned {
     }
 
     function wrap(uint32 amount) public {
-        require(balanceOf(msg.sender) >= amount);
+        if (balanceOf(msg.sender) < amount) {
+            revert ErrorInsufficientFunds();
+        }
 
         _burn(msg.sender, amount);
         euint32 eAmount = FHE.asEuint32(amount);
@@ -31,13 +35,14 @@ contract WrappingERC20 is ERC20, Permissioned {
     }
 
     function unwrap(uint32 amount) public {
-        require(FHE.isInitialized(_encBalances[msg.sender]));
+        euint32 encAmount = FHE.asEuint32(amount);
 
-        FHE.req(_encBalances[msg.sender].gt(FHE.asEuint32(amount)));
-        euint32 eAmount = FHE.asEuint32(amount);
-        _encBalances[msg.sender] = _encBalances[msg.sender] - eAmount;
-        totalEncryptedSupply = totalEncryptedSupply - eAmount;
-        _mint(msg.sender, amount);
+        euint32 amountToUnwrap = FHE.select(_encBalances[msg.sender].gt(encAmount), FHE.asEuint32(0), encAmount);
+
+        _encBalances[msg.sender] = _encBalances[msg.sender] - amountToUnwrap;
+        totalEncryptedSupply = totalEncryptedSupply - amountToUnwrap;
+
+        _mint(msg.sender, FHE.Decrypt(amountToUnwrap));
     }
 
     function mint(uint256 amount) public {
@@ -67,14 +72,11 @@ contract WrappingERC20 is ERC20, Permissioned {
         // Transfers an encrypted amount.
     function _transferImpl(address from, address to, euint32 amount) internal {
         // Make sure the sender has enough tokens.
-//        FHE.req(_encBalances[from].gte(amount));
-        ebool test = amount.lt(_encBalances[from]);
-        euint32 zero = FHE.asEuint32(0);
-        euint32 amountToSend = FHE.select(test, amount, zero);
+        euint32 amountToSend = FHE.select(amount.lt(_encBalances[from]), amount, FHE.asEuint32(0));
 
         // Add to the balance of `to` and subract from the balance of `from`.
-        _encBalances[to] = _encBalances[to] + amount;
-        _encBalances[from] = _encBalances[from] - amount;
+        _encBalances[to] = _encBalances[to] + amountToSend;
+        _encBalances[from] = _encBalances[from] - amountToSend;
     }
 
     function balanceOfEncrypted(
