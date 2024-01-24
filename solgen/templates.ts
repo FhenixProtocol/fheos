@@ -176,8 +176,11 @@ const castFromEncrypted = (
     console.log(`Unsupported type for casting: ${toType}`);
     process.exit(1);
   }
+  if (!valueIsEncrypted(fromType)) {
+    return ""; // casting from plaintext type is handled elsewhere
+  }
   return `Impl.cast(${
-    UintTypes[toType]
+    UintTypes[fromType]
   }, ${fromType}.unwrap(${name}), Common.${toType.toUpperCase()}_TFHE_GO)`;
 };
 

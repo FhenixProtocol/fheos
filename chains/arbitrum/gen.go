@@ -486,6 +486,7 @@ func (con FheOps) {{.Name}}(c ctx, evm mech{{.Inputs}}) ({{.ReturnType}}, error)
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+			// fmt.Printf("FHEOS: %s took %d\n", "{{.Name}}", time.Since(start).Milliseconds())
 		}(time.Now())
 	}	
 
