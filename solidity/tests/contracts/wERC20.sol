@@ -42,7 +42,7 @@ contract WrappingERC20 is ERC20, Permissioned {
         _encBalances[msg.sender] = _encBalances[msg.sender] - amountToUnwrap;
         totalEncryptedSupply = totalEncryptedSupply - amountToUnwrap;
 
-        _mint(msg.sender, FHE.Decrypt(amountToUnwrap));
+        _mint(msg.sender, FHE.decrypt(amountToUnwrap));
     }
 
     function mint(uint256 amount) public {
