@@ -34,12 +34,12 @@ export const fromHexString = (hexString: string): Uint8Array => {
   return Uint8Array.from(arr.map((byte) => parseInt(byte, 16)));
 };
 
-export const deployContract = async (contractName: string) => {
+export const deployContract = async (contractName: string, args?: any[]) => {
   const [signer] = await ethers.getSigners();
   const con = await ethers.getContractFactory(contractName);
   let deployedContract: BaseContract;
   try {
-    deployedContract = await deployContractFromSigner(con, signer);
+    deployedContract = await deployContractFromSigner(con, signer, undefined, args);
   } catch (e) {
     if (`${e}`.includes('nonce too')) {
       // find last occurence of ": " in e and get the number that comes after
@@ -50,6 +50,8 @@ export const deployContract = async (contractName: string) => {
       }
 
       deployedContract = await syncNonce(con, signer, stateNonce);
+    } else {
+      throw e;
     }
   }
 
@@ -60,11 +62,14 @@ export const deployContract = async (contractName: string) => {
 export const deployContractFromSigner = async (
   con: any,
   signer: any,
-  nonce?: number
+  nonce?: number,
+  args?: any[]
 ) => {
-  return await con.deploy({
+
+  let argsToUse = args || [];
+
+  return await con.deploy(...argsToUse, {
     from: signer,
-    args: [],
     log: true,
     skipIfAlreadyDeployed: false,
     nonce,

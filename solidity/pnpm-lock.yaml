@@ -1,10 +1,13 @@
-lockfileVersion: '6.0'
+lockfileVersion: '6.1'
 
 settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
 devDependencies:
+  '@fhenixprotocol/contracts':
+    specifier: ^0.1.0-beta.2
+    version: 0.1.0-beta.2
   '@nomicfoundation/hardhat-chai-matchers':
     specifier: ^2.0.0
     version: 2.0.3(@nomicfoundation/hardhat-ethers@3.0.5)(chai@4.3.10)(ethers@6.9.1)(hardhat@2.19.4)
@@ -919,6 +922,12 @@ packages:
     engines: {node: '>=14'}
     dev: true
 
+  /@fhenixprotocol/contracts@0.1.0-beta.2:
+    resolution: {integrity: sha512-ZTYvJV1JedQjeNfWp5e80Rk9ShKrPqfmVzequYpCMEG7F/vT2o7dtcKHH4IVil92YnA/J2r35pJ/4clV7ufE2Q==}
+    dependencies:
+      '@openzeppelin/contracts': 5.0.1
+    dev: true
+
   /@humanwhocodes/config-array@0.11.13:
     resolution: {integrity: sha512-JSBDMiDKSzQVngfRjOdFXgFfklaXI4K9nLF49Auh21lmBWRLIK3+xTErTWD4KU54pb6coM6ESE7Awz/FNU3zgQ==}
     engines: {node: '>=10.10.0'}
@@ -1634,6 +1643,10 @@ packages:
 
   /@openzeppelin/contracts@4.9.5:
     resolution: {integrity: sha512-ZK+W5mVhRppff9BE6YdR8CC52C8zAvsVAiWhEtQ5+oNxFE6h1WdeWo+FJSF8KKvtxxVYZ7MTP/5KoVpAU3aSWg==}
+    dev: true
+
+  /@openzeppelin/contracts@5.0.1:
+    resolution: {integrity: sha512-yQJaT5HDp9hYOOp4jTYxMsR02gdFZFXhewX5HW9Jo4fsqSVqqyIO/xTHdWDaKX5a3pv1txmf076Lziz+sO7L1w==}
     dev: true
 
   /@scure/base@1.1.5:

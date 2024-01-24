@@ -1,0 +1,7 @@
+.git
+.gitattributes
+.gitignore
+Dockerfile
+Dockerfile.debug
+target
+node_modules

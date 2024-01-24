@@ -179,7 +179,7 @@ describe('Test SealOutput', () =>  {
 
     });
 
-    const testCases = ["sealoutput(euint8)", "sealoutput(euint16)", "sealoutput(euint32)"];
+    const testCases = ["sealoutput(euint8)", "sealoutput(euint16)", "sealoutput(euint32)", "seal(euint8)"];
 
     for (const test of testCases) {
         it(`Test ${test}`, async () => {
