@@ -201,7 +201,7 @@ func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
-		return big.NewInt(0), gas, nil
+		return state.MaxUintValue, gas, nil
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
