@@ -1892,6 +1892,9 @@ library BindingsEbool {
     function toU32(ebool value) internal pure returns (euint32) {
         return FHE.asEuint32(value);
     }
+    function seal(ebool value, bytes32 publicKey) internal pure returns (bytes memory) {
+        return FHE.sealoutput(value, publicKey);
+    }
 }
 
 using BindingsEuint8 for euint8 global;
@@ -2048,6 +2051,9 @@ library BindingsEuint8 {
     }
     function toU32(euint8 value) internal pure returns (euint32) {
         return FHE.asEuint32(value);
+    }
+    function seal(euint8 value, bytes32 publicKey) internal pure returns (bytes memory) {
+        return FHE.sealoutput(value, publicKey);
     }
 }
 
@@ -2206,6 +2212,9 @@ library BindingsEuint16 {
     function toU32(euint16 value) internal pure returns (euint32) {
         return FHE.asEuint32(value);
     }
+    function seal(euint16 value, bytes32 publicKey) internal pure returns (bytes memory) {
+        return FHE.sealoutput(value, publicKey);
+    }
 }
 
 using BindingsEuint32 for euint32 global;
@@ -2362,5 +2371,8 @@ library BindingsEuint32 {
     }
     function toU16(euint32 value) internal pure returns (euint16) {
         return FHE.asEuint16(value);
+    }
+    function seal(euint32 value, bytes32 publicKey) internal pure returns (bytes memory) {
+        return FHE.sealoutput(value, publicKey);
     }
 }

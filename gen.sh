@@ -2,11 +2,31 @@
 
 set -e
 
-FHE_OPS_DEST=${1:-"../precompiles"}
-OUTPUT=${2:-"chains/arbitrum"}
+# Default values
+FHE_OPS_DEST="../precompiles"
+OUTPUT="chains/arbitrum"
+GEN_FHEOPS="false"
+NITRO_OVERRIDE="false"
 
-GEN_FHEOPS=${3:-"false"}
+# Parse flags
+while getopts "d:o:g:n:" opt; do
+  case $opt in
+    d) FHE_OPS_DEST=$OPTARG ;;
+    o) OUTPUT=$OPTARG ;;
+    g) GEN_FHEOPS=$OPTARG ;;
+    n) NITRO_OVERRIDE=$OPTARG ;;
+    \?) echo "Invalid option -$OPTARG" >&2
+        exit 1
+    ;;
+  esac
+done
 
+# Set FHE_OPS_DEST to "nitro-overrides/precompiles" if the nitro override flag is true
+if [ "$NITRO_OVERRIDE" = "true" ]; then
+    FHE_OPS_DEST="nitro-overrides/precompiles"
+fi
+
+# Rest of the script remains the same
 go run gen.go 1
 if [ ! -e precompiles/contracts ]; then
     mkdir precompiles/contracts

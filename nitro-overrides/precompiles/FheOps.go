@@ -22,6 +22,7 @@ func (con FheOps) Add(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+			// fmt.Printf("FHEOS: %s took %d\n", "Add", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -58,6 +59,7 @@ func (con FheOps) And(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+			// fmt.Printf("FHEOS: %s took %d\n", "And", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -94,6 +96,7 @@ func (con FheOps) Cast(c ctx, evm mech, utype byte, input []byte, toType byte) (
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+			// fmt.Printf("FHEOS: %s took %d\n", "Cast", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -130,6 +133,7 @@ func (con FheOps) Decrypt(c ctx, evm mech, utype byte, input []byte) (*big.Int, 
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+			// fmt.Printf("FHEOS: %s took %d\n", "Decrypt", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -166,6 +170,7 @@ func (con FheOps) Div(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+			// fmt.Printf("FHEOS: %s took %d\n", "Div", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -202,6 +207,7 @@ func (con FheOps) Eq(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+			// fmt.Printf("FHEOS: %s took %d\n", "Eq", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -244,6 +250,7 @@ func (con FheOps) Gt(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+			// fmt.Printf("FHEOS: %s took %d\n", "Gt", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -280,6 +287,7 @@ func (con FheOps) Gte(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+			// fmt.Printf("FHEOS: %s took %d\n", "Gte", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -316,6 +324,7 @@ func (con FheOps) Lt(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+			// fmt.Printf("FHEOS: %s took %d\n", "Lt", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -352,6 +361,7 @@ func (con FheOps) Lte(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+			// fmt.Printf("FHEOS: %s took %d\n", "Lte", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -388,6 +398,7 @@ func (con FheOps) Max(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+			// fmt.Printf("FHEOS: %s took %d\n", "Max", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -424,6 +435,7 @@ func (con FheOps) Min(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+			// fmt.Printf("FHEOS: %s took %d\n", "Min", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -460,6 +472,7 @@ func (con FheOps) Mul(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+			// fmt.Printf("FHEOS: %s took %d\n", "Mul", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -496,6 +509,7 @@ func (con FheOps) Ne(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+			// fmt.Printf("FHEOS: %s took %d\n", "Ne", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -532,6 +546,7 @@ func (con FheOps) Not(c ctx, evm mech, utype byte, value []byte) ([]byte, error)
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+			// fmt.Printf("FHEOS: %s took %d\n", "Not", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -568,6 +583,7 @@ func (con FheOps) Or(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+			// fmt.Printf("FHEOS: %s took %d\n", "Or", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -604,6 +620,7 @@ func (con FheOps) Rem(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+			// fmt.Printf("FHEOS: %s took %d\n", "Rem", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -640,6 +657,7 @@ func (con FheOps) Req(c ctx, evm mech, utype byte, input []byte) ([]byte, error)
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+			// fmt.Printf("FHEOS: %s took %d\n", "Req", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -676,6 +694,7 @@ func (con FheOps) SealOutput(c ctx, evm mech, utype byte, ctHash []byte, pk []by
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+			// fmt.Printf("FHEOS: %s took %d\n", "SealOutput", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -712,6 +731,7 @@ func (con FheOps) Select(c ctx, evm mech, utype byte, controlHash []byte, ifTrue
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+			// fmt.Printf("FHEOS: %s took %d\n", "Select", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -748,6 +768,7 @@ func (con FheOps) Shl(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+			// fmt.Printf("FHEOS: %s took %d\n", "Shl", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -784,6 +805,7 @@ func (con FheOps) Shr(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+			// fmt.Printf("FHEOS: %s took %d\n", "Shr", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -820,6 +842,7 @@ func (con FheOps) Sub(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+			// fmt.Printf("FHEOS: %s took %d\n", "Sub", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -856,6 +879,7 @@ func (con FheOps) TrivialEncrypt(c ctx, evm mech, input []byte, toType byte) ([]
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+			// fmt.Printf("FHEOS: %s took %d\n", "TrivialEncrypt", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -892,6 +916,7 @@ func (con FheOps) Verify(c ctx, evm mech, utype byte, input []byte) ([]byte, err
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+			// fmt.Printf("FHEOS: %s took %d\n", "Verify", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -928,6 +953,7 @@ func (con FheOps) Xor(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+			// fmt.Printf("FHEOS: %s took %d\n", "Xor", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 

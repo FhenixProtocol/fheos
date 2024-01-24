@@ -2,6 +2,7 @@
 pragma solidity ^0.8.17;
 
 import {FHE} from "../../FHE.sol";
+import {ebool, euint8} from "../../FHE.sol";
 import {Utils} from "./utils/Utils.sol";
 
 error TestNotFound(string test);
@@ -23,8 +24,10 @@ contract SealoutputTest {
             }
 
             return FHE.sealoutput(FHE.asEbool(b), pubkey);
-        } 
-        
+        } else if (Utils.cmp(test, "seal(euint8)")) {
+            euint8 aEnc = FHE.asEuint8(a);
+            return aEnc.seal(pubkey);
+        }
         revert TestNotFound(test);
     }
 }

@@ -7,7 +7,7 @@ import {
   UnderlyingTypes,
   UintTypes,
   valueIsEncrypted,
-  valueIsPlaintext,
+  valueIsPlaintext, LOCAL_SEAL_FUNCTION_NAME,
 } from "./common";
 
 export const preamble = () => {
@@ -557,7 +557,7 @@ export function generateTestContract(
   importTypes: boolean = false
 ) {
   const importStatement = importTypes
-    ? `\nimport {ebool} from "../../FHE.sol";`
+    ? `\nimport {ebool, euint8} from "../../FHE.sol";`
     : "";
   return `// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
@@ -615,14 +615,16 @@ export function testContractReencrypt() {
             }
 
             return FHE.${SEALING_FUNCTION_NAME}(FHE.asEbool(b), pubkey);
-        } 
-        
+        } else if (Utils.cmp(test, "${LOCAL_SEAL_FUNCTION_NAME}(euint8)")) {
+            euint8 aEnc = FHE.asEuint8(a);
+            return aEnc.${LOCAL_SEAL_FUNCTION_NAME}(pubkey);
+        }
         revert TestNotFound(test);
     }`;
   const abi = `export interface SealoutputTestType extends BaseContract {
     ${SEALING_FUNCTION_NAME}: (test: string, a: bigint, pubkey: Uint8Array) => Promise<Uint8Array>;
 }\n`;
-  return [generateTestContract(SEALING_FUNCTION_NAME, func), abi];
+  return [generateTestContract(SEALING_FUNCTION_NAME, func, true), abi];
 }
 
 export function testContract3Arg(name: string) {
@@ -960,5 +962,12 @@ export const CastBinding = (thisType: string, targetType: string) => {
       targetType
     )}(${thisType} value) internal pure returns (${targetType}) {
         return FHE.as${capitalize(targetType)}(value);
+    }`;
+};
+
+export const SealFromType = (thisType: string) => {
+  return `
+    function ${LOCAL_SEAL_FUNCTION_NAME}(${thisType} value, bytes32 publicKey) internal pure returns (bytes memory) {
+        return FHE.sealoutput(value, publicKey);
     }`;
 };
