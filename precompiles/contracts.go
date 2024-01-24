@@ -2,8 +2,9 @@ package precompiles
 
 import (
 	"encoding/hex"
-	"github.com/ethereum/go-ethereum/core/vm"
 	"math/big"
+
+	"github.com/ethereum/go-ethereum/core/vm"
 
 	"github.com/sirupsen/logrus"
 
@@ -528,21 +529,20 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams) ([]byte, uint64, 
 		logger.Error("invalid ciphertext type ", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
+	if !isValidType(toType) {
+		logger.Error("invalid type to cast to")
+		return nil, 0, vm.ErrExecutionReverted
+	}
 
 	uintType := tfhe.UintType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
-		return state.EZero[utype], gas, nil
+		return state.EZero[toType], gas, nil
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", functionName)
-	}
-
-	if !isValidType(toType) {
-		logger.Error("invalid type to cast to")
-		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ct := getCiphertext(state, tfhe.BytesToHash(input))
