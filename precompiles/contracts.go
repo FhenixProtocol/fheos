@@ -2,8 +2,9 @@ package precompiles
 
 import (
 	"encoding/hex"
-	"github.com/ethereum/go-ethereum/core/vm"
 	"math/big"
+
+	"github.com/ethereum/go-ethereum/core/vm"
 
 	"github.com/sirupsen/logrus"
 
@@ -201,7 +202,7 @@ func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
-		return big.NewInt(0), gas, nil
+		return state.MaxUintValue, gas, nil
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
@@ -528,21 +529,20 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams) ([]byte, uint64, 
 		logger.Error("invalid ciphertext type ", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
+	if !isValidType(toType) {
+		logger.Error("invalid type to cast to")
+		return nil, 0, vm.ErrExecutionReverted
+	}
 
 	uintType := tfhe.UintType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
-		return state.EZero[utype], gas, nil
+		return state.EZero[toType], gas, nil
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("starting new precompiled contract function ", functionName)
-	}
-
-	if !isValidType(toType) {
-		logger.Error("invalid type to cast to")
-		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ct := getCiphertext(state, tfhe.BytesToHash(input))
@@ -604,6 +604,14 @@ func TrivialEncrypt(input []byte, toType byte, tp *TxParams) ([]byte, uint64, er
 
 	valueToEncrypt := *new(big.Int).SetBytes(input)
 	encryptToType := tfhe.UintType(toType)
+
+	// Optimize trivial encrypts of zero since we already have trivially encrypted zeros
+	// Trivial encryption of zero is common because it is done for every uninitialized ciphertext
+	if state.EZero != nil && valueToEncrypt.Cmp(big.NewInt(0)) == 0 {
+		// return trivial ciphertext
+		return state.EZero[toType], gas, nil
+
+	}
 
 	ct, err := tfhe.NewCipherTextTrivial(valueToEncrypt, encryptToType)
 	if err != nil {

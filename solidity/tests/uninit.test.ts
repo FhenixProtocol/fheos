@@ -22,8 +22,8 @@ describe("Test Unitialized Variables", () => {
   it("Test using uninitialized state variable", async () => {
     const { instance, permit } = await createFheInstance(contractAddr);
 
-    const encAmount = instance.encrypt_uint8(33);
-    await contract.add(encAmount);
+    const encAmount = await instance.encrypt_uint8(33);
+    await contract.add(encAmount.data);
 
     const encCounter = await contract.getCounter(permit.publicKey);
     const counter = await instance.unseal(contractAddr, encCounter);
@@ -49,8 +49,8 @@ describe("Test Unitialized Variables", () => {
   it("Test using uninitialized mapping state variable", async () => {
     const { instance, permit } = await createFheInstance(contractAddr);
 
-    const encAmount = instance.encrypt_uint8(34);
-    await contract.addMapping(BigInt(0), encAmount);
+    const encAmount = await instance.encrypt_uint8(34);
+    await contract.addMapping(BigInt(0), encAmount.data);
 
     const encCounter = await contract.getCounterMapping(
       BigInt(0),

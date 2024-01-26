@@ -6,6 +6,7 @@
     "@nomicfoundation/hardhat-network-helpers": "^1.0.6",
     "@nomicfoundation/hardhat-toolbox": "^3.0.0",
     "@nomicfoundation/hardhat-verify": "^1.0.0",
+    "@fhenixprotocol/contracts": "^0.1.0-beta.2",
     "@openzeppelin/contracts": "^4.9.2",
     "@trivago/prettier-plugin-sort-imports": "^4.0.0",
     "@typechain/ethers-v6": "^0.4.0",
@@ -24,7 +25,7 @@
     "eslint": "^8.28.0",
     "eslint-config-prettier": "^8.5.0",
     "ethers": "^6.9.0",
-    "fhenixjs": "^0.0.3",
+    "fhenixjs": "^0.1.0-beta.2",
     "fs-extra": "^10.1.0",
     "hardhat": "^2.19.2",
     "hardhat-deploy": "^0.11.29",
@@ -48,7 +49,7 @@
     "testTimeout": 20000
   },
   "scripts": {
-    "test": "jest",
+    "test": "jest --runInBand",
     "compile": "cross-env TS_NODE_TRANSPILE_ONLY=true hardhat compile"
   }
 }

@@ -407,8 +407,11 @@ func Gen(parent string, output string) {
 	file.WriteString(`package precompiles
 
 import (
+	"fmt"
+	"github.com/ethereum/go-ethereum/metrics"
 	fheos "github.com/fhenixprotocol/fheos/precompiles"
 	"math/big"
+	"time"
 )
 
 type FheOps struct {
@@ -456,6 +459,7 @@ type Argument struct {
 func GenerateFHEOperationNoGasTemplate() *template.Template {
 	templateText := `
 func (con FheOps) {{.Name}}(c ctx, evm mech{{.Inputs}}) ({{.ReturnType}}, error) {
+
 	tp := fheos.TxParamsFromEVM(evm)
 	return fheos.{{.Name}}({{.InnerInputs}}&tp)
 }
@@ -474,13 +478,38 @@ func GenerateFHEOperationTemplate() *template.Template {
 	templateText := `
 func (con FheOps) {{.Name}}(c ctx, evm mech{{.Inputs}}) ({{.ReturnType}}, error) {
 	tp := fheos.TxParamsFromEVM(evm)
+
+	if metrics.Enabled {
+		h := fmt.Sprintf("%s/%s", "fheos", "{{.Name}}")
+		defer func(start time.Time) {
+			sampler := func() metrics.Sample {
+				return metrics.NewBoundedHistogramSample()
+			}
+			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+			// fmt.Printf("FHEOS: %s took %d\n", "{{.Name}}", time.Since(start).Milliseconds())
+		}(time.Now())
+	}	
+
 	ret, gas, err := fheos.{{.Name}}({{.InnerInputs}}&tp)
 	
 	if err != nil {
+		if metrics.Enabled {
+			metrics.GetOrRegisterCounter("fheos"+"/{{.Name}}/error/fhe_failure/", nil).Inc(1)
+		}
 		return ret, err
 	}
 
 	err = c.Burn(gas)
+
+	if metrics.Enabled {
+	        metricPath := "/{{.Name}}/success/total/"
+	        if err != nil {
+	             metricPath = "/{{.Name}}/error/fhe_gas_failure/"
+	        } 
+
+		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
+	}
+
 	return ret, err
 }
 `
