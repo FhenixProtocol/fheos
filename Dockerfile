@@ -1,6 +1,22 @@
 ARG BRANCH=latest
 ARG DOCKER_NAME=ghcr.io/fhenixprotocol/nitro/fhenix-node-builder:$BRANCH
 
+FROM rust:1.68-slim-bullseye as go-tfhe-builder
+WORKDIR /workspace
+RUN export DEBIAN_FRONTEND=noninteractive && \
+    apt-get update && \
+    apt-get install -y make wget gpg software-properties-common zlib1g-dev libstdc++-10-dev wabt git
+
+RUN wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add - && \
+    add-apt-repository 'deb http://apt.llvm.org/bullseye/ llvm-toolchain-bullseye-12 main' && \
+    apt-get update && \
+    apt-get install -y llvm-12-dev libclang-common-12-dev
+
+COPY go-tfhe/ go-tfhe/
+WORKDIR /workspace/go-tfhe
+
+RUN make build-rust-release
+
 FROM $DOCKER_NAME as winning
 
 RUN echo $DOCKER_NAME
@@ -11,6 +27,7 @@ RUN apt-get update -qq && apt-get install -y nodejs npm yarn
 
 RUN npm install -g pnpm
 
+RUN rm -rf fheos/
 COPY . fheos/
 
 WORKDIR fheos
@@ -27,7 +44,7 @@ RUN go build -gcflags "all=-N -l" -ldflags="-X github.com/offchainlabs/nitro/cmd
 
 FROM ghcr.io/fhenixprotocol/localfhenix:v0.1.0-beta0
 
-COPY --from=winning /workspace/fheos/go-tfhe/internal/api/amd64/libtfhe_wrapper.x86_64.so /usr/lib/libtfhe_wrapper.x86_64.so
+COPY --from=go-tfhe-builder /workspace/go-tfhe/internal/api/amd64/libtfhe_wrapper.so /usr/lib/libtfhe_wrapper.so
 COPY --from=winning /workspace/target/bin/nitro /usr/local/bin/
 
 RUN mkdir -p /home/user/fhenix/fheosdb
