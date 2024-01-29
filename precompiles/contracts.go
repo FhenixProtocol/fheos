@@ -2,9 +2,12 @@ package precompiles
 
 import (
 	"encoding/hex"
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/log"
-	"math/big"
+
+	"github.com/sirupsen/logrus"
 
 	tfhe "github.com/fhenixprotocol/go-tfhe"
 )
@@ -131,11 +134,11 @@ func Verify(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 	ctHash := ct.Hash()
 	err = importCiphertext(state, ct)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName + " failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	logger.Debug(functionName+" success", "ctHash", ctHash.Hex())
+	logger.Debug(functionName + " success", "ctHash", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
@@ -184,7 +187,7 @@ func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) ([]byte, uin
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	logger.Debug(functionName+" success", "ciphertext-hash ", hex.EncodeToString(ctHash), "public-key", hex.EncodeToString(pk))
+	logger.Debug(functionName + " success", "ciphertext-hash ", hex.EncodeToString(ctHash), "public-key", hex.EncodeToString(pk))
 
 	return reencryptedValue, gas, nil
 }
@@ -202,7 +205,7 @@ func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
-		return big.NewInt(0), gas, nil
+		return state.MaxUintValue, gas, nil
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
@@ -230,7 +233,7 @@ func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
 
 	bgDecrypted := new(big.Int).SetUint64(decryptedValue)
 
-	logger.Debug(functionName+" success", "input", hex.EncodeToString(input))
+	logger.Debug(functionName + " success", "input", hex.EncodeToString(input))
 	return bgDecrypted, gas, nil
 }
 
@@ -268,18 +271,18 @@ func Lte(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 	result, err := lhs.Lte(rhs)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName + " failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	err = importCiphertext(state, result)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName + " failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	resultHash := result.Hash()
-	logger.Debug(functionName+" success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
+	logger.Debug(functionName + " success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
 	return resultHash[:], gas, nil
 }
 
@@ -322,12 +325,12 @@ func Sub(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 	err = importCiphertext(state, result)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName + " failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	resultHash := result.Hash()
-	logger.Debug(functionName+" success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
+	logger.Debug(functionName + " success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
 	return resultHash[:], gas, nil
 }
 
@@ -370,7 +373,7 @@ func Mul(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 	err = importCiphertext(state, result)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName + " failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -419,12 +422,12 @@ func Lt(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 
 	err = importCiphertext(state, result)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName + " failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	resultHash := result.Hash()
-	logger.Debug(functionName+" success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
+	logger.Debug(functionName + " success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
 	return resultHash[:], gas, nil
 }
 
@@ -461,18 +464,18 @@ func Select(utype byte, controlHash []byte, ifTrueHash []byte, ifFalseHash []byt
 
 	result, err := control.Cmux(ifTrue, ifFalse)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName + " failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	err = importCiphertext(state, result)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName + " failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	resultHash := result.Hash()
-	logger.Debug(functionName+" success", "control", control.Hash().Hex(), "ifTrue", ifTrue.Hash().Hex(), "ifFalse", ifTrue.Hash().Hex(), "result", resultHash.Hex())
+	logger.Debug(functionName + " success", "control", control.Hash().Hex(), "ifTrue", ifTrue.Hash().Hex(), "ifFalse", ifTrue.Hash().Hex(), "result", resultHash.Hex())
 	return resultHash[:], gas, nil
 }
 
@@ -528,21 +531,20 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams) ([]byte, uint64, 
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
+	if !isValidType(toType) {
+		logger.Error("invalid type to cast to")
+		return nil, 0, vm.ErrExecutionReverted
+	}
 
 	uintType := tfhe.UintType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
-		return state.EZero[utype], gas, nil
+		return state.EZero[toType], gas, nil
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function: " + functionName)
-	}
-
-	if !isValidType(toType) {
-		logger.Error("invalid type to cast to")
-		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ct := getCiphertext(state, tfhe.BytesToHash(input))
@@ -564,7 +566,7 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams) ([]byte, uint64, 
 
 	err = importCiphertext(state, res)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName + " failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -603,6 +605,14 @@ func TrivialEncrypt(input []byte, toType byte, tp *TxParams) ([]byte, uint64, er
 	valueToEncrypt := *new(big.Int).SetBytes(input)
 	encryptToType := tfhe.UintType(toType)
 
+	// Optimize trivial encrypts of zero since we already have trivially encrypted zeros
+	// Trivial encryption of zero is common because it is done for every uninitialized ciphertext
+	if state.EZero != nil && valueToEncrypt.Cmp(big.NewInt(0)) == 0 {
+		// return trivial ciphertext
+		return state.EZero[toType], gas, nil
+
+	}
+
 	ct, err := tfhe.NewCipherTextTrivial(valueToEncrypt, encryptToType)
 	if err != nil {
 		logger.Error("failed to create trivial encrypted value")
@@ -612,12 +622,12 @@ func TrivialEncrypt(input []byte, toType byte, tp *TxParams) ([]byte, uint64, er
 	ctHash := ct.Hash()
 	err = importCiphertext(state, ct)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName + " failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Debug(functionName+" success", "ctHash", ctHash.Hex(), "valueToEncrypt", valueToEncrypt.Uint64())
+		logger.Debug(functionName + " success", "ctHash", ctHash.Hex(), "valueToEncrypt", valueToEncrypt.Uint64())
 	}
 	return ctHash[:], gas, nil
 }
@@ -661,13 +671,13 @@ func Div(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 	err = importCiphertext(state, result)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName + " failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := result.Hash()
 
-	logger.Debug(functionName+" success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	logger.Debug(functionName + " success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
@@ -711,13 +721,13 @@ func Gt(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 
 	err = importCiphertext(state, result)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName + " failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := result.Hash()
 
-	logger.Debug(functionName+" success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	logger.Debug(functionName + " success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
@@ -760,13 +770,13 @@ func Gte(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 	err = importCiphertext(state, result)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName + " failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := result.Hash()
 
-	logger.Debug(functionName+" success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	logger.Debug(functionName + " success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
@@ -808,13 +818,13 @@ func Rem(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 	err = importCiphertext(state, result)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName + " failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := result.Hash()
 
-	logger.Debug(functionName+" success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	logger.Debug(functionName + " success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
@@ -858,13 +868,13 @@ func And(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 	err = importCiphertext(state, result)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName + " failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := result.Hash()
 
-	logger.Debug(functionName+" success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	logger.Debug(functionName + " success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
@@ -908,13 +918,13 @@ func Or(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 
 	err = importCiphertext(state, result)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName + " failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := result.Hash()
 
-	logger.Debug(functionName+" success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	logger.Debug(functionName + " success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
@@ -957,13 +967,13 @@ func Xor(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 	err = importCiphertext(state, result)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName + " failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := result.Hash()
 
-	logger.Debug(functionName+" success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	logger.Debug(functionName + " success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
@@ -1007,13 +1017,13 @@ func Eq(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 	}
 	err = importCiphertext(state, result)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName + " failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := result.Hash()
 
-	logger.Debug(functionName+" success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	logger.Debug(functionName + " success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
@@ -1057,13 +1067,13 @@ func Ne(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 	}
 	err = importCiphertext(state, result)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName + " failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := result.Hash()
 
-	logger.Debug(functionName+" success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	logger.Debug(functionName + " success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
@@ -1105,13 +1115,13 @@ func Min(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 	err = importCiphertext(state, result)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName + " failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := result.Hash()
 
-	logger.Debug(functionName+" success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	logger.Debug(functionName + " success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
@@ -1153,13 +1163,13 @@ func Max(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 	err = importCiphertext(state, result)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName + " failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := result.Hash()
 
-	logger.Debug(functionName+" success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	logger.Debug(functionName + " success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
@@ -1201,13 +1211,13 @@ func Shl(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 	err = importCiphertext(state, result)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName + " failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := result.Hash()
 
-	logger.Debug(functionName+" success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	logger.Debug(functionName + " success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
@@ -1249,13 +1259,13 @@ func Shr(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 	err = importCiphertext(state, result)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName + " failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := result.Hash()
 
-	logger.Debug(functionName+" success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	logger.Debug(functionName + " success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
@@ -1293,12 +1303,12 @@ func Not(utype byte, value []byte, tp *TxParams) ([]byte, uint64, error) {
 
 	err = importCiphertext(state, result)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName + " failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	resultHash := result.Hash()
-	logger.Debug(functionName+" success", "input", ct.Hash().Hex(), "result", resultHash.Hex())
+	logger.Debug(functionName + " success", "input", ct.Hash().Hex(), "result", resultHash.Hex())
 	return resultHash[:], gas, nil
 }
 

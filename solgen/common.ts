@@ -29,6 +29,7 @@ export type AllTypes =
   | "none";
 
 export const SEALING_FUNCTION_NAME = "sealoutput";
+export const LOCAL_SEAL_FUNCTION_NAME = "seal";
 
 export const UnderlyingTypes: Record<EUintType, string> = {
   euint8: "uint256",

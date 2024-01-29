@@ -3,12 +3,14 @@ package precompiles
 import (
 	"errors"
 	"github.com/fhenixprotocol/go-tfhe"
+	"math/big"
 )
 
 type FheosState struct {
 	FheosVersion uint64
 	Storage      Storage
 	EZero        [][]byte // Preencrypted 0s for each uint type
+	MaxUintValue *big.Int // This should contain the max value of the supported uint type
 }
 
 const FheosVersion = uint64(1)
@@ -28,6 +30,7 @@ func createFheosState(storage *Storage, version uint64) error {
 		version,
 		*storage,
 		nil,
+		new(big.Int).SetUint64(^uint64(0)),
 	}
 
 	tempTp := TxParams{

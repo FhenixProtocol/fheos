@@ -19,7 +19,7 @@ import {
     AsTypeTestingContract,
     genAbiFile,
     capitalize,
-    CastBinding
+    CastBinding, SealFromType
 } from "./templates";
 import {
     AllTypes,
@@ -368,6 +368,8 @@ const main = async () => {
         EInputType.filter(otherType => otherType !== encryptedType).forEach(otherType => {
             outputFile += CastBinding(encryptedType, otherType);
         });
+        outputFile += SealFromType(encryptedType);
+
         outputFile += PostFix();
     })
 
