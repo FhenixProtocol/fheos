@@ -47,7 +47,7 @@ func (store LevelDbStorage) OpenDB(readonly bool) *leveldb.DB {
 
 	db, err := leveldb.OpenFile(store.dbPath, &opt.Options{ReadOnly: readonly})
 	if err != nil {
-		logger.Error("failed to open fheos db ", err)
+		logger.Error("failed to open fheos db", "err", err)
 		panic(err)
 	}
 
@@ -63,7 +63,7 @@ func closeDB(db *leveldb.DB, readonly bool) {
 
 	err := db.Close()
 	if err != nil {
-		logger.Error("failed to close fheos db ", err)
+		logger.Error("failed to close fheos db", "err", err)
 		panic(err)
 	}
 
@@ -79,7 +79,7 @@ func (store LevelDbStorage) Put(t DataType, key []byte, val []byte) error {
 
 	err := db.Put(extendedKey, val, nil)
 	if err != nil {
-		logger.Error("failed to write into fheos db ", err)
+		logger.Error("failed to write into fheos db", "err", err)
 		return err
 	}
 
@@ -96,7 +96,7 @@ func (store LevelDbStorage) Get(t DataType, key []byte) ([]byte, error) {
 
 	val, err := db.Get(extendedKey, nil)
 	if err != nil {
-		logger.Error("failed to read from fheos db ", err)
+		logger.Error("failed to read from fheos db", "err", err)
 		return nil, err
 	}
 
@@ -124,7 +124,7 @@ func (store LevelDbStorage) PutCt(h tfhe.Hash, cipher *tfhe.Ciphertext) error {
 	enc := gob.NewEncoder(&cipherBuffer)
 	err := enc.Encode(*cipher)
 	if err != nil {
-		logger.Error("failed to encode ciphertext ", err)
+		logger.Error("failed to encode ciphertext", "err", err)
 		return err
 	}
 
@@ -141,7 +141,7 @@ func (store LevelDbStorage) GetCt(h tfhe.Hash) (*tfhe.Ciphertext, error) {
 	dec := gob.NewDecoder(bytes.NewReader(v))
 	err = dec.Decode(&cipher)
 	if err != nil {
-		logger.Error("failed to decode ciphertext ", err)
+		logger.Error("failed to decode ciphertext", "err", err)
 		return nil, err
 	}
 

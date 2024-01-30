@@ -46,7 +46,7 @@ func createFheosState(storage *Storage, version uint64) error {
 	for i := 0; i < 3; i++ {
 		ezero[i], _, err = TrivialEncrypt(zero, byte(i), &tempTp)
 		if err != nil {
-			logger.Error("failed to encrypt 0 for ezero ", i, err)
+			logger.Error("failed to encrypt 0 for ezero", "toType", i, "err", err)
 			return err
 		}
 	}
@@ -66,14 +66,14 @@ func InitializeFheosState() error {
 
 	err := storage.PutVersion(FheosVersion)
 	if err != nil {
-		logger.Error("failed to write version into fheos db ", err)
+		logger.Error("failed to write version into fheos db", "err", err)
 		return errors.New("failed to write version into fheos db")
 	}
 
 	err = createFheosState(&storage, FheosVersion)
 
 	if err != nil {
-		logger.Error("failed to create fheos state ", err)
+		logger.Error("failed to create fheos state", "err", err)
 		return errors.New("failed to create fheos state")
 	}
 
