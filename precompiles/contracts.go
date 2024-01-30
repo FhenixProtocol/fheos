@@ -181,7 +181,7 @@ func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) ([]byte, uin
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	logger.Debug(functionName+"success", "ciphertext-hash ", hex.EncodeToString(ctHash), "public-key", hex.EncodeToString(pk))
+	logger.Debug(functionName+" success", "ciphertext-hash ", hex.EncodeToString(ctHash), "public-key", hex.EncodeToString(pk))
 
 	return reencryptedValue, gas, nil
 }
