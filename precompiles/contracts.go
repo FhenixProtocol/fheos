@@ -5,27 +5,26 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/core/vm"
-
-	"github.com/sirupsen/logrus"
+	"github.com/ethereum/go-ethereum/log"
 
 	tfhe "github.com/fhenixprotocol/go-tfhe"
 )
 
-var logger *logrus.Logger
+var logger log.Logger
 
 func InitLogger() {
-	logger = newLogger()
-	tfhe.InitLogger(getDefaultLogLevel())
+	logger = log.Root().New("module", "fheos")
+	tfhe.SetLogger(log.Root().New("module", "go-tfhe"))
 }
 
 func initTfheConfig(tfheConfig *tfhe.Config) error {
 	err := tfhe.InitTfhe(tfheConfig)
 	if err != nil {
-		logger.Error("Failed to init tfhe config with error: ", err)
+		logger.Error("Failed to init tfhe config with", "error:", err)
 		return err
 	}
 
-	logger.Info("Successfully initialized tfhe config to be: ", tfheConfig)
+	logger.Info("Successfully initialized tfhe config", "config", tfheConfig)
 
 	return nil
 }
@@ -54,7 +53,7 @@ func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	functionName := "add"
 
 	if !isValidType(utype) {
-		logger.Error("invalid ciphertext type ", utype)
+		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -66,18 +65,18 @@ func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("starting new precompiled contract function ", functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
 	if err != nil {
-		logger.Error(functionName, " inputs not verified", " err ", err)
+		logger.Error(functionName+": Inputs not verified", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	if lhs.UintType != rhs.UintType || (lhs.UintType != uintType) {
 		msg := functionName + " operand type mismatch"
-		logger.Error(msg, " lhs ", lhs.UintType, " rhs ", rhs.UintType)
+		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -85,19 +84,19 @@ func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 	result, err := lhs.Add(rhs)
 	if err != nil {
-		logger.Error(functionName, " failed ", " err ", err)
+		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	err = importCiphertext(state, result)
 	if err != nil {
-		logger.Error(functionName, " failed ", " err ", err)
+		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	resultHash := result.Hash()
 
-	logger.Debug(functionName, " success ", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), " result ", resultHash.Hex())
+	logger.Debug(functionName+" success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
 	return resultHash[:], gas, nil
 }
 
@@ -105,7 +104,7 @@ func Verify(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 	functionName := "verify"
 
 	if !isValidType(utype) {
-		logger.Error("invalid ciphertext type ", utype)
+		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -117,7 +116,7 @@ func Verify(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("starting new precompiled contract function ", functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	ct, err := tfhe.NewCipherTextFromBytes(input, uintType, true /* TODO: not sure + shouldn't be hardcoded */)
@@ -131,11 +130,11 @@ func Verify(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 	ctHash := ct.Hash()
 	err = importCiphertext(state, ct)
 	if err != nil {
-		logger.Error(functionName, " failed ", " err ", err)
+		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	logger.Debug(functionName, " success ", " ctHash ", ctHash.Hex())
+	logger.Debug(functionName+" success", "ctHash", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
@@ -144,7 +143,7 @@ func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) ([]byte, uin
 	functionName := "sealOutput"
 
 	if !isValidType(utype) {
-		logger.Error("invalid ciphertext type ", utype)
+		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -156,7 +155,7 @@ func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) ([]byte, uin
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("starting new precompiled contract function ", functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	if len(ctHash) != 32 {
@@ -184,7 +183,7 @@ func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) ([]byte, uin
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	logger.Debug(functionName, " success", " ciphertext's hash ", hex.EncodeToString(ctHash), " public key ", hex.EncodeToString(pk))
+	logger.Debug(functionName+" success", "ciphertext-hash ", hex.EncodeToString(ctHash), "public-key", hex.EncodeToString(pk))
 
 	return reencryptedValue, gas, nil
 }
@@ -194,7 +193,7 @@ func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
 	functionName := "decrypt"
 
 	if !isValidType(utype) {
-		logger.Error("invalid ciphertext type ", utype)
+		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -206,7 +205,7 @@ func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("starting new precompiled contract function ", functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	if len(input) != 32 {
@@ -230,9 +229,8 @@ func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
 
 	bgDecrypted := new(big.Int).SetUint64(decryptedValue)
 
-	logger.Debug(functionName, " success", " input ", hex.EncodeToString(input))
+	logger.Debug(functionName+" success", "input", hex.EncodeToString(input))
 	return bgDecrypted, gas, nil
-
 }
 
 func Lte(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
@@ -240,7 +238,7 @@ func Lte(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	functionName := "lte"
 
 	if !isValidType(utype) {
-		logger.Error("invalid ciphertext type ", utype)
+		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -252,7 +250,7 @@ func Lte(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("starting new precompiled contract function ", functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
@@ -269,18 +267,18 @@ func Lte(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 	result, err := lhs.Lte(rhs)
 	if err != nil {
-		logger.Error(functionName, " failed ", " err ", err)
+		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	err = importCiphertext(state, result)
 	if err != nil {
-		logger.Error(functionName, " failed ", " err ", err)
+		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	resultHash := result.Hash()
-	logger.Debug(functionName, " success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), " result ", resultHash.Hex())
+	logger.Debug(functionName+" success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
 	return resultHash[:], gas, nil
 }
 
@@ -288,7 +286,7 @@ func Sub(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	functionName := "sub"
 
 	if !isValidType(utype) {
-		logger.Error("invalid ciphertext type ", utype)
+		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -300,7 +298,7 @@ func Sub(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("starting new precompiled contract function ", functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
@@ -323,12 +321,12 @@ func Sub(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 	err = importCiphertext(state, result)
 	if err != nil {
-		logger.Error(functionName, " failed ", " err ", err)
+		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	resultHash := result.Hash()
-	logger.Debug(functionName, " success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), " result ", resultHash.Hex())
+	logger.Debug(functionName+" success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
 	return resultHash[:], gas, nil
 }
 
@@ -336,7 +334,7 @@ func Mul(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	functionName := "mul"
 
 	if !isValidType(utype) {
-		logger.Error("invalid ciphertext type ", utype)
+		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -348,7 +346,7 @@ func Mul(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("starting new precompiled contract function ", functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
@@ -371,7 +369,7 @@ func Mul(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 	err = importCiphertext(state, result)
 	if err != nil {
-		logger.Error(functionName, " failed ", " err ", err)
+		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -385,7 +383,7 @@ func Lt(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 	functionName := "lt"
 
 	if !isValidType(utype) {
-		logger.Error("invalid ciphertext type ", utype)
+		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -397,7 +395,7 @@ func Lt(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("starting new precompiled contract function ", functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
@@ -420,12 +418,12 @@ func Lt(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 
 	err = importCiphertext(state, result)
 	if err != nil {
-		logger.Error(functionName, " failed ", " err ", err)
+		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	resultHash := result.Hash()
-	logger.Debug(functionName+" success ", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), " result ", resultHash.Hex())
+	logger.Debug(functionName+" success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
 	return resultHash[:], gas, nil
 }
 
@@ -433,7 +431,7 @@ func Select(utype byte, controlHash []byte, ifTrueHash []byte, ifFalseHash []byt
 	functionName := "select"
 
 	if !isValidType(utype) {
-		logger.Error("invalid ciphertext type ", utype)
+		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -445,7 +443,7 @@ func Select(utype byte, controlHash []byte, ifTrueHash []byte, ifFalseHash []byt
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("starting new precompiled contract function ", functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	control, ifTrue, ifFalse, err := get3VerifiedOperands(state, controlHash, ifTrueHash, ifFalseHash)
@@ -462,18 +460,18 @@ func Select(utype byte, controlHash []byte, ifTrueHash []byte, ifFalseHash []byt
 
 	result, err := control.Cmux(ifTrue, ifFalse)
 	if err != nil {
-		logger.Error(functionName, " failed ", " err ", err)
+		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	err = importCiphertext(state, result)
 	if err != nil {
-		logger.Error(functionName, " failed ", " err ", err)
+		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	resultHash := result.Hash()
-	logger.Debug(functionName, " success ", " control ", control.Hash().Hex(), " ifTrue ", ifTrue.Hash().Hex(), " ifFalse ", ifTrue.Hash().Hex(), " result ", resultHash.Hex())
+	logger.Debug(functionName+" success", "control", control.Hash().Hex(), "ifTrue", ifTrue.Hash().Hex(), "ifFalse", ifTrue.Hash().Hex(), "result", resultHash.Hex())
 	return resultHash[:], gas, nil
 }
 
@@ -483,7 +481,7 @@ func Req(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 	functionName := "require"
 
 	if !isValidType(utype) {
-		logger.Error("invalid ciphertext type ", utype)
+		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -495,7 +493,7 @@ func Req(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("starting new precompiled contract function ", functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	if len(input) != 32 {
@@ -526,7 +524,7 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams) ([]byte, uint64, 
 	functionName := "cast"
 
 	if !isValidType(utype) {
-		logger.Error("invalid ciphertext type ", utype)
+		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 	if !isValidType(toType) {
@@ -542,7 +540,7 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams) ([]byte, uint64, 
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("starting new precompiled contract function ", functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	ct := getCiphertext(state, tfhe.BytesToHash(input))
@@ -564,14 +562,12 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams) ([]byte, uint64, 
 
 	err = importCiphertext(state, res)
 	if err != nil {
-		logger.Error(functionName, " failed ", " err ", err)
+		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Debug(functionName, " success",
-			" ctHash ", resHash.Hex(),
-		)
+		logger.Debug(functionName+" success", "ctHash", resHash.Hex())
 	}
 
 	return resHash[:], gas, nil
@@ -581,7 +577,7 @@ func TrivialEncrypt(input []byte, toType byte, tp *TxParams) ([]byte, uint64, er
 	functionName := "trivialEncrypt"
 
 	if !isValidType(toType) {
-		logger.Error("invalid ciphertext type ", toType)
+		logger.Error("invalid ciphertext", "type", toType)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -593,7 +589,7 @@ func TrivialEncrypt(input []byte, toType byte, tp *TxParams) ([]byte, uint64, er
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("starting new precompiled contract function ", functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	if len(input) != 32 {
@@ -622,14 +618,12 @@ func TrivialEncrypt(input []byte, toType byte, tp *TxParams) ([]byte, uint64, er
 	ctHash := ct.Hash()
 	err = importCiphertext(state, ct)
 	if err != nil {
-		logger.Error(functionName, " failed ", " err ", err)
+		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Debug(functionName, " success",
-			" ctHash ", ctHash.Hex(),
-			" valueToEncrypt ", valueToEncrypt.Uint64())
+		logger.Debug(functionName+" success", "ctHash", ctHash.Hex(), "valueToEncrypt", valueToEncrypt.Uint64())
 	}
 	return ctHash[:], gas, nil
 }
@@ -638,7 +632,7 @@ func Div(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	functionName := "div"
 
 	if !isValidType(utype) {
-		logger.Error("invalid ciphertext type ", utype)
+		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -650,7 +644,7 @@ func Div(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function ", functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
@@ -673,13 +667,13 @@ func Div(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 	err = importCiphertext(state, result)
 	if err != nil {
-		logger.Error(functionName, " failed ", " err ", err)
+		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := result.Hash()
 
-	logger.Debug(functionName, " success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), " result ", ctHash.Hex())
+	logger.Debug(functionName+" success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
@@ -688,7 +682,7 @@ func Gt(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 	functionName := "gt"
 
 	if !isValidType(utype) {
-		logger.Error("invalid ciphertext type ", utype)
+		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -700,7 +694,7 @@ func Gt(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function ", functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
@@ -723,13 +717,13 @@ func Gt(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 
 	err = importCiphertext(state, result)
 	if err != nil {
-		logger.Error(functionName, " failed ", " err ", err)
+		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := result.Hash()
 
-	logger.Debug(functionName, " success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), " result ", ctHash.Hex())
+	logger.Debug(functionName+" success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
@@ -738,7 +732,7 @@ func Gte(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	functionName := "gte"
 
 	if !isValidType(utype) {
-		logger.Error("invalid ciphertext type ", utype)
+		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -750,7 +744,7 @@ func Gte(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function ", functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
@@ -772,13 +766,13 @@ func Gte(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 	err = importCiphertext(state, result)
 	if err != nil {
-		logger.Error(functionName, " failed ", " err ", err)
+		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := result.Hash()
 
-	logger.Debug(functionName+" success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), " result ", ctHash.Hex())
+	logger.Debug(functionName+" success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
@@ -786,7 +780,7 @@ func Rem(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	functionName := "rem"
 
 	if !isValidType(utype) {
-		logger.Error("invalid ciphertext type ", utype)
+		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -798,7 +792,7 @@ func Rem(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function ", functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
@@ -820,13 +814,13 @@ func Rem(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 	err = importCiphertext(state, result)
 	if err != nil {
-		logger.Error(functionName, " failed ", " err ", err)
+		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := result.Hash()
 
-	logger.Debug(functionName+" success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), " result ", ctHash.Hex())
+	logger.Debug(functionName+" success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
@@ -835,7 +829,7 @@ func And(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	functionName := "and"
 
 	if !isValidType(utype) {
-		logger.Error("invalid ciphertext type ", utype)
+		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -847,7 +841,7 @@ func And(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function ", functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
@@ -870,13 +864,13 @@ func And(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 	err = importCiphertext(state, result)
 	if err != nil {
-		logger.Error(functionName, " failed ", " err ", err)
+		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := result.Hash()
 
-	logger.Debug(functionName+" success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), " result ", ctHash.Hex())
+	logger.Debug(functionName+" success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
@@ -885,7 +879,7 @@ func Or(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 	functionName := "or"
 
 	if !isValidType(utype) {
-		logger.Error("invalid ciphertext type ", utype)
+		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -897,7 +891,7 @@ func Or(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function ", functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
@@ -920,13 +914,13 @@ func Or(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 
 	err = importCiphertext(state, result)
 	if err != nil {
-		logger.Error(functionName, " failed ", " err ", err)
+		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := result.Hash()
 
-	logger.Debug(functionName+" success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), " result ", ctHash.Hex())
+	logger.Debug(functionName+" success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
@@ -935,7 +929,7 @@ func Xor(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	functionName := "xor"
 
 	if !isValidType(utype) {
-		logger.Error("invalid ciphertext type ", utype)
+		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -947,7 +941,7 @@ func Xor(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function ", functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
@@ -969,13 +963,13 @@ func Xor(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 	err = importCiphertext(state, result)
 	if err != nil {
-		logger.Error(functionName, " failed ", " err ", err)
+		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := result.Hash()
 
-	logger.Debug(functionName+" success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), " result ", ctHash.Hex())
+	logger.Debug(functionName+" success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
@@ -985,7 +979,7 @@ func Eq(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 	functionName := "eq"
 
 	if !isValidType(utype) {
-		logger.Error("invalid ciphertext type ", utype)
+		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -997,7 +991,7 @@ func Eq(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function ", functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
@@ -1019,13 +1013,13 @@ func Eq(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 	}
 	err = importCiphertext(state, result)
 	if err != nil {
-		logger.Error(functionName, " failed ", " err ", err)
+		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := result.Hash()
 
-	logger.Debug(functionName+" success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), " result ", ctHash.Hex())
+	logger.Debug(functionName+" success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
@@ -1035,7 +1029,7 @@ func Ne(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 	functionName := "ne"
 
 	if !isValidType(utype) {
-		logger.Error("invalid ciphertext type ", utype)
+		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -1047,7 +1041,7 @@ func Ne(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function ", functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
@@ -1069,13 +1063,13 @@ func Ne(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 	}
 	err = importCiphertext(state, result)
 	if err != nil {
-		logger.Error(functionName, " failed ", " err ", err)
+		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := result.Hash()
 
-	logger.Debug(functionName+" success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), "result", ctHash.Hex())
+	logger.Debug(functionName+" success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
@@ -1083,7 +1077,7 @@ func Min(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	functionName := "min"
 
 	if !isValidType(utype) {
-		logger.Error("invalid ciphertext type ", utype)
+		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -1095,7 +1089,7 @@ func Min(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function ", functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
@@ -1117,13 +1111,13 @@ func Min(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 	err = importCiphertext(state, result)
 	if err != nil {
-		logger.Error(functionName, " failed ", " err ", err)
+		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := result.Hash()
 
-	logger.Debug(functionName+" success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), "result", ctHash.Hex())
+	logger.Debug(functionName+" success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
@@ -1131,7 +1125,7 @@ func Max(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	functionName := "max"
 
 	if !isValidType(utype) {
-		logger.Error("invalid ciphertext type ", utype)
+		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -1143,7 +1137,7 @@ func Max(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function ", functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
@@ -1165,13 +1159,13 @@ func Max(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 	err = importCiphertext(state, result)
 	if err != nil {
-		logger.Error(functionName, " failed ", " err ", err)
+		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := result.Hash()
 
-	logger.Debug(functionName+" success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), "result", ctHash.Hex())
+	logger.Debug(functionName+" success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
@@ -1179,7 +1173,7 @@ func Shl(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	functionName := "shl"
 
 	if !isValidType(utype) {
-		logger.Error("invalid ciphertext type ", utype)
+		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -1191,7 +1185,7 @@ func Shl(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function ", functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
@@ -1213,13 +1207,13 @@ func Shl(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 	err = importCiphertext(state, result)
 	if err != nil {
-		logger.Error(functionName, " failed ", " err ", err)
+		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := result.Hash()
 
-	logger.Debug(functionName+" success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), "result", ctHash.Hex())
+	logger.Debug(functionName+" success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
@@ -1227,7 +1221,7 @@ func Shr(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	functionName := "shr"
 
 	if !isValidType(utype) {
-		logger.Error("invalid ciphertext type ", utype)
+		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -1239,7 +1233,7 @@ func Shr(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function ", functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(state, lhsHash, rhsHash)
@@ -1261,13 +1255,13 @@ func Shr(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 	err = importCiphertext(state, result)
 	if err != nil {
-		logger.Error(functionName, " failed ", " err ", err)
+		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := result.Hash()
 
-	logger.Debug(functionName+" success", " lhs ", lhs.Hash().Hex(), " rhs ", rhs.Hash().Hex(), "result", ctHash.Hex())
+	logger.Debug(functionName+" success", "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
@@ -1275,7 +1269,7 @@ func Not(utype byte, value []byte, tp *TxParams) ([]byte, uint64, error) {
 	functionName := "not"
 
 	if !isValidType(utype) {
-		logger.Error("invalid ciphertext type ", utype)
+		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -1287,7 +1281,7 @@ func Not(utype byte, value []byte, tp *TxParams) ([]byte, uint64, error) {
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("starting new precompiled contract function ", functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	ct := getCiphertext(state, tfhe.BytesToHash(value))
@@ -1305,12 +1299,12 @@ func Not(utype byte, value []byte, tp *TxParams) ([]byte, uint64, error) {
 
 	err = importCiphertext(state, result)
 	if err != nil {
-		logger.Error(functionName, " failed ", " err ", err)
+		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	resultHash := result.Hash()
-	logger.Debug(functionName+" success", " in ", ct.Hash().Hex(), " result ", resultHash.Hex())
+	logger.Debug(functionName+" success", "input", ct.Hash().Hex(), "result", resultHash.Hex())
 	return resultHash[:], gas, nil
 }
 
@@ -1318,7 +1312,7 @@ func GetNetworkPublicKey(tp *TxParams) ([]byte, error) {
 	functionName := "getNetworkPublicKey"
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("starting new function get network public key:", functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
 	pk, err := tfhe.PublicKey()
