@@ -28,9 +28,9 @@ ${EInputType.map((type) => {
 }`;
 }).join("\n")}
 
-struct outSealedArray {
+struct SealedArray {
   bytes[] data;
-};
+}
 
 library Common {
     // Values used to communicate types to the runtime.
