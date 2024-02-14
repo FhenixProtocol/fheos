@@ -48,6 +48,19 @@ func shouldPrintPrecompileInfo(tp *TxParams) bool {
 	return tp.Commit && !tp.GasEstimation
 }
 
+func UtypeToString(utype byte) string {
+	switch tfhe.UintType(utype) {
+	case tfhe.Uint8:
+		return "uint8"
+	case tfhe.Uint16:
+		return "uint16"
+	case tfhe.Uint32:
+		return "uint32"
+	default:
+		return "unknown"
+	}
+}
+
 // ============================
 func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
 	functionName := "add"
