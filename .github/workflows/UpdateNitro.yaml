@@ -1,9 +1,9 @@
 name: Send submodule updates to parent repo
 
-on: [push]
-  # push:
-    # branches: 
-    #   - master
+on:
+  push:
+    branches: 
+      - master
 
 jobs:
   update:
