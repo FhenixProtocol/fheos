@@ -16,10 +16,10 @@ jobs:
           token: ${{ secrets.GH_PAT }}
           submodules: true
 
-      - name: Pull & update submodules recursively
+      - name: Pull & update submodules
         run: |
-          git submodule update --init --recursive
-          git submodule update --recursive --remote fheos
+          git submodule update --init
+          git submodule update --remote fheos
 
       - name: Commit
         run: |
