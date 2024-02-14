@@ -873,7 +873,7 @@ func (con FheOps) TrivialEncrypt(c ctx, evm mech, input []byte, toType byte) ([]
 	tp := fheos.TxParamsFromEVM(evm)
 
 	if metrics.Enabled {
-		h := fmt.Sprintf("%s/%s/%s", "fheos", "TrivialEncrypt", fheos.UtypeToString(utype))
+		h := fmt.Sprintf("%s/%s/%s", "fheos", "TrivialEncrypt", fheos.UtypeToString(toType))
 		defer func(start time.Time) {
 			sampler := func() metrics.Sample {
 				return metrics.NewBoundedHistogramSample()
@@ -886,7 +886,7 @@ func (con FheOps) TrivialEncrypt(c ctx, evm mech, input []byte, toType byte) ([]
 
 	if err != nil {
 		if metrics.Enabled {
-			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "TrivialEncrypt", fheos.UtypeToString(utype), "error/fhe_failure")
+			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "TrivialEncrypt", fheos.UtypeToString(toType), "error/fhe_failure")
 			metrics.GetOrRegisterCounter(c, nil).Inc(1)
 		}
 		return ret, err
@@ -895,9 +895,9 @@ func (con FheOps) TrivialEncrypt(c ctx, evm mech, input []byte, toType byte) ([]
 	err = c.Burn(gas)
 
 	if metrics.Enabled {
-		metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "TrivialEncrypt", fheos.UtypeToString(utype), "success/total")
+		metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "TrivialEncrypt", fheos.UtypeToString(toType), "success/total")
 		if err != nil {
-			metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "TrivialEncrypt", fheos.UtypeToString(utype), "error/fhe_gas_failure")
+			metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "TrivialEncrypt", fheos.UtypeToString(toType), "error/fhe_gas_failure")
 		}
 
 		metrics.GetOrRegisterCounter(metricPath, nil).Inc(1)
