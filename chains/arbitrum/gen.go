@@ -480,13 +480,12 @@ func (con FheOps) {{.Name}}(c ctx, evm mech{{.Inputs}}) ({{.ReturnType}}, error)
 	tp := fheos.TxParamsFromEVM(evm)
 
 	if metrics.Enabled {
-		h := fmt.Sprintf("%s/%s", "fheos", "{{.Name}}")
+		h := fmt.Sprintf("%s/%s/%s", "fheos", "{{.Name}}", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
 			sampler := func() metrics.Sample {
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
-			// fmt.Printf("FHEOS: %s took %d\n", "{{.Name}}", time.Since(start).Milliseconds())
 		}(time.Now())
 	}	
 
@@ -494,7 +493,8 @@ func (con FheOps) {{.Name}}(c ctx, evm mech{{.Inputs}}) ({{.ReturnType}}, error)
 	
 	if err != nil {
 		if metrics.Enabled {
-			metrics.GetOrRegisterCounter("fheos"+"/{{.Name}}/error/fhe_failure/", nil).Inc(1)
+			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "{{.Name}}", fheos.UtypeToString(utype), "error/fhe_failure")
+			metrics.GetOrRegisterCounter(c, nil).Inc(1)
 		}
 		return ret, err
 	}
@@ -502,12 +502,12 @@ func (con FheOps) {{.Name}}(c ctx, evm mech{{.Inputs}}) ({{.ReturnType}}, error)
 	err = c.Burn(gas)
 
 	if metrics.Enabled {
-	        metricPath := "/{{.Name}}/success/total/"
+	        metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "{{.Name}}", fheos.UtypeToString(utype), "success/total")
 	        if err != nil {
-	             metricPath = "/{{.Name}}/error/fhe_gas_failure/"
+				metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "{{.Name}}", fheos.UtypeToString(utype), "error/fhe_gas_failure")
 	        } 
 
-		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
+		metrics.GetOrRegisterCounter(metricPath, nil).Inc(1)
 	}
 
 	return ret, err

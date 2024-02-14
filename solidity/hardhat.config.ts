@@ -117,6 +117,11 @@ const config: HardhatUserConfig = {
       chainId: 412346,
       url: "http://localhost:8547",
     },
+    testnet: {
+      accounts: { mnemonic },
+      chainId: 42069,
+      url: "http://api.testnet.fhenix.zone:7747",
+    },
     remote_orbit: {
       accounts: { mnemonic },
       chainId: 974077888,

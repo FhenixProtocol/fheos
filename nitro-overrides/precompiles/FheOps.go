@@ -16,13 +16,12 @@ func (con FheOps) Add(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	tp := fheos.TxParamsFromEVM(evm)
 
 	if metrics.Enabled {
-		h := fmt.Sprintf("%s/%s", "fheos", "Add")
+		h := fmt.Sprintf("%s/%s/%s", "fheos", "Add", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
 			sampler := func() metrics.Sample {
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
-			// fmt.Printf("FHEOS: %s took %d\n", "Add", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -30,7 +29,8 @@ func (con FheOps) Add(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 
 	if err != nil {
 		if metrics.Enabled {
-			metrics.GetOrRegisterCounter("fheos"+"/Add/error/fhe_failure/", nil).Inc(1)
+			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Add", fheos.UtypeToString(utype), "error/fhe_failure")
+			metrics.GetOrRegisterCounter(c, nil).Inc(1)
 		}
 		return ret, err
 	}
@@ -38,12 +38,12 @@ func (con FheOps) Add(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	err = c.Burn(gas)
 
 	if metrics.Enabled {
-		metricPath := "/Add/success/total/"
+		metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Add", fheos.UtypeToString(utype), "success/total")
 		if err != nil {
-			metricPath = "/Add/error/fhe_gas_failure/"
+			metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "Add", fheos.UtypeToString(utype), "error/fhe_gas_failure")
 		}
 
-		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
+		metrics.GetOrRegisterCounter(metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -53,13 +53,12 @@ func (con FheOps) And(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	tp := fheos.TxParamsFromEVM(evm)
 
 	if metrics.Enabled {
-		h := fmt.Sprintf("%s/%s", "fheos", "And")
+		h := fmt.Sprintf("%s/%s/%s", "fheos", "And", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
 			sampler := func() metrics.Sample {
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
-			// fmt.Printf("FHEOS: %s took %d\n", "And", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -67,7 +66,8 @@ func (con FheOps) And(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 
 	if err != nil {
 		if metrics.Enabled {
-			metrics.GetOrRegisterCounter("fheos"+"/And/error/fhe_failure/", nil).Inc(1)
+			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "And", fheos.UtypeToString(utype), "error/fhe_failure")
+			metrics.GetOrRegisterCounter(c, nil).Inc(1)
 		}
 		return ret, err
 	}
@@ -75,12 +75,12 @@ func (con FheOps) And(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	err = c.Burn(gas)
 
 	if metrics.Enabled {
-		metricPath := "/And/success/total/"
+		metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "And", fheos.UtypeToString(utype), "success/total")
 		if err != nil {
-			metricPath = "/And/error/fhe_gas_failure/"
+			metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "And", fheos.UtypeToString(utype), "error/fhe_gas_failure")
 		}
 
-		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
+		metrics.GetOrRegisterCounter(metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -90,13 +90,12 @@ func (con FheOps) Cast(c ctx, evm mech, utype byte, input []byte, toType byte) (
 	tp := fheos.TxParamsFromEVM(evm)
 
 	if metrics.Enabled {
-		h := fmt.Sprintf("%s/%s", "fheos", "Cast")
+		h := fmt.Sprintf("%s/%s/%s", "fheos", "Cast", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
 			sampler := func() metrics.Sample {
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
-			// fmt.Printf("FHEOS: %s took %d\n", "Cast", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -104,7 +103,8 @@ func (con FheOps) Cast(c ctx, evm mech, utype byte, input []byte, toType byte) (
 
 	if err != nil {
 		if metrics.Enabled {
-			metrics.GetOrRegisterCounter("fheos"+"/Cast/error/fhe_failure/", nil).Inc(1)
+			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Cast", fheos.UtypeToString(utype), "error/fhe_failure")
+			metrics.GetOrRegisterCounter(c, nil).Inc(1)
 		}
 		return ret, err
 	}
@@ -112,12 +112,12 @@ func (con FheOps) Cast(c ctx, evm mech, utype byte, input []byte, toType byte) (
 	err = c.Burn(gas)
 
 	if metrics.Enabled {
-		metricPath := "/Cast/success/total/"
+		metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Cast", fheos.UtypeToString(utype), "success/total")
 		if err != nil {
-			metricPath = "/Cast/error/fhe_gas_failure/"
+			metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "Cast", fheos.UtypeToString(utype), "error/fhe_gas_failure")
 		}
 
-		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
+		metrics.GetOrRegisterCounter(metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -127,13 +127,12 @@ func (con FheOps) Decrypt(c ctx, evm mech, utype byte, input []byte) (*big.Int, 
 	tp := fheos.TxParamsFromEVM(evm)
 
 	if metrics.Enabled {
-		h := fmt.Sprintf("%s/%s", "fheos", "Decrypt")
+		h := fmt.Sprintf("%s/%s/%s", "fheos", "Decrypt", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
 			sampler := func() metrics.Sample {
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
-			// fmt.Printf("FHEOS: %s took %d\n", "Decrypt", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -141,7 +140,8 @@ func (con FheOps) Decrypt(c ctx, evm mech, utype byte, input []byte) (*big.Int, 
 
 	if err != nil {
 		if metrics.Enabled {
-			metrics.GetOrRegisterCounter("fheos"+"/Decrypt/error/fhe_failure/", nil).Inc(1)
+			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Decrypt", fheos.UtypeToString(utype), "error/fhe_failure")
+			metrics.GetOrRegisterCounter(c, nil).Inc(1)
 		}
 		return ret, err
 	}
@@ -149,12 +149,12 @@ func (con FheOps) Decrypt(c ctx, evm mech, utype byte, input []byte) (*big.Int, 
 	err = c.Burn(gas)
 
 	if metrics.Enabled {
-		metricPath := "/Decrypt/success/total/"
+		metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Decrypt", fheos.UtypeToString(utype), "success/total")
 		if err != nil {
-			metricPath = "/Decrypt/error/fhe_gas_failure/"
+			metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "Decrypt", fheos.UtypeToString(utype), "error/fhe_gas_failure")
 		}
 
-		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
+		metrics.GetOrRegisterCounter(metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -164,13 +164,12 @@ func (con FheOps) Div(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	tp := fheos.TxParamsFromEVM(evm)
 
 	if metrics.Enabled {
-		h := fmt.Sprintf("%s/%s", "fheos", "Div")
+		h := fmt.Sprintf("%s/%s/%s", "fheos", "Div", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
 			sampler := func() metrics.Sample {
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
-			// fmt.Printf("FHEOS: %s took %d\n", "Div", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -178,7 +177,8 @@ func (con FheOps) Div(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 
 	if err != nil {
 		if metrics.Enabled {
-			metrics.GetOrRegisterCounter("fheos"+"/Div/error/fhe_failure/", nil).Inc(1)
+			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Div", fheos.UtypeToString(utype), "error/fhe_failure")
+			metrics.GetOrRegisterCounter(c, nil).Inc(1)
 		}
 		return ret, err
 	}
@@ -186,12 +186,12 @@ func (con FheOps) Div(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	err = c.Burn(gas)
 
 	if metrics.Enabled {
-		metricPath := "/Div/success/total/"
+		metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Div", fheos.UtypeToString(utype), "success/total")
 		if err != nil {
-			metricPath = "/Div/error/fhe_gas_failure/"
+			metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "Div", fheos.UtypeToString(utype), "error/fhe_gas_failure")
 		}
 
-		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
+		metrics.GetOrRegisterCounter(metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -201,13 +201,12 @@ func (con FheOps) Eq(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 	tp := fheos.TxParamsFromEVM(evm)
 
 	if metrics.Enabled {
-		h := fmt.Sprintf("%s/%s", "fheos", "Eq")
+		h := fmt.Sprintf("%s/%s/%s", "fheos", "Eq", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
 			sampler := func() metrics.Sample {
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
-			// fmt.Printf("FHEOS: %s took %d\n", "Eq", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -215,7 +214,8 @@ func (con FheOps) Eq(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 
 	if err != nil {
 		if metrics.Enabled {
-			metrics.GetOrRegisterCounter("fheos"+"/Eq/error/fhe_failure/", nil).Inc(1)
+			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Eq", fheos.UtypeToString(utype), "error/fhe_failure")
+			metrics.GetOrRegisterCounter(c, nil).Inc(1)
 		}
 		return ret, err
 	}
@@ -223,12 +223,12 @@ func (con FheOps) Eq(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 	err = c.Burn(gas)
 
 	if metrics.Enabled {
-		metricPath := "/Eq/success/total/"
+		metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Eq", fheos.UtypeToString(utype), "success/total")
 		if err != nil {
-			metricPath = "/Eq/error/fhe_gas_failure/"
+			metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "Eq", fheos.UtypeToString(utype), "error/fhe_gas_failure")
 		}
 
-		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
+		metrics.GetOrRegisterCounter(metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -244,13 +244,12 @@ func (con FheOps) Gt(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 	tp := fheos.TxParamsFromEVM(evm)
 
 	if metrics.Enabled {
-		h := fmt.Sprintf("%s/%s", "fheos", "Gt")
+		h := fmt.Sprintf("%s/%s/%s", "fheos", "Gt", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
 			sampler := func() metrics.Sample {
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
-			// fmt.Printf("FHEOS: %s took %d\n", "Gt", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -258,7 +257,8 @@ func (con FheOps) Gt(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 
 	if err != nil {
 		if metrics.Enabled {
-			metrics.GetOrRegisterCounter("fheos"+"/Gt/error/fhe_failure/", nil).Inc(1)
+			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Gt", fheos.UtypeToString(utype), "error/fhe_failure")
+			metrics.GetOrRegisterCounter(c, nil).Inc(1)
 		}
 		return ret, err
 	}
@@ -266,12 +266,12 @@ func (con FheOps) Gt(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 	err = c.Burn(gas)
 
 	if metrics.Enabled {
-		metricPath := "/Gt/success/total/"
+		metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Gt", fheos.UtypeToString(utype), "success/total")
 		if err != nil {
-			metricPath = "/Gt/error/fhe_gas_failure/"
+			metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "Gt", fheos.UtypeToString(utype), "error/fhe_gas_failure")
 		}
 
-		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
+		metrics.GetOrRegisterCounter(metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -281,13 +281,12 @@ func (con FheOps) Gte(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	tp := fheos.TxParamsFromEVM(evm)
 
 	if metrics.Enabled {
-		h := fmt.Sprintf("%s/%s", "fheos", "Gte")
+		h := fmt.Sprintf("%s/%s/%s", "fheos", "Gte", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
 			sampler := func() metrics.Sample {
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
-			// fmt.Printf("FHEOS: %s took %d\n", "Gte", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -295,7 +294,8 @@ func (con FheOps) Gte(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 
 	if err != nil {
 		if metrics.Enabled {
-			metrics.GetOrRegisterCounter("fheos"+"/Gte/error/fhe_failure/", nil).Inc(1)
+			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Gte", fheos.UtypeToString(utype), "error/fhe_failure")
+			metrics.GetOrRegisterCounter(c, nil).Inc(1)
 		}
 		return ret, err
 	}
@@ -303,12 +303,12 @@ func (con FheOps) Gte(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	err = c.Burn(gas)
 
 	if metrics.Enabled {
-		metricPath := "/Gte/success/total/"
+		metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Gte", fheos.UtypeToString(utype), "success/total")
 		if err != nil {
-			metricPath = "/Gte/error/fhe_gas_failure/"
+			metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "Gte", fheos.UtypeToString(utype), "error/fhe_gas_failure")
 		}
 
-		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
+		metrics.GetOrRegisterCounter(metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -318,13 +318,12 @@ func (con FheOps) Lt(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 	tp := fheos.TxParamsFromEVM(evm)
 
 	if metrics.Enabled {
-		h := fmt.Sprintf("%s/%s", "fheos", "Lt")
+		h := fmt.Sprintf("%s/%s/%s", "fheos", "Lt", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
 			sampler := func() metrics.Sample {
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
-			// fmt.Printf("FHEOS: %s took %d\n", "Lt", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -332,7 +331,8 @@ func (con FheOps) Lt(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 
 	if err != nil {
 		if metrics.Enabled {
-			metrics.GetOrRegisterCounter("fheos"+"/Lt/error/fhe_failure/", nil).Inc(1)
+			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Lt", fheos.UtypeToString(utype), "error/fhe_failure")
+			metrics.GetOrRegisterCounter(c, nil).Inc(1)
 		}
 		return ret, err
 	}
@@ -340,12 +340,12 @@ func (con FheOps) Lt(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 	err = c.Burn(gas)
 
 	if metrics.Enabled {
-		metricPath := "/Lt/success/total/"
+		metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Lt", fheos.UtypeToString(utype), "success/total")
 		if err != nil {
-			metricPath = "/Lt/error/fhe_gas_failure/"
+			metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "Lt", fheos.UtypeToString(utype), "error/fhe_gas_failure")
 		}
 
-		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
+		metrics.GetOrRegisterCounter(metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -355,13 +355,12 @@ func (con FheOps) Lte(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	tp := fheos.TxParamsFromEVM(evm)
 
 	if metrics.Enabled {
-		h := fmt.Sprintf("%s/%s", "fheos", "Lte")
+		h := fmt.Sprintf("%s/%s/%s", "fheos", "Lte", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
 			sampler := func() metrics.Sample {
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
-			// fmt.Printf("FHEOS: %s took %d\n", "Lte", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -369,7 +368,8 @@ func (con FheOps) Lte(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 
 	if err != nil {
 		if metrics.Enabled {
-			metrics.GetOrRegisterCounter("fheos"+"/Lte/error/fhe_failure/", nil).Inc(1)
+			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Lte", fheos.UtypeToString(utype), "error/fhe_failure")
+			metrics.GetOrRegisterCounter(c, nil).Inc(1)
 		}
 		return ret, err
 	}
@@ -377,12 +377,12 @@ func (con FheOps) Lte(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	err = c.Burn(gas)
 
 	if metrics.Enabled {
-		metricPath := "/Lte/success/total/"
+		metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Lte", fheos.UtypeToString(utype), "success/total")
 		if err != nil {
-			metricPath = "/Lte/error/fhe_gas_failure/"
+			metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "Lte", fheos.UtypeToString(utype), "error/fhe_gas_failure")
 		}
 
-		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
+		metrics.GetOrRegisterCounter(metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -392,13 +392,12 @@ func (con FheOps) Max(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	tp := fheos.TxParamsFromEVM(evm)
 
 	if metrics.Enabled {
-		h := fmt.Sprintf("%s/%s", "fheos", "Max")
+		h := fmt.Sprintf("%s/%s/%s", "fheos", "Max", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
 			sampler := func() metrics.Sample {
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
-			// fmt.Printf("FHEOS: %s took %d\n", "Max", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -406,7 +405,8 @@ func (con FheOps) Max(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 
 	if err != nil {
 		if metrics.Enabled {
-			metrics.GetOrRegisterCounter("fheos"+"/Max/error/fhe_failure/", nil).Inc(1)
+			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Max", fheos.UtypeToString(utype), "error/fhe_failure")
+			metrics.GetOrRegisterCounter(c, nil).Inc(1)
 		}
 		return ret, err
 	}
@@ -414,12 +414,12 @@ func (con FheOps) Max(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	err = c.Burn(gas)
 
 	if metrics.Enabled {
-		metricPath := "/Max/success/total/"
+		metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Max", fheos.UtypeToString(utype), "success/total")
 		if err != nil {
-			metricPath = "/Max/error/fhe_gas_failure/"
+			metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "Max", fheos.UtypeToString(utype), "error/fhe_gas_failure")
 		}
 
-		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
+		metrics.GetOrRegisterCounter(metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -429,13 +429,12 @@ func (con FheOps) Min(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	tp := fheos.TxParamsFromEVM(evm)
 
 	if metrics.Enabled {
-		h := fmt.Sprintf("%s/%s", "fheos", "Min")
+		h := fmt.Sprintf("%s/%s/%s", "fheos", "Min", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
 			sampler := func() metrics.Sample {
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
-			// fmt.Printf("FHEOS: %s took %d\n", "Min", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -443,7 +442,8 @@ func (con FheOps) Min(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 
 	if err != nil {
 		if metrics.Enabled {
-			metrics.GetOrRegisterCounter("fheos"+"/Min/error/fhe_failure/", nil).Inc(1)
+			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Min", fheos.UtypeToString(utype), "error/fhe_failure")
+			metrics.GetOrRegisterCounter(c, nil).Inc(1)
 		}
 		return ret, err
 	}
@@ -451,12 +451,12 @@ func (con FheOps) Min(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	err = c.Burn(gas)
 
 	if metrics.Enabled {
-		metricPath := "/Min/success/total/"
+		metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Min", fheos.UtypeToString(utype), "success/total")
 		if err != nil {
-			metricPath = "/Min/error/fhe_gas_failure/"
+			metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "Min", fheos.UtypeToString(utype), "error/fhe_gas_failure")
 		}
 
-		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
+		metrics.GetOrRegisterCounter(metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -466,13 +466,12 @@ func (con FheOps) Mul(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	tp := fheos.TxParamsFromEVM(evm)
 
 	if metrics.Enabled {
-		h := fmt.Sprintf("%s/%s", "fheos", "Mul")
+		h := fmt.Sprintf("%s/%s/%s", "fheos", "Mul", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
 			sampler := func() metrics.Sample {
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
-			// fmt.Printf("FHEOS: %s took %d\n", "Mul", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -480,7 +479,8 @@ func (con FheOps) Mul(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 
 	if err != nil {
 		if metrics.Enabled {
-			metrics.GetOrRegisterCounter("fheos"+"/Mul/error/fhe_failure/", nil).Inc(1)
+			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Mul", fheos.UtypeToString(utype), "error/fhe_failure")
+			metrics.GetOrRegisterCounter(c, nil).Inc(1)
 		}
 		return ret, err
 	}
@@ -488,12 +488,12 @@ func (con FheOps) Mul(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	err = c.Burn(gas)
 
 	if metrics.Enabled {
-		metricPath := "/Mul/success/total/"
+		metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Mul", fheos.UtypeToString(utype), "success/total")
 		if err != nil {
-			metricPath = "/Mul/error/fhe_gas_failure/"
+			metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "Mul", fheos.UtypeToString(utype), "error/fhe_gas_failure")
 		}
 
-		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
+		metrics.GetOrRegisterCounter(metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -503,13 +503,12 @@ func (con FheOps) Ne(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 	tp := fheos.TxParamsFromEVM(evm)
 
 	if metrics.Enabled {
-		h := fmt.Sprintf("%s/%s", "fheos", "Ne")
+		h := fmt.Sprintf("%s/%s/%s", "fheos", "Ne", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
 			sampler := func() metrics.Sample {
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
-			// fmt.Printf("FHEOS: %s took %d\n", "Ne", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -517,7 +516,8 @@ func (con FheOps) Ne(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 
 	if err != nil {
 		if metrics.Enabled {
-			metrics.GetOrRegisterCounter("fheos"+"/Ne/error/fhe_failure/", nil).Inc(1)
+			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Ne", fheos.UtypeToString(utype), "error/fhe_failure")
+			metrics.GetOrRegisterCounter(c, nil).Inc(1)
 		}
 		return ret, err
 	}
@@ -525,12 +525,12 @@ func (con FheOps) Ne(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 	err = c.Burn(gas)
 
 	if metrics.Enabled {
-		metricPath := "/Ne/success/total/"
+		metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Ne", fheos.UtypeToString(utype), "success/total")
 		if err != nil {
-			metricPath = "/Ne/error/fhe_gas_failure/"
+			metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "Ne", fheos.UtypeToString(utype), "error/fhe_gas_failure")
 		}
 
-		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
+		metrics.GetOrRegisterCounter(metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -540,13 +540,12 @@ func (con FheOps) Not(c ctx, evm mech, utype byte, value []byte) ([]byte, error)
 	tp := fheos.TxParamsFromEVM(evm)
 
 	if metrics.Enabled {
-		h := fmt.Sprintf("%s/%s", "fheos", "Not")
+		h := fmt.Sprintf("%s/%s/%s", "fheos", "Not", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
 			sampler := func() metrics.Sample {
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
-			// fmt.Printf("FHEOS: %s took %d\n", "Not", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -554,7 +553,8 @@ func (con FheOps) Not(c ctx, evm mech, utype byte, value []byte) ([]byte, error)
 
 	if err != nil {
 		if metrics.Enabled {
-			metrics.GetOrRegisterCounter("fheos"+"/Not/error/fhe_failure/", nil).Inc(1)
+			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Not", fheos.UtypeToString(utype), "error/fhe_failure")
+			metrics.GetOrRegisterCounter(c, nil).Inc(1)
 		}
 		return ret, err
 	}
@@ -562,12 +562,12 @@ func (con FheOps) Not(c ctx, evm mech, utype byte, value []byte) ([]byte, error)
 	err = c.Burn(gas)
 
 	if metrics.Enabled {
-		metricPath := "/Not/success/total/"
+		metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Not", fheos.UtypeToString(utype), "success/total")
 		if err != nil {
-			metricPath = "/Not/error/fhe_gas_failure/"
+			metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "Not", fheos.UtypeToString(utype), "error/fhe_gas_failure")
 		}
 
-		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
+		metrics.GetOrRegisterCounter(metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -577,13 +577,12 @@ func (con FheOps) Or(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 	tp := fheos.TxParamsFromEVM(evm)
 
 	if metrics.Enabled {
-		h := fmt.Sprintf("%s/%s", "fheos", "Or")
+		h := fmt.Sprintf("%s/%s/%s", "fheos", "Or", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
 			sampler := func() metrics.Sample {
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
-			// fmt.Printf("FHEOS: %s took %d\n", "Or", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -591,7 +590,8 @@ func (con FheOps) Or(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 
 	if err != nil {
 		if metrics.Enabled {
-			metrics.GetOrRegisterCounter("fheos"+"/Or/error/fhe_failure/", nil).Inc(1)
+			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Or", fheos.UtypeToString(utype), "error/fhe_failure")
+			metrics.GetOrRegisterCounter(c, nil).Inc(1)
 		}
 		return ret, err
 	}
@@ -599,12 +599,12 @@ func (con FheOps) Or(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 	err = c.Burn(gas)
 
 	if metrics.Enabled {
-		metricPath := "/Or/success/total/"
+		metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Or", fheos.UtypeToString(utype), "success/total")
 		if err != nil {
-			metricPath = "/Or/error/fhe_gas_failure/"
+			metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "Or", fheos.UtypeToString(utype), "error/fhe_gas_failure")
 		}
 
-		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
+		metrics.GetOrRegisterCounter(metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -614,13 +614,12 @@ func (con FheOps) Rem(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	tp := fheos.TxParamsFromEVM(evm)
 
 	if metrics.Enabled {
-		h := fmt.Sprintf("%s/%s", "fheos", "Rem")
+		h := fmt.Sprintf("%s/%s/%s", "fheos", "Rem", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
 			sampler := func() metrics.Sample {
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
-			// fmt.Printf("FHEOS: %s took %d\n", "Rem", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -628,7 +627,8 @@ func (con FheOps) Rem(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 
 	if err != nil {
 		if metrics.Enabled {
-			metrics.GetOrRegisterCounter("fheos"+"/Rem/error/fhe_failure/", nil).Inc(1)
+			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Rem", fheos.UtypeToString(utype), "error/fhe_failure")
+			metrics.GetOrRegisterCounter(c, nil).Inc(1)
 		}
 		return ret, err
 	}
@@ -636,12 +636,12 @@ func (con FheOps) Rem(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	err = c.Burn(gas)
 
 	if metrics.Enabled {
-		metricPath := "/Rem/success/total/"
+		metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Rem", fheos.UtypeToString(utype), "success/total")
 		if err != nil {
-			metricPath = "/Rem/error/fhe_gas_failure/"
+			metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "Rem", fheos.UtypeToString(utype), "error/fhe_gas_failure")
 		}
 
-		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
+		metrics.GetOrRegisterCounter(metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -651,13 +651,12 @@ func (con FheOps) Req(c ctx, evm mech, utype byte, input []byte) ([]byte, error)
 	tp := fheos.TxParamsFromEVM(evm)
 
 	if metrics.Enabled {
-		h := fmt.Sprintf("%s/%s", "fheos", "Req")
+		h := fmt.Sprintf("%s/%s/%s", "fheos", "Req", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
 			sampler := func() metrics.Sample {
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
-			// fmt.Printf("FHEOS: %s took %d\n", "Req", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -665,7 +664,8 @@ func (con FheOps) Req(c ctx, evm mech, utype byte, input []byte) ([]byte, error)
 
 	if err != nil {
 		if metrics.Enabled {
-			metrics.GetOrRegisterCounter("fheos"+"/Req/error/fhe_failure/", nil).Inc(1)
+			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Req", fheos.UtypeToString(utype), "error/fhe_failure")
+			metrics.GetOrRegisterCounter(c, nil).Inc(1)
 		}
 		return ret, err
 	}
@@ -673,12 +673,12 @@ func (con FheOps) Req(c ctx, evm mech, utype byte, input []byte) ([]byte, error)
 	err = c.Burn(gas)
 
 	if metrics.Enabled {
-		metricPath := "/Req/success/total/"
+		metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Req", fheos.UtypeToString(utype), "success/total")
 		if err != nil {
-			metricPath = "/Req/error/fhe_gas_failure/"
+			metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "Req", fheos.UtypeToString(utype), "error/fhe_gas_failure")
 		}
 
-		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
+		metrics.GetOrRegisterCounter(metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -688,13 +688,12 @@ func (con FheOps) SealOutput(c ctx, evm mech, utype byte, ctHash []byte, pk []by
 	tp := fheos.TxParamsFromEVM(evm)
 
 	if metrics.Enabled {
-		h := fmt.Sprintf("%s/%s", "fheos", "SealOutput")
+		h := fmt.Sprintf("%s/%s/%s", "fheos", "SealOutput", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
 			sampler := func() metrics.Sample {
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
-			// fmt.Printf("FHEOS: %s took %d\n", "SealOutput", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -702,7 +701,8 @@ func (con FheOps) SealOutput(c ctx, evm mech, utype byte, ctHash []byte, pk []by
 
 	if err != nil {
 		if metrics.Enabled {
-			metrics.GetOrRegisterCounter("fheos"+"/SealOutput/error/fhe_failure/", nil).Inc(1)
+			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "SealOutput", fheos.UtypeToString(utype), "error/fhe_failure")
+			metrics.GetOrRegisterCounter(c, nil).Inc(1)
 		}
 		return ret, err
 	}
@@ -710,12 +710,12 @@ func (con FheOps) SealOutput(c ctx, evm mech, utype byte, ctHash []byte, pk []by
 	err = c.Burn(gas)
 
 	if metrics.Enabled {
-		metricPath := "/SealOutput/success/total/"
+		metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "SealOutput", fheos.UtypeToString(utype), "success/total")
 		if err != nil {
-			metricPath = "/SealOutput/error/fhe_gas_failure/"
+			metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "SealOutput", fheos.UtypeToString(utype), "error/fhe_gas_failure")
 		}
 
-		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
+		metrics.GetOrRegisterCounter(metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -725,13 +725,12 @@ func (con FheOps) Select(c ctx, evm mech, utype byte, controlHash []byte, ifTrue
 	tp := fheos.TxParamsFromEVM(evm)
 
 	if metrics.Enabled {
-		h := fmt.Sprintf("%s/%s", "fheos", "Select")
+		h := fmt.Sprintf("%s/%s/%s", "fheos", "Select", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
 			sampler := func() metrics.Sample {
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
-			// fmt.Printf("FHEOS: %s took %d\n", "Select", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -739,7 +738,8 @@ func (con FheOps) Select(c ctx, evm mech, utype byte, controlHash []byte, ifTrue
 
 	if err != nil {
 		if metrics.Enabled {
-			metrics.GetOrRegisterCounter("fheos"+"/Select/error/fhe_failure/", nil).Inc(1)
+			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Select", fheos.UtypeToString(utype), "error/fhe_failure")
+			metrics.GetOrRegisterCounter(c, nil).Inc(1)
 		}
 		return ret, err
 	}
@@ -747,12 +747,12 @@ func (con FheOps) Select(c ctx, evm mech, utype byte, controlHash []byte, ifTrue
 	err = c.Burn(gas)
 
 	if metrics.Enabled {
-		metricPath := "/Select/success/total/"
+		metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Select", fheos.UtypeToString(utype), "success/total")
 		if err != nil {
-			metricPath = "/Select/error/fhe_gas_failure/"
+			metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "Select", fheos.UtypeToString(utype), "error/fhe_gas_failure")
 		}
 
-		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
+		metrics.GetOrRegisterCounter(metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -762,13 +762,12 @@ func (con FheOps) Shl(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	tp := fheos.TxParamsFromEVM(evm)
 
 	if metrics.Enabled {
-		h := fmt.Sprintf("%s/%s", "fheos", "Shl")
+		h := fmt.Sprintf("%s/%s/%s", "fheos", "Shl", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
 			sampler := func() metrics.Sample {
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
-			// fmt.Printf("FHEOS: %s took %d\n", "Shl", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -776,7 +775,8 @@ func (con FheOps) Shl(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 
 	if err != nil {
 		if metrics.Enabled {
-			metrics.GetOrRegisterCounter("fheos"+"/Shl/error/fhe_failure/", nil).Inc(1)
+			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Shl", fheos.UtypeToString(utype), "error/fhe_failure")
+			metrics.GetOrRegisterCounter(c, nil).Inc(1)
 		}
 		return ret, err
 	}
@@ -784,12 +784,12 @@ func (con FheOps) Shl(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	err = c.Burn(gas)
 
 	if metrics.Enabled {
-		metricPath := "/Shl/success/total/"
+		metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Shl", fheos.UtypeToString(utype), "success/total")
 		if err != nil {
-			metricPath = "/Shl/error/fhe_gas_failure/"
+			metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "Shl", fheos.UtypeToString(utype), "error/fhe_gas_failure")
 		}
 
-		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
+		metrics.GetOrRegisterCounter(metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -799,13 +799,12 @@ func (con FheOps) Shr(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	tp := fheos.TxParamsFromEVM(evm)
 
 	if metrics.Enabled {
-		h := fmt.Sprintf("%s/%s", "fheos", "Shr")
+		h := fmt.Sprintf("%s/%s/%s", "fheos", "Shr", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
 			sampler := func() metrics.Sample {
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
-			// fmt.Printf("FHEOS: %s took %d\n", "Shr", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -813,7 +812,8 @@ func (con FheOps) Shr(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 
 	if err != nil {
 		if metrics.Enabled {
-			metrics.GetOrRegisterCounter("fheos"+"/Shr/error/fhe_failure/", nil).Inc(1)
+			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Shr", fheos.UtypeToString(utype), "error/fhe_failure")
+			metrics.GetOrRegisterCounter(c, nil).Inc(1)
 		}
 		return ret, err
 	}
@@ -821,12 +821,12 @@ func (con FheOps) Shr(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	err = c.Burn(gas)
 
 	if metrics.Enabled {
-		metricPath := "/Shr/success/total/"
+		metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Shr", fheos.UtypeToString(utype), "success/total")
 		if err != nil {
-			metricPath = "/Shr/error/fhe_gas_failure/"
+			metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "Shr", fheos.UtypeToString(utype), "error/fhe_gas_failure")
 		}
 
-		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
+		metrics.GetOrRegisterCounter(metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -836,13 +836,12 @@ func (con FheOps) Sub(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	tp := fheos.TxParamsFromEVM(evm)
 
 	if metrics.Enabled {
-		h := fmt.Sprintf("%s/%s", "fheos", "Sub")
+		h := fmt.Sprintf("%s/%s/%s", "fheos", "Sub", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
 			sampler := func() metrics.Sample {
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
-			// fmt.Printf("FHEOS: %s took %d\n", "Sub", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -850,7 +849,8 @@ func (con FheOps) Sub(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 
 	if err != nil {
 		if metrics.Enabled {
-			metrics.GetOrRegisterCounter("fheos"+"/Sub/error/fhe_failure/", nil).Inc(1)
+			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Sub", fheos.UtypeToString(utype), "error/fhe_failure")
+			metrics.GetOrRegisterCounter(c, nil).Inc(1)
 		}
 		return ret, err
 	}
@@ -858,12 +858,12 @@ func (con FheOps) Sub(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	err = c.Burn(gas)
 
 	if metrics.Enabled {
-		metricPath := "/Sub/success/total/"
+		metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Sub", fheos.UtypeToString(utype), "success/total")
 		if err != nil {
-			metricPath = "/Sub/error/fhe_gas_failure/"
+			metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "Sub", fheos.UtypeToString(utype), "error/fhe_gas_failure")
 		}
 
-		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
+		metrics.GetOrRegisterCounter(metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -873,13 +873,12 @@ func (con FheOps) TrivialEncrypt(c ctx, evm mech, input []byte, toType byte) ([]
 	tp := fheos.TxParamsFromEVM(evm)
 
 	if metrics.Enabled {
-		h := fmt.Sprintf("%s/%s", "fheos", "TrivialEncrypt")
+		h := fmt.Sprintf("%s/%s/%s", "fheos", "TrivialEncrypt", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
 			sampler := func() metrics.Sample {
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
-			// fmt.Printf("FHEOS: %s took %d\n", "TrivialEncrypt", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -887,7 +886,8 @@ func (con FheOps) TrivialEncrypt(c ctx, evm mech, input []byte, toType byte) ([]
 
 	if err != nil {
 		if metrics.Enabled {
-			metrics.GetOrRegisterCounter("fheos"+"/TrivialEncrypt/error/fhe_failure/", nil).Inc(1)
+			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "TrivialEncrypt", fheos.UtypeToString(utype), "error/fhe_failure")
+			metrics.GetOrRegisterCounter(c, nil).Inc(1)
 		}
 		return ret, err
 	}
@@ -895,12 +895,12 @@ func (con FheOps) TrivialEncrypt(c ctx, evm mech, input []byte, toType byte) ([]
 	err = c.Burn(gas)
 
 	if metrics.Enabled {
-		metricPath := "/TrivialEncrypt/success/total/"
+		metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "TrivialEncrypt", fheos.UtypeToString(utype), "success/total")
 		if err != nil {
-			metricPath = "/TrivialEncrypt/error/fhe_gas_failure/"
+			metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "TrivialEncrypt", fheos.UtypeToString(utype), "error/fhe_gas_failure")
 		}
 
-		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
+		metrics.GetOrRegisterCounter(metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -910,13 +910,12 @@ func (con FheOps) Verify(c ctx, evm mech, utype byte, input []byte) ([]byte, err
 	tp := fheos.TxParamsFromEVM(evm)
 
 	if metrics.Enabled {
-		h := fmt.Sprintf("%s/%s", "fheos", "Verify")
+		h := fmt.Sprintf("%s/%s/%s", "fheos", "Verify", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
 			sampler := func() metrics.Sample {
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
-			// fmt.Printf("FHEOS: %s took %d\n", "Verify", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -924,7 +923,8 @@ func (con FheOps) Verify(c ctx, evm mech, utype byte, input []byte) ([]byte, err
 
 	if err != nil {
 		if metrics.Enabled {
-			metrics.GetOrRegisterCounter("fheos"+"/Verify/error/fhe_failure/", nil).Inc(1)
+			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Verify", fheos.UtypeToString(utype), "error/fhe_failure")
+			metrics.GetOrRegisterCounter(c, nil).Inc(1)
 		}
 		return ret, err
 	}
@@ -932,12 +932,12 @@ func (con FheOps) Verify(c ctx, evm mech, utype byte, input []byte) ([]byte, err
 	err = c.Burn(gas)
 
 	if metrics.Enabled {
-		metricPath := "/Verify/success/total/"
+		metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Verify", fheos.UtypeToString(utype), "success/total")
 		if err != nil {
-			metricPath = "/Verify/error/fhe_gas_failure/"
+			metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "Verify", fheos.UtypeToString(utype), "error/fhe_gas_failure")
 		}
 
-		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
+		metrics.GetOrRegisterCounter(metricPath, nil).Inc(1)
 	}
 
 	return ret, err
@@ -947,13 +947,12 @@ func (con FheOps) Xor(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	tp := fheos.TxParamsFromEVM(evm)
 
 	if metrics.Enabled {
-		h := fmt.Sprintf("%s/%s", "fheos", "Xor")
+		h := fmt.Sprintf("%s/%s/%s", "fheos", "Xor", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
 			sampler := func() metrics.Sample {
 				return metrics.NewBoundedHistogramSample()
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
-			// fmt.Printf("FHEOS: %s took %d\n", "Xor", time.Since(start).Milliseconds())
 		}(time.Now())
 	}
 
@@ -961,7 +960,8 @@ func (con FheOps) Xor(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 
 	if err != nil {
 		if metrics.Enabled {
-			metrics.GetOrRegisterCounter("fheos"+"/Xor/error/fhe_failure/", nil).Inc(1)
+			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Xor", fheos.UtypeToString(utype), "error/fhe_failure")
+			metrics.GetOrRegisterCounter(c, nil).Inc(1)
 		}
 		return ret, err
 	}
@@ -969,12 +969,12 @@ func (con FheOps) Xor(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	err = c.Burn(gas)
 
 	if metrics.Enabled {
-		metricPath := "/Xor/success/total/"
+		metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Xor", fheos.UtypeToString(utype), "success/total")
 		if err != nil {
-			metricPath = "/Xor/error/fhe_gas_failure/"
+			metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "Xor", fheos.UtypeToString(utype), "error/fhe_gas_failure")
 		}
 
-		metrics.GetOrRegisterCounter("fheos"+metricPath, nil).Inc(1)
+		metrics.GetOrRegisterCounter(metricPath, nil).Inc(1)
 	}
 
 	return ret, err
