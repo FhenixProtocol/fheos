@@ -20,15 +20,6 @@ const FheosVersion = uint64(1)
 
 var state *FheosState = nil
 
-func (fs *FheosState) GetStorageSize() uint64 {
-	storageSize := fs.Storage.Size()
-	if metrics.Enabled {
-		h := fmt.Sprintf("%s/%s/%s", "fheos", "db", "size")
-		metrics.GetOrRegisterGauge(h, nil).Update(int64(storageSize))
-	}
-	return storageSize
-}
-
 func (fs *FheosState) GetCiphertext(hash tfhe.Hash) (*tfhe.Ciphertext, error) {
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "db", "get")
@@ -54,11 +45,6 @@ func (fs *FheosState) SetCiphertext(ct *tfhe.Ciphertext) error {
 	}
 
 	result := fs.Storage.PutCt(ct.Hash(), ct)
-
-	// This checks the size of the db and logs it - we don't really need the result
-	if metrics.Enabled {
-		_ = fs.Storage.Size()
-	}
 
 	return result
 }

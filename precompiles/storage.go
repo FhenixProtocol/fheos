@@ -86,21 +86,6 @@ func (store LevelDbStorage) Put(t DataType, key []byte, val []byte) error {
 	return nil
 }
 
-func (store LevelDbStorage) Size() uint64 {
-	db := store.OpenDB(true)
-	defer closeDB(db, true)
-
-	dbStats := leveldb.DBStats{}
-	err := db.Stats(&dbStats)
-	if err != nil {
-		logger.Error("failed to get stats from db")
-		return 0
-	}
-
-	size := dbStats.LevelSizes.Sum()
-	return uint64(size)
-}
-
 func (store LevelDbStorage) Get(t DataType, key []byte) ([]byte, error) {
 	db := store.OpenDB(true)
 	defer closeDB(db, true)
