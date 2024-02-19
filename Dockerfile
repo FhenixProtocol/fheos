@@ -42,10 +42,19 @@ RUN go mod tidy
 
 RUN go build -gcflags "all=-N -l" -ldflags="-X github.com/offchainlabs/nitro/cmd/util/confighelpers.version= -X github.com/offchainlabs/nitro/cmd/util/confighelpers.datetime= -X github.com/offchainlabs/nitro/cmd/util/confighelpers.modified=" -o target/bin/nitro "/workspace/cmd/nitro"
 
+RUN cd fheos && make build
+
 FROM ghcr.io/fhenixprotocol/localfhenix:v0.1.0-beta5
 
 COPY --from=go-tfhe-builder /workspace/go-tfhe/internal/api/amd64/libtfhe_wrapper.so /usr/lib/libtfhe_wrapper.so
 COPY --from=winning /workspace/target/bin/nitro /usr/local/bin/
+COPY --from=winning /workspace/fheos/build/main /usr/local/bin/fheos
 
+RUN rm -rf /home/user/fhenix/fheosdb
 RUN mkdir -p /home/user/fhenix/fheosdb
-COPY --chown=user:user nitro-overrides/fheosdb/* /home/user/fhenix/fheosdb/
+
+RUN fheos init-db
+
+
+
+
