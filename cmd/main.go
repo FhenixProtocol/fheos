@@ -46,6 +46,15 @@ func generateKeys() error {
 	return nil
 }
 
+func initDbOnly() error {
+	err := precompiles.InitFheos(&tfhe.ConfigDefault)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func initFheos() (*precompiles.TxParams, error) {
 	err := generateKeys()
 	if err != nil {
@@ -179,6 +188,15 @@ func main() {
 		},
 	}
 
+	var initDb = &cobra.Command{
+		Use:   "init-db",
+		Short: "Initialize fheos db only (no keys)",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			err := initDbOnly()
+			return err
+		},
+	}
+
 	var add = setupOperationCommand("add", "add two numbers", precompiles.Add)
 	var sub = setupOperationCommand("sub", "subtract two numbers", precompiles.Sub)
 	var lte = setupOperationCommand("lte", "lte two numbers", precompiles.Lte)
@@ -198,7 +216,7 @@ func main() {
 	var shl = setupOperationCommand("shl", "shl two numbers", precompiles.Shl)
 	var shr = setupOperationCommand("shr", "shr two numbers", precompiles.Shr)
 
-	rootCmd.AddCommand(initState, add, sub, lte, sub, mul, lt, div, gt, gte, rem, and, or, xor, eq, ne, min, max, shl, shr)
+	rootCmd.AddCommand(initDb, initState, add, sub, lte, sub, mul, lt, div, gt, gte, rem, and, or, xor, eq, ne, min, max, shl, shr)
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
