@@ -2,8 +2,11 @@ package precompiles
 
 import (
 	"errors"
+	"fmt"
+	"github.com/ethereum/go-ethereum/metrics"
 	"github.com/fhenixprotocol/go-tfhe"
 	"math/big"
+	"time"
 )
 
 type FheosState struct {
@@ -17,12 +20,47 @@ const FheosVersion = uint64(1)
 
 var state *FheosState = nil
 
+func (fs *FheosState) GetStorageSize() uint64 {
+	storageSize := fs.Storage.Size()
+	if metrics.Enabled {
+		h := fmt.Sprintf("%s/%s/%s", "fheos", "db", "size")
+		metrics.GetOrRegisterGauge(h, nil).Update(int64(storageSize))
+	}
+	return storageSize
+}
+
 func (fs *FheosState) GetCiphertext(hash tfhe.Hash) (*tfhe.Ciphertext, error) {
+	if metrics.Enabled {
+		h := fmt.Sprintf("%s/%s/%s", "fheos", "db", "get")
+		defer func(start time.Time) {
+			sampler := func() metrics.Sample {
+				return metrics.NewBoundedHistogramSample()
+			}
+			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+		}(time.Now())
+	}
 	return fs.Storage.GetCt(hash)
 }
 
 func (fs *FheosState) SetCiphertext(ct *tfhe.Ciphertext) error {
-	return fs.Storage.PutCt(ct.Hash(), ct)
+	if metrics.Enabled {
+		h := fmt.Sprintf("%s/%s/%s", "fheos", "db", "put")
+		defer func(start time.Time) {
+			sampler := func() metrics.Sample {
+				return metrics.NewBoundedHistogramSample()
+			}
+			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+		}(time.Now())
+	}
+
+	result := fs.Storage.PutCt(ct.Hash(), ct)
+
+	// This checks the size of the db and logs it - we don't really need the result
+	if metrics.Enabled {
+		_ = fs.Storage.Size()
+	}
+
+	return result
 }
 
 func createFheosState(storage *Storage, version uint64) error {
@@ -46,7 +84,7 @@ func createFheosState(storage *Storage, version uint64) error {
 	for i := 0; i < 3; i++ {
 		ezero[i], _, err = TrivialEncrypt(zero, byte(i), &tempTp)
 		if err != nil {
-			logger.Error("failed to encrypt 0 for ezero ", i, err)
+			logger.Error("failed to encrypt 0 for ezero", "toType", i, "err", err)
 			return err
 		}
 	}
@@ -66,14 +104,14 @@ func InitializeFheosState() error {
 
 	err := storage.PutVersion(FheosVersion)
 	if err != nil {
-		logger.Error("failed to write version into fheos db ", err)
+		logger.Error("failed to write version into fheos db", "err", err)
 		return errors.New("failed to write version into fheos db")
 	}
 
 	err = createFheosState(&storage, FheosVersion)
 
 	if err != nil {
-		logger.Error("failed to create fheos state ", err)
+		logger.Error("failed to create fheos state", "err", err)
 		return errors.New("failed to create fheos state")
 	}
 

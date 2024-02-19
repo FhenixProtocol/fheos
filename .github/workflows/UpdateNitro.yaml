@@ -1,0 +1,51 @@
+name: Send submodule updates to parent repo
+
+on:
+  push:
+    branches: 
+      - master
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:   
+      - uses: actions/checkout@v4
+        with: 
+          repository: fhenixprotocol/nitro
+          token: ${{ secrets.GH_PAT }}
+          submodules: true
+      - name: Pull & update submodules
+        run: |
+          git submodule update --init
+          git submodule update --remote fheos
+      - name: Commit
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions - update submodules"
+          git add --all
+          cp fheos/nitro-overrides/precompiles/FheOps.go precompiles/FheOps.go
+          git commit -m "Update submodules" || echo "No changes to commit"
+      - name: Parse GH Commit Hash
+        shell: bash
+        run: |
+          cd fheos && echo "sha_short=$(git rev-parse --short "$GITHUB_SHA")" >> "$GITHUB_ENV"
+      - name: Create Pull Request
+        id: cpr
+        continue-on-error: true
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GH_PAT }}
+          commit-message: Updated Submodule from FheOS
+          committer: GitHub <noreply@github.com>
+          author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
+          signoff: false
+          branch: fheos-${{ env.sha_short }}
+          delete-branch: true
+          title: 'Update Submodule from FheOS'
+          body: |
+            Updated submodule from FheOS push to [master](https://github.com/fhenixprotocol/fheos/commit/${{ github.sha }})
+          labels: |
+            report
+            automated pr
+          draft: false

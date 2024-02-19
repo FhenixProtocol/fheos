@@ -34,3 +34,5 @@ func (store WasmStorage) PutCt(h tfhe.Hash, cipher *tfhe.Ciphertext) error {
 func (store WasmStorage) GetCt(h tfhe.Hash) (*tfhe.Ciphertext, error) {
 	return nil, nil
 }
+
+func (store WasmStorage) Size() uint64 { return 0 }
