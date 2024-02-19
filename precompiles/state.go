@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/ethereum/go-ethereum/metrics"
+	"github.com/fhenixprotocol/fheos/precompiles/storage"
 	"github.com/fhenixprotocol/go-tfhe"
 	"math/big"
 	"time"
@@ -11,7 +12,7 @@ import (
 
 type FheosState struct {
 	FheosVersion uint64
-	Storage      Storage
+	Storage      storage.Storage
 	EZero        [][]byte // Preencrypted 0s for each uint type
 	MaxUintValue *big.Int // This should contain the max value of the supported uint type
 }
@@ -63,7 +64,7 @@ func (fs *FheosState) SetCiphertext(ct *tfhe.Ciphertext) error {
 	return result
 }
 
-func createFheosState(storage *Storage, version uint64) error {
+func createFheosState(storage *storage.Storage, version uint64) error {
 	state = &FheosState{
 		version,
 		*storage,
@@ -95,20 +96,20 @@ func createFheosState(storage *Storage, version uint64) error {
 }
 
 func InitializeFheosState() error {
-	storage := InitStorage()
+	store := storage.InitStorage()
 
-	if storage == nil {
+	if store == nil {
 		logger.Error("failed to open storage for fheos state")
 		return errors.New("failed to open storage for fheos state")
 	}
 
-	err := storage.PutVersion(FheosVersion)
+	err := store.PutVersion(FheosVersion)
 	if err != nil {
 		logger.Error("failed to write version into fheos db", "err", err)
 		return errors.New("failed to write version into fheos db")
 	}
 
-	err = createFheosState(&storage, FheosVersion)
+	err = createFheosState(&store, FheosVersion)
 
 	if err != nil {
 		logger.Error("failed to create fheos state", "err", err)
