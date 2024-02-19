@@ -33,6 +33,7 @@ type Storage interface {
 	PutVersion(v uint64) error
 	PutCt(h tfhe.Hash, cipher *tfhe.Ciphertext) error
 	GetCt(h tfhe.Hash) (*tfhe.Ciphertext, error)
+	Size() uint64
 }
 
 func TxParamsFromEVM(evm *vm.EVM) TxParams {
