@@ -1,41 +1,30 @@
 //go:build amd64 || arm64
 
-package precompiles
+package leveldb
 
 import (
 	"bytes"
 	"encoding/binary"
 	"encoding/gob"
+	"github.com/ethereum/go-ethereum/log"
+	"github.com/fhenixprotocol/fheos/precompiles/types"
 	"github.com/fhenixprotocol/go-tfhe"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/opt"
-	"os"
 	"sync"
+)
+
+var logger log.Logger
+
+const (
+	version types.DataType = iota
+	ct
 )
 
 var LevelDbLock sync.RWMutex
 
 type LevelDbStorage struct {
-	dbPath string
-}
-
-const DBPath = "/home/user/fhenix/fheosdb"
-
-func getDbPath() string {
-	dbPath := os.Getenv("FHEOS_DB_PATH")
-	if dbPath == "" {
-		return DBPath
-	}
-
-	return dbPath
-}
-
-func InitStorage() Storage {
-	storage := LevelDbStorage{
-		dbPath: getDbPath(),
-	}
-
-	return storage
+	DbPath string
 }
 
 func (store LevelDbStorage) OpenDB(readonly bool) *leveldb.DB {
@@ -45,7 +34,7 @@ func (store LevelDbStorage) OpenDB(readonly bool) *leveldb.DB {
 		LevelDbLock.Lock()
 	}
 
-	db, err := leveldb.OpenFile(store.dbPath, &opt.Options{ReadOnly: readonly})
+	db, err := leveldb.OpenFile(store.DbPath, &opt.Options{ReadOnly: readonly})
 	if err != nil {
 		logger.Error("failed to open fheos db", "err", err)
 		panic(err)
@@ -69,7 +58,7 @@ func closeDB(db *leveldb.DB, readonly bool) {
 
 	logger.Debug("fheos db closed")
 }
-func (store LevelDbStorage) Put(t DataType, key []byte, val []byte) error {
+func (store LevelDbStorage) Put(t types.DataType, key []byte, val []byte) error {
 	db := store.OpenDB(false)
 	defer closeDB(db, false)
 
@@ -86,7 +75,7 @@ func (store LevelDbStorage) Put(t DataType, key []byte, val []byte) error {
 	return nil
 }
 
-func (store LevelDbStorage) Get(t DataType, key []byte) ([]byte, error) {
+func (store LevelDbStorage) Get(t types.DataType, key []byte) ([]byte, error) {
 	db := store.OpenDB(true)
 	defer closeDB(db, true)
 

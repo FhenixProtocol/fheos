@@ -19,22 +19,6 @@ type GasBurner interface {
 	Burned() uint64
 }
 
-type DataType uint64
-
-const (
-	version DataType = iota
-	ct
-)
-
-type Storage interface {
-	Put(t DataType, key []byte, val []byte) error
-	Get(t DataType, key []byte) ([]byte, error)
-	GetVersion() (uint64, error)
-	PutVersion(v uint64) error
-	PutCt(h tfhe.Hash, cipher *tfhe.Ciphertext) error
-	GetCt(h tfhe.Hash) (*tfhe.Ciphertext, error)
-}
-
 func TxParamsFromEVM(evm *vm.EVM) TxParams {
 	var tp TxParams
 	tp.Commit = evm.Commit

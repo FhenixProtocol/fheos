@@ -1,4 +1,4 @@
-package precompiles
+package storage
 
 import (
 	"github.com/fhenixprotocol/go-tfhe"
