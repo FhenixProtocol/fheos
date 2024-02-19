@@ -57,7 +57,7 @@ func createFheosState(storage *Storage, version uint64) error {
 }
 
 func InitializeFheosState() error {
-	storage := InitStorage()
+	storage := NewPebbleStorage()
 
 	if storage == nil {
 		logger.Error("failed to open storage for fheos state")
