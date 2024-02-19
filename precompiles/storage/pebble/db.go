@@ -84,7 +84,7 @@ func (p *Storage) PutVersion(v uint64) error {
 		return err
 	}
 
-	return p.db.Set(key, buf.Bytes(), pebble.Sync)
+	return p.db.Set(key, buf.Bytes(), pebble.NoSync)
 }
 
 func (p *Storage) PutCt(h tfhe.Hash, cipher *tfhe.Ciphertext) error {
@@ -96,7 +96,7 @@ func (p *Storage) PutCt(h tfhe.Hash, cipher *tfhe.Ciphertext) error {
 	}
 
 	// Use hash as key
-	return p.db.Set(h[:], buf.Bytes(), pebble.Sync)
+	return p.db.Set(h[:], buf.Bytes(), pebble.NoSync)
 }
 
 func (p *Storage) GetCt(h tfhe.Hash) (*tfhe.Ciphertext, error) {

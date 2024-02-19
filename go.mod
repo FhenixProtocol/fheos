@@ -3,9 +3,11 @@ module github.com/fhenixprotocol/fheos
 go 1.20
 
 require (
-	github.com/cockroachdb/pebble v1.1.0
+	github.com/cockroachdb/pebble v0.0.0-20230209160836-829675f94811
+	// needs to match the one in go-ethereum because fuck you that's why
+	//github.com/cockroachdb/pebble v1.1.0
 	github.com/ethereum/go-ethereum v1.10.26
-	github.com/sirupsen/logrus v1.9.3
+	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/spf13/cobra v1.7.0
 	github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
 )
@@ -24,7 +26,6 @@ require (
 	github.com/cockroachdb/errors v1.11.1 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
 	github.com/cockroachdb/redact v1.1.5 // indirect
-	github.com/cockroachdb/tokenbucket v0.0.0-20230807174530-cc333fc44b06 // indirect
 	github.com/consensys/bavard v0.1.13 // indirect
 	github.com/consensys/gnark-crypto v0.10.0 // indirect
 	github.com/crate-crypto/go-kzg-4844 v0.3.0 // indirect

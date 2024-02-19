@@ -14,6 +14,7 @@ import (
 )
 
 const storagePath = "/tmp/fheosdb"
+const TestFileSize = 1024 * 1024 * 4 // 4MB
 
 func generateKeys() error {
 	if _, err := os.Stat("./keys/"); os.IsNotExist(err) {
@@ -62,8 +63,8 @@ func init() {
 
 // Helper function to generate a random Ciphertext
 func randomCiphertext() *tfhe.Ciphertext {
-	// Generate a large serialization (64KB)
-	serialization := make([]byte, 64*1024)
+	// Generate a large serialization
+	serialization := make([]byte, TestFileSize)
 	_, _ = rand.Read(serialization)
 
 	// Generate a random hash
@@ -118,7 +119,7 @@ func TestStorageConcurrency(t *testing.T) {
 func BenchmarkStoragePut(b *testing.B) {
 	storage := storage2.InitStorage(storagePath)
 	key := []byte("benchmarkKey")
-	val := make([]byte, 64*1024) // 64KB value to simulate large data
+	val := make([]byte, TestFileSize) // 64KB value to simulate large data
 	rand.Read(val)
 
 	b.ResetTimer()
@@ -213,7 +214,7 @@ func TestStorageVersioning(t *testing.T) {
 func BenchmarkStorageGet(b *testing.B) {
 	storage := storage2.InitStorage(storagePath)
 	key := []byte("benchmarkKey")
-	val := make([]byte, 64*1024) // 64KB value to simulate large data
+	val := make([]byte, TestFileSize) // 64KB value to simulate large data
 	rand.Read(val)
 
 	// Ensure the key exists for the benchmark
@@ -234,7 +235,7 @@ func BenchmarkConcurrentPut(b *testing.B) {
 	storage := storage2.InitStorage(storagePath)
 
 	key := []byte("benchmarkKey")
-	val := make([]byte, 64*1024) // 64KB value to simulate large data
+	val := make([]byte, TestFileSize) // 64KB value to simulate large data
 	rand.Read(val)
 	// Number of goroutines to use for concurrent writes
 	concurrencyLevel := 10
