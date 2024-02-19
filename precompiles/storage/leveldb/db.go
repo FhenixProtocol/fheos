@@ -6,38 +6,43 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/gob"
-	"github.com/ethereum/go-ethereum/log"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	"github.com/fhenixprotocol/go-tfhe"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/opt"
+	"log"
 	"sync"
 )
-
-var logger log.Logger
 
 const (
 	version types.DataType = iota
 	ct
 )
 
-var LevelDbLock sync.RWMutex
+var Lock sync.RWMutex
 
-type LevelDbStorage struct {
-	DbPath string
+type Storage struct {
+	dbPath string
 }
 
-func (store LevelDbStorage) OpenDB(readonly bool) *leveldb.DB {
-	if readonly {
-		LevelDbLock.RLock()
-	} else {
-		LevelDbLock.Lock()
+func NewStorage(path string) Storage {
+	storage := Storage{
+		dbPath: path,
 	}
 
-	db, err := leveldb.OpenFile(store.DbPath, &opt.Options{ReadOnly: readonly})
+	return storage
+}
+
+func (store Storage) OpenDB(readonly bool) *leveldb.DB {
+	if readonly {
+		Lock.RLock()
+	} else {
+		Lock.Lock()
+	}
+
+	db, err := leveldb.OpenFile(store.dbPath, &opt.Options{ReadOnly: readonly})
 	if err != nil {
-		logger.Error("failed to open fheos db", "err", err)
-		panic(err)
+		log.Fatalf("failed to open fheos db. %s: %s", "err", err)
 	}
 
 	return db
@@ -45,20 +50,18 @@ func (store LevelDbStorage) OpenDB(readonly bool) *leveldb.DB {
 
 func closeDB(db *leveldb.DB, readonly bool) {
 	if readonly {
-		defer LevelDbLock.RUnlock()
+		defer Lock.RUnlock()
 	} else {
-		defer LevelDbLock.Unlock()
+		defer Lock.Unlock()
 	}
 
 	err := db.Close()
 	if err != nil {
-		logger.Error("failed to close fheos db", "err", err)
-		panic(err)
+		log.Fatalf("failed to close fheos db. %s: %s", "err", err)
 	}
-
-	logger.Debug("fheos db closed")
 }
-func (store LevelDbStorage) Put(t types.DataType, key []byte, val []byte) error {
+
+func (store Storage) Put(t types.DataType, key []byte, val []byte) error {
 	db := store.OpenDB(false)
 	defer closeDB(db, false)
 
@@ -68,14 +71,13 @@ func (store LevelDbStorage) Put(t types.DataType, key []byte, val []byte) error 
 
 	err := db.Put(extendedKey, val, nil)
 	if err != nil {
-		logger.Error("failed to write into fheos db", "err", err)
 		return err
 	}
 
 	return nil
 }
 
-func (store LevelDbStorage) Get(t types.DataType, key []byte) ([]byte, error) {
+func (store Storage) Get(t types.DataType, key []byte) ([]byte, error) {
 	db := store.OpenDB(true)
 	defer closeDB(db, true)
 
@@ -85,14 +87,13 @@ func (store LevelDbStorage) Get(t types.DataType, key []byte) ([]byte, error) {
 
 	val, err := db.Get(extendedKey, nil)
 	if err != nil {
-		logger.Error("failed to read from fheos db", "err", err)
 		return nil, err
 	}
 
 	return val, nil
 }
 
-func (store LevelDbStorage) GetVersion() (uint64, error) {
+func (store Storage) GetVersion() (uint64, error) {
 	v, err := store.Get(version, []byte{})
 	if err != nil {
 		return 0, err
@@ -101,26 +102,25 @@ func (store LevelDbStorage) GetVersion() (uint64, error) {
 	return binary.BigEndian.Uint64(v), nil
 }
 
-func (store LevelDbStorage) PutVersion(v uint64) error {
+func (store Storage) PutVersion(v uint64) error {
 	vb := make([]byte, 8)
 	binary.BigEndian.PutUint64(vb, v)
 
 	return store.Put(version, []byte{}, vb)
 }
 
-func (store LevelDbStorage) PutCt(h tfhe.Hash, cipher *tfhe.Ciphertext) error {
+func (store Storage) PutCt(h tfhe.Hash, cipher *tfhe.Ciphertext) error {
 	var cipherBuffer bytes.Buffer
 	enc := gob.NewEncoder(&cipherBuffer)
 	err := enc.Encode(*cipher)
 	if err != nil {
-		logger.Error("failed to encode ciphertext", "err", err)
 		return err
 	}
 
 	return store.Put(ct, h[:], cipherBuffer.Bytes())
 }
 
-func (store LevelDbStorage) GetCt(h tfhe.Hash) (*tfhe.Ciphertext, error) {
+func (store Storage) GetCt(h tfhe.Hash) (*tfhe.Ciphertext, error) {
 	v, err := store.Get(ct, h[:])
 	if err != nil {
 		return nil, err
@@ -130,7 +130,6 @@ func (store LevelDbStorage) GetCt(h tfhe.Hash) (*tfhe.Ciphertext, error) {
 	dec := gob.NewDecoder(bytes.NewReader(v))
 	err = dec.Decode(&cipher)
 	if err != nil {
-		logger.Error("failed to decode ciphertext", "err", err)
 		return nil, err
 	}
 

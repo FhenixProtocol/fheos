@@ -7,6 +7,7 @@ import (
 	"github.com/fhenixprotocol/fheos/precompiles/storage"
 	"github.com/fhenixprotocol/go-tfhe"
 	"math/big"
+	"os"
 	"time"
 )
 
@@ -18,6 +19,17 @@ type FheosState struct {
 }
 
 const FheosVersion = uint64(1)
+
+const DBPath = "/home/user/fhenix/fheosdb"
+
+func getDbPath() string {
+	dbPath := os.Getenv("FHEOS_DB_PATH")
+	if dbPath == "" {
+		return DBPath
+	}
+
+	return dbPath
+}
 
 var state *FheosState = nil
 
@@ -82,7 +94,7 @@ func createFheosState(storage *storage.Storage, version uint64) error {
 }
 
 func InitializeFheosState() error {
-	store := storage.NewPebbleStorage()
+	store := storage.InitStorage(getDbPath())
 
 	if store == nil {
 		logger.Error("failed to open storage for fheos state")

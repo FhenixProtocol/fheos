@@ -1,8 +1,9 @@
-package precompiles_test
+package storage_test
 
 import (
 	"bytes"
 	"fmt"
+	storage2 "github.com/fhenixprotocol/fheos/precompiles/storage"
 	"math/rand"
 	"os"
 	"sync"
@@ -11,6 +12,8 @@ import (
 	"github.com/fhenixprotocol/fheos/precompiles"
 	"github.com/fhenixprotocol/go-tfhe" // Update with the actual package path
 )
+
+const storagePath = "/tmp/fheosdb"
 
 func generateKeys() error {
 	if _, err := os.Stat("./keys/"); os.IsNotExist(err) {
@@ -78,7 +81,7 @@ func randomCiphertext() *tfhe.Ciphertext {
 }
 
 func TestStorageConcurrency(t *testing.T) {
-	storage := precompiles.NewPebbleStorage()
+	storage := storage2.InitStorage(storagePath)
 	var wg sync.WaitGroup
 
 	// Define the number of concurrent operations
@@ -113,7 +116,7 @@ func TestStorageConcurrency(t *testing.T) {
 }
 
 func BenchmarkStoragePut(b *testing.B) {
-	storage := precompiles.NewPebbleStorage()
+	storage := storage2.InitStorage(storagePath)
 	key := []byte("benchmarkKey")
 	val := make([]byte, 64*1024) // 64KB value to simulate large data
 	rand.Read(val)
@@ -130,7 +133,7 @@ func BenchmarkStoragePut(b *testing.B) {
 // Additional tests for the Storage interface
 
 func TestStorageGet(t *testing.T) {
-	storage := precompiles.NewPebbleStorage()
+	storage := storage2.InitStorage(storagePath)
 	key := []byte("testKey")
 	expectedVal := []byte("testValue")
 
@@ -150,7 +153,7 @@ func TestStorageGet(t *testing.T) {
 }
 
 func TestStorageGetCt(t *testing.T) {
-	storage := precompiles.NewPebbleStorage()
+	storage := storage2.InitStorage(storagePath)
 	ct := randomCiphertext()
 	hash := tfhe.Hash{0} // Simplified hash for testing
 
@@ -169,7 +172,7 @@ func TestStorageGetCt(t *testing.T) {
 }
 
 func TestStorageVersioning(t *testing.T) {
-	storage := precompiles.NewPebbleStorage()
+	storage := storage2.InitStorage(storagePath)
 	initialVersion, err := storage.GetVersion()
 	if err != nil {
 		t.Fatalf("Failed to get initial version: %v", err)
@@ -208,7 +211,7 @@ func TestStorageVersioning(t *testing.T) {
 
 // Benchmark for Get operation - focuses on reading performance
 func BenchmarkStorageGet(b *testing.B) {
-	storage := precompiles.NewPebbleStorage()
+	storage := storage2.InitStorage(storagePath)
 	key := []byte("benchmarkKey")
 	val := make([]byte, 64*1024) // 64KB value to simulate large data
 	rand.Read(val)
@@ -228,7 +231,7 @@ func BenchmarkStorageGet(b *testing.B) {
 }
 
 func BenchmarkConcurrentPut(b *testing.B) {
-	storage := precompiles.NewPebbleStorage() // Initialize your storage
+	storage := storage2.InitStorage(storagePath)
 
 	key := []byte("benchmarkKey")
 	val := make([]byte, 64*1024) // 64KB value to simulate large data

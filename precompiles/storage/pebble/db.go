@@ -1,9 +1,12 @@
-package precompiles
+//go:build amd64 || arm64
+
+package pebble
 
 import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"github.com/fhenixprotocol/fheos/precompiles/types"
 	"github.com/fhenixprotocol/go-tfhe"
 	"log"
 	"sync"
@@ -12,35 +15,34 @@ import (
 )
 
 var (
-	instance *PebbleStorage
+	instance *Storage
 	once     sync.Once
 )
 
-type PebbleStorage struct {
+type Storage struct {
 	db *pebble.DB
 }
 
 // NewPebbleStorage ensures a single PebbleStorage instance
-func NewPebbleStorage() Storage {
+func NewStorage(path string) *Storage {
 	once.Do(func() {
-		path := getDbPath()
 		db, err := pebble.Open(path, &pebble.Options{})
 		if err != nil {
 			// Consider handling this error more gracefully instead of using log.Fatalf
 			// For example, you could return an error to the caller.
 			log.Fatalf("failed to open pebble db: %v", err)
 		}
-		instance = &PebbleStorage{db: db}
+		instance = &Storage{db: db}
 	})
 	return instance
 }
-func (p *PebbleStorage) Put(t DataType, key []byte, val []byte) error {
+func (p *Storage) Put(t types.DataType, key []byte, val []byte) error {
 	// Use DataType as part of the key to differentiate data types
 	prefixedKey := append([]byte(fmt.Sprintf("%d_", t)), key...)
 	return p.db.Set(prefixedKey, val, pebble.Sync)
 }
 
-func (p *PebbleStorage) Get(t DataType, key []byte) ([]byte, error) {
+func (p *Storage) Get(t types.DataType, key []byte) ([]byte, error) {
 	prefixedKey := append([]byte(fmt.Sprintf("%d_", t)), key...)
 	val, closer, err := p.db.Get(prefixedKey)
 	if err != nil {
@@ -55,7 +57,7 @@ func (p *PebbleStorage) Get(t DataType, key []byte) ([]byte, error) {
 	return valCopy, nil
 }
 
-func (p *PebbleStorage) GetVersion() (uint64, error) {
+func (p *Storage) GetVersion() (uint64, error) {
 	key := []byte("version")
 	val, closer, err := p.db.Get(key)
 	if err != nil {
@@ -74,7 +76,7 @@ func (p *PebbleStorage) GetVersion() (uint64, error) {
 	return version, nil
 }
 
-func (p *PebbleStorage) PutVersion(v uint64) error {
+func (p *Storage) PutVersion(v uint64) error {
 	key := []byte("version")
 	var buf bytes.Buffer
 	err := gob.NewEncoder(&buf).Encode(v)
@@ -85,7 +87,7 @@ func (p *PebbleStorage) PutVersion(v uint64) error {
 	return p.db.Set(key, buf.Bytes(), pebble.Sync)
 }
 
-func (p *PebbleStorage) PutCt(h tfhe.Hash, cipher *tfhe.Ciphertext) error {
+func (p *Storage) PutCt(h tfhe.Hash, cipher *tfhe.Ciphertext) error {
 	// Serialize Ciphertext
 	var buf bytes.Buffer
 	err := gob.NewEncoder(&buf).Encode(cipher)
@@ -97,7 +99,7 @@ func (p *PebbleStorage) PutCt(h tfhe.Hash, cipher *tfhe.Ciphertext) error {
 	return p.db.Set(h[:], buf.Bytes(), pebble.Sync)
 }
 
-func (p *PebbleStorage) GetCt(h tfhe.Hash) (*tfhe.Ciphertext, error) {
+func (p *Storage) GetCt(h tfhe.Hash) (*tfhe.Ciphertext, error) {
 	val, closer, err := p.db.Get(h[:])
 	if err != nil {
 		return nil, err
