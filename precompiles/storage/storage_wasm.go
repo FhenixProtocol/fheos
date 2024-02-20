@@ -1,21 +1,31 @@
 package storage
 
 import (
+	"github.com/fhenixprotocol/fheos/precompiles/types"
 	"github.com/fhenixprotocol/go-tfhe"
 )
 
 type WasmStorage struct {
 }
 
-func InitStorage() Storage {
+type Storage interface {
+	Put(t types.DataType, key []byte, val []byte) error
+	Get(t types.DataType, key []byte) ([]byte, error)
+	GetVersion() (uint64, error)
+	PutVersion(v uint64) error
+	PutCt(h tfhe.Hash, cipher *tfhe.Ciphertext) error
+	GetCt(h tfhe.Hash) (*tfhe.Ciphertext, error)
+}
+
+func InitStorage(_ string) Storage {
 	return WasmStorage{}
 }
 
-func (store WasmStorage) Put(_ DataType, _ []byte, _ []byte) error {
+func (store WasmStorage) Put(_ types.DataType, _ []byte, _ []byte) error {
 	return nil
 }
 
-func (store WasmStorage) Get(t DataType, key []byte) ([]byte, error) {
+func (store WasmStorage) Get(t types.DataType, key []byte) ([]byte, error) {
 	return nil, nil
 }
 
