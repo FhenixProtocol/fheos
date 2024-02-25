@@ -50,7 +50,7 @@ contract XorTest {
             if (b == 0) {
                 bBool = false;
             }
-            if (FHE.decrypt(FHE.asEbool(aBool).xor(FHE.asEbool(bBool)))) {
+            if (FHE.asEbool(aBool).xor(FHE.asEbool(bBool)).decrypt()) {
                 return 1;
             }
             return 0;

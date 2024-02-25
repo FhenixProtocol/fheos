@@ -29,19 +29,19 @@ contract GteTest {
 
             return 0;
         } else if (Utils.cmp(test, "euint8.gte(euint8)")) {
-            if (FHE.decrypt(FHE.asEuint8(a).gte(FHE.asEuint8(b)))) {
+            if (FHE.asEuint8(a).gte(FHE.asEuint8(b)).decrypt()) {
                 return 1;
             }
 
             return 0;
         } else if (Utils.cmp(test, "euint16.gte(euint16)")) {
-            if (FHE.decrypt(FHE.asEuint16(a).gte(FHE.asEuint16(b)))) {
+            if (FHE.asEuint16(a).gte(FHE.asEuint16(b)).decrypt()) {
                 return 1;
             }
 
             return 0;
         } else if (Utils.cmp(test, "euint32.gte(euint32)")) {
-            if (FHE.decrypt(FHE.asEuint32(a).gte(FHE.asEuint32(b)))) {
+            if (FHE.asEuint32(a).gte(FHE.asEuint32(b)).decrypt()) {
                 return 1;
             }
 
