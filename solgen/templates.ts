@@ -290,7 +290,7 @@ function TypeCastTestingFunction(
   } else {
     func += `function castFrom${testType}To${to}(${fromType} val, string calldata test) public pure returns (${retType}) {
         if (Utils.cmp(test, "bound")) {
-            return FHE.decrypt(${encryptedVal}.to${shortenType(toType)}());
+            return ${encryptedVal}.to${shortenType(toType)}().decrypt();
         } else if (Utils.cmp(test, "regular")) {
             return FHE.decrypt(FHE.as${to}(${encryptedVal}));
         }
@@ -462,19 +462,19 @@ export function testContract2ArgBoolRes(name: string, isBoolean: boolean) {
 
             return 0;
         } else if (Utils.cmp(test, "euint8.${name}(euint8)")) {
-            if (FHE.decrypt(FHE.asEuint8(a).${name}(FHE.asEuint8(b)))) {
+            if (FHE.asEuint8(a).${name}(FHE.asEuint8(b)).decrypt()) {
                 return 1;
             }
 
             return 0;
         } else if (Utils.cmp(test, "euint16.${name}(euint16)")) {
-            if (FHE.decrypt(FHE.asEuint16(a).${name}(FHE.asEuint16(b)))) {
+            if (FHE.asEuint16(a).${name}(FHE.asEuint16(b)).decrypt()) {
                 return 1;
             }
 
             return 0;
         } else if (Utils.cmp(test, "euint32.${name}(euint32)")) {
-            if (FHE.decrypt(FHE.asEuint32(a).${name}(FHE.asEuint32(b)))) {
+            if (FHE.asEuint32(a).${name}(FHE.asEuint32(b)).decrypt()) {
                 return 1;
             }
 
@@ -504,7 +504,7 @@ export function testContract2ArgBoolRes(name: string, isBoolean: boolean) {
             if (b == 0) {
                 bBool = false;
             }
-            if (FHE.decrypt(FHE.asEbool(aBool).${name}(FHE.asEbool(bBool)))) {
+            if (FHE.asEbool(aBool).${name}(FHE.asEbool(bBool)).decrypt()) {
                 return 1;
             }
             return 0;
@@ -715,7 +715,7 @@ export function testContract2Arg(
             if (b == 0) {
                 bBool = false;
             }
-            if (FHE.decrypt(FHE.asEbool(aBool).${name}(FHE.asEbool(bBool)))) {
+            if (FHE.asEbool(aBool).${name}(FHE.asEbool(bBool)).decrypt()) {
                 return 1;
             }
             return 0;
