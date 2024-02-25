@@ -10,6 +10,7 @@ import {
   valueIsPlaintext,
   LOCAL_SEAL_FUNCTION_NAME,
   LOCAL_DECRYPT_FUNCTION_NAME,
+  toPlaintextType,
 } from "./common";
 
 export const preamble = () => {
@@ -69,7 +70,6 @@ library Common {
         b = new bytes(32);
         assembly { mstore(add(b, 32), x) }
     }
-    
 }
 
 library Impl {
@@ -976,7 +976,7 @@ export const SealFromType = (thisType: string) => {
 
 export const DecryptBinding = (thisType: string) => {
   return `
-    function ${LOCAL_DECRYPT_FUNCTION_NAME}(${thisType} value) internal pure returns (bytes memory) {
+    function ${LOCAL_DECRYPT_FUNCTION_NAME}(${thisType} value) internal pure returns (${toPlaintextType(thisType)}) {
         return FHE.decrypt(value);
     }`;
 };

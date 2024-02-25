@@ -211,3 +211,7 @@ export const isComparisonType = (value: string): boolean => {
 export const isBitwiseOp = (value: string): boolean => {
   return bitwiseAndLogicalOperators.includes(value);
 };
+
+export const toPlaintextType = (value: string): PlaintextType => {
+  return <PlaintextType>value.slice(1); // removes initial "e" from the type name
+};
