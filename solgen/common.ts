@@ -30,6 +30,7 @@ export type AllTypes =
 
 export const SEALING_FUNCTION_NAME = "sealoutput";
 export const LOCAL_SEAL_FUNCTION_NAME = "seal";
+export const LOCAL_DECRYPT_FUNCTION_NAME = "decrypt";
 
 export const UnderlyingTypes: Record<EUintType, string> = {
   euint8: "uint256",

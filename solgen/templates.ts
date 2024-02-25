@@ -7,7 +7,9 @@ import {
   UnderlyingTypes,
   UintTypes,
   valueIsEncrypted,
-  valueIsPlaintext, LOCAL_SEAL_FUNCTION_NAME,
+  valueIsPlaintext,
+  LOCAL_SEAL_FUNCTION_NAME,
+  LOCAL_DECRYPT_FUNCTION_NAME,
 } from "./common";
 
 export const preamble = () => {
@@ -973,5 +975,12 @@ export const SealFromType = (thisType: string) => {
   return `
     function ${LOCAL_SEAL_FUNCTION_NAME}(${thisType} value, bytes32 publicKey) internal pure returns (bytes memory) {
         return FHE.sealoutput(value, publicKey);
+    }`;
+};
+
+export const DecryptBinding = (thisType: string) => {
+  return `
+    function ${LOCAL_DECRYPT_FUNCTION_NAME}(${thisType} value) internal pure returns (bytes memory) {
+        return FHE.decrypt(value);
     }`;
 };
