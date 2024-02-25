@@ -30,10 +30,6 @@ ${EInputType.map((type) => {
 }`;
 }).join("\n")}
 
-struct SealedArray {
-  bytes[] data;
-}
-
 library Common {
     // Values used to communicate types to the runtime.
     uint8 internal constant EBOOL_TFHE_GO = 0;
