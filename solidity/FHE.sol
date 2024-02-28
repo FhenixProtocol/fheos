@@ -23,6 +23,10 @@ struct inEuint32 {
     bytes data;
 }
 
+struct SealedArray {
+  bytes[] data;
+}
+
 library Common {
     // Values used to communicate types to the runtime.
     uint8 internal constant EBOOL_TFHE_GO = 0;
@@ -62,7 +66,6 @@ library Common {
         b = new bytes(32);
         assembly { mstore(add(b, 32), x) }
     }
-    
 }
 
 library Impl {
@@ -1895,6 +1898,9 @@ library BindingsEbool {
     function seal(ebool value, bytes32 publicKey) internal pure returns (bytes memory) {
         return FHE.sealoutput(value, publicKey);
     }
+    function decrypt(ebool value) internal pure returns (bool) {
+        return FHE.decrypt(value);
+    }
 }
 
 using BindingsEuint8 for euint8 global;
@@ -2054,6 +2060,9 @@ library BindingsEuint8 {
     }
     function seal(euint8 value, bytes32 publicKey) internal pure returns (bytes memory) {
         return FHE.sealoutput(value, publicKey);
+    }
+    function decrypt(euint8 value) internal pure returns (uint8) {
+        return FHE.decrypt(value);
     }
 }
 
@@ -2215,6 +2224,9 @@ library BindingsEuint16 {
     function seal(euint16 value, bytes32 publicKey) internal pure returns (bytes memory) {
         return FHE.sealoutput(value, publicKey);
     }
+    function decrypt(euint16 value) internal pure returns (uint16) {
+        return FHE.decrypt(value);
+    }
 }
 
 using BindingsEuint32 for euint32 global;
@@ -2374,5 +2386,8 @@ library BindingsEuint32 {
     }
     function seal(euint32 value, bytes32 publicKey) internal pure returns (bytes memory) {
         return FHE.sealoutput(value, publicKey);
+    }
+    function decrypt(euint32 value) internal pure returns (uint32) {
+        return FHE.decrypt(value);
     }
 }

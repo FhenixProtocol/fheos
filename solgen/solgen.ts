@@ -19,7 +19,9 @@ import {
     AsTypeTestingContract,
     genAbiFile,
     capitalize,
-    CastBinding, SealFromType
+    CastBinding,
+    SealFromType,
+    DecryptBinding
 } from "./templates";
 import {
     AllTypes,
@@ -369,6 +371,7 @@ const main = async () => {
             outputFile += CastBinding(encryptedType, otherType);
         });
         outputFile += SealFromType(encryptedType);
+        outputFile += DecryptBinding(encryptedType);
 
         outputFile += PostFix();
     })

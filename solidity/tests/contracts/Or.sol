@@ -50,7 +50,7 @@ contract OrTest {
             if (b == 0) {
                 bBool = false;
             }
-            if (FHE.decrypt(FHE.asEbool(aBool).or(FHE.asEbool(bBool)))) {
+            if (FHE.asEbool(aBool).or(FHE.asEbool(bBool)).decrypt()) {
                 return 1;
             }
             return 0;

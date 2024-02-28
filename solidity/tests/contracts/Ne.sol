@@ -29,19 +29,19 @@ contract NeTest {
 
             return 0;
         } else if (Utils.cmp(test, "euint8.ne(euint8)")) {
-            if (FHE.decrypt(FHE.asEuint8(a).ne(FHE.asEuint8(b)))) {
+            if (FHE.asEuint8(a).ne(FHE.asEuint8(b)).decrypt()) {
                 return 1;
             }
 
             return 0;
         } else if (Utils.cmp(test, "euint16.ne(euint16)")) {
-            if (FHE.decrypt(FHE.asEuint16(a).ne(FHE.asEuint16(b)))) {
+            if (FHE.asEuint16(a).ne(FHE.asEuint16(b)).decrypt()) {
                 return 1;
             }
 
             return 0;
         } else if (Utils.cmp(test, "euint32.ne(euint32)")) {
-            if (FHE.decrypt(FHE.asEuint32(a).ne(FHE.asEuint32(b)))) {
+            if (FHE.asEuint32(a).ne(FHE.asEuint32(b)).decrypt()) {
                 return 1;
             }
 
@@ -69,7 +69,7 @@ contract NeTest {
             if (b == 0) {
                 bBool = false;
             }
-            if (FHE.decrypt(FHE.asEbool(aBool).ne(FHE.asEbool(bBool)))) {
+            if (FHE.asEbool(aBool).ne(FHE.asEbool(bBool)).decrypt()) {
                 return 1;
             }
             return 0;

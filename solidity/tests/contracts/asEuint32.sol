@@ -12,7 +12,7 @@ contract AsEuint32Test {
     
     function castFromEboolToEuint32(uint256 val, string calldata test) public pure returns (uint32) {
         if (Utils.cmp(test, "bound")) {
-            return FHE.decrypt(FHE.asEbool(val).toU32());
+            return FHE.asEbool(val).toU32().decrypt();
         } else if (Utils.cmp(test, "regular")) {
             return FHE.decrypt(FHE.asEuint32(FHE.asEbool(val)));
         }
@@ -21,7 +21,7 @@ contract AsEuint32Test {
 
     function castFromEuint8ToEuint32(uint256 val, string calldata test) public pure returns (uint32) {
         if (Utils.cmp(test, "bound")) {
-            return FHE.decrypt(FHE.asEuint8(val).toU32());
+            return FHE.asEuint8(val).toU32().decrypt();
         } else if (Utils.cmp(test, "regular")) {
             return FHE.decrypt(FHE.asEuint32(FHE.asEuint8(val)));
         }
@@ -30,7 +30,7 @@ contract AsEuint32Test {
 
     function castFromEuint16ToEuint32(uint256 val, string calldata test) public pure returns (uint32) {
         if (Utils.cmp(test, "bound")) {
-            return FHE.decrypt(FHE.asEuint16(val).toU32());
+            return FHE.asEuint16(val).toU32().decrypt();
         } else if (Utils.cmp(test, "regular")) {
             return FHE.decrypt(FHE.asEuint32(FHE.asEuint16(val)));
         }

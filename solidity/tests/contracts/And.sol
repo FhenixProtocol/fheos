@@ -50,7 +50,7 @@ contract AndTest {
             if (b == 0) {
                 bBool = false;
             }
-            if (FHE.decrypt(FHE.asEbool(aBool).and(FHE.asEbool(bBool)))) {
+            if (FHE.asEbool(aBool).and(FHE.asEbool(bBool)).decrypt()) {
                 return 1;
             }
             return 0;

@@ -30,6 +30,7 @@ export type AllTypes =
 
 export const SEALING_FUNCTION_NAME = "sealoutput";
 export const LOCAL_SEAL_FUNCTION_NAME = "seal";
+export const LOCAL_DECRYPT_FUNCTION_NAME = "decrypt";
 
 export const UnderlyingTypes: Record<EUintType, string> = {
   euint8: "uint256",
@@ -209,4 +210,8 @@ export const isComparisonType = (value: string): boolean => {
 
 export const isBitwiseOp = (value: string): boolean => {
   return bitwiseAndLogicalOperators.includes(value);
+};
+
+export const toPlaintextType = (value: string): PlaintextType => {
+  return <PlaintextType>value.slice(1); // removes initial "e" from the type name
 };
