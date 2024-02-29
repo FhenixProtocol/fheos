@@ -176,7 +176,6 @@ func setupOperationCommand(use, short string, op operationFunc) *cobra.Command {
 }
 
 func main() {
-
 	var rootCmd = &cobra.Command{Use: "fheos"}
 
 	var initState = &cobra.Command{
@@ -197,6 +196,8 @@ func main() {
 		},
 	}
 
+	rootCmd.AddCommand(initDb, initState)
+
 	var add = setupOperationCommand("add", "add two numbers", precompiles.Add)
 	var sub = setupOperationCommand("sub", "subtract two numbers", precompiles.Sub)
 	var lte = setupOperationCommand("lte", "perform less-than-or-equal comparison between two numbers", precompiles.Lte)
@@ -216,7 +217,9 @@ func main() {
 	var shl = setupOperationCommand("shl", "shift-left a number", precompiles.Shl)
 	var shr = setupOperationCommand("shr", "shift-right a number", precompiles.Shr)
 
-	rootCmd.AddCommand(initDb, initState, add, sub, lte, sub, mul, lt, div, gt, gte, rem, and, or, xor, eq, ne, min, max, shl, shr)
+	rootCmd.AddCommand(add, sub, lte, sub, mul, lt, div, gt, gte, rem, and, or, xor, eq, ne, min, max, shl, shr)
+	rootCmd.AddCommand(versionCommand)
+
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
