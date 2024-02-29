@@ -14,7 +14,7 @@ func init() {
 		Use:   "version",
 		Short: "Show current fheos version",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Println(VERSION)
+			fmt.Println("FheOs:", VERSION)
 			return nil
 		},
 	}
