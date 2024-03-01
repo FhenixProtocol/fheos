@@ -176,7 +176,7 @@ func setupOperationCommand(use, short string, op operationFunc) *cobra.Command {
 }
 
 func main() {
-	var rootCmd = &cobra.Command{Use: "fheos", Version: GetFullVersionString()}
+	var rootCmd = &cobra.Command{Use: "fheos", Version: precompiles.GetFullVersionString()}
 
 	var initState = &cobra.Command{
 		Use:   "init-state",

@@ -2,11 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/fhenixprotocol/go-tfhe"
+	fheos "github.com/fhenixprotocol/fheos/precompiles"
 	"github.com/spf13/cobra"
 )
-
-const VERSION = "0.0.5"
 
 var versionCommand *cobra.Command
 
@@ -15,12 +13,8 @@ func init() {
 		Use:   "version",
 		Short: "Display version information",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Println("FheOs: " + GetFullVersionString())
+			fmt.Println("FheOs: " + fheos.GetFullVersionString())
 			return nil
 		},
 	}
-}
-
-func GetFullVersionString() string {
-	return VERSION + "\nTfhe-rs: " + tfhe.Version()
 }
