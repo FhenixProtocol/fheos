@@ -15,9 +15,12 @@ func init() {
 		Use:   "version",
 		Short: "Display version information",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Println("FheOs:", VERSION)
-			fmt.Println("Tfhe-rs:", tfhe.Version())
+			fmt.Println("FheOs: " + GetFullVersionString())
 			return nil
 		},
 	}
+}
+
+func GetFullVersionString() string {
+	return VERSION + "\nTfhe-rs: " + tfhe.Version()
 }
