@@ -13,7 +13,7 @@ var versionCommand *cobra.Command
 func init() {
 	versionCommand = &cobra.Command{
 		Use:   "version",
-		Short: "Show current fheos version",
+		Short: "Display version information",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Println("FheOs:", VERSION)
 			fmt.Println("Tfhe-rs:", tfhe.Version())
