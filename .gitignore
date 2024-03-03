@@ -7,3 +7,5 @@ build/
 solidity/types/*
 
 go-tfhe.log
+fheosdb/
+keys/
