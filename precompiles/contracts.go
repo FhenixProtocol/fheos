@@ -31,6 +31,7 @@ func initTfheConfig(tfheConfig *tfhe.Config) error {
 
 func InitFheos(tfheConfig *tfhe.Config) error {
 	InitLogger()
+
 	err := initTfheConfig(tfheConfig)
 	if err != nil {
 		return err
