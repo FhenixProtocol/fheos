@@ -7,7 +7,6 @@ import (
 	"encoding/binary"
 	"encoding/gob"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
-	"github.com/fhenixprotocol/go-tfhe"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/opt"
 	"log"
@@ -109,7 +108,7 @@ func (store Storage) PutVersion(v uint64) error {
 	return store.Put(version, []byte{}, vb)
 }
 
-func (store Storage) PutCt(h tfhe.Hash, cipher *tfhe.Ciphertext) error {
+func (store Storage) PutCt(h fhe.Hash, cipher *fhe.FheEncrypted) error {
 	var cipherBuffer bytes.Buffer
 	enc := gob.NewEncoder(&cipherBuffer)
 	err := enc.Encode(*cipher)
@@ -120,13 +119,13 @@ func (store Storage) PutCt(h tfhe.Hash, cipher *tfhe.Ciphertext) error {
 	return store.Put(ct, h[:], cipherBuffer.Bytes())
 }
 
-func (store Storage) GetCt(h tfhe.Hash) (*tfhe.Ciphertext, error) {
+func (store Storage) GetCt(h fhe.Hash) (*fhe.FheEncrypted, error) {
 	v, err := store.Get(ct, h[:])
 	if err != nil {
 		return nil, err
 	}
 
-	var cipher tfhe.Ciphertext
+	var cipher fhe.FheEncrypted
 	dec := gob.NewDecoder(bytes.NewReader(v))
 	err = dec.Decode(&cipher)
 	if err != nil {

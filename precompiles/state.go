@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/metrics"
 	"github.com/fhenixprotocol/fheos/precompiles/storage"
-	"github.com/fhenixprotocol/go-tfhe"
+	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 	"math/big"
 	"os"
 	"time"
@@ -33,7 +33,7 @@ func getDbPath() string {
 
 var state *FheosState = nil
 
-func (fs *FheosState) GetCiphertext(hash tfhe.Hash) (*tfhe.Ciphertext, error) {
+func (fs *FheosState) GetCiphertext(hash fhe.Hash) (*fhe.FheEncrypted, error) {
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "db", "get")
 		defer func(start time.Time) {
@@ -46,7 +46,7 @@ func (fs *FheosState) GetCiphertext(hash tfhe.Hash) (*tfhe.Ciphertext, error) {
 	return fs.Storage.GetCt(hash)
 }
 
-func (fs *FheosState) SetCiphertext(ct *tfhe.Ciphertext) error {
+func (fs *FheosState) SetCiphertext(ct *fhe.FheEncrypted) error {
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "db", "put")
 		defer func(start time.Time) {
@@ -132,7 +132,7 @@ func InitializeFheosState() error {
 //
 //	_ = storage.SetUint64ByUint64(versionOffset, 1)
 //
-//	b, err := encodeMap(make(map[tfhe.Hash]tfhe.Ciphertext))
+//	b, err := encodeMap(make(map[fhe.Hash]fhe.FheEncrypted))
 //	if err != nil {
 //		return nil, err
 //	}

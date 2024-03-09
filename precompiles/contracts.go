@@ -2,34 +2,34 @@ package precompiles
 
 import (
 	"encoding/hex"
+	"github.com/fhenixprotocol/go-tfhe"
+	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/log"
-
-	tfhe "github.com/fhenixprotocol/go-tfhe"
 )
 
 var logger log.Logger
 
 func InitLogger() {
 	logger = log.Root().New("module", "fheos")
-	tfhe.SetLogger(log.Root().New("module", "go-tfhe"))
+	fhe.SetLogger(log.Root().New("module", "go-tfhe"))
 }
 
-func initTfheConfig(tfheConfig *tfhe.Config) error {
-	err := tfhe.InitTfhe(tfheConfig)
+func initTfheConfig(fheConfig *fhe.Config) error {
+	err := fhe.Init(fheConfig)
 	if err != nil {
 		logger.Error("Failed to init tfhe config with", "error:", err)
 		return err
 	}
 
-	logger.Info("Successfully initialized tfhe config", "config", tfheConfig)
+	logger.Info("Successfully initialized tfhe config", "config", fheConfig)
 
 	return nil
 }
 
-func InitFheos(tfheConfig *tfhe.Config) error {
+func InitFheos(tfheConfig *fhe.Config) error {
 	InitLogger()
 	err := initTfheConfig(tfheConfig)
 	if err != nil {
@@ -49,12 +49,12 @@ func shouldPrintPrecompileInfo(tp *TxParams) bool {
 }
 
 func UtypeToString(utype byte) string {
-	switch tfhe.UintType(utype) {
-	case tfhe.Uint8:
+	switch fhe.EncryptionType(utype) {
+	case fhe.Uint8:
 		return "uint8"
-	case tfhe.Uint16:
+	case fhe.Uint16:
 		return "uint16"
-	case tfhe.Uint32:
+	case fhe.Uint32:
 		return "uint32"
 	default:
 		return "unknown"
@@ -70,7 +70,7 @@ func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	uintType := tfhe.UintType(utype)
+	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -121,7 +121,7 @@ func Verify(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	uintType := tfhe.UintType(utype)
+	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -132,7 +132,7 @@ func Verify(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
-	ct, err := tfhe.NewCipherTextFromBytes(input, uintType, true /* TODO: not sure + shouldn't be hardcoded */)
+	ct, err := fhe.NewFheEncryptedFromBytes(input, uintType, true /* TODO: not sure + shouldn't be hardcoded */)
 	if err != nil {
 		logger.Error(functionName+" failed to deserialize input ciphertext", "err", err, "len", len(input))
 		return nil, 0, vm.ErrExecutionReverted
@@ -158,7 +158,7 @@ func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) ([]byte, uin
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	uintType := tfhe.UintType(utype)
+	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -181,14 +181,14 @@ func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) ([]byte, uin
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	ct := getCiphertext(state, tfhe.BytesToHash(ctHash))
+	ct := getCiphertext(state, fhe.BytesToHash(ctHash))
 	if ct == nil {
 		msg := functionName + " unverified ciphertext handle"
 		logger.Error(msg, "ciphertext-hash", hex.EncodeToString(ctHash))
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	reencryptedValue, err := tfhe.SealOutput(*ct, pk)
+	reencryptedValue, err := fhe.SealOutput(*ct, pk)
 	if err != nil {
 		logger.Error(functionName+" failed to encrypt to user key", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -208,7 +208,7 @@ func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	uintType := tfhe.UintType(utype)
+	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -225,14 +225,14 @@ func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	ct := getCiphertext(state, tfhe.BytesToHash(input))
+	ct := getCiphertext(state, fhe.BytesToHash(input))
 	if ct == nil {
 		msg := functionName + " unverified ciphertext handle"
 		logger.Error(msg, " input ", hex.EncodeToString(input))
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	decryptedValue, err := tfhe.Decrypt(*ct)
+	decryptedValue, err := fhe.Decrypt(*ct)
 	if err != nil {
 		logger.Error("failed decrypting ciphertext", "error", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -253,7 +253,7 @@ func Lte(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	uintType := tfhe.UintType(utype)
+	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -301,7 +301,7 @@ func Sub(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	uintType := tfhe.UintType(utype)
+	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -349,7 +349,7 @@ func Mul(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	uintType := tfhe.UintType(utype)
+	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -398,7 +398,7 @@ func Lt(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	uintType := tfhe.UintType(utype)
+	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -446,7 +446,7 @@ func Select(utype byte, controlHash []byte, ifTrueHash []byte, ifFalseHash []byt
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	uintType := tfhe.UintType(utype)
+	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -469,7 +469,7 @@ func Select(utype byte, controlHash []byte, ifTrueHash []byte, ifFalseHash []byt
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	result, err := control.Cmux(ifTrue, ifFalse)
+	result, err := control.Select(ifTrue, ifFalse)
 	if err != nil {
 		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -496,7 +496,7 @@ func Req(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	uintType := tfhe.UintType(utype)
+	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -513,7 +513,7 @@ func Req(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	ct := getCiphertext(state, tfhe.BytesToHash(input))
+	ct := getCiphertext(state, fhe.BytesToHash(input))
 	if ct == nil {
 		msg := functionName + " unverified handle"
 		logger.Error(msg, " input ", hex.EncodeToString(input))
@@ -543,7 +543,7 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams) ([]byte, uint64, 
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	uintType := tfhe.UintType(utype)
+	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -554,13 +554,13 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams) ([]byte, uint64, 
 		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
-	ct := getCiphertext(state, tfhe.BytesToHash(input))
+	ct := getCiphertext(state, fhe.BytesToHash(input))
 	if ct == nil {
 		logger.Error(functionName + " input not verified")
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	castToType := tfhe.UintType(toType)
+	castToType := fhe.EncryptionType(toType)
 
 	res, err := ct.Cast(castToType)
 	if err != nil {
@@ -592,7 +592,7 @@ func TrivialEncrypt(input []byte, toType byte, tp *TxParams) ([]byte, uint64, er
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	uintType := tfhe.UintType(toType)
+	uintType := fhe.EncryptionType(toType)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -610,7 +610,7 @@ func TrivialEncrypt(input []byte, toType byte, tp *TxParams) ([]byte, uint64, er
 	}
 
 	valueToEncrypt := *new(big.Int).SetBytes(input)
-	encryptToType := tfhe.UintType(toType)
+	encryptToType := fhe.EncryptionType(toType)
 
 	// Optimize trivial encrypts of zero since we already have trivially encrypted zeros
 	// Trivial encryption of zero is common because it is done for every uninitialized ciphertext
@@ -620,7 +620,9 @@ func TrivialEncrypt(input []byte, toType byte, tp *TxParams) ([]byte, uint64, er
 
 	}
 
-	ct, err := tfhe.NewCipherTextTrivial(valueToEncrypt, encryptToType)
+	// we encrypt this using the computation key no the public key. Also, compact to save space in case this gets saved directly
+	// to storage
+	ct, err := fhe.NewFheEncrypted(valueToEncrypt, encryptToType, true, false)
 	if err != nil {
 		logger.Error("failed to create trivial encrypted value")
 		return nil, 0, vm.ErrExecutionReverted
@@ -647,7 +649,7 @@ func Div(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	uintType := tfhe.UintType(utype)
+	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -697,7 +699,7 @@ func Gt(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	uintType := tfhe.UintType(utype)
+	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -747,7 +749,7 @@ func Gte(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	uintType := tfhe.UintType(utype)
+	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -795,7 +797,7 @@ func Rem(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	uintType := tfhe.UintType(utype)
+	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -844,7 +846,7 @@ func And(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	uintType := tfhe.UintType(utype)
+	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -894,7 +896,7 @@ func Or(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	uintType := tfhe.UintType(utype)
+	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -944,7 +946,7 @@ func Xor(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	uintType := tfhe.UintType(utype)
+	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -994,7 +996,7 @@ func Eq(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	uintType := tfhe.UintType(utype)
+	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -1044,7 +1046,7 @@ func Ne(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	uintType := tfhe.UintType(utype)
+	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -1092,7 +1094,7 @@ func Min(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	uintType := tfhe.UintType(utype)
+	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -1140,7 +1142,7 @@ func Max(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	uintType := tfhe.UintType(utype)
+	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -1188,7 +1190,7 @@ func Shl(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	uintType := tfhe.UintType(utype)
+	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -1236,7 +1238,7 @@ func Shr(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	uintType := tfhe.UintType(utype)
+	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -1284,7 +1286,7 @@ func Not(utype byte, value []byte, tp *TxParams) ([]byte, uint64, error) {
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	uintType := tfhe.UintType(utype)
+	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -1295,7 +1297,7 @@ func Not(utype byte, value []byte, tp *TxParams) ([]byte, uint64, error) {
 		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
-	ct := getCiphertext(state, tfhe.BytesToHash(value))
+	ct := getCiphertext(state, fhe.BytesToHash(value))
 	if ct == nil {
 		msg := "not unverified ciphertext handle"
 		logger.Error(msg, "input", hex.EncodeToString(value))

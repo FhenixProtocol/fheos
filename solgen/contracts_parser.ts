@@ -26,7 +26,7 @@ const specificFunctions = [
     paramTypes: ["encrypted", "uint8", "plaintext"],
   },
   { name: "getCiphertext(", amount: 1, paramTypes: ["encrypted"] },
-  { name: "tfhe.UintType(", amount: 1, paramTypes: ["encrypted"] },
+  { name: "fhedriver.UintType(", amount: 1, paramTypes: ["encrypted"] },
 ];
 
 async function analyzeGoFile(
@@ -89,7 +89,7 @@ async function analyzeGoFile(
         // skip tfhe.UintType(utype) because it will not indicate the input types
         if (
           trimmedLine.includes(keyfn.name) &&
-          !trimmedLine.includes("tfhe.UintType(utype)")
+          !trimmedLine.includes("fhe.EncryptionType(utype)")
         ) {
           let needsSameType = /lhs.UintType\s+!=\s+rhs.UintType/.test(
             trimmedLine

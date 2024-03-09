@@ -2,7 +2,7 @@ package storage
 
 import (
 	"github.com/fhenixprotocol/fheos/precompiles/types"
-	"github.com/fhenixprotocol/go-tfhe"
+	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 )
 
 type WasmStorage struct {
@@ -13,8 +13,8 @@ type Storage interface {
 	Get(t types.DataType, key []byte) ([]byte, error)
 	GetVersion() (uint64, error)
 	PutVersion(v uint64) error
-	PutCt(h tfhe.Hash, cipher *tfhe.Ciphertext) error
-	GetCt(h tfhe.Hash) (*tfhe.Ciphertext, error)
+	PutCt(h fhe.Hash, cipher *fhe.FheEncrypted) error
+	GetCt(h fhe.Hash) (*fhe.FheEncrypted, error)
 }
 
 func InitStorage(_ string) Storage {
@@ -37,11 +37,11 @@ func (store WasmStorage) PutVersion(v uint64) error {
 	return nil
 }
 
-func (store WasmStorage) PutCt(h tfhe.Hash, cipher *tfhe.Ciphertext) error {
+func (store WasmStorage) PutCt(h fhe.Hash, cipher *fhe.FheEncrypted) error {
 	return nil
 }
 
-func (store WasmStorage) GetCt(h tfhe.Hash) (*tfhe.Ciphertext, error) {
+func (store WasmStorage) GetCt(h fhe.Hash) (*fhe.FheEncrypted, error) {
 	return nil, nil
 }
 

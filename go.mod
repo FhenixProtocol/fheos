@@ -1,6 +1,8 @@
 module github.com/fhenixprotocol/fheos
 
-go 1.20
+go 1.21
+
+toolchain go1.21.5
 
 require (
 	github.com/cockroachdb/pebble v0.0.0-20230209160836-829675f94811
@@ -8,7 +10,7 @@ require (
 	//github.com/cockroachdb/pebble v1.1.0
 	github.com/ethereum/go-ethereum v1.10.26
 	github.com/sirupsen/logrus v1.9.3 // indirect
-	github.com/spf13/cobra v1.7.0
+	github.com/spf13/cobra v1.8.0
 	github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
 )
 
@@ -16,7 +18,12 @@ require github.com/deckarep/golang-set/v2 v2.3.1 // indirect
 
 replace github.com/ethereum/go-ethereum => ./go-ethereum
 
-replace github.com/fhenixprotocol/go-tfhe => ./go-tfhe
+replace (
+	github.com/fhenixprotocol/warp-drive/fhe-bridge => ../fhe-engine-monorepo/fhe-bridge
+	github.com/fhenixprotocol/warp-drive/fhe-driver => ../fhe-engine-monorepo/fhe-driver
+)
+
+require github.com/fhenixprotocol/warp-drive/fhe-driver v0.0.0
 
 require (
 	github.com/DataDog/zstd v1.5.2 // indirect
@@ -31,6 +38,7 @@ require (
 	github.com/crate-crypto/go-kzg-4844 v0.3.0 // indirect
 	github.com/ethereum/c-kzg-4844 v0.3.1 // indirect
 	github.com/fhenixprotocol/decryption-oracle-proto v0.0.0-20231205134639-3c799c823a17 // indirect
+	github.com/fhenixprotocol/warp-drive/fhe-bridge v0.0.0-20231205134639-3c799c823a17 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gammazero/deque v0.2.1 // indirect
 	github.com/getsentry/sentry-go v0.18.0 // indirect
@@ -53,14 +61,14 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/supranational/blst v0.3.11 // indirect
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
-	golang.org/x/net v0.15.0 // indirect
-	golang.org/x/sync v0.3.0 // indirect
-	golang.org/x/text v0.13.0 // indirect
-	google.golang.org/genproto v0.0.0-20230822172742-b8732ec3820d // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20230822172742-b8732ec3820d // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20230822172742-b8732ec3820d // indirect
-	google.golang.org/grpc v1.59.0 // indirect
-	google.golang.org/protobuf v1.31.0 // indirect
+	golang.org/x/net v0.22.0 // indirect
+	golang.org/x/sync v0.6.0 // indirect
+	golang.org/x/text v0.14.0 // indirect
+	google.golang.org/genproto v0.0.0-20240123012728-ef4313101c80 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20240123012728-ef4313101c80 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240123012728-ef4313101c80 // indirect
+	google.golang.org/grpc v1.62.1 // indirect
+	google.golang.org/protobuf v1.32.0 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	rsc.io/tmplfunc v0.0.3 // indirect
 )
@@ -72,12 +80,12 @@ require (
 	github.com/fhenixprotocol/go-tfhe v0.0.1
 	github.com/go-ole/go-ole v1.2.5 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
-	github.com/google/uuid v1.3.1 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/shirou/gopsutil v3.21.4-0.20210419000835-c7a38de76ee5+incompatible // indirect
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
-	golang.org/x/crypto v0.14.0 // indirect
-	golang.org/x/sys v0.14.0 // indirect
+	golang.org/x/crypto v0.21.0 // indirect
+	golang.org/x/sys v0.18.0 // indirect
 
 )

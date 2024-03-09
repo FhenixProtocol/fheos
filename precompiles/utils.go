@@ -5,7 +5,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
-	tfhe "github.com/fhenixprotocol/go-tfhe"
+	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 )
 
 type TxParams struct {
@@ -33,7 +33,7 @@ type Precompile struct {
 	Address  common.Address
 }
 
-func getCiphertext(state *FheosState, ciphertextHash tfhe.Hash) *tfhe.Ciphertext {
+func getCiphertext(state *FheosState, ciphertextHash fhe.Hash) *fhe.FheEncrypted {
 	ct, err := state.GetCiphertext(ciphertextHash)
 	if err != nil {
 		logger.Error("reading ciphertext from state resulted with error: ", err)
@@ -42,16 +42,16 @@ func getCiphertext(state *FheosState, ciphertextHash tfhe.Hash) *tfhe.Ciphertext
 
 	return ct
 }
-func get2VerifiedOperands(state *FheosState, lhsHash []byte, rhsHash []byte) (lhs *tfhe.Ciphertext, rhs *tfhe.Ciphertext, err error) {
+func get2VerifiedOperands(state *FheosState, lhsHash []byte, rhsHash []byte) (lhs *fhe.FheEncrypted, rhs *fhe.FheEncrypted, err error) {
 	if len(lhsHash) != 32 || len(rhsHash) != 32 {
 		return nil, nil, errors.New("ciphertext's hashes need to be 32 bytes long")
 	}
 
-	lhs = getCiphertext(state, tfhe.BytesToHash(lhsHash))
+	lhs = getCiphertext(state, fhe.BytesToHash(lhsHash))
 	if lhs == nil {
 		return nil, nil, errors.New("unverified ciphertext handle")
 	}
-	rhs = getCiphertext(state, tfhe.BytesToHash(rhsHash))
+	rhs = getCiphertext(state, fhe.BytesToHash(rhsHash))
 	if rhs == nil {
 		return nil, nil, errors.New("unverified ciphertext handle")
 	}
@@ -59,20 +59,20 @@ func get2VerifiedOperands(state *FheosState, lhsHash []byte, rhsHash []byte) (lh
 	return
 }
 
-func get3VerifiedOperands(state *FheosState, controlHash []byte, ifTrueHash []byte, ifFalseHash []byte) (control *tfhe.Ciphertext, ifTrue *tfhe.Ciphertext, ifFalse *tfhe.Ciphertext, err error) {
+func get3VerifiedOperands(state *FheosState, controlHash []byte, ifTrueHash []byte, ifFalseHash []byte) (control *fhe.FheEncrypted, ifTrue *fhe.FheEncrypted, ifFalse *fhe.FheEncrypted, err error) {
 	if len(controlHash) != 32 || len(ifTrueHash) != 32 || len(ifFalseHash) != 32 {
 		return nil, nil, nil, errors.New("ciphertext's hashes need to be 32 bytes long")
 	}
 
-	control = getCiphertext(state, tfhe.BytesToHash(controlHash))
+	control = getCiphertext(state, fhe.BytesToHash(controlHash))
 	if control == nil {
 		return nil, nil, nil, errors.New("unverified ciphertext handle")
 	}
-	ifTrue = getCiphertext(state, tfhe.BytesToHash(ifTrueHash))
+	ifTrue = getCiphertext(state, fhe.BytesToHash(ifTrueHash))
 	if ifTrue == nil {
 		return nil, nil, nil, errors.New("unverified ciphertext handle")
 	}
-	ifFalse = getCiphertext(state, tfhe.BytesToHash(ifFalseHash))
+	ifFalse = getCiphertext(state, fhe.BytesToHash(ifFalseHash))
 	if ifFalse == nil {
 		return nil, nil, nil, errors.New("unverified ciphertext handle")
 	}
@@ -80,7 +80,7 @@ func get3VerifiedOperands(state *FheosState, controlHash []byte, ifTrueHash []by
 	return
 }
 
-func importCiphertext(state *FheosState, ct *tfhe.Ciphertext) error {
+func importCiphertext(state *FheosState, ct *fhe.FheEncrypted) error {
 	err := state.SetCiphertext(ct)
 	if err != nil {
 		logger.Error("failed importing ciphertext to state: ", err)
@@ -96,8 +96,8 @@ func minInt(a int, b int) int {
 	return b
 }
 
-func evaluateRequire(ct *tfhe.Ciphertext) bool {
-	return tfhe.Require(ct)
+func evaluateRequire(ct *fhe.FheEncrypted) bool {
+	return fhe.Require(ct)
 }
 
 type fheUintType uint8

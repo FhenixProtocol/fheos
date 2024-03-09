@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"fmt"
 	storage2 "github.com/fhenixprotocol/fheos/precompiles/storage"
+	"github.com/fhenixprotocol/go-tfhe"
 	"math/rand"
 	"os"
 	"sync"
 	"testing"
 
 	"github.com/fhenixprotocol/fheos/precompiles"
-	"github.com/fhenixprotocol/go-tfhe" // Update with the actual package path
+	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 )
 
 const storagePath = "/tmp/fheosdb"
@@ -54,7 +55,7 @@ func init() {
 		panic(err)
 	}
 
-	err = precompiles.InitFheos(&tfhe.ConfigDefault)
+	err = precompiles.InitFheos(&fhe.ConfigDefault)
 	if err != nil {
 		panic(err)
 	}
@@ -62,7 +63,7 @@ func init() {
 }
 
 // Helper function to generate a random Ciphertext
-func randomCiphertext() *tfhe.Ciphertext {
+func randomCiphertext() *fhe.FheEncrypted {
 	// Generate a large serialization
 	serialization := make([]byte, TestFileSize)
 	_, _ = rand.Read(serialization)
@@ -71,9 +72,9 @@ func randomCiphertext() *tfhe.Ciphertext {
 	hash := make([]byte, 32)
 	_, _ = rand.Read(hash)
 
-	ct := &tfhe.Ciphertext{
-		Serialization: serialization,
-		UintType:      2, // Assuming 0 is a valid UintType
+	ct := &fhe.FheEncrypted{
+		Data:     serialization,
+		UintType: 2, // Assuming 0 is a valid UintType
 	}
 
 	ct.Hash()
@@ -107,7 +108,7 @@ func TestStorageConcurrency(t *testing.T) {
 		go func(i int) {
 			defer wg.Done()
 			ct := randomCiphertext()
-			if err := storage.PutCt(tfhe.Hash{byte(i)}, ct); err != nil {
+			if err := storage.PutCt(fhe.Hash{byte(i)}, ct); err != nil {
 				t.Errorf("Failed to put ciphertext: %v", err)
 			}
 		}(i)
@@ -156,7 +157,7 @@ func TestStorageGet(t *testing.T) {
 func TestStorageGetCt(t *testing.T) {
 	storage := storage2.InitStorage(storagePath)
 	ct := randomCiphertext()
-	hash := tfhe.Hash{0} // Simplified hash for testing
+	hash := fhe.Hash{0} // Simplified hash for testing
 
 	if err := storage.PutCt(hash, ct); err != nil {
 		t.Fatalf("Failed to put ciphertext: %v", err)
@@ -167,7 +168,7 @@ func TestStorageGetCt(t *testing.T) {
 		t.Fatalf("Failed to get ciphertext: %v", err)
 	}
 
-	if !bytes.Equal(retrievedCt.Serialization, ct.Serialization) || !(retrievedCt.Hash() == ct.Hash()) {
+	if !bytes.Equal(retrievedCt.Data, ct.Data) || !(retrievedCt.Hash() == ct.Hash()) {
 		t.Errorf("Retrieved ciphertext does not match the original")
 	}
 }

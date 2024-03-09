@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/fhenixprotocol/fheos/precompiles"
-	"github.com/fhenixprotocol/go-tfhe"
+	fhedriver "github.com/fhenixprotocol/warp-drive/fhe-driver"
 	"github.com/spf13/cobra"
 	"math/big"
 	"os"
@@ -39,7 +39,7 @@ func generateKeys() error {
 	}
 
 	err :=
-		tfhe.GenerateFheKeys("./keys/tfhe/", "./sks", "./cks", "./pks")
+		fhedriver.GenerateFheKeys(0)
 	if err != nil {
 		return fmt.Errorf("error from tfhe GenerateFheKeys: %s", err)
 	}
@@ -47,7 +47,7 @@ func generateKeys() error {
 }
 
 func initDbOnly() error {
-	err := precompiles.InitFheos(&tfhe.ConfigDefault)
+	err := precompiles.InitFheos(&fhedriver.ConfigDefault)
 	if err != nil {
 		return err
 	}
@@ -68,7 +68,7 @@ func initFheos() (*precompiles.TxParams, error) {
 		}
 	}
 
-	err = precompiles.InitFheos(&tfhe.ConfigDefault)
+	err = precompiles.InitFheos(&fhedriver.ConfigDefault)
 	if err != nil {
 		return nil, err
 	}

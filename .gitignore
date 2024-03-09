@@ -6,4 +6,3 @@ solgen/*.js
 build/
 solidity/types/*
 
-go-tfhe.log
