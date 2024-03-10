@@ -1,8 +1,8 @@
 package arbitrum
 
 import (
-	"flag"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
+	flag "github.com/spf13/pflag"
 )
 
 func FhenixConfigAddOptions(prefix string, f *flag.FlagSet) {
