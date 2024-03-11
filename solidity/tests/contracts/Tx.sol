@@ -1,23 +1,23 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.19;
 
-import {FHE} from "../../FHE.sol";
+import { FHE, euint32, inEuint32 } from "../../FHE.sol";
 import {Utils} from "./utils/Utils.sol";
 
 error TestNotFound(string test);
 
 contract AddCaller {
-    euint32 private counter;
-    
-    function addTx(inEuint32 value, bytes calldata publicKey) public returns (bytes memory) {
-        counter = counter.add(value.toU32());
+    euint32 private counter = FHE.asEuint32(0);
+
+    function addTx(inEuint32 calldata value, bytes32 publicKey) public returns (bytes memory) {
+        counter = counter.add(FHE.asEuint32(value));
         return counter.seal(publicKey);
     }
 
     function addViaContractCallAsPlain(
         uint32 value,
         address contractAddress,
-        bytes calldata publicKey
+        bytes32 publicKey
     ) public returns (bytes memory) {
         AddCallee addContract = AddCallee(contractAddress);
         counter = addContract.add(FHE.decrypt(counter), value);
@@ -26,9 +26,9 @@ contract AddCaller {
     }
 
     function addViaContractCall(
-        inEuint32 value,
-        address addContract,
-        bytes calldata publicKey
+        inEuint32 calldata value,
+        address contractAddress,
+        bytes32 publicKey
     ) public returns (bytes memory) {
         AddCallee addContract = AddCallee(contractAddress);
         counter = addContract.add(counter, value);
@@ -37,49 +37,34 @@ contract AddCaller {
     }
 
     function addViaContractCallU32(
-        inEuint32 value,
-        address addContract,
-        bytes calldata publicKey
+        inEuint32 calldata value,
+        address contractAddress,
+        bytes32 publicKey
     ) public returns (bytes memory) {
         AddCallee addContract = AddCallee(contractAddress);
-        counter = addContract.add(counter, value.toU32());
-
-        return counter.seal(publicKey);
-    }
-
-    function addDelegate(
-        inEuint32 value,
-        address addContract,
-        bytes calldata publicKey
-    ) public returns (bytes memory) {
-        AddCallee addContract = AddCallee(contractAddress);
-        addContract.addDelegate(value);
+        counter = addContract.add(counter, FHE.asEuint32(value));
 
         return counter.seal(publicKey);
     }
 
     function addDelegatePlain(
         uint32 value,
-        address addContract,
-        bytes calldata publicKey
+        address contractAddress,
+        bytes32 publicKey
     ) public returns (bytes memory) {
-        AddCallee addContract = AddCallee(contractAddress);
-
-        (bool success, bytes memory data) = addContract.delegatecall(
-            abi.encodeWithSignature("addDelegate(uint32)", value.toU32())
+        contractAddress.delegatecall(
+            abi.encodeWithSignature("addDelegate(uint32)", value)
         );
 
         return counter.seal(publicKey);
     }
 
     function addDelegate(
-        inEuint32 value,
-        address addContract,
-        bytes calldata publicKey
+        inEuint32 calldata value,
+        address contractAddress,
+        bytes32 publicKey
     ) public returns (bytes memory) {
-        AddCallee addContract = AddCallee(contractAddress);
-
-        (bool success, bytes memory data) = addContract.delegatecall(
+        contractAddress.delegatecall(
             abi.encodeWithSignature("addDelegate(inEuint32)", value)
         );
 
@@ -87,14 +72,12 @@ contract AddCaller {
     }
 
     function addDelegateU32(
-        inEuint32 value,
-        address addContract,
-        bytes calldata publicKey
+        inEuint32 calldata value,
+        address contractAddress,
+        bytes32 publicKey
     ) public returns (bytes memory) {
-        AddCallee addContract = AddCallee(contractAddress);
-
-        (bool success, bytes memory data) = addContract.delegatecall(
-            abi.encodeWithSignature("addDelegate(euint32)", value.toU32())
+        contractAddress.delegatecall(
+            abi.encodeWithSignature("addDelegate(euint32)", FHE.asEuint32(value))
         );
 
         return counter.seal(publicKey);
@@ -104,8 +87,8 @@ contract AddCaller {
 contract AddCallee {
     euint32 private counter;
 
-    function add(euint32 a, inEuint32 b) public pure returns (euint32 output) {
-        return a + b.toU32();
+    function add(euint32 a, inEuint32 calldata b) public pure returns (euint32 output) {
+        return a + FHE.asEuint32(b);
     }
 
     function add(euint32 a, euint32 b) public pure returns (euint32 output) {
@@ -116,11 +99,11 @@ contract AddCallee {
         return FHE.asEuint32(a + b);
     }
 
-    function addDelegate(euint32) public {
-        counter = counter + b;
+    function addDelegate(euint32 value) public {
+        counter = counter + value;
     }
 
-    function addDelegate(inEuint32) public {
-        counter = counter + b.toU32();
+    function addDelegate(inEuint32 calldata value) public {
+        counter = counter + FHE.asEuint32(value);
     }
 }
