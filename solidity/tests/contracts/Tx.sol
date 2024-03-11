@@ -15,12 +15,12 @@ contract AddCaller {
     }
 
     function addViaContractCallAsPlain(
-        inEuint32 value,
+        uint32 value,
         address contractAddress,
         bytes calldata publicKey
     ) public returns (bytes memory) {
         AddCallee addContract = AddCallee(contractAddress);
-        counter = addContract.add(FHE.decrypt(counter), FHE.decrypt(value));
+        counter = addContract.add(FHE.decrypt(counter), value);
 
         return counter.seal(publicKey);
     }
@@ -58,6 +58,34 @@ contract AddCaller {
         return counter.seal(publicKey);
     }
 
+    function addDelegatePlain(
+        uint32 value,
+        address addContract,
+        bytes calldata publicKey
+    ) public returns (bytes memory) {
+        AddCallee addContract = AddCallee(contractAddress);
+
+        (bool success, bytes memory data) = addContract.delegatecall(
+            abi.encodeWithSignature("addDelegate(uint32)", value.toU32())
+        );
+
+        return counter.seal(publicKey);
+    }
+
+    function addDelegate(
+        inEuint32 value,
+        address addContract,
+        bytes calldata publicKey
+    ) public returns (bytes memory) {
+        AddCallee addContract = AddCallee(contractAddress);
+
+        (bool success, bytes memory data) = addContract.delegatecall(
+            abi.encodeWithSignature("addDelegate(inEuint32)", value)
+        );
+
+        return counter.seal(publicKey);
+    }
+
     function addDelegateU32(
         inEuint32 value,
         address addContract,
@@ -65,7 +93,9 @@ contract AddCaller {
     ) public returns (bytes memory) {
         AddCallee addContract = AddCallee(contractAddress);
 
-        abi.encodeWithSignature("addDelegate(uint256)", value.toU32());
+        (bool success, bytes memory data) = addContract.delegatecall(
+            abi.encodeWithSignature("addDelegate(euint32)", value.toU32())
+        );
 
         return counter.seal(publicKey);
     }
