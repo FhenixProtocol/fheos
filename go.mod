@@ -23,7 +23,10 @@ replace (
 	github.com/fhenixprotocol/warp-drive/fhe-driver => ../fhe-engine-monorepo/fhe-driver
 )
 
-require github.com/fhenixprotocol/warp-drive/fhe-driver v0.0.0
+require (
+	github.com/fhenixprotocol/warp-drive/fhe-driver v0.0.0
+	github.com/spf13/pflag v1.0.5
+)
 
 require (
 	github.com/DataDog/zstd v1.5.2 // indirect
@@ -58,7 +61,6 @@ require (
 	github.com/prometheus/common v0.39.0 // indirect
 	github.com/prometheus/procfs v0.9.0 // indirect
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/supranational/blst v0.3.11 // indirect
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
 	golang.org/x/net v0.22.0 // indirect

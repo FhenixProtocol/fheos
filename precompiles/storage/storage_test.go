@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	storage2 "github.com/fhenixprotocol/fheos/precompiles/storage"
+	"github.com/fhenixprotocol/fheos/precompiles/types"
 	"github.com/fhenixprotocol/go-tfhe"
 	"math/rand"
 	"os"
@@ -108,7 +109,7 @@ func TestStorageConcurrency(t *testing.T) {
 		go func(i int) {
 			defer wg.Done()
 			ct := randomCiphertext()
-			if err := storage.PutCt(fhe.Hash{byte(i)}, ct); err != nil {
+			if err := storage.PutCt(types.Hash(fhe.Hash{byte(i)}), (*types.FheEncrypted)(ct)); err != nil {
 				t.Errorf("Failed to put ciphertext: %v", err)
 			}
 		}(i)
@@ -159,16 +160,16 @@ func TestStorageGetCt(t *testing.T) {
 	ct := randomCiphertext()
 	hash := fhe.Hash{0} // Simplified hash for testing
 
-	if err := storage.PutCt(hash, ct); err != nil {
+	if err := storage.PutCt(types.Hash(hash), (*types.FheEncrypted)(ct)); err != nil {
 		t.Fatalf("Failed to put ciphertext: %v", err)
 	}
 
-	retrievedCt, err := storage.GetCt(hash)
+	retrievedCt, err := storage.GetCt(types.Hash(hash))
 	if err != nil {
 		t.Fatalf("Failed to get ciphertext: %v", err)
 	}
 
-	if !bytes.Equal(retrievedCt.Data, ct.Data) || !(retrievedCt.Hash() == ct.Hash()) {
+	if !bytes.Equal(retrievedCt.Data, ct.Data) || !((*fhe.FheEncrypted)(retrievedCt).Hash() == ct.Hash()) {
 		t.Errorf("Retrieved ciphertext does not match the original")
 	}
 }

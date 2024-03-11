@@ -5,6 +5,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/fhenixprotocol/fheos/precompiles/types"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 )
 
@@ -34,13 +35,13 @@ type Precompile struct {
 }
 
 func getCiphertext(state *FheosState, ciphertextHash fhe.Hash) *fhe.FheEncrypted {
-	ct, err := state.GetCiphertext(ciphertextHash)
+	ct, err := state.GetCiphertext(types.Hash(ciphertextHash))
 	if err != nil {
 		logger.Error("reading ciphertext from state resulted with error: ", err)
 		return nil
 	}
 
-	return ct
+	return (*fhe.FheEncrypted)(ct)
 }
 func get2VerifiedOperands(state *FheosState, lhsHash []byte, rhsHash []byte) (lhs *fhe.FheEncrypted, rhs *fhe.FheEncrypted, err error) {
 	if len(lhsHash) != 32 || len(rhsHash) != 32 {

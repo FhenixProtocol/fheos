@@ -2,7 +2,6 @@ package precompiles
 
 import (
 	"encoding/hex"
-	"github.com/fhenixprotocol/go-tfhe"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 	"math/big"
 
@@ -1328,7 +1327,7 @@ func GetNetworkPublicKey(tp *TxParams) ([]byte, error) {
 		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
-	pk, err := tfhe.PublicKey()
+	pk, err := fhe.PublicKey(0)
 	if err != nil {
 		logger.Error("could not get public key", "err", err)
 		return nil, vm.ErrExecutionReverted

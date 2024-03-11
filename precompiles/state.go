@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/metrics"
 	"github.com/fhenixprotocol/fheos/precompiles/storage"
+	"github.com/fhenixprotocol/fheos/precompiles/types"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 	"math/big"
 	"os"
@@ -33,7 +34,7 @@ func getDbPath() string {
 
 var state *FheosState = nil
 
-func (fs *FheosState) GetCiphertext(hash fhe.Hash) (*fhe.FheEncrypted, error) {
+func (fs *FheosState) GetCiphertext(hash types.Hash) (*types.FheEncrypted, error) {
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "db", "get")
 		defer func(start time.Time) {
@@ -57,7 +58,7 @@ func (fs *FheosState) SetCiphertext(ct *fhe.FheEncrypted) error {
 		}(time.Now())
 	}
 
-	result := fs.Storage.PutCt(ct.Hash(), ct)
+	result := fs.Storage.PutCt(types.Hash(ct.Hash()), (*types.FheEncrypted)(ct))
 
 	return result
 }

@@ -86,7 +86,7 @@ func (p *Storage) PutVersion(v uint64) error {
 	return p.db.Set(key, buf.Bytes(), pebble.NoSync)
 }
 
-func (p *Storage) PutCt(h fhe.Hash, cipher *fhe.FheEncrypted) error {
+func (p *Storage) PutCt(h types.Hash, cipher *types.FheEncrypted) error {
 	// Serialize Ciphertext
 	var buf bytes.Buffer
 	err := gob.NewEncoder(&buf).Encode(cipher)
@@ -98,14 +98,14 @@ func (p *Storage) PutCt(h fhe.Hash, cipher *fhe.FheEncrypted) error {
 	return p.db.Set(h[:], buf.Bytes(), pebble.NoSync)
 }
 
-func (p *Storage) GetCt(h fhe.Hash) (*fhe.FheEncrypted, error) {
+func (p *Storage) GetCt(h types.Hash) (*types.FheEncrypted, error) {
 	val, closer, err := p.db.Get(h[:])
 	if err != nil {
 		return nil, err
 	}
 	defer closer.Close()
 
-	var cipher fhe.FheEncrypted
+	var cipher types.FheEncrypted
 	err = gob.NewDecoder(bytes.NewBuffer(val)).Decode(&cipher)
 	if err != nil {
 		return nil, err

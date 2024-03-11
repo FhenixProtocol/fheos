@@ -12,8 +12,8 @@ type Storage interface {
 	Get(t types.DataType, key []byte) ([]byte, error)
 	GetVersion() (uint64, error)
 	PutVersion(v uint64) error
-	PutCt(h fhe.Hash, cipher *fhe.FheEncrypted) error
-	GetCt(h fhe.Hash) (*fhe.FheEncrypted, error)
+	PutCt(h types.Hash, cipher *types.FheEncrypted) error
+	GetCt(h types.Hash) (*types.FheEncrypted, error)
 }
 
 func InitStorage(path string) Storage {

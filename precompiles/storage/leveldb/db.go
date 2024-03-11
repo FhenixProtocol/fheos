@@ -108,7 +108,7 @@ func (store Storage) PutVersion(v uint64) error {
 	return store.Put(version, []byte{}, vb)
 }
 
-func (store Storage) PutCt(h fhe.Hash, cipher *fhe.FheEncrypted) error {
+func (store Storage) PutCt(h types.Hash, cipher *types.FheEncrypted) error {
 	var cipherBuffer bytes.Buffer
 	enc := gob.NewEncoder(&cipherBuffer)
 	err := enc.Encode(*cipher)
@@ -119,13 +119,13 @@ func (store Storage) PutCt(h fhe.Hash, cipher *fhe.FheEncrypted) error {
 	return store.Put(ct, h[:], cipherBuffer.Bytes())
 }
 
-func (store Storage) GetCt(h fhe.Hash) (*fhe.FheEncrypted, error) {
+func (store Storage) GetCt(h types.Hash) (*types.FheEncrypted, error) {
 	v, err := store.Get(ct, h[:])
 	if err != nil {
 		return nil, err
 	}
 
-	var cipher fhe.FheEncrypted
+	var cipher types.FheEncrypted
 	dec := gob.NewDecoder(bytes.NewReader(v))
 	err = dec.Decode(&cipher)
 	if err != nil {
