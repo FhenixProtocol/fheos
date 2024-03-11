@@ -8,6 +8,11 @@ error TestNotFound(string test);
 
 contract AddCaller {
     euint32 private counter = FHE.asEuint32(0);
+    AddCallee public addContract;
+
+    constructor(address addCallee) {
+        addContract = AddCallee(addCallee);
+    }
 
     function addTx(inEuint32 calldata value, bytes32 publicKey) public returns (bytes memory) {
         counter = counter.add(FHE.asEuint32(value));
@@ -16,10 +21,8 @@ contract AddCaller {
 
     function addViaContractCallAsPlain(
         uint32 value,
-        address contractAddress,
         bytes32 publicKey
     ) public returns (bytes memory) {
-        AddCallee addContract = AddCallee(contractAddress);
         counter = addContract.add(FHE.decrypt(counter), value);
 
         return counter.seal(publicKey);
@@ -27,10 +30,8 @@ contract AddCaller {
 
     function addViaContractCall(
         inEuint32 calldata value,
-        address contractAddress,
         bytes32 publicKey
     ) public returns (bytes memory) {
-        AddCallee addContract = AddCallee(contractAddress);
         counter = addContract.add(counter, value);
 
         return counter.seal(publicKey);
@@ -38,10 +39,8 @@ contract AddCaller {
 
     function addViaContractCallU32(
         inEuint32 calldata value,
-        address contractAddress,
         bytes32 publicKey
     ) public returns (bytes memory) {
-        AddCallee addContract = AddCallee(contractAddress);
         counter = addContract.add(counter, FHE.asEuint32(value));
 
         return counter.seal(publicKey);
@@ -49,10 +48,9 @@ contract AddCaller {
 
     function addDelegatePlain(
         uint32 value,
-        address contractAddress,
         bytes32 publicKey
     ) public returns (bytes memory) {
-        contractAddress.delegatecall(
+        address(addContract).delegatecall(
             abi.encodeWithSignature("addDelegate(uint32)", value)
         );
 
@@ -61,10 +59,9 @@ contract AddCaller {
 
     function addDelegate(
         inEuint32 calldata value,
-        address contractAddress,
         bytes32 publicKey
     ) public returns (bytes memory) {
-        contractAddress.delegatecall(
+        address(addContract).delegatecall(
             abi.encodeWithSignature("addDelegate(inEuint32)", value)
         );
 
@@ -73,10 +70,9 @@ contract AddCaller {
 
     function addDelegateU32(
         inEuint32 calldata value,
-        address contractAddress,
         bytes32 publicKey
     ) public returns (bytes memory) {
-        contractAddress.delegatecall(
+        address(addContract).delegatecall(
             abi.encodeWithSignature("addDelegate(euint32)", FHE.asEuint32(value))
         );
 
