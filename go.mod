@@ -19,8 +19,8 @@ require github.com/deckarep/golang-set/v2 v2.3.1 // indirect
 replace github.com/ethereum/go-ethereum => ./go-ethereum
 
 replace (
-	github.com/fhenixprotocol/warp-drive/fhe-bridge => ../fhe-engine-monorepo/fhe-bridge
-	github.com/fhenixprotocol/warp-drive/fhe-driver => ../fhe-engine-monorepo/fhe-driver
+	github.com/fhenixprotocol/warp-drive/fhe-bridge => ./warp-drive/fhe-bridge
+	github.com/fhenixprotocol/warp-drive/fhe-driver => ./warp-drive/fhe-driver
 )
 
 require (
