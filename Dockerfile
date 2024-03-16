@@ -11,7 +11,7 @@ RUN wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add - && \
     apt-get update && \
     apt-get install -y llvm-12-dev libclang-common-12-dev
 
-COPY fheos/warp-drive/ warp-drive/
+COPY warp-drive/ warp-drive/
 WORKDIR /workspace/warp-drive/fhe-engine
 
 RUN RUSTFLAGS="-C target-cpu=native" cargo build --release
