@@ -1,4 +1,4 @@
-ARG BRANCH=latest
+ARG BRANCH=v0.2.0-alpha.0
 ARG DOCKER_NAME=ghcr.io/fhenixprotocol/nitro/fhenix-node-builder:$BRANCH
 
 FROM rust:1.74-slim-bullseye as warp-drive-builder
@@ -27,7 +27,21 @@ RUN apt-get update -qq && apt-get install -y nodejs npm yarn
 RUN npm install -g pnpm
 
 RUN rm -rf fheos/
-COPY . fheos/
+RUN mkdir fheos/
+
+COPY warp-drive fheos/warp-drive
+COPY go-ethereum fheos/go-ethereum
+COPY chains fheos/chains
+COPY cmd fheos/cmd
+COPY precompiles fheos/precompiles
+
+COPY gen.sh fheos/
+COPY gen.go fheos/
+
+COPY go.mod fheos/
+COPY go.sum fheos/
+
+RUN mkdir -p fheos/solidity
 
 WORKDIR fheos
 
@@ -40,6 +54,8 @@ COPY nitro-overrides/precompiles/FheOps.go precompiles/FheOps.go
 RUN go mod tidy
 
 RUN go build -gcflags "all=-N -l" -ldflags="-X github.com/offchainlabs/nitro/cmd/util/confighelpers.version= -X github.com/offchainlabs/nitro/cmd/util/confighelpers.datetime= -X github.com/offchainlabs/nitro/cmd/util/confighelpers.modified=" -o target/bin/nitro "/workspace/cmd/nitro"
+
+COPY Makefile fheos/
 
 RUN cd fheos && make build
 
@@ -54,9 +70,15 @@ COPY --from=warp-drive-builder /workspace/warp-drive/fhe-engine/config/fhe_engin
 COPY --from=winning /workspace/target/bin/nitro /usr/local/bin/
 COPY --from=winning /workspace/fheos/build/main /usr/local/bin/fheos
 
-RUN fheos init-db
-RUN fheos generate-keys
+COPY deployment/run.sh run.sh
+
+RUN sudo chmod +x ./run.sh
+RUN sudo chown -R user:user /home/user/keys
+
+RUN sed -i '/^keys_folder *=.*/s//keys_folder = "\/home\/user\/keys" /' /home/user/fhenix/fhe_engine.toml
+
+RUN sudo jq '.conf |= (.fhenix = .tfhe | del(.tfhe))' /config/sequencer_config.json > temp.json && sudo mv temp.json /config/sequencer_config.json
 
 
-
+CMD ["./run.sh"]
 
