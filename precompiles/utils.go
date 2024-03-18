@@ -107,8 +107,10 @@ const (
 	FheUint8  fheUintType = 0
 	FheUint16 fheUintType = 1
 	FheUint32 fheUintType = 2
+
+	FheBool fheUintType = 13
 )
 
 func isValidType(t byte) bool {
-	return t >= uint8(FheUint8) && t <= uint8(FheUint32)
+	return t >= uint8(FheUint8) && t <= uint8(FheBool)
 }

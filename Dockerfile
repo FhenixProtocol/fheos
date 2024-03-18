@@ -11,7 +11,19 @@ RUN wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add - && \
     apt-get update && \
     apt-get install -y llvm-12-dev libclang-common-12-dev
 
+# Copy all the stuff needed to download all the packages
+# so we don't have to download everything every time just to change something small
+COPY warp-drive/fhe-engine/rust-toolchain warp-drive/fhe-engine/rust-toolchain
+COPY warp-drive/fhe-engine/Cargo.toml warp-drive/fhe-engine/Cargo.toml
+COPY warp-drive/fhe-engine/Cargo.lock warp-drive/fhe-engine/Cargo.lock
+COPY warp-drive/fhe-bridge warp-drive/fhe-bridge
+
+# Update rust version & install packages
+RUN cd warp-drive/fhe-engine && RUSTFLAGS="-C target-cpu=native" cargo update
+
+# Copy the rest of the stuff so we can actually build it
 COPY warp-drive/ warp-drive/
+
 WORKDIR /workspace/warp-drive/fhe-engine
 
 RUN RUSTFLAGS="-C target-cpu=native" cargo build --release

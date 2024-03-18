@@ -1,4 +1,4 @@
-lockfileVersion: '6.1'
+lockfileVersion: '6.0'
 
 settings:
   autoInstallPeers: true
@@ -78,8 +78,8 @@ devDependencies:
     specifier: ^6.9.0
     version: 6.9.1
   fhenixjs:
-    specifier: ^0.1.0-beta.2
-    version: 0.1.0-beta.2
+    specifier: file:../../fhenix.js
+    version: file:../../fhenix.js
   fs-extra:
     specifier: ^10.1.0
     version: 10.1.0
@@ -3600,19 +3600,6 @@ packages:
       bser: 2.1.1
     dev: true
 
-  /fhenixjs@0.1.0-beta.2:
-    resolution: {integrity: sha512-mHTNijKARjIse/dYgzWkfjpbBUwk3CS9m2sXl68lluyfaqUXzeOSzHXfYPxt8VVNhwP9bm7R5GdUYbxMI+Otwg==}
-    dependencies:
-      ethers: 6.9.1
-      node-tfhe: 0.3.1
-      tfhe: 0.3.1
-      tweetnacl: 1.0.3
-      tweetnacl-util: 0.15.1
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
-    dev: true
-
   /file-entry-cache@6.0.1:
     resolution: {integrity: sha512-7Gps/XWymbLk2QLYK4NzpMOrYjMhdIxXuIvy2QBsLE6ljuodKvdkWs/cpyJJ3CVIVpH0Oi1Hvg1ovbMzLdFBBg==}
     engines: {node: ^10.12.0 || >=12.0.0}
@@ -5363,8 +5350,8 @@ packages:
     resolution: {integrity: sha512-y10wOWt8yZpqXmOgRo77WaHEmhYQYGNA6y421PKsKYWEK8aW+cqAphborZDhqfyKrbZEN92CN1X2KbafY2s7Yw==}
     dev: true
 
-  /node-tfhe@0.3.1:
-    resolution: {integrity: sha512-re5tBgPMwoSWl6b/pL13MWKnsBUv9nldAXoWkokG1aiUm9P0aOjJoz0J9+zOwV/dB0i9xN/TI//mnqF3uWAOIg==}
+  /node-tfhe@0.5.3:
+    resolution: {integrity: sha512-72HFj9Lj9hC5PWaW5TH306uPAUUL6We2lAXLW6ibxwsLcSUgEL7NEVGz5MqAYa5PcwpVEvzLDZSHCFRz8glqaQ==}
     dev: true
 
   /nofilter@3.1.0:
@@ -6362,8 +6349,8 @@ packages:
     resolution: {integrity: sha512-N+8UisAXDGk8PFXP4HAzVR9nbfmVJ3zYLAWiTIoqC5v5isinhr+r5uaO8+7r3BMfuNIufIsA7RdpVgacC2cSpw==}
     dev: true
 
-  /tfhe@0.3.1:
-    resolution: {integrity: sha512-PqnsUVChETviwd5ebfJoj9yueUxIKPaSsfSGVmgvpUsUqAlianAx+4UH9hEmjDxgshSRDgm1Fp0/rRgCx2BYog==}
+  /tfhe@0.5.3:
+    resolution: {integrity: sha512-LrZXKPzI/YsLwJA+y41uYvQU+G1/JbXea30eQXXFdLSeYPPO45a9jCL5ZqvkWZkRFA9Ox2/7t86+1ysR/1DNyw==}
     dev: true
 
   /then-request@6.0.2:
@@ -6887,4 +6874,18 @@ packages:
       ethers: ^5.7.0
     dependencies:
       ethers: 5.7.2
+    dev: true
+
+  file:../../fhenix.js:
+    resolution: {directory: ../../fhenix.js, type: directory}
+    name: fhenixjs
+    dependencies:
+      ethers: 6.9.1
+      node-tfhe: 0.5.3
+      tfhe: 0.5.3
+      tweetnacl: 1.0.3
+      tweetnacl-util: 0.15.1
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
     dev: true

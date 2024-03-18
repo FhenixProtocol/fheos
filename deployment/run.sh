@@ -2,7 +2,13 @@
 
 fhe-engine-server -c /home/user/fhenix/fhe_engine.toml &
 
+# otherwise we could end up starting before the server is started
+sleep 2
+
 fheos init-state
+
+# otherwise we could end up starting before the keys are loaded
+sleep 3
 
 node faucet/server.js &
 

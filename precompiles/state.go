@@ -77,16 +77,23 @@ func createFheosState(storage *storage.Storage, version uint64) error {
 		EthCall:       true,
 	}
 
+	// todo: refactor this - currently it causes crashing and weirdness if you try to add a new type
+	// also it's not very flexible
 	zero := make([]byte, 32)
 	var err error
-	ezero := make([][]byte, 3)
+	ezero := make([][]byte, 14)
 
-	for i := 0; i < 3; i++ {
+	for i := 0; i < 6; i++ {
 		ezero[i], _, err = TrivialEncrypt(zero, byte(i), &tempTp)
 		if err != nil {
 			logger.Error("failed to encrypt 0 for ezero", "toType", i, "err", err)
 			return err
 		}
+	}
+	ezero[13], _, err = TrivialEncrypt(zero, byte(13), &tempTp)
+	if err != nil {
+		logger.Error("failed to encrypt 0 for ezero", "toType", 13, "err", err)
+		return err
 	}
 
 	state.EZero = ezero

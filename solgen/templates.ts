@@ -37,11 +37,16 @@ struct SealedArray {
 
 library Common {
     // Values used to communicate types to the runtime.
-    uint8 internal constant EBOOL_TFHE_GO = 0;
+    // Must match values defined in warp-drive protobufs for everything to 
+    // make sense
     uint8 internal constant EUINT8_TFHE_GO = 0;
     uint8 internal constant EUINT16_TFHE_GO = 1;
     uint8 internal constant EUINT32_TFHE_GO = 2;
-
+    uint8 internal constant EUINT64_TFHE_GO = 3;
+    uint8 internal constant EUINT128_TFHE_GO = 4;
+    uint8 internal constant EUINT256_TFHE_GO = 5;
+    uint8 internal constant EBOOL_TFHE_GO = 13;
+    
     function bigIntToBool(uint256 i) internal pure returns (bool) {
         return (i > 0);
     }
@@ -203,11 +208,16 @@ const castFromInputType = (name: string, toType: string): string => {
 };
 
 const castToEbool = (name: string, fromType: string): string => {
-  return `
-    \n    /// @notice Converts a ${fromType} to an ebool
-    function asEbool(${fromType} value) internal pure returns (ebool) {
-        return ne(${name}, as${capitalize(fromType)}(0));
-    }`;
+  // return `
+  //   \n    /// @notice Converts a ${fromType} to an ebool
+  //   function asEbool(${fromType} value) internal pure returns (ebool) {
+  //       return ne(${name}, as${capitalize(fromType)}(0));
+  //   }`;
+  // return `
+  //   /// @notice Converts a ${fromType} to an ebool
+  //   function asEbool(${fromType} value) internal pure returns (ebool) {
+  //         return FHE.as${capitalize(toType)}(${name}.data)
+  // `
 };
 
 export const AsTypeFunction = (fromType: string, toType: string) => {

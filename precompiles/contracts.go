@@ -616,7 +616,6 @@ func TrivialEncrypt(input []byte, toType byte, tp *TxParams) ([]byte, uint64, er
 	if state.EZero != nil && valueToEncrypt.Cmp(big.NewInt(0)) == 0 {
 		// return trivial ciphertext
 		return state.EZero[toType], gas, nil
-
 	}
 
 	// we encrypt this using the computation key no the public key. Also, compact to save space in case this gets saved directly
