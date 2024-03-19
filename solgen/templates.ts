@@ -208,16 +208,11 @@ const castFromInputType = (name: string, toType: string): string => {
 };
 
 const castToEbool = (name: string, fromType: string): string => {
-  // return `
-  //   \n    /// @notice Converts a ${fromType} to an ebool
-  //   function asEbool(${fromType} value) internal pure returns (ebool) {
-  //       return ne(${name}, as${capitalize(fromType)}(0));
-  //   }`;
-  // return `
-  //   /// @notice Converts a ${fromType} to an ebool
-  //   function asEbool(${fromType} value) internal pure returns (ebool) {
-  //         return FHE.as${capitalize(toType)}(${name}.data)
-  // `
+  return `
+    \n    /// @notice Converts a ${fromType} to an ebool
+    function asEbool(${fromType} value) internal pure returns (ebool) {
+        return ne(${name}, as${capitalize(fromType)}(0));
+    }`;
 };
 
 export const AsTypeFunction = (fromType: string, toType: string) => {
