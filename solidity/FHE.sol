@@ -1570,7 +1570,7 @@ library FHE {
     
     /// @notice Converts a euint8 to an ebool
     function asEbool(euint8 value) internal pure returns (ebool) {
-        return ebool.wrap(Impl.cast(Common.EUINT8_TFHE_GO, euint8.unwrap(value), Common.EBOOL_TFHE_GO));
+        return ne(value, asEuint8(0));
     }
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an euint8
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key

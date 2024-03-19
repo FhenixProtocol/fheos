@@ -1,4 +1,4 @@
-lockfileVersion: '6.0'
+lockfileVersion: '6.1'
 
 settings:
   autoInstallPeers: true
@@ -78,8 +78,8 @@ devDependencies:
     specifier: ^6.9.0
     version: 6.9.1
   fhenixjs:
-    specifier: file:../../fhenix.js
-    version: file:../../fhenix.js
+    specifier: ^0.2.0-beta.0
+    version: 0.2.0-beta.0
   fs-extra:
     specifier: ^10.1.0
     version: 10.1.0
@@ -3600,6 +3600,19 @@ packages:
       bser: 2.1.1
     dev: true
 
+  /fhenixjs@0.2.0-beta.0:
+    resolution: {integrity: sha512-HvuVl3yItjBsba7/MUggk81Vw5qDY2VUTa2MEOBmAr84qO2t+Qc6nxotBgSb7hhv6qvUNDsyEaDjimAN0CTNtg==}
+    dependencies:
+      ethers: 6.9.1
+      node-tfhe: 0.5.3
+      tfhe: 0.5.3
+      tweetnacl: 1.0.3
+      tweetnacl-util: 0.15.1
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+    dev: true
+
   /file-entry-cache@6.0.1:
     resolution: {integrity: sha512-7Gps/XWymbLk2QLYK4NzpMOrYjMhdIxXuIvy2QBsLE6ljuodKvdkWs/cpyJJ3CVIVpH0Oi1Hvg1ovbMzLdFBBg==}
     engines: {node: ^10.12.0 || >=12.0.0}
@@ -6874,18 +6887,4 @@ packages:
       ethers: ^5.7.0
     dependencies:
       ethers: 5.7.2
-    dev: true
-
-  file:../../fhenix.js:
-    resolution: {directory: ../../fhenix.js, type: directory}
-    name: fhenixjs
-    dependencies:
-      ethers: 6.9.1
-      node-tfhe: 0.5.3
-      tfhe: 0.5.3
-      tweetnacl: 1.0.3
-      tweetnacl-util: 0.15.1
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
     dev: true

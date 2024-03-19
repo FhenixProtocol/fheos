@@ -1212,7 +1212,7 @@ describe('Test AsEbool', () =>  {
                 continue;
             }
 
-            const encInput = await fheContract.instance.encrypt_uint8(Number(testCase.input));
+            const encInput = await fheContract.instance.encrypt_bool(!!Number(testCase.input));
             let decryptedResult = await contract.castFromPreEncryptedToEbool(encInput.data);
             expect(decryptedResult).toBe(testCase.output);
         }

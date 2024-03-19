@@ -2,6 +2,7 @@ ARG BRANCH=v0.2.0-alpha.0
 ARG DOCKER_NAME=ghcr.io/fhenixprotocol/nitro/fhenix-node-builder:$BRANCH
 
 FROM rust:1.74-slim-bullseye as warp-drive-builder
+
 WORKDIR /workspace
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get update && \
@@ -10,6 +11,9 @@ RUN wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add - && \
     add-apt-repository 'deb http://apt.llvm.org/bullseye/ llvm-toolchain-bullseye-12 main' && \
     apt-get update && \
     apt-get install -y llvm-12-dev libclang-common-12-dev
+
+ARG EXTRA_RUSTFLAGS="-C target-feature=+aes"
+ENV EXTRA_RUSTFLAGS=$EXTRA_RUSTFLAGS
 
 # Copy all the stuff needed to download all the packages
 # so we don't have to download everything every time just to change something small
@@ -26,7 +30,8 @@ COPY warp-drive/ warp-drive/
 
 WORKDIR /workspace/warp-drive/fhe-engine
 
-RUN RUSTFLAGS="-C target-cpu=native" cargo build --release
+# Todo: fix arm support
+RUN RUSTFLAGS=$EXTRA_RUSTFLAGS cargo build --profile=release-lto
 
 FROM $DOCKER_NAME as winning
 
@@ -46,6 +51,8 @@ COPY go-ethereum fheos/go-ethereum
 COPY chains fheos/chains
 COPY cmd fheos/cmd
 COPY precompiles fheos/precompiles
+
+RUN cd fheos/precompiles/ && pnpm install
 
 COPY gen.sh fheos/
 COPY gen.go fheos/
@@ -76,7 +83,7 @@ FROM ghcr.io/fhenixprotocol/localfhenix:v0.1.0-beta5
 RUN rm -rf /home/user/fhenix/fheosdb
 RUN mkdir -p /home/user/fhenix/fheosdb
 
-COPY --from=warp-drive-builder /workspace/warp-drive/fhe-engine/target/release/fhe-engine-server /usr/bin/fhe-engine-server
+COPY --from=warp-drive-builder /workspace/warp-drive/fhe-engine/target/release-lto/fhe-engine-server /usr/bin/fhe-engine-server
 COPY --from=warp-drive-builder /workspace/warp-drive/fhe-engine/config/fhe_engine.toml /home/user/fhenix/fhe_engine.toml
 
 COPY --from=winning /workspace/target/bin/nitro /usr/local/bin/
