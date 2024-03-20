@@ -37,6 +37,33 @@ contract AsEboolTest {
         revert TestNotFound(test);
     }
 
+    function castFromEuint64ToEbool(uint256 val, string calldata test) public pure returns (bool) {
+        if (Utils.cmp(test, "bound")) {
+            return FHE.asEuint64(val).toBool().decrypt();
+        } else if (Utils.cmp(test, "regular")) {
+            return FHE.decrypt(FHE.asEbool(FHE.asEuint64(val)));
+        }
+        revert TestNotFound(test);
+    }
+
+    function castFromEuint128ToEbool(uint256 val, string calldata test) public pure returns (bool) {
+        if (Utils.cmp(test, "bound")) {
+            return FHE.asEuint128(val).toBool().decrypt();
+        } else if (Utils.cmp(test, "regular")) {
+            return FHE.decrypt(FHE.asEbool(FHE.asEuint128(val)));
+        }
+        revert TestNotFound(test);
+    }
+
+    function castFromEuint256ToEbool(uint256 val, string calldata test) public pure returns (bool) {
+        if (Utils.cmp(test, "bound")) {
+            return FHE.asEuint256(val).toBool().decrypt();
+        } else if (Utils.cmp(test, "regular")) {
+            return FHE.decrypt(FHE.asEbool(FHE.asEuint256(val)));
+        }
+        revert TestNotFound(test);
+    }
+
     function castFromPlaintextToEbool(uint256 val) public pure returns (bool) {
         return FHE.decrypt(FHE.asEbool(val));
     }

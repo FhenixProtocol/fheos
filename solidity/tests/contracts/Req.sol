@@ -16,6 +16,12 @@ contract ReqTest {
             FHE.req(FHE.asEuint16(a));
         } else if (Utils.cmp(test, "req(euint32)")) {
             FHE.req(FHE.asEuint32(a));
+        } else if (Utils.cmp(test, "req(euint64)")) {
+            FHE.req(FHE.asEuint64(a));
+        } else if (Utils.cmp(test, "req(euint128)")) {
+            FHE.req(FHE.asEuint128(a));
+        } else if (Utils.cmp(test, "req(euint256)")) {
+            FHE.req(FHE.asEuint256(a));
         } else if (Utils.cmp(test, "req(ebool)")) {
             bool b = true;
             if (a == 0) {

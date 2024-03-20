@@ -37,6 +37,33 @@ contract AsEuint32Test {
         revert TestNotFound(test);
     }
 
+    function castFromEuint64ToEuint32(uint256 val, string calldata test) public pure returns (uint32) {
+        if (Utils.cmp(test, "bound")) {
+            return FHE.asEuint64(val).toU32().decrypt();
+        } else if (Utils.cmp(test, "regular")) {
+            return FHE.decrypt(FHE.asEuint32(FHE.asEuint64(val)));
+        }
+        revert TestNotFound(test);
+    }
+
+    function castFromEuint128ToEuint32(uint256 val, string calldata test) public pure returns (uint32) {
+        if (Utils.cmp(test, "bound")) {
+            return FHE.asEuint128(val).toU32().decrypt();
+        } else if (Utils.cmp(test, "regular")) {
+            return FHE.decrypt(FHE.asEuint32(FHE.asEuint128(val)));
+        }
+        revert TestNotFound(test);
+    }
+
+    function castFromEuint256ToEuint32(uint256 val, string calldata test) public pure returns (uint32) {
+        if (Utils.cmp(test, "bound")) {
+            return FHE.asEuint256(val).toU32().decrypt();
+        } else if (Utils.cmp(test, "regular")) {
+            return FHE.decrypt(FHE.asEuint32(FHE.asEuint256(val)));
+        }
+        revert TestNotFound(test);
+    }
+
     function castFromPlaintextToEuint32(uint256 val) public pure returns (uint32) {
         return FHE.decrypt(FHE.asEuint32(val));
     }

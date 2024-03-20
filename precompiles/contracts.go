@@ -2,6 +2,7 @@ package precompiles
 
 import (
 	"encoding/hex"
+	"fmt"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 	"math/big"
 
@@ -563,7 +564,7 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams) ([]byte, uint64, 
 
 	res, err := ct.Cast(castToType)
 	if err != nil {
-		msg := functionName + " Run() error casting ciphertext to"
+		msg := fmt.Sprintf("failed to cast to type %s", UtypeToString(toType))
 		logger.Error(msg, " type ", castToType)
 		return nil, 0, vm.ErrExecutionReverted
 	}

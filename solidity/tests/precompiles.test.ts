@@ -1,7 +1,8 @@
 import { ethers } from 'hardhat';
 import { BaseContract } from "ethers";
 import {createFheInstance, fromHexString} from './utils';
-import { AddTestType,
+import {
+    AddTestType,
     LteTestType,
     SubTestType,
     MulTestType,
@@ -26,7 +27,7 @@ import { AddTestType,
     AsEuint8TestType,
     AsEuint16TestType,
     AsEuint32TestType,
-    SealoutputTestType
+    SealoutputTestType, AsEuint64TestType, AsEuint128TestType, AsEuint256TestType
 } from './abis';
 
 const deployContractFromSigner = async (con: any, signer: any, nonce?: number) => {
@@ -343,6 +344,18 @@ describe('Test Mul', () =>  {
                 },
             ],
         },
+        {
+            function: ["mul(euint64,euint64)", "euint64.mul(euint64)", "euint64 * euint64"],
+            cases: [
+                { a: 2, b: 3, expectedResult: 6, name: "" },
+                {
+                    a: 3000300300,
+                    b: 2000200200,
+                    expectedResult: BigInt(6001201260120060000n),
+                    name: " with large number",
+                },
+            ],
+        }
     ];
 
     for (const test of testCases) {
@@ -426,6 +439,18 @@ describe('Test Select', () =>  {
             cases,
         },
         {
+            function: "select: euint64",
+            cases,
+        },
+        {
+            function: "select: euint128",
+            cases,
+        },
+        {
+            function: "select: euint256",
+            cases,
+        },
+        {
             function: "select: ebool",
             cases: [
                 { control: true, a: 0, b: 1, expectedResult: 0, name: "true" },
@@ -469,6 +494,18 @@ describe('Test Req', () =>  {
         },
         {
             function: "req(euint32)",
+            cases,
+        },
+        {
+            function: "req(euint64)",
+            cases,
+        },
+        {
+            function: "req(euint128)",
+            cases,
+        },
+        {
+            function: "req(euint256)",
             cases,
         },
         {
@@ -536,7 +573,16 @@ describe('Test Div', () =>  {
                 { a: 4, b: 3, expectedResult: 1, name: " with reminder" },
                 { a: 4, b: 0, expectedResult: 2 ** 32 - 1, name: " div by 0" },
             ],
-        }
+        },
+        // {
+        //     function: ["div(euint64,euint64)", "euint64.div(euint64)", "euint64 / euint64"],
+        //     cases: [
+        //         { a: 4, b: 2, expectedResult: 2, name: "" },
+        //         { a: 4, b: 3, expectedResult: 1, name: " with reminder" },
+        //         { a: 4, b: 0, expectedResult: 2 ** 64 - 1, name: " div by 0" },
+        //     ],
+        // }
+        // uint128 and uint256 aren't permitted at this time
     ];
     for (const test of testCases) {
         for (const testCase of test.cases) {
@@ -577,7 +623,19 @@ describe('Test Gt', () =>  {
         {
             function: ["gt(euint32,euint32)", "euint32.gt(euint32)"],
             cases,
-        }
+        },
+        {
+            function: ["gt(euint64,euint64)", "euint64.gt(euint64)"],
+            cases,
+        },
+        {
+            function: ["gt(euint128,euint128)", "euint128.gt(euint128)"],
+            cases,
+        },
+        // {
+        //     function: ["gt(euint256,euint256)", "euint256.gt(euint256)"],
+        //     cases,
+        // }
     ];
     for (const test of testCases) {
         for (const testCase of test.cases) {
@@ -618,7 +676,19 @@ describe('Test Gte', () =>  {
         {
             function: ["gte(euint32,euint32)", "euint32.gte(euint32)"],
             cases,
-        }
+        },
+        {
+            function: ["gte(euint64,euint64)", "euint64.gte(euint64)"],
+            cases,
+        },
+        {
+            function: ["gte(euint128,euint128)", "euint128.gte(euint128)"],
+            cases,
+        },
+        // {
+        //     function: ["gte(euint256,euint256)", "euint256.gte(euint256)"],
+        //     cases,
+        // }
     ];
     for (const test of testCases) {
         for (const testCase of test.cases) {
@@ -660,6 +730,10 @@ describe('Test Rem', () =>  {
             function: ["rem(euint32,euint32)", "euint32.rem(euint32)", "euint32 % euint32"],
             cases,
         },
+        // {
+        //     function: ["rem(euint64,euint64)", "euint64.rem(euint64)", "euint64 % euint64"],
+        //     cases,
+        // }
     ];
 
     for (const test of testCases) {
@@ -702,6 +776,18 @@ describe('Test And', () =>  {
             function: ["and(euint32,euint32)", "euint32.and(euint32)", "euint32 & euint32"],
             cases,
         },
+        {
+            function: ["and(euint64,euint64)", "euint64.and(euint64)", "euint64 & euint64"],
+            cases,
+        },
+        {
+            function: ["and(euint128,euint128)", "euint128.and(euint128)", "euint128 & euint128"],
+            cases,
+        },
+        // {
+        //     function: ["and(euint256,euint256)", "euint256.and(euint256)", "euint256 & euint256"],
+        //     cases,
+        // },
         {
             function: ["and(ebool,ebool)", "ebool.and(ebool)", "ebool & ebool"],
             cases: [
@@ -752,6 +838,18 @@ describe('Test Or', () =>  {
             function: ["or(euint32,euint32)", "euint32.or(euint32)", "euint32 | euint32"],
             cases,
         },
+        {
+            function: ["or(euint64,euint64)", "euint64.or(euint64)", "euint64 | euint64"],
+            cases,
+        },
+        {
+            function: ["or(euint128,euint128)", "euint128.or(euint128)", "euint128 | euint128"],
+            cases,
+        },
+        // {
+        //     function: ["or(euint256,euint256)", "euint256.or(euint256)", "euint256 | euint256"],
+        //     cases,
+        // },
         {
             function: ["or(ebool,ebool)", "ebool.or(ebool)", "ebool | ebool"],
             cases: [
@@ -806,6 +904,18 @@ describe('Test Xor', () =>  {
             cases,
         },
         {
+            function: ["xor(euint64,euint64)", "euint64.xor(euint64)", "euint64 ^ euint64"],
+            cases,
+        },
+        {
+            function: ["xor(euint128,euint128)", "euint128.xor(euint128)", "euint128 ^ euint128"],
+            cases,
+        },
+        // {
+        //     function: ["xor(euint256,euint256)", "euint256.xor(euint256)", "euint256 ^ euint256"],
+        //     cases,
+        // },
+        {
             function: ["xor(ebool,ebool)", "ebool.xor(ebool)", "ebool ^ ebool"],
             cases: [
                 { a: 9, b: 15, expectedResult: 0, name: "" },
@@ -856,6 +966,18 @@ describe('Test Eq', () =>  {
             function: ["eq(euint32,euint32)", "euint32.eq(euint32)"],
             cases,
         },
+        {
+            function: ["eq(euint64,euint64)", "euint64.eq(euint64)"],
+            cases,
+        },
+        {
+            function: ["eq(euint128,euint128)", "euint128.eq(euint128)"],
+            cases,
+        },
+        // {
+        //     function: ["eq(euint256,euint256)", "euint256.eq(euint256)"],
+        //     cases,
+        // },
         {
             function: ["eq(ebool,ebool)", "ebool.eq(ebool)"],
             cases: [
@@ -908,6 +1030,18 @@ describe('Test Ne', () =>  {
             cases,
         },
         {
+            function: ["ne(euint64,euint64)", "euint64.ne(euint64)"],
+            cases,
+        },
+        {
+            function: ["ne(euint128,euint128)", "euint128.ne(euint128)"],
+            cases,
+        },
+        // {
+        //     function: ["ne(euint256,euint256)", "euint256.ne(euint256)"],
+        //     cases,
+        // },
+        {
             function: ["ne(ebool,ebool)", "ebool.ne(ebool)"],
             cases: [
                 { a: 1, b: 1, expectedResult: 0, name: " 1 == 1" },
@@ -958,6 +1092,18 @@ describe('Test Min', () =>  {
             function: ["min(euint32,euint32)", "euint32.min(euint32)"],
             cases,
         },
+        {
+            function: ["min(euint64,euint64)", "euint64.min(euint64)"],
+            cases,
+        },
+        {
+            function: ["min(euint128,euint128)", "euint128.min(euint128)"],
+            cases,
+        },
+        // {
+        //     function: ["min(euint256,euint256)", "euint256.min(euint256)"],
+        //     cases,
+        // }
     ];
 
     for (const test of testCases) {
@@ -1000,6 +1146,18 @@ describe('Test Max', () =>  {
             function: ["max(euint32,euint32)", "euint32.max(euint32)"],
             cases,
         },
+        {
+            function: ["max(euint64,euint64)", "euint64.max(euint64)"],
+            cases,
+        },
+        {
+            function: ["max(euint128,euint128)", "euint128.max(euint128)"],
+            cases,
+        },
+        // {
+        //     function: ["max(euint256,euint256)", "euint256.max(euint256)"],
+        //     cases,
+        // }
     ];
 
     for (const test of testCases) {
@@ -1050,6 +1208,18 @@ describe('Test Shl', () =>  {
             function: ["shl(euint32,euint32)", "euint32.shl(euint32)"],
             cases,
         },
+        {
+            function: ["shl(euint64,euint64)", "euint64.shl(euint64)"],
+            cases,
+        },
+        {
+            function: ["shl(euint128,euint128)", "euint128.shl(euint128)"],
+            cases,
+        },
+        // {
+        //     function: ["shl(euint256,euint256)", "euint256.shl(euint256)"],
+        //     cases,
+        // }
     ];
 
     for (const test of testCases) {
@@ -1095,6 +1265,18 @@ describe('Test Shr', () =>  {
             function: ["shr(euint32,euint32)", "euint32.shr(euint32)"],
             cases,
         },
+        {
+            function: ["shr(euint64,euint64)", "euint64.shr(euint64)"],
+            cases,
+        },
+        {
+            function: ["shr(euint128,euint128)", "euint128.shr(euint128)"],
+            cases,
+        },
+        // {
+        //     function: ["shr(euint256,euint256)", "euint256.shr(euint256)"],
+        //     cases,
+        // }
     ];
 
     for (const test of testCases) {
@@ -1141,6 +1323,18 @@ describe('Test Not', () =>  {
             function: "not(ebool)",
             cases: [{ value: 1, expectedResult: 0, name: " !true" }, { value: 0, expectedResult: 1, name: " !false" }],
         },
+        // {
+        //     function: "not(euint64)",
+        //     //     cases: [{ value: 0b
+        // },
+        // {
+        //     function: "not(euint128)",
+        //     // cases: [{ value: 0b
+        // },
+        // {
+        //     function: "not(euint256)",
+        //     // cases: [{ value: 0b
+        // }
     ];
 
     for (const test of testCases) {
@@ -1193,6 +1387,33 @@ describe('Test AsEbool', () =>  {
         it(`From euint32 - ${funcType}`, async () => {
             for (const testCase of cases) {
                 let decryptedResult = await contract.castFromEuint32ToEbool(testCase.input, funcType);
+                expect(decryptedResult).toBe(testCase.output);
+            }
+        });
+    }
+
+    for (const funcType of funcTypes) {
+        it(`From euint64 - ${funcType}`, async () => {
+            for (const testCase of cases) {
+                let decryptedResult = await contract.castFromEuint64ToEbool(testCase.input, funcType);
+                expect(decryptedResult).toBe(testCase.output);
+            }
+        });
+    }
+
+    for (const funcType of funcTypes) {
+        it(`From euint128 - ${funcType}`, async () => {
+            for (const testCase of cases) {
+                let decryptedResult = await contract.castFromEuint128ToEbool(testCase.input, funcType);
+                expect(decryptedResult).toBe(testCase.output);
+            }
+        });
+    }
+
+    for (const funcType of funcTypes) {
+        it(`From euint256 - ${funcType}`, async () => {
+            for (const testCase of cases) {
+                let decryptedResult = await contract.castFromEuint256ToEbool(testCase.input, funcType);
                 expect(decryptedResult).toBe(testCase.output);
             }
         });
@@ -1258,6 +1479,27 @@ describe('Test AsEuint8', () =>  {
         });
     }
 
+    for (const funcType of funcTypes) {
+        it(`From euint64 - ${funcType}`, async () => {
+            let decryptedResult = await contract.castFromEuint64ToEuint8(value, funcType);
+            expect(decryptedResult).toBe(value);
+        });
+    }
+
+    for (const funcType of funcTypes) {
+        it(`From euint128 - ${funcType}`, async () => {
+            let decryptedResult = await contract.castFromEuint128ToEuint8(value, funcType);
+            expect(decryptedResult).toBe(value);
+        });
+    }
+
+    for (const funcType of funcTypes) {
+        it(`From euint256 - ${funcType}`, async () => {
+            let decryptedResult = await contract.castFromEuint256ToEuint8(value, funcType);
+            expect(decryptedResult).toBe(value);
+        });
+    }
+
     it(`From plaintext`, async () => {
         let decryptedResult = await contract.castFromPlaintextToEuint8(value);
         expect(decryptedResult).toBe(value);
@@ -1306,6 +1548,27 @@ describe('Test AsEuint16', () =>  {
     for (const funcType of funcTypes) {
         it(`From euint32 - ${funcType}`, async () => {
             let decryptedResult = await contract.castFromEuint32ToEuint16(value, funcType);
+            expect(decryptedResult).toBe(value);
+        });
+    }
+
+    for (const funcType of funcTypes) {
+        it(`From euint64 - ${funcType}`, async () => {
+            let decryptedResult = await contract.castFromEuint64ToEuint16(value, funcType);
+            expect(decryptedResult).toBe(value);
+        });
+    }
+
+    for (const funcType of funcTypes) {
+        it(`From euint128 - ${funcType}`, async () => {
+            let decryptedResult = await contract.castFromEuint128ToEuint16(value, funcType);
+            expect(decryptedResult).toBe(value);
+        });
+    }
+
+    for (const funcType of funcTypes) {
+        it(`From euint256 - ${funcType}`, async () => {
+            let decryptedResult = await contract.castFromEuint256ToEuint16(value, funcType);
             expect(decryptedResult).toBe(value);
         });
     }
@@ -1362,6 +1625,27 @@ describe('Test AsEuint32', () =>  {
         });
     }
 
+    for (const funcType of funcTypes) {
+        it(`From euint64 - ${funcType}`, async () => {
+            let decryptedResult = await contract.castFromEuint64ToEuint32(value, funcType);
+            expect(decryptedResult).toBe(value);
+        });
+    }
+
+    for (const funcType of funcTypes) {
+        it(`From euint128 - ${funcType}`, async () => {
+            let decryptedResult = await contract.castFromEuint128ToEuint32(value, funcType);
+            expect(decryptedResult).toBe(value);
+        });
+    }
+
+    for (const funcType of funcTypes) {
+        it(`From euint256 - ${funcType}`, async () => {
+            let decryptedResult = await contract.castFromEuint256ToEuint32(value, funcType);
+            expect(decryptedResult).toBe(value);
+        });
+    }
+
     it(`From plaintext`, async () => {
         let decryptedResult = await contract.castFromPlaintextToEuint32(value);
         expect(decryptedResult).toBe(value);
@@ -1370,6 +1654,224 @@ describe('Test AsEuint32', () =>  {
     it(`From pre encrypted`, async () => {
         const encInput = await fheContract.instance.encrypt_uint32(Number(value));
         let decryptedResult = await contract.castFromPreEncryptedToEuint32(encInput.data);
+        expect(decryptedResult).toBe(value);
+    });
+});
+
+describe('Test AsEuint64', () =>  {
+    let contract;
+    let fheContract;
+
+    // We don't really need it as test but it is a test since it is async
+    it(`Test Contract Deployment`, async () => {
+        const baseContract = await deployContract('AsEuint64Test');
+        contract = baseContract  as AsEuint64TestType;
+
+        const contractAddress = await baseContract.getAddress();
+        fheContract = await getFheContract(contractAddress);
+
+        expect(contract).toBeTruthy();
+        expect(fheContract).toBeTruthy();
+    });
+
+    const value = BigInt(1);
+    const funcTypes = ["regular", "bound"];
+
+    for (const funcType of funcTypes) {
+        it(`From ebool - ${funcType}`, async () => {
+            let decryptedResult = await contract.castFromEboolToEuint64(value, funcType);
+            expect(decryptedResult).toBe(value);
+        });
+    }
+
+    for (const funcType of funcTypes) {
+        it(`From euint8 - ${funcType}`, async () => {
+            let decryptedResult = await contract.castFromEuint8ToEuint64(value, funcType);
+            expect(decryptedResult).toBe(value);
+        });
+    }
+
+    for (const funcType of funcTypes) {
+        it(`From euint16 - ${funcType}`, async () => {
+            let decryptedResult = await contract.castFromEuint16ToEuint64(value, funcType);
+            expect(decryptedResult).toBe(value);
+        });
+    }
+
+    for (const funcType of funcTypes) {
+        it(`From euint32 - ${funcType}`, async () => {
+            let decryptedResult = await contract.castFromEuint32ToEuint64(value, funcType);
+            expect(decryptedResult).toBe(value);
+        });
+    }
+
+    for (const funcType of funcTypes) {
+        it(`From euint128 - ${funcType}`, async () => {
+            let decryptedResult = await contract.castFromEuint128ToEuint64(value, funcType);
+            expect(decryptedResult).toBe(value);
+        });
+    }
+
+    for (const funcType of funcTypes) {
+        it(`From euint256 - ${funcType}`, async () => {
+            let decryptedResult = await contract.castFromEuint256ToEuint64(value, funcType);
+            expect(decryptedResult).toBe(value);
+        });
+    }
+
+    it(`From plaintext`, async () => {
+        let decryptedResult = await contract.castFromPlaintextToEuint64(value);
+        expect(decryptedResult).toBe(value);
+    });
+
+    it(`From pre encrypted`, async () => {
+        const encInput = await fheContract.instance.encrypt_uint64(value);
+        let decryptedResult = await contract.castFromPreEncryptedToEuint64(encInput.data);
+        expect(decryptedResult).toBe(value);
+    });
+});
+
+
+describe('Test AsEuint128', () => {
+    let contract;
+    let fheContract;
+
+    it(`Test Contract Deployment`, async () => {
+        const baseContract = await deployContract('AsEuint128Test');
+        contract = baseContract as AsEuint128TestType;
+
+        const contractAddress = await baseContract.getAddress();
+        fheContract = await getFheContract(contractAddress);
+
+        expect(contract).toBeTruthy();
+        expect(fheContract).toBeTruthy();
+    });
+
+    const value = BigInt(1);
+    const funcTypes = ["regular", "bound"];
+
+    for (const funcType of funcTypes) {
+        it(`From ebool - ${funcType}`, async () => {
+            let decryptedResult = await contract.castFromEboolToEuint128(value, funcType);
+            expect(decryptedResult).toBe(value);
+        });
+    }
+
+    for (const funcType of funcTypes) {
+        it(`From euint8 - ${funcType}`, async () => {
+            let decryptedResult = await contract.castFromEuint8ToEuint128(value, funcType);
+            expect(decryptedResult).toBe(value);
+        });
+    }
+
+    for (const funcType of funcTypes) {
+        it(`From euint16 - ${funcType}`, async () => {
+            let decryptedResult = await contract.castFromEuint16ToEuint128(value, funcType);
+            expect(decryptedResult).toBe(value);
+        });
+    }
+
+    for (const funcType of funcTypes) {
+        it(`From euint32 - ${funcType}`, async () => {
+            let decryptedResult = await contract.castFromEuint32ToEuint128(value, funcType);
+            expect(decryptedResult).toBe(value);
+        });
+    }
+
+    for (const funcType of funcTypes) {
+        it(`From euint64 - ${funcType}`, async () => {
+            let decryptedResult = await contract.castFromEuint64ToEuint128(value, funcType);
+            expect(decryptedResult).toBe(value);
+        });
+    }
+
+    for (const funcType of funcTypes) {
+        it(`From euint256 - ${funcType}`, async () => {
+            let decryptedResult = await contract.castFromEuint256ToEuint128(value, funcType);
+            expect(decryptedResult).toBe(value);
+        });
+    }
+
+    it(`From plaintext`, async () => {
+        let decryptedResult = await contract.castFromPlaintextToEuint128(value);
+        expect(decryptedResult).toBe(value);
+    });
+
+    it(`From pre encrypted`, async () => {
+        const encInput = await fheContract.instance.encrypt_uint128(value);
+        let decryptedResult = await contract.castFromPreEncryptedToEuint128(encInput.data);
+        expect(decryptedResult).toBe(value);
+    });
+});
+
+describe('Test AsEuint256', () =>  {
+    let contract;
+    let fheContract;
+
+    it(`Test Contract Deployment`, async () => {
+        const baseContract = await deployContract('AsEuint256Test');
+        contract = baseContract as AsEuint256TestType;
+
+        const contractAddress = await baseContract.getAddress();
+        fheContract = await getFheContract(contractAddress);
+
+        expect(contract).toBeTruthy();
+        expect(fheContract).toBeTruthy();
+    });
+
+    const value = BigInt(1);
+    const funcTypes = ["regular", "bound"];
+
+    for (const funcType of funcTypes) {
+        it(`From ebool - ${funcType}`, async () => {
+            let decryptedResult = await contract.castFromEboolToEuint256(value, funcType);
+            expect(decryptedResult).toBe(value);
+        });
+    }
+
+    for (const funcType of funcTypes) {
+        it(`From euint8 - ${funcType}`, async () => {
+            let decryptedResult = await contract.castFromEuint8ToEuint256(value, funcType);
+            expect(decryptedResult).toBe(value);
+        });
+    }
+
+    for (const funcType of funcTypes) {
+        it(`From euint16 - ${funcType}`, async () => {
+            let decryptedResult = await contract.castFromEuint16ToEuint256(value, funcType);
+            expect(decryptedResult).toBe(value);
+        });
+    }
+
+    for (const funcType of funcTypes) {
+        it(`From euint32 - ${funcType}`, async () => {
+            let decryptedResult = await contract.castFromEuint32ToEuint256(value, funcType);
+            expect(decryptedResult).toBe(value);
+        });
+    }
+
+    for (const funcType of funcTypes) {
+        it(`From euint64 - ${funcType}`, async () => {
+        let decryptedResult = await contract.castFromEuint64ToEuint256(value, funcType);
+        expect(decryptedResult).toBe(value);
+        });
+    }
+
+    for (const funcType of funcTypes) {
+        it(`From euint128 - ${funcType}`, async () => {
+            let decryptedResult = await contract.castFromEuint128ToEuint256(value, funcType);
+            expect(decryptedResult).toBe(value);
+        });
+    }
+
+    it(`From plaintext`, async () => {
+        let decryptedResult = await contract.castFromPlaintextToEuint256(value);
+        expect(decryptedResult).toBe(value);
+    });
+
+    it(`From pre encrypted`, async () => {
+        const encInput = await fheContract.instance.encrypt_uint256(value); // Adjust encryption method if necessary
+        let decryptedResult = await contract.castFromPreEncryptedToEuint256(encInput.data);
         expect(decryptedResult).toBe(value);
     });
 });
