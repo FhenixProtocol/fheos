@@ -35,7 +35,7 @@ build:
 
 .PHONY: build-configserver
 build-configserver:
-    go build -o build/configserver ./cmd/configserver/
+	go build -o build/configserver ./cmd/configserver/
 
 .PHONY: clean
 clean:
