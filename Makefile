@@ -33,6 +33,10 @@ test: check_network_is_running gen compile
 build:
 	go build -o build/main ./cmd/
 
+.PHONY: build-configserver
+build-configserver:
+    go build -o build/configserver ./cmd/configserver/
+
 .PHONY: clean
 clean:
 	rm -r build/*
