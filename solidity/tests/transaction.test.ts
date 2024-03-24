@@ -50,7 +50,9 @@ describe("Test Transactions Scenarios", () => {
     expect(Number(counter)).toEqual(8);
   });
 
-  // todo: this fails!
+  // TODO: this test fails! It seems that there is some error with:
+  //   a = decypt(encCounter)
+  //   c = a + b      // doing an addition operation with a previously encrypted number seems to revert!
   it.skip("Add via contract call as Plaintext", async () => {
     const { instance, permit } = await createFheInstance(contractAddr);
 
