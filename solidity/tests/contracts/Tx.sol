@@ -65,6 +65,11 @@ contract AddCaller {
 
         return counter.seal(publicKey);
     }
+
+    //utility func
+    function returnPlainCounter() public view returns (uint256) {
+        return FHE.decrypt(counter);
+    }
 }
 
 contract AddCallee {
@@ -79,6 +84,7 @@ contract AddCallee {
     }
 
     function add(uint32 a, uint32 b) public pure returns (euint32 output) {
+        // TODO: this fails for some reason. "a", a decrypted uint, cannot be used with "+"
         return FHE.asEuint32(a + b);
     }
 
