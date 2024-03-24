@@ -68,7 +68,7 @@ describe("Test Transactions Scenarios", () => {
     expect(Number(counter)).toEqual(9);
   });
 
-  it.only("Add via contract call as Encrypted Input", async () => {
+  it("Add via contract call - pass pass InEuint32", async () => {
     const { instance, permit } = await createFheInstance(contractAddr);
     const encInput = await instance.encrypt_uint32(10);
 
@@ -79,6 +79,24 @@ describe("Test Transactions Scenarios", () => {
 
     // 2 - real call + query
     const encCounterReceipt = await contractCaller.addViaContractCall(encInput, permit.publicKey);
+    await encCounterReceipt.wait();
+
+    const getCounterResponse = await contractCaller.getCounter(permit.publicKey);
+    const counter = instance.unseal(contractAddr, getCounterResponse);
+    expect(Number(counter)).toEqual(10);
+  });
+
+  it("Add via contract call - pass Euint32", async () => {
+    const { instance, permit } = await createFheInstance(contractAddr);
+    const encInput = await instance.encrypt_uint32(10);
+
+    // 1 - static call
+    const encCounter = await contractCaller.addViaContractCallU32.staticCall(encInput, permit.publicKey);
+    const counterStatic = instance.unseal(contractAddr, encCounter);
+    expect(Number(counterStatic)).toEqual(10);
+
+    // 2 - real call + query
+    const encCounterReceipt = await contractCaller.addViaContractCallU32(encInput, permit.publicKey);
     await encCounterReceipt.wait();
 
     const getCounterResponse = await contractCaller.getCounter(permit.publicKey);
