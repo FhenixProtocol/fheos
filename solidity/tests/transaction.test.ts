@@ -32,22 +32,38 @@ describe.only("Test Transactions Scenarios", () => {
     expect(contractAddr).toBeTruthy();
   });
 
-  it.only("Test simple Tx - static call ", async () => {
-    const { instance, permit } = await createFheInstance(contractAddr);
-    const encInput = await instance.encrypt_uint32(7);
-    const encCounterResponse = await contractCaller.addTx.staticCall(encInput, permit.publicKey);
-    const counter = instance.unseal(contractAddr, encCounterResponse);
-    expect(Number(counter)).toEqual(7);
-  });
-
-  it.only("Test simple Tx - query for state change", async () => {
+  it("Basic Add Tx", async () => {
     const { instance, permit } = await createFheInstance(contractAddr);
     const encInput = await instance.encrypt_uint32(8);
-    const encCounterResponse = await contractCaller.addTx(encInput, permit.publicKey);
-    await encCounterResponse.wait();
+
+    // 1 - static call
+    const encCounter = await contractCaller.addTx.staticCall(encInput, permit.publicKey);
+    const counterStatic = instance.unseal(contractAddr, encCounter);
+    expect(Number(counterStatic)).toEqual(8);
+
+    // 2 - real call + query
+    const encCounterReceipt = await contractCaller.addTx(encInput, permit.publicKey);
+    await encCounterReceipt.wait();
 
     const getCounterResponse = await contractCaller.getCounter(permit.publicKey);
     const counter = instance.unseal(contractAddr, getCounterResponse);
     expect(Number(counter)).toEqual(8);
+  });
+
+  it("Add via contract call", async () => {
+    const { instance, permit } = await createFheInstance(contractAddr);
+
+    // 1 - static call
+    const encCounter = await contractCaller.addViaContractCallAsPlain.staticCall(9, permit.publicKey);
+    const counterStatic = instance.unseal(contractAddr, encCounter);
+    expect(Number(counterStatic)).toEqual(9);
+
+    // 2 - real call + query
+    const encCounterReceipt = await contractCaller.addViaContractCallAsPlain(9, permit.publicKey);
+    await encCounterReceipt.wait();
+
+    const getCounterResponse = await contractCaller.getCounter(permit.publicKey);
+    const counter = instance.unseal(contractAddr, getCounterResponse);
+    expect(Number(counter)).toEqual(9);
   });
 });
