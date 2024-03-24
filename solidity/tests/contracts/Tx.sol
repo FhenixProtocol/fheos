@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: MIT
+// solhint-disable one-contract-per-file
+// solhint-disable avoid-low-level-calls
 pragma solidity ^0.8.19;
 
 import { FHE, euint32, inEuint32 } from "../../FHE.sol";
@@ -20,10 +22,6 @@ contract AddCaller {
 
     function addTx(inEuint32 calldata value, bytes32 publicKey) public returns (bytes memory) {
         counter = counter.add(FHE.asEuint32(value));
-        return counter.seal(publicKey);
-    }
-
-    function getCounter(bytes32 publicKey) public view returns (bytes memory) {
         return counter.seal(publicKey);
     }
 
@@ -92,9 +90,13 @@ contract AddCaller {
         return counter.seal(publicKey);
     }
 
-    // utility func
+    // utility funcs
     function returnPlainCounter() public view returns (uint256) {
         return FHE.decrypt(counter);
+    }
+
+    function getCounter(bytes32 publicKey) public view returns (bytes memory) {
+        return counter.seal(publicKey);
     }
 }
 
