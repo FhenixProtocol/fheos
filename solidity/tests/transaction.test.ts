@@ -104,13 +104,31 @@ describe("Test Transactions Scenarios", () => {
     expect(Number(counter)).toEqual(11);
   });
 
+  it("Add via VIEW contract call - pass Euint32", async () => {
+    const { instance, permit } = await createFheInstance(contractAddr);
+    const encInput = await instance.encrypt_uint32(11);
+
+    // 1 - static call
+    const encCounter = await contractCaller.addViaViewContractCallU32.staticCall(encInput, permit.publicKey);
+    const counterStatic = instance.unseal(contractAddr, encCounter);
+    expect(Number(counterStatic)).toEqual(16);
+
+    // 2 - real call + query
+    const encCounterReceipt = await contractCaller.addViaViewContractCallU32(encInput, permit.publicKey);
+    await encCounterReceipt.wait();
+
+    const getCounterResponse = await contractCaller.getCounter(permit.publicKey);
+    const counter = instance.unseal(contractAddr, getCounterResponse);
+    expect(Number(counter)).toEqual(16);
+  });
+
   it("Add via DELEGATE contract call as Plaintext", async () => {
     const { instance, permit } = await createFheInstance(contractAddr);
 
     // 1 - static call
     const encCounter = await contractCaller.addDelegatePlain.staticCall(12, permit.publicKey);
     const counterStatic = instance.unseal(contractAddr, encCounter);
-    expect(Number(counterStatic)).toEqual(12);
+    expect(Number(counterStatic)).toEqual(24);
 
     // 2 - real call + query
     const encCounterReceipt = await contractCaller.addDelegatePlain(12, permit.publicKey);
@@ -118,7 +136,7 @@ describe("Test Transactions Scenarios", () => {
 
     const getCounterResponse = await contractCaller.getCounter(permit.publicKey);
     const counter = instance.unseal(contractAddr, getCounterResponse);
-    expect(Number(counter)).toEqual(12);
+    expect(Number(counter)).toEqual(24);
   });
 
   it("Add via DELEGATE contract call - pass Euint32", async () => {
@@ -128,7 +146,7 @@ describe("Test Transactions Scenarios", () => {
     // 1 - static call
     const encCounter = await contractCaller.addDelegate.staticCall(encInput, permit.publicKey);
     const counterStatic = instance.unseal(contractAddr, encCounter);
-    expect(Number(counterStatic)).toEqual(13);
+    expect(Number(counterStatic)).toEqual(26);
 
     // 2 - real call + query
     const encCounterReceipt = await contractCaller.addDelegate(encInput, permit.publicKey);
@@ -136,7 +154,25 @@ describe("Test Transactions Scenarios", () => {
 
     const getCounterResponse = await contractCaller.getCounter(permit.publicKey);
     const counter = instance.unseal(contractAddr, getCounterResponse);
-    expect(Number(counter)).toEqual(13);
+    expect(Number(counter)).toEqual(26);
+  });
+
+  it("Add via DELEGATE contract call - pass Uint32", async () => {
+    const { instance, permit } = await createFheInstance(contractAddr);
+    const encInput = await instance.encrypt_uint32(14);
+
+    // 1 - static call
+    const encCounter = await contractCaller.addDelegate.staticCall(encInput, permit.publicKey);
+    const counterStatic = instance.unseal(contractAddr, encCounter);
+    expect(Number(counterStatic)).toEqual(28);
+
+    // 2 - real call + query
+    const encCounterReceipt = await contractCaller.addDelegateU32(encInput, permit.publicKey);
+    await encCounterReceipt.wait();
+
+    const getCounterResponse = await contractCaller.getCounter(permit.publicKey);
+    const counter = instance.unseal(contractAddr, getCounterResponse);
+    expect(Number(counter)).toEqual(28);
   });
 
   // function addDelegate(inEuint32 calldata value, bytes32 publicKey) public returns (bytes memory) {

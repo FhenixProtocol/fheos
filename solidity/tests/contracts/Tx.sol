@@ -42,17 +42,23 @@ contract AddCaller {
         return counter.seal(publicKey);
     }
 
+    function addViaViewContractCallU32(inEuint32 calldata value, bytes32 publicKey) public returns (bytes memory) {
+        counter = addContract.addView(counter, FHE.asEuint32(value));
+        return counter.seal(publicKey);
+    }
+
     function addDelegatePlain(uint32 value, bytes32 publicKey) public returns (bytes memory) {
         // value is added twice in this case, to verify that the delegatecall operated on the correct value
         counter = counter.add(FHE.asEuint32(value));
 
-        address(addContract).delegatecall(
+        (bool success, /* bytes memory data */) = address(addContract).delegatecall(
             abi.encodeWithSelector(
                 AddCallee.addDelegatePlain.selector,
                 value
             )
         );
 
+        require(success, "delegate call failed");
         return counter.seal(publicKey);
     }
 
@@ -60,13 +66,14 @@ contract AddCaller {
         // value is added twice, to verify that the delegatecall operated on the correct value
         counter = counter.add(FHE.asEuint32(value));
 
-        address(addContract).delegatecall(
+        (bool success, /* bytes memory data */) = address(addContract).delegatecall(
             abi.encodeWithSelector(
                 AddCallee.addDelegateInEuint.selector,
                 value
             )
         );
 
+        require(success, "delegate call failed");
         return counter.seal(publicKey);
     }
 
@@ -74,13 +81,14 @@ contract AddCaller {
         // value is added twice, to verify that the delegatecall operated on the correct value
         counter = counter.add(FHE.asEuint32(value));
 
-        address(addContract).delegatecall(
+        (bool success, /* bytes memory data */) = address(addContract).delegatecall(
             abi.encodeWithSelector(
                 AddCallee.addDelegateEuint.selector,
                 FHE.asEuint32(value)
             )
         );
 
+        require(success, "delegate call failed");
         return counter.seal(publicKey);
     }
 
@@ -92,6 +100,7 @@ contract AddCaller {
 
 contract AddCallee {
     euint32 private counter;
+    euint32 private constForView = FHE.asEuint32(5);
 
     function add(euint32 a, inEuint32 calldata b) public pure returns (euint32 output) {
         return a + FHE.asEuint32(b);
@@ -99,6 +108,10 @@ contract AddCallee {
 
     function add(euint32 a, euint32 b) public pure returns (euint32 output) {
         return a + b;
+    }
+
+    function addView(euint32 a, euint32 b) public view returns (euint32 output) {
+        return a + b + constForView;
     }
 
     function add(uint32 a, uint32 b) public pure returns (euint32 output) {
