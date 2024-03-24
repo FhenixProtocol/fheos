@@ -43,30 +43,48 @@ contract AddCaller {
     }
 
     function addDelegatePlain(uint32 value, bytes32 publicKey) public returns (bytes memory) {
+        // value is added twice in this case, to verify that the delegatecall operated on the correct value
+        counter = counter.add(FHE.asEuint32(value));
+
         address(addContract).delegatecall(
-            abi.encodeWithSignature("addDelegate(uint32)", value)
+            abi.encodeWithSelector(
+                AddCallee.addDelegatePlain.selector,
+                value
+            )
         );
 
         return counter.seal(publicKey);
     }
 
     function addDelegate(inEuint32 calldata value, bytes32 publicKey) public returns (bytes memory) {
+        // value is added twice, to verify that the delegatecall operated on the correct value
+        counter = counter.add(FHE.asEuint32(value));
+
         address(addContract).delegatecall(
-            abi.encodeWithSignature("addDelegate(inEuint32)", value)
+            abi.encodeWithSelector(
+                AddCallee.addDelegateInEuint.selector,
+                value
+            )
         );
 
         return counter.seal(publicKey);
     }
 
     function addDelegateU32(inEuint32 calldata value, bytes32 publicKey) public returns (bytes memory) {
+        // value is added twice, to verify that the delegatecall operated on the correct value
+        counter = counter.add(FHE.asEuint32(value));
+
         address(addContract).delegatecall(
-            abi.encodeWithSignature("addDelegate(euint32)", FHE.asEuint32(value))
+            abi.encodeWithSelector(
+                AddCallee.addDelegateEuint.selector,
+                FHE.asEuint32(value)
+            )
         );
 
         return counter.seal(publicKey);
     }
 
-    //utility func
+    // utility func
     function returnPlainCounter() public view returns (uint256) {
         return FHE.decrypt(counter);
     }
@@ -88,11 +106,15 @@ contract AddCallee {
         return FHE.asEuint32(a + b);
     }
 
-    function addDelegate(euint32 value) public {
+    function addDelegatePlain(uint32 value) public {
+        counter = counter + FHE.asEuint32(value);
+    }
+
+    function addDelegateEuint(euint32 value) public {
         counter = counter + value;
     }
 
-    function addDelegate(inEuint32 calldata value) public {
+    function addDelegateInEuint(inEuint32 calldata value) public {
         counter = counter + FHE.asEuint32(value);
     }
 }
