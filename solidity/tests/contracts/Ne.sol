@@ -28,6 +28,24 @@ contract NeTest {
             }
 
             return 0;
+        } else if (Utils.cmp(test, "ne(euint64,euint64)")) {
+            if (FHE.decrypt(FHE.ne(FHE.asEuint64(a), FHE.asEuint64(b)))) {
+                return 1;
+            }
+
+            return 0;
+        } else if (Utils.cmp(test, "ne(euint128,euint128)")) {
+            if (FHE.decrypt(FHE.ne(FHE.asEuint128(a), FHE.asEuint128(b)))) {
+                return 1;
+            }
+
+            return 0;
+        } else if (Utils.cmp(test, "ne(euint256,euint256)")) {
+            if (FHE.decrypt(FHE.ne(FHE.asEuint256(a), FHE.asEuint256(b)))) {
+                return 1;
+            }
+
+            return 0;
         } else if (Utils.cmp(test, "euint8.ne(euint8)")) {
             if (FHE.asEuint8(a).ne(FHE.asEuint8(b)).decrypt()) {
                 return 1;
@@ -45,6 +63,21 @@ contract NeTest {
                 return 1;
             }
 
+            return 0;
+        } else if (Utils.cmp(test, "euint64.ne(euint64)")) {
+            if (FHE.asEuint64(a).ne(FHE.asEuint64(b)).decrypt()) {
+                return 1;
+            }
+            return 0;
+        } else if (Utils.cmp(test, "euint128.ne(euint128)")) {
+            if (FHE.asEuint128(a).ne(FHE.asEuint128(b)).decrypt()) {
+                return 1;
+            }
+            return 0;
+        } else if (Utils.cmp(test, "euint256.ne(euint256)")) {
+            if (FHE.asEuint256(a).ne(FHE.asEuint256(b)).decrypt()) {
+                return 1;
+            }
             return 0;
         } else if (Utils.cmp(test, "ne(ebool,ebool)")) {
             bool aBool = true;

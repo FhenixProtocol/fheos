@@ -16,6 +16,12 @@ contract NotTest {
             return FHE.decrypt(FHE.not(FHE.asEuint16(a)));
         } else if (Utils.cmp(test, "not(euint32)")) {
             return FHE.decrypt(FHE.not(FHE.asEuint32(a)));
+        } else if (Utils.cmp(test, "not(euint64)")) {
+            return FHE.decrypt(FHE.not(FHE.asEuint64(a)));
+        } else if (Utils.cmp(test, "not(euint128)")) {
+            return FHE.decrypt(FHE.not(FHE.asEuint128(a)));
+        } else if (Utils.cmp(test, "not(euint256)")) {
+            return FHE.decrypt(FHE.not(FHE.asEuint256(a)));
         } else if (Utils.cmp(test, "not(ebool)")) {
             bool aBool = true;
             if (a == 0) {

@@ -7,7 +7,6 @@ import (
 	"encoding/gob"
 	"fmt"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
-	"github.com/fhenixprotocol/go-tfhe"
 	"log"
 	"sync"
 
@@ -87,7 +86,7 @@ func (p *Storage) PutVersion(v uint64) error {
 	return p.db.Set(key, buf.Bytes(), pebble.NoSync)
 }
 
-func (p *Storage) PutCt(h tfhe.Hash, cipher *tfhe.Ciphertext) error {
+func (p *Storage) PutCt(h types.Hash, cipher *types.FheEncrypted) error {
 	// Serialize Ciphertext
 	var buf bytes.Buffer
 	err := gob.NewEncoder(&buf).Encode(cipher)
@@ -99,14 +98,14 @@ func (p *Storage) PutCt(h tfhe.Hash, cipher *tfhe.Ciphertext) error {
 	return p.db.Set(h[:], buf.Bytes(), pebble.NoSync)
 }
 
-func (p *Storage) GetCt(h tfhe.Hash) (*tfhe.Ciphertext, error) {
+func (p *Storage) GetCt(h types.Hash) (*types.FheEncrypted, error) {
 	val, closer, err := p.db.Get(h[:])
 	if err != nil {
 		return nil, err
 	}
 	defer closer.Close()
 
-	var cipher tfhe.Ciphertext
+	var cipher types.FheEncrypted
 	err = gob.NewDecoder(bytes.NewBuffer(val)).Decode(&cipher)
 	if err != nil {
 		return nil, err

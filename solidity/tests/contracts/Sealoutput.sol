@@ -17,6 +17,12 @@ contract SealoutputTest {
             return FHE.sealoutput(FHE.asEuint16(a), pubkey);
         } else if (Utils.cmp(test, "sealoutput(euint32)")) {
             return FHE.sealoutput(FHE.asEuint32(a), pubkey);
+        } else if (Utils.cmp(test, "sealoutput(euint64)")) {
+            return FHE.sealoutput(FHE.asEuint64(a), pubkey);
+        } else if (Utils.cmp(test, "sealoutput(euint128)")) {
+            return FHE.sealoutput(FHE.asEuint128(a), pubkey);
+        } else if (Utils.cmp(test, "sealoutput(euint256)")) {
+            return FHE.sealoutput(FHE.asEuint256(a), pubkey);
         } else if (Utils.cmp(test, "sealoutput(ebool)")) {
             bool b = true;
             if (a == 0) {

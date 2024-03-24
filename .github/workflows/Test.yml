@@ -19,7 +19,7 @@ jobs:
           token: ${{ secrets.GH_PAT }}
       - uses: actions/setup-go@v4
         with:
-          go-version: 1.21
+          go-version: 1.20.11
       - name: Docker Login
         uses: docker/login-action@v3.0.0
         with:
@@ -30,9 +30,9 @@ jobs:
         uses: "pnpm/action-setup@v2"
         with:
           version: "8"
-      - name: Build go-tfhe
-        run: |
-          cd go-tfhe && make build-rust
+#      - name: Build fhe-engine
+#        run: |
+#          cd warp-drive/fhe-engine && RUSTFLAGS="-C target-cpu=native" cargo build --release
       - name: Install Dependencies
         run: |
           make install
