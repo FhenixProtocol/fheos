@@ -14,8 +14,16 @@ contract AddCaller {
         addContract = AddCallee(addCallee);
     }
 
+    function resetCounter() public {
+        counter = FHE.asEuint32(0);
+    }
+
     function addTx(inEuint32 calldata value, bytes32 publicKey) public returns (bytes memory) {
         counter = counter.add(FHE.asEuint32(value));
+        return counter.seal(publicKey);
+    }
+
+    function getCounter(bytes32 publicKey) public view returns (bytes memory) {
         return counter.seal(publicKey);
     }
 
