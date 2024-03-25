@@ -11,6 +11,7 @@ error TestNotFound(string test);
 contract AddCaller {
     euint32 private counter = FHE.asEuint32(0);
     AddCallee public addContract;
+    error DelegateCallFailed();
 
     constructor(address addCallee) {
         addContract = AddCallee(addCallee);
@@ -56,7 +57,9 @@ contract AddCaller {
             )
         );
 
-        require(success, "delegate call failed");
+        if (!success) {
+            revert DelegateCallFailed();
+        }
         return counter.seal(publicKey);
     }
 
@@ -71,7 +74,9 @@ contract AddCaller {
             )
         );
 
-        require(success, "delegate call failed");
+        if (!success) {
+            revert DelegateCallFailed();
+        }
         return counter.seal(publicKey);
     }
 
@@ -86,7 +91,9 @@ contract AddCaller {
             )
         );
 
-        require(success, "delegate call failed");
+        if (!success) {
+            revert DelegateCallFailed();
+        }
         return counter.seal(publicKey);
     }
 
