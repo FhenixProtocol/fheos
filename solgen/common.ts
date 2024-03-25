@@ -1,4 +1,4 @@
-export const EInputType = ["ebool", "euint8", "euint16", "euint32"];
+export const EInputType = ["ebool", "euint8", "euint16", "euint32", "euint64", "euint128", "euint256"];
 export const EComparisonType = ["ebool"];
 export const EPlaintextType = [
   "bool",
@@ -9,7 +9,7 @@ export const EPlaintextType = [
   "uint128",
   "uint256",
 ];
-export type EUintType = "ebool" | "euint8" | "euint16" | "euint32";
+export type EUintType = "ebool" | "euint8" | "euint16" | "euint32" | "euint64" | "euint128" | "euint256";
 export type PlaintextType =
   | "bool"
   | "uint8"
@@ -30,19 +30,26 @@ export type AllTypes =
 
 export const SEALING_FUNCTION_NAME = "sealoutput";
 export const LOCAL_SEAL_FUNCTION_NAME = "seal";
+export const LOCAL_DECRYPT_FUNCTION_NAME = "decrypt";
 
 export const UnderlyingTypes: Record<EUintType, string> = {
   euint8: "uint256",
   euint16: "uint256",
   euint32: "uint256",
   ebool: "uint256",
+  euint64: "uint256",
+  euint128: "uint256",
+  euint256: "uint256",
 };
 
 export const UintTypes: Record<EUintType, string> = {
-  euint8: "Common.EUINT8_TFHE_GO",
-  euint16: "Common.EUINT16_TFHE_GO",
-  euint32: "Common.EUINT32_TFHE_GO",
-  ebool: "Common.EBOOL_TFHE_GO",
+  euint8: "Common.EUINT8_TFHE",
+  euint16: "Common.EUINT16_TFHE",
+  euint32:  "Common.EUINT32_TFHE",
+  ebool:    "Common.EBOOL_TFHE",
+  euint64:  "Common.EUINT64_TFHE",
+  euint128: "Common.EUINT128_TFHE",
+  euint256: "Common.EUINT256_TFHE",
 };
 
 interface OperatorMap {
@@ -209,4 +216,8 @@ export const isComparisonType = (value: string): boolean => {
 
 export const isBitwiseOp = (value: string): boolean => {
   return bitwiseAndLogicalOperators.includes(value);
+};
+
+export const toPlaintextType = (value: string): PlaintextType => {
+  return <PlaintextType>value.slice(1); // removes initial "e" from the type name
 };

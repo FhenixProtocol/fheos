@@ -18,6 +18,12 @@ contract SelectTest {
             return FHE.decrypt(FHE.select(condition, FHE.asEuint16(a), FHE.asEuint16(b)));
         } else if (Utils.cmp(test, "select: euint32")) {
             return FHE.decrypt(FHE.select(condition, FHE.asEuint32(a), FHE.asEuint32(b)));
+        } else if (Utils.cmp(test, "select: euint64")) {
+            return FHE.decrypt(FHE.select(condition, FHE.asEuint64(a), FHE.asEuint64(b)));
+        } else if (Utils.cmp(test, "select: euint128")) {
+            return FHE.decrypt(FHE.select(condition, FHE.asEuint128(a), FHE.asEuint128(b)));
+        } else if (Utils.cmp(test, "select: euint256")) {
+            return FHE.decrypt(FHE.select(condition, FHE.asEuint256(a), FHE.asEuint256(b)));
         } else if (Utils.cmp(test, "select: ebool")) {
             bool aBool = true;
             bool bBool = true;

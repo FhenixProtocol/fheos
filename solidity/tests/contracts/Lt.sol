@@ -28,23 +28,56 @@ contract LtTest {
             }
 
             return 0;
+        } else if (Utils.cmp(test, "lt(euint64,euint64)")) {
+            if (FHE.decrypt(FHE.lt(FHE.asEuint64(a), FHE.asEuint64(b)))) {
+                return 1;
+            }
+
+            return 0;
+        } else if (Utils.cmp(test, "lt(euint128,euint128)")) {
+            if (FHE.decrypt(FHE.lt(FHE.asEuint128(a), FHE.asEuint128(b)))) {
+                return 1;
+            }
+
+            return 0;
+        } else if (Utils.cmp(test, "lt(euint256,euint256)")) {
+            if (FHE.decrypt(FHE.lt(FHE.asEuint256(a), FHE.asEuint256(b)))) {
+                return 1;
+            }
+
+            return 0;
         } else if (Utils.cmp(test, "euint8.lt(euint8)")) {
-            if (FHE.decrypt(FHE.asEuint8(a).lt(FHE.asEuint8(b)))) {
+            if (FHE.asEuint8(a).lt(FHE.asEuint8(b)).decrypt()) {
                 return 1;
             }
 
             return 0;
         } else if (Utils.cmp(test, "euint16.lt(euint16)")) {
-            if (FHE.decrypt(FHE.asEuint16(a).lt(FHE.asEuint16(b)))) {
+            if (FHE.asEuint16(a).lt(FHE.asEuint16(b)).decrypt()) {
                 return 1;
             }
 
             return 0;
         } else if (Utils.cmp(test, "euint32.lt(euint32)")) {
-            if (FHE.decrypt(FHE.asEuint32(a).lt(FHE.asEuint32(b)))) {
+            if (FHE.asEuint32(a).lt(FHE.asEuint32(b)).decrypt()) {
                 return 1;
             }
 
+            return 0;
+        } else if (Utils.cmp(test, "euint64.lt(euint64)")) {
+            if (FHE.asEuint64(a).lt(FHE.asEuint64(b)).decrypt()) {
+                return 1;
+            }
+            return 0;
+        } else if (Utils.cmp(test, "euint128.lt(euint128)")) {
+            if (FHE.asEuint128(a).lt(FHE.asEuint128(b)).decrypt()) {
+                return 1;
+            }
+            return 0;
+        } else if (Utils.cmp(test, "euint256.lt(euint256)")) {
+            if (FHE.asEuint256(a).lt(FHE.asEuint256(b)).decrypt()) {
+                return 1;
+            }
             return 0;
         }
         revert TestNotFound(test);

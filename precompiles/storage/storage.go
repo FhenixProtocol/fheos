@@ -5,7 +5,6 @@ package storage
 import (
 	"github.com/fhenixprotocol/fheos/precompiles/storage/pebble"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
-	"github.com/fhenixprotocol/go-tfhe"
 )
 
 type Storage interface {
@@ -13,8 +12,8 @@ type Storage interface {
 	Get(t types.DataType, key []byte) ([]byte, error)
 	GetVersion() (uint64, error)
 	PutVersion(v uint64) error
-	PutCt(h tfhe.Hash, cipher *tfhe.Ciphertext) error
-	GetCt(h tfhe.Hash) (*tfhe.Ciphertext, error)
+	PutCt(h types.Hash, cipher *types.FheEncrypted) error
+	GetCt(h types.Hash) (*types.FheEncrypted, error)
 }
 
 func InitStorage(path string) Storage {

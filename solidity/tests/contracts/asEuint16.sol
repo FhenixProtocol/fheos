@@ -12,7 +12,7 @@ contract AsEuint16Test {
     
     function castFromEboolToEuint16(uint256 val, string calldata test) public pure returns (uint16) {
         if (Utils.cmp(test, "bound")) {
-            return FHE.decrypt(FHE.asEbool(val).toU16());
+            return FHE.asEbool(val).toU16().decrypt();
         } else if (Utils.cmp(test, "regular")) {
             return FHE.decrypt(FHE.asEuint16(FHE.asEbool(val)));
         }
@@ -21,7 +21,7 @@ contract AsEuint16Test {
 
     function castFromEuint8ToEuint16(uint256 val, string calldata test) public pure returns (uint16) {
         if (Utils.cmp(test, "bound")) {
-            return FHE.decrypt(FHE.asEuint8(val).toU16());
+            return FHE.asEuint8(val).toU16().decrypt();
         } else if (Utils.cmp(test, "regular")) {
             return FHE.decrypt(FHE.asEuint16(FHE.asEuint8(val)));
         }
@@ -30,9 +30,36 @@ contract AsEuint16Test {
 
     function castFromEuint32ToEuint16(uint256 val, string calldata test) public pure returns (uint16) {
         if (Utils.cmp(test, "bound")) {
-            return FHE.decrypt(FHE.asEuint32(val).toU16());
+            return FHE.asEuint32(val).toU16().decrypt();
         } else if (Utils.cmp(test, "regular")) {
             return FHE.decrypt(FHE.asEuint16(FHE.asEuint32(val)));
+        }
+        revert TestNotFound(test);
+    }
+
+    function castFromEuint64ToEuint16(uint256 val, string calldata test) public pure returns (uint16) {
+        if (Utils.cmp(test, "bound")) {
+            return FHE.asEuint64(val).toU16().decrypt();
+        } else if (Utils.cmp(test, "regular")) {
+            return FHE.decrypt(FHE.asEuint16(FHE.asEuint64(val)));
+        }
+        revert TestNotFound(test);
+    }
+
+    function castFromEuint128ToEuint16(uint256 val, string calldata test) public pure returns (uint16) {
+        if (Utils.cmp(test, "bound")) {
+            return FHE.asEuint128(val).toU16().decrypt();
+        } else if (Utils.cmp(test, "regular")) {
+            return FHE.decrypt(FHE.asEuint16(FHE.asEuint128(val)));
+        }
+        revert TestNotFound(test);
+    }
+
+    function castFromEuint256ToEuint16(uint256 val, string calldata test) public pure returns (uint16) {
+        if (Utils.cmp(test, "bound")) {
+            return FHE.asEuint256(val).toU16().decrypt();
+        } else if (Utils.cmp(test, "regular")) {
+            return FHE.decrypt(FHE.asEuint16(FHE.asEuint256(val)));
         }
         revert TestNotFound(test);
     }

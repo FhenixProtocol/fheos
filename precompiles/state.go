@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/metrics"
 	"github.com/fhenixprotocol/fheos/precompiles/storage"
-	"github.com/fhenixprotocol/go-tfhe"
+	"github.com/fhenixprotocol/fheos/precompiles/types"
+	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 	"math/big"
 	"os"
 	"time"
@@ -33,7 +34,7 @@ func getDbPath() string {
 
 var state *FheosState = nil
 
-func (fs *FheosState) GetCiphertext(hash tfhe.Hash) (*tfhe.Ciphertext, error) {
+func (fs *FheosState) GetCiphertext(hash types.Hash) (*types.FheEncrypted, error) {
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "db", "get")
 		defer func(start time.Time) {
@@ -46,7 +47,7 @@ func (fs *FheosState) GetCiphertext(hash tfhe.Hash) (*tfhe.Ciphertext, error) {
 	return fs.Storage.GetCt(hash)
 }
 
-func (fs *FheosState) SetCiphertext(ct *tfhe.Ciphertext) error {
+func (fs *FheosState) SetCiphertext(ct *fhe.FheEncrypted) error {
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "db", "put")
 		defer func(start time.Time) {
@@ -57,7 +58,7 @@ func (fs *FheosState) SetCiphertext(ct *tfhe.Ciphertext) error {
 		}(time.Now())
 	}
 
-	result := fs.Storage.PutCt(ct.Hash(), ct)
+	result := fs.Storage.PutCt(types.Hash(ct.Hash()), (*types.FheEncrypted)(ct))
 
 	return result
 }
@@ -76,16 +77,23 @@ func createFheosState(storage *storage.Storage, version uint64) error {
 		EthCall:       true,
 	}
 
+	// todo: refactor this - currently it causes crashing and weirdness if you try to add a new type
+	// also it's not very flexible
 	zero := make([]byte, 32)
 	var err error
-	ezero := make([][]byte, 3)
+	ezero := make([][]byte, 14)
 
-	for i := 0; i < 3; i++ {
+	for i := 0; i < 6; i++ {
 		ezero[i], _, err = TrivialEncrypt(zero, byte(i), &tempTp)
 		if err != nil {
 			logger.Error("failed to encrypt 0 for ezero", "toType", i, "err", err)
 			return err
 		}
+	}
+	ezero[13], _, err = TrivialEncrypt(zero, byte(13), &tempTp)
+	if err != nil {
+		logger.Error("failed to encrypt 0 for ezero", "toType", 13, "err", err)
+		return err
 	}
 
 	state.EZero = ezero
@@ -132,7 +140,7 @@ func InitializeFheosState() error {
 //
 //	_ = storage.SetUint64ByUint64(versionOffset, 1)
 //
-//	b, err := encodeMap(make(map[tfhe.Hash]tfhe.Ciphertext))
+//	b, err := encodeMap(make(map[fhe.Hash]fhe.FheEncrypted))
 //	if err != nil {
 //		return nil, err
 //	}

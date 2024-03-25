@@ -28,23 +28,56 @@ contract EqTest {
             }
 
             return 0;
+        } else if (Utils.cmp(test, "eq(euint64,euint64)")) {
+            if (FHE.decrypt(FHE.eq(FHE.asEuint64(a), FHE.asEuint64(b)))) {
+                return 1;
+            }
+
+            return 0;
+        } else if (Utils.cmp(test, "eq(euint128,euint128)")) {
+            if (FHE.decrypt(FHE.eq(FHE.asEuint128(a), FHE.asEuint128(b)))) {
+                return 1;
+            }
+
+            return 0;
+        } else if (Utils.cmp(test, "eq(euint256,euint256)")) {
+            if (FHE.decrypt(FHE.eq(FHE.asEuint256(a), FHE.asEuint256(b)))) {
+                return 1;
+            }
+
+            return 0;
         } else if (Utils.cmp(test, "euint8.eq(euint8)")) {
-            if (FHE.decrypt(FHE.asEuint8(a).eq(FHE.asEuint8(b)))) {
+            if (FHE.asEuint8(a).eq(FHE.asEuint8(b)).decrypt()) {
                 return 1;
             }
 
             return 0;
         } else if (Utils.cmp(test, "euint16.eq(euint16)")) {
-            if (FHE.decrypt(FHE.asEuint16(a).eq(FHE.asEuint16(b)))) {
+            if (FHE.asEuint16(a).eq(FHE.asEuint16(b)).decrypt()) {
                 return 1;
             }
 
             return 0;
         } else if (Utils.cmp(test, "euint32.eq(euint32)")) {
-            if (FHE.decrypt(FHE.asEuint32(a).eq(FHE.asEuint32(b)))) {
+            if (FHE.asEuint32(a).eq(FHE.asEuint32(b)).decrypt()) {
                 return 1;
             }
 
+            return 0;
+        } else if (Utils.cmp(test, "euint64.eq(euint64)")) {
+            if (FHE.asEuint64(a).eq(FHE.asEuint64(b)).decrypt()) {
+                return 1;
+            }
+            return 0;
+        } else if (Utils.cmp(test, "euint128.eq(euint128)")) {
+            if (FHE.asEuint128(a).eq(FHE.asEuint128(b)).decrypt()) {
+                return 1;
+            }
+            return 0;
+        } else if (Utils.cmp(test, "euint256.eq(euint256)")) {
+            if (FHE.asEuint256(a).eq(FHE.asEuint256(b)).decrypt()) {
+                return 1;
+            }
             return 0;
         } else if (Utils.cmp(test, "eq(ebool,ebool)")) {
             bool aBool = true;
@@ -69,7 +102,7 @@ contract EqTest {
             if (b == 0) {
                 bBool = false;
             }
-            if (FHE.decrypt(FHE.asEbool(aBool).eq(FHE.asEbool(bBool)))) {
+            if (FHE.asEbool(aBool).eq(FHE.asEbool(bBool)).decrypt()) {
                 return 1;
             }
             return 0;
