@@ -162,8 +162,7 @@ func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) (string, uin
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
-		// TODO: check if gas estimation works
-		return "", gas, nil
+		return "0x00", gas, nil
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
