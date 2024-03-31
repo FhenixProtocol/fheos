@@ -21,32 +21,32 @@ contract AddCaller {
         counter = FHE.asEuint32(0);
     }
 
-    function addTx(inEuint32 calldata value, bytes32 publicKey) public returns (bytes memory) {
+    function addTx(inEuint32 calldata value, bytes32 publicKey) public returns (string memory) {
         counter = counter.add(FHE.asEuint32(value));
         return counter.seal(publicKey);
     }
 
-    function addViaContractCallAsPlain(uint32 value, bytes32 publicKey) public returns (bytes memory) {
+    function addViaContractCallAsPlain(uint32 value, bytes32 publicKey) public returns (string memory) {
         counter = addContract.add(FHE.decrypt(counter), value);
         return counter.seal(publicKey);
     }
 
-    function addViaContractCall(inEuint32 calldata value, bytes32 publicKey) public returns (bytes memory) {
+    function addViaContractCall(inEuint32 calldata value, bytes32 publicKey) public returns (string memory) {
         counter = addContract.add(counter, value);
         return counter.seal(publicKey);
     }
 
-    function addViaContractCallU32(inEuint32 calldata value, bytes32 publicKey) public returns (bytes memory) {
+    function addViaContractCallU32(inEuint32 calldata value, bytes32 publicKey) public returns (string memory) {
         counter = addContract.add(counter, FHE.asEuint32(value));
         return counter.seal(publicKey);
     }
 
-    function addViaViewContractCallU32(inEuint32 calldata value, bytes32 publicKey) public returns (bytes memory) {
+    function addViaViewContractCallU32(inEuint32 calldata value, bytes32 publicKey) public returns (string memory) {
         counter = addContract.addView(counter, FHE.asEuint32(value));
         return counter.seal(publicKey);
     }
 
-    function addDelegatePlain(uint32 value, bytes32 publicKey) public returns (bytes memory) {
+    function addDelegatePlain(uint32 value, bytes32 publicKey) public returns (string memory) {
         // value is added twice in this case, to verify that the delegatecall operated on the correct value
         counter = counter.add(FHE.asEuint32(value));
 
@@ -63,7 +63,7 @@ contract AddCaller {
         return counter.seal(publicKey);
     }
 
-    function addDelegate(inEuint32 calldata value, bytes32 publicKey) public returns (bytes memory) {
+    function addDelegate(inEuint32 calldata value, bytes32 publicKey) public returns (string memory) {
         // value is added twice, to verify that the delegatecall operated on the correct value
         counter = counter.add(FHE.asEuint32(value));
 
@@ -80,7 +80,7 @@ contract AddCaller {
         return counter.seal(publicKey);
     }
 
-    function addDelegateU32(inEuint32 calldata value, bytes32 publicKey) public returns (bytes memory) {
+    function addDelegateU32(inEuint32 calldata value, bytes32 publicKey) public returns (string memory) {
         // value is added twice, to verify that the delegatecall operated on the correct value
         counter = counter.add(FHE.asEuint32(value));
 
@@ -102,7 +102,7 @@ contract AddCaller {
         return FHE.decrypt(counter);
     }
 
-    function getCounter(bytes32 publicKey) public view returns (bytes memory) {
+    function getCounter(bytes32 publicKey) public view returns (string memory) {
         return counter.seal(publicKey);
     }
 }
