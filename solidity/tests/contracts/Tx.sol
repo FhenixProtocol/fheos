@@ -124,7 +124,7 @@ contract AddCallee {
     }
 
     function add(uint32 a, uint32 b) public pure returns (euint32 output) {
-        // TODO: this fails for some reason. "a", a decrypted uint, cannot be used with "+"
+        // TODO: this overflows on gas estimation, since, as a shortcut, "a" is decrypted to max uint
         return FHE.asEuint32(a + b);
     }
 
