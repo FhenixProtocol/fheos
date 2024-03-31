@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-import { SEALING_FUNCTION_NAME } from "./common";
+import {SEAL_RETURN_TYPE, SEALING_FUNCTION_NAME} from "./common";
 
 type ParamTypes = "encrypted" | "uint8" | "plaintext" | "bytes32";
 
@@ -98,7 +98,7 @@ async function analyzeGoFile(
           if (funcName === SEALING_FUNCTION_NAME) {
             // console.log(`func name: ${funcName}`)
             amount = 2;
-            returnType = "bytes memory";
+            returnType = `${SEAL_RETURN_TYPE} memory`;
             needsSameType = false;
             inputs = ["encrypted", "bytes32"];
           }
