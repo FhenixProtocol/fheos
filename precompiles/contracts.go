@@ -149,20 +149,21 @@ func Verify(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 	return ctHash[:], gas, nil
 }
 
-func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) ([]byte, uint64, error) {
+func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) (string, uint64, error) {
 	//solgen: bool math
 	functionName := "sealOutput"
 
 	if !isValidType(utype) {
 		logger.Error("invalid ciphertext", "type", utype)
-		return nil, 0, vm.ErrExecutionReverted
+		return "", 0, vm.ErrExecutionReverted
 	}
 
 	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
-		return state.EZero[utype], gas, nil
+		// TODO: check if gas estimation works
+		return "", gas, nil
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
@@ -172,31 +173,31 @@ func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) ([]byte, uin
 	if len(ctHash) != 32 {
 		msg := functionName + " ciphertext's hashes need to be 32 bytes long"
 		logger.Error(msg, "ciphertext-hash", hex.EncodeToString(ctHash), "hash-len", len(ctHash))
-		return nil, 0, vm.ErrExecutionReverted
+		return "", 0, vm.ErrExecutionReverted
 	}
 
 	if len(pk) != 32 {
 		msg := functionName + " public key need to be 32 bytes long"
 		logger.Error(msg, "public-key", hex.EncodeToString(pk), "len", len(pk))
-		return nil, 0, vm.ErrExecutionReverted
+		return "", 0, vm.ErrExecutionReverted
 	}
 
 	ct := getCiphertext(state, fhe.BytesToHash(ctHash))
 	if ct == nil {
 		msg := functionName + " unverified ciphertext handle"
 		logger.Error(msg, "ciphertext-hash", hex.EncodeToString(ctHash))
-		return nil, 0, vm.ErrExecutionReverted
+		return "", 0, vm.ErrExecutionReverted
 	}
 
 	reencryptedValue, err := fhe.SealOutput(*ct, pk)
 	if err != nil {
 		logger.Error(functionName+" failed to encrypt to user key", "err", err)
-		return nil, 0, vm.ErrExecutionReverted
+		return "", 0, vm.ErrExecutionReverted
 	}
 
 	logger.Debug(functionName+" success", "ciphertext-hash ", hex.EncodeToString(ctHash), "public-key", hex.EncodeToString(pk))
 
-	return reencryptedValue, gas, nil
+	return "0x" + hex.EncodeToString(reencryptedValue), gas, nil
 }
 
 func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
