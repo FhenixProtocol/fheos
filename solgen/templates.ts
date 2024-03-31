@@ -702,7 +702,7 @@ export function testContractReencrypt() {
     }`;
   // TODO: verify the return type Promise<String> is correct
   const abi = `export interface SealoutputTestType extends BaseContract {
-    ${SEALING_FUNCTION_NAME}: (test: string, a: bigint, pubkey: Uint8Array) => Promise<String>;
+    ${SEALING_FUNCTION_NAME}: (test: string, a: bigint, pubkey: Uint8Array) => Promise<string>;
 }\n`;
   return [generateTestContract(SEALING_FUNCTION_NAME, func, true), abi];
 }
