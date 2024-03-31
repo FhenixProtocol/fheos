@@ -3,7 +3,7 @@ export interface AddTestType extends BaseContract {
     add: (test: string, a: bigint, b: bigint) => Promise<bigint>;
 }
 export interface SealoutputTestType extends BaseContract {
-    sealoutput: (test: string, a: bigint, pubkey: Uint8Array) => Promise<Uint8Array>;
+    sealoutput: (test: string, a: bigint, pubkey: Uint8Array) => Promise<String>;
 }
 export interface LteTestType extends BaseContract {
     lte: (test: string, a: bigint, b: bigint) => Promise<bigint>;

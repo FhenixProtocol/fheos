@@ -10,7 +10,7 @@ error TestNotFound(string test);
 contract SealoutputTest {
     using Utils for *;
     
-    function sealoutput(string calldata test, uint256 a, bytes32 pubkey) public pure returns (bytes memory reencrypted) {
+    function sealoutput(string calldata test, uint256 a, bytes32 pubkey) public pure returns (string memory reencrypted) {
         if (Utils.cmp(test, "sealoutput(euint8)")) {
             return FHE.sealoutput(FHE.asEuint8(a), pubkey);
         } else if (Utils.cmp(test, "sealoutput(euint16)")) {
