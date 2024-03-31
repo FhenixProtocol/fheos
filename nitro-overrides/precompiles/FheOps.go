@@ -684,7 +684,7 @@ func (con FheOps) Req(c ctx, evm mech, utype byte, input []byte) ([]byte, error)
 	return ret, err
 }
 
-func (con FheOps) SealOutput(c ctx, evm mech, utype byte, ctHash []byte, pk []byte) ([]byte, error) {
+func (con FheOps) SealOutput(c ctx, evm mech, utype byte, ctHash []byte, pk []byte) (string, error) {
 	tp := fheos.TxParamsFromEVM(evm)
 
 	if metrics.Enabled {
