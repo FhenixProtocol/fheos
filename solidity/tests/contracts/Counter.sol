@@ -18,14 +18,14 @@ contract Counter {
     counterMapping[idx] = FHE.add(counterMapping[idx], value);
   }
 
-  function getCounter(bytes32 publicKey) public view returns (bytes memory) {
+  function getCounter(bytes32 publicKey) public view returns (string memory) {
     return FHE.sealoutput(counter, publicKey);
   }
 
   function getCounterMapping(
     uint8 idx,
     bytes32 publicKey
-  ) public view returns (bytes memory) {
+  ) public view returns (string memory) {
     return FHE.sealoutput(counterMapping[idx], publicKey);
   }
 }
