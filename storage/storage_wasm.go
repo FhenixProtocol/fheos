@@ -8,25 +8,29 @@ type WasmStorage struct {
 }
 
 type Storage interface {
-	Put(t types.DataType, key []byte, val []byte) error
-	Get(t types.DataType, key []byte) ([]byte, error)
+	//Put(t types.DataType, key []byte, val []byte) error
+	//Get(t types.DataType, key []byte) ([]byte, error)
 	GetVersion() (uint64, error)
 	PutVersion(v uint64) error
 	PutCt(h types.Hash, cipher *types.FheEncrypted) error
 	GetCt(h types.Hash) (*types.FheEncrypted, error)
 }
 
-func InitStorage(_ string) Storage {
-	return WasmStorage{}
+func InitStorage(_ string) *FheosStorage {
+	storage := WasmStorage{}
+
+	fheosStore := newFheosStorage(storage, initEphemeralStorage())
+
+	return fheosStore
 }
 
-func (store WasmStorage) Put(_ types.DataType, _ []byte, _ []byte) error {
-	return nil
-}
-
-func (store WasmStorage) Get(t types.DataType, key []byte) ([]byte, error) {
-	return nil, nil
-}
+//func (store WasmStorage) Put(_ types.DataType, _ []byte, _ []byte) error {
+//	return nil
+//}
+//
+//func (store WasmStorage) Get(t types.DataType, key []byte) ([]byte, error) {
+//	return nil, nil
+//}
 
 func (store WasmStorage) GetVersion() (uint64, error) {
 	return 0, nil

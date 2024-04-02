@@ -3,7 +3,7 @@ module github.com/fhenixprotocol/fheos
 go 1.20
 
 require (
-	github.com/cockroachdb/pebble v0.0.0-20230209160836-829675f94811
+	github.com/cockroachdb/pebble v0.0.0-20230209160836-829675f94811 // indirect
 	// needs to match the one in go-ethereum because fuck you that's why
 	//github.com/cockroachdb/pebble v1.1.0
 	github.com/ethereum/go-ethereum v1.10.26
@@ -38,11 +38,11 @@ require (
 	github.com/consensys/gnark-crypto v0.10.0 // indirect
 	github.com/crate-crypto/go-kzg-4844 v0.3.0 // indirect
 	github.com/ethereum/c-kzg-4844 v0.3.1 // indirect
-	github.com/fhenixprotocol/decryption-oracle-proto v0.0.0-20231205134639-3c799c823a17 // indirect
 	github.com/fhenixprotocol/warp-drive/fhe-bridge v0.0.0-20231205134639-3c799c823a17 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gammazero/deque v0.2.1 // indirect
 	github.com/getsentry/sentry-go v0.18.0 // indirect
+	github.com/gofrs/flock v0.8.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.5-0.20220116011046-fa5810519dcb // indirect
@@ -51,8 +51,10 @@ require (
 	github.com/klauspost/compress v1.15.15 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
+	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/mmcloughlin/addchain v0.4.0 // indirect
+	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.14.0 // indirect
 	github.com/prometheus/client_model v0.3.0 // indirect
@@ -77,7 +79,6 @@ require (
 	github.com/StackExchange/wmi v1.2.1 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.2.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
-	github.com/fhenixprotocol/go-tfhe v0.0.1
 	github.com/go-ole/go-ole v1.2.5 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
