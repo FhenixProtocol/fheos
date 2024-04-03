@@ -1,6 +1,5 @@
 ARG BRANCH=v0.2.0-alpha.0
-#ARG DOCKER_NAME=ghcr.io/fhenixprotocol/nitro/fhenix-node-builder:$BRANCH
-ARG DOCKER_NAME=local-builder
+ARG DOCKER_NAME=ghcr.io/fhenixprotocol/nitro/fhenix-node-builder:$BRANCH
 
 FROM rust:1.74-slim-bullseye as warp-drive-builder
 

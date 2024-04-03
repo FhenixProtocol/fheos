@@ -158,7 +158,7 @@ func Verify(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 	}
 
 	logger.Debug(functionName+" success", "ctHash", ct.Hash().Hex())
-	return ct.GetHash(), gas, nil
+	return ct.GetHashBytes(), gas, nil
 }
 
 func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) ([]byte, uint64, error) {
