@@ -12,8 +12,8 @@ import (
 type EphemeralStorage interface {
 	types.FheCipherTextStorage
 
-	MarkAsLts(common.Address, types.Hash) error
-	GetAllLts() []ContractCiphertext
+	MarkForPersistence(common.Address, types.Hash) error
+	GetAllToPersist() []ContractCiphertext
 }
 
 type ContractCiphertext struct {
@@ -26,11 +26,11 @@ type EphemeralStorageImpl struct {
 	memstore *memorydb.Database
 }
 
-func (es *EphemeralStorageImpl) getLtsKey() []byte {
+func (es *EphemeralStorageImpl) getPersistKey() []byte {
 	return []byte("LTS")
 }
 
-func (es *EphemeralStorageImpl) encodeLts(lts []ContractCiphertext) ([]byte, error) {
+func (es *EphemeralStorageImpl) encodePersistingCiphertexts(lts []ContractCiphertext) ([]byte, error) {
 	var buf bytes.Buffer
 	err := gob.NewEncoder(&buf).Encode(lts)
 	if err != nil {
@@ -40,7 +40,7 @@ func (es *EphemeralStorageImpl) encodeLts(lts []ContractCiphertext) ([]byte, err
 	return buf.Bytes(), nil
 }
 
-func (es *EphemeralStorageImpl) ParseLtsValue(raw []byte) ([]ContractCiphertext, error) {
+func (es *EphemeralStorageImpl) DecodePersistingCiphertexts(raw []byte) ([]ContractCiphertext, error) {
 	var lts []ContractCiphertext
 	err := gob.NewDecoder(bytes.NewBuffer(raw)).Decode(&lts)
 	if err != nil {
@@ -50,8 +50,8 @@ func (es *EphemeralStorageImpl) ParseLtsValue(raw []byte) ([]ContractCiphertext,
 	return lts, nil
 }
 
-func (es *EphemeralStorageImpl) MarkAsLts(contract common.Address, h types.Hash) error {
-	key := es.getLtsKey()
+func (es *EphemeralStorageImpl) MarkForPersistence(contract common.Address, h types.Hash) error {
+	key := es.getPersistKey()
 
 	var parsedLts []ContractCiphertext
 	rawLts, err := es.memstore.Get(key)
@@ -60,7 +60,7 @@ func (es *EphemeralStorageImpl) MarkAsLts(contract common.Address, h types.Hash)
 			return err
 		}
 	} else {
-		parsedLts, err = es.ParseLtsValue(rawLts)
+		parsedLts, err = es.DecodePersistingCiphertexts(rawLts)
 		if err != nil {
 			return err
 		}
@@ -71,7 +71,7 @@ func (es *EphemeralStorageImpl) MarkAsLts(contract common.Address, h types.Hash)
 		CipherTextHash:  h,
 	})
 
-	encodedLts, err := es.encodeLts(parsedLts)
+	encodedLts, err := es.encodePersistingCiphertexts(parsedLts)
 	if err != nil {
 		return err
 	}
@@ -128,8 +128,8 @@ func (es *EphemeralStorageImpl) HasCt(h types.Hash) bool {
 	return ok
 }
 
-func (es *EphemeralStorageImpl) GetAllLts() []ContractCiphertext {
-	key := es.getLtsKey()
+func (es *EphemeralStorageImpl) GetAllToPersist() []ContractCiphertext {
+	key := es.getPersistKey()
 
 	rawLts, err := es.memstore.Get(key)
 	if err != nil {
@@ -140,7 +140,7 @@ func (es *EphemeralStorageImpl) GetAllLts() []ContractCiphertext {
 		return nil
 	}
 
-	parsedLts, err := es.ParseLtsValue(rawLts)
+	parsedLts, err := es.DecodePersistingCiphertexts(rawLts)
 	if err != nil {
 		return nil
 	}

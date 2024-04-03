@@ -32,7 +32,7 @@ func (h FheOSHooksImpl) StoreCiphertextHook(contract common.Address, loc [32]byt
 		return nil
 	}
 
-	err := storage.MarkAsLts(contract, val)
+	err := storage.MarkForPersistence(contract, val)
 	if err != nil {
 		log.Crit("Error marking ciphertext as LTS", "err", err)
 		return err
@@ -63,7 +63,7 @@ func (h FheOSHooksImpl) EvmCallStart() {
 func (h FheOSHooksImpl) EvmCallEnd(evmSuccess bool) {
 	if evmSuccess && h.evm.Commit {
 		storage := storage2.NewEphemeralStorage(h.evm.CiphertextDb)
-		toStore := storage.GetAllLts()
+		toStore := storage.GetAllToPersist()
 
 		for _, contractCiphertext := range toStore {
 			cipherText, err := storage.GetCt(contractCiphertext.CipherTextHash)

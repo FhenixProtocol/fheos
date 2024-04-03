@@ -314,13 +314,13 @@ func TestEphemeralStorageImpl_Lts(t *testing.T) {
 		t.Fatalf("Failed to put ciphertext: %v", err)
 	}
 
-	err := ephemeralStorage.MarkAsLts(ownerAddress, types.Hash(hash))
+	err := ephemeralStorage.MarkForPersistence(ownerAddress, types.Hash(hash))
 	if err != nil {
 		t.Fatalf("Failed to mark ciphertext as LTS: %v", err)
 	}
 
 	// Test getting all LTS ciphertexts
-	ltsCts := ephemeralStorage.GetAllLts()
+	ltsCts := ephemeralStorage.GetAllToPersist()
 	if len(ltsCts) != 1 {
 		t.Fatalf("Expected 1 LTS ciphertext, got %d", len(ltsCts))
 	}
