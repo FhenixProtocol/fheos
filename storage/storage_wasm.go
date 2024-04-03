@@ -4,10 +4,10 @@ import (
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 )
 
-type WasmStorage struct {
+type FheosStorage struct {
 }
 
-type Storage interface {
+type IFheosStorage interface {
 	//Put(t types.DataType, key []byte, val []byte) error
 	//Get(t types.DataType, key []byte) ([]byte, error)
 	GetVersion() (uint64, error)
@@ -16,12 +16,8 @@ type Storage interface {
 	GetCt(h types.Hash) (*types.FheEncrypted, error)
 }
 
-func InitStorage(_ string) *FheosStorage {
-	storage := WasmStorage{}
-
-	fheosStore := newFheosStorage(storage, initEphemeralStorage())
-
-	return fheosStore
+func InitStorage(_ string) (*FheosStorage, error) {
+	return &FheosStorage{}, nil
 }
 
 //func (store WasmStorage) Put(_ types.DataType, _ []byte, _ []byte) error {
@@ -32,20 +28,20 @@ func InitStorage(_ string) *FheosStorage {
 //	return nil, nil
 //}
 
-func (store WasmStorage) GetVersion() (uint64, error) {
+func (store FheosStorage) GetVersion() (uint64, error) {
 	return 0, nil
 }
 
-func (store WasmStorage) PutVersion(v uint64) error {
+func (store FheosStorage) PutVersion(v uint64) error {
 	return nil
 }
 
-func (store WasmStorage) PutCt(h types.Hash, cipher *types.FheEncrypted) error {
+func (store FheosStorage) PutCt(h types.Hash, cipher *types.FheEncrypted) error {
 	return nil
 }
 
-func (store WasmStorage) GetCt(h types.Hash) (*types.FheEncrypted, error) {
+func (store FheosStorage) GetCt(h types.Hash) (*types.FheEncrypted, error) {
 	return nil, nil
 }
 
-func (store WasmStorage) Size() uint64 { return 0 }
+func (store FheosStorage) Size() uint64 { return 0 }
