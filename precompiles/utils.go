@@ -93,7 +93,7 @@ func get3VerifiedOperands(storage *storage.MultiStore, controlHash []byte, ifTru
 func storeCipherText(storage *storage.MultiStore, ct *fhe.FheEncrypted) error {
 	err := storage.PutCt(types.Hash(ct.Hash()), (*types.FheEncrypted)(ct))
 	if err != nil {
-		logger.Error("failed importing ciphertext to State: ", err)
+		logger.Error("failed importing ciphertext to state: ", err)
 		return err
 	}
 
