@@ -56,7 +56,16 @@ node faucet/server.js &
 # Nitro service is started only in "normal mode"
 if [[ "${DEBUG_MODE}" -eq 0 ]]; then
     echo "Starting Nitro service in normal mode"
-    nitro --conf.file /config/sequencer_config.json --metrics --node.feed.output.enable --node.feed.output.port 9642 --http.api net,web3,eth,txpool,debug --node.seq-coordinator.my-url ws://sequencer:8548 --graphql.enable --graphql.vhosts "*" --graphql.corsdomain "*"
+    nitro --conf.file /config/sequencer_config.json \
+          --metrics \
+          --node.feed.output.enable \
+          --node.feed.output.port 9642 \
+          --http.api net,web3,eth,txpool,debug \
+          --node.seq-coordinator.my-url ws://sequencer:8548 \
+          --graphql.enable \
+          --graphql.vhosts "*" \
+          --graphql.corsdomain "*" \
+          --conf.env-prefix "NITRO"
 fi
 
 # Start in debug mode if requested
