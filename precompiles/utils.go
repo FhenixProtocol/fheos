@@ -5,14 +5,20 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ethereum/go-ethereum/ethdb/memorydb"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
+	"github.com/fhenixprotocol/fheos/storage"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
+	"math"
+	"math/big"
 )
 
 type TxParams struct {
 	Commit        bool
 	GasEstimation bool
 	EthCall       bool
+	CiphertextDb  *memorydb.Database
+	Contract      common.Address
 }
 
 type GasBurner interface {
@@ -26,6 +32,9 @@ func TxParamsFromEVM(evm *vm.EVM) TxParams {
 	tp.GasEstimation = evm.GasEstimation
 	tp.EthCall = evm.EthCall
 
+	tp.CiphertextDb = evm.CiphertextDb
+	tp.Contract = evm.Origin
+
 	return tp
 }
 
@@ -34,25 +43,25 @@ type Precompile struct {
 	Address  common.Address
 }
 
-func getCiphertext(state *FheosState, ciphertextHash fhe.Hash) *fhe.FheEncrypted {
-	ct, err := state.GetCiphertext(types.Hash(ciphertextHash))
+func getCiphertext(state *storage.MultiStore, ciphertextHash fhe.Hash) *fhe.FheEncrypted {
+	ct, err := state.GetCt(types.Hash(ciphertextHash))
 	if err != nil {
-		logger.Error("reading ciphertext from state resulted with error: ", err)
+		logger.Error("reading ciphertext from State resulted with error: ", err)
 		return nil
 	}
 
 	return (*fhe.FheEncrypted)(ct)
 }
-func get2VerifiedOperands(state *FheosState, lhsHash []byte, rhsHash []byte) (lhs *fhe.FheEncrypted, rhs *fhe.FheEncrypted, err error) {
+func get2VerifiedOperands(storage *storage.MultiStore, lhsHash []byte, rhsHash []byte) (lhs *fhe.FheEncrypted, rhs *fhe.FheEncrypted, err error) {
 	if len(lhsHash) != 32 || len(rhsHash) != 32 {
 		return nil, nil, errors.New("ciphertext's hashes need to be 32 bytes long")
 	}
 
-	lhs = getCiphertext(state, fhe.BytesToHash(lhsHash))
+	lhs = getCiphertext(storage, fhe.BytesToHash(lhsHash))
 	if lhs == nil {
 		return nil, nil, errors.New("unverified ciphertext handle")
 	}
-	rhs = getCiphertext(state, fhe.BytesToHash(rhsHash))
+	rhs = getCiphertext(storage, fhe.BytesToHash(rhsHash))
 	if rhs == nil {
 		return nil, nil, errors.New("unverified ciphertext handle")
 	}
@@ -60,20 +69,20 @@ func get2VerifiedOperands(state *FheosState, lhsHash []byte, rhsHash []byte) (lh
 	return
 }
 
-func get3VerifiedOperands(state *FheosState, controlHash []byte, ifTrueHash []byte, ifFalseHash []byte) (control *fhe.FheEncrypted, ifTrue *fhe.FheEncrypted, ifFalse *fhe.FheEncrypted, err error) {
+func get3VerifiedOperands(storage *storage.MultiStore, controlHash []byte, ifTrueHash []byte, ifFalseHash []byte) (control *fhe.FheEncrypted, ifTrue *fhe.FheEncrypted, ifFalse *fhe.FheEncrypted, err error) {
 	if len(controlHash) != 32 || len(ifTrueHash) != 32 || len(ifFalseHash) != 32 {
 		return nil, nil, nil, errors.New("ciphertext's hashes need to be 32 bytes long")
 	}
 
-	control = getCiphertext(state, fhe.BytesToHash(controlHash))
+	control = getCiphertext(storage, fhe.BytesToHash(controlHash))
 	if control == nil {
 		return nil, nil, nil, errors.New("unverified ciphertext handle")
 	}
-	ifTrue = getCiphertext(state, fhe.BytesToHash(ifTrueHash))
+	ifTrue = getCiphertext(storage, fhe.BytesToHash(ifTrueHash))
 	if ifTrue == nil {
 		return nil, nil, nil, errors.New("unverified ciphertext handle")
 	}
-	ifFalse = getCiphertext(state, fhe.BytesToHash(ifFalseHash))
+	ifFalse = getCiphertext(storage, fhe.BytesToHash(ifFalseHash))
 	if ifFalse == nil {
 		return nil, nil, nil, errors.New("unverified ciphertext handle")
 	}
@@ -81,8 +90,8 @@ func get3VerifiedOperands(state *FheosState, controlHash []byte, ifTrueHash []by
 	return
 }
 
-func importCiphertext(state *FheosState, ct *fhe.FheEncrypted) error {
-	err := state.SetCiphertext(ct)
+func storeCipherText(storage *storage.MultiStore, ct *fhe.FheEncrypted) error {
+	err := storage.PutCt(types.Hash(ct.Hash()), (*types.FheEncrypted)(ct))
 	if err != nil {
 		logger.Error("failed importing ciphertext to state: ", err)
 		return err
@@ -108,9 +117,39 @@ const (
 	FheUint16 fheUintType = 1
 	FheUint32 fheUintType = 2
 
+	FheUint64  fheUintType = 3
+	FheUint128 fheUintType = 4
+	FheUint256 fheUintType = 5
+
 	FheBool fheUintType = 13
 )
 
 func isValidType(t byte) bool {
 	return t >= uint8(FheUint8) && t <= uint8(FheBool)
+}
+
+func FakeDecryptionResult(encType fhe.EncryptionType) *big.Int {
+
+	decryptionType := fheUintType(encType)
+
+	switch decryptionType {
+	case FheUint8:
+		return big.NewInt(math.MaxUint8 / 2)
+	case FheUint16:
+		return big.NewInt(math.MaxInt16 / 2)
+	case FheUint32:
+		return big.NewInt(math.MaxUint32 / 2)
+	case FheUint64:
+		return big.NewInt(math.MaxUint64 / 2)
+	case FheUint128:
+		value := &big.Int{}
+		value.SetString("2222222222222222222222222222222", 16)
+		return value
+	case FheUint256:
+		value := &big.Int{}
+		value.SetString("2222222222222222222222222222222222222222222222222", 16)
+		return value
+	default:
+		return big.NewInt(0)
+	}
 }
