@@ -3,8 +3,9 @@ package precompiles
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 	"math/big"
+
+	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/log"
@@ -62,6 +63,10 @@ func UtypeToString(utype byte) string {
 }
 
 // ============================
+func Log(s string) (uint64, error) {
+	logger.Debug(fmt.Sprintf("Contract Log: %s", s))
+	return 1, nil
+}
 func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
 	functionName := "add"
 
