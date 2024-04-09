@@ -63,7 +63,11 @@ func UtypeToString(utype byte) string {
 }
 
 // ============================
-func Log(s string) (uint64, error) {
+func Log(s string, tp *TxParams) (uint64, error) {
+	if tp.GasEstimation {
+		return 1, nil
+	}
+
 	logger.Error(fmt.Sprintf("Contract Log: %s", s))
 	return 1, nil
 }

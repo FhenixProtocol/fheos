@@ -146,10 +146,6 @@ interface FheOps {
 			inner := strings.Split(chunks[1], "(")
 			Name = inner[0]
 
-			//if Name == "Log" {
-			//	continue
-			//}
-
 			param := Param{
 				Name: "",
 				Type: "",
@@ -438,6 +434,10 @@ type FheOps struct {
 	}
 
 	for _, op := range operations {
+		if op.Name == "Log" {
+			continue
+		}
+
 		var template *template.Template
 		if strings.Contains(op.Name, "GetNetworkPublicKey") {
 			template = GenerateFHEOperationNoGasTemplate()
@@ -500,9 +500,9 @@ func (con FheOps) {{.Name}}(c ctx, evm mech{{.Inputs}}) ({{.ReturnType}}, error)
 
 func GenerateLogTemplate() string {
 	templateText := `
-func (con FheOps) Log(c ctx, _ mech, s string) error {
-
-	gas, err := fheos.Log(s)
+func (con FheOps) Log(c ctx, evm mech, s string) error {
+	tp := fheos.TxParamsFromEVM(evm)
+	gas, err := fheos.Log(s, &tp)
 
 	if err != nil {
 		return err

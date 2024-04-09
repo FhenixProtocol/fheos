@@ -12,9 +12,9 @@ type FheOps struct {
 	Address addr // 0x80
 }
 
-func (con FheOps) Log(c ctx, _ mech, s string) error {
-
-	gas, err := fheos.Log(s)
+func (con FheOps) Log(c ctx, evm mech, s string) error {
+	tp := fheos.TxParamsFromEVM(evm)
+	gas, err := fheos.Log(s, &tp)
 
 	if err != nil {
 		return err
