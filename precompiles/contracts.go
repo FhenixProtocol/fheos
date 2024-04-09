@@ -64,7 +64,7 @@ func UtypeToString(utype byte) string {
 
 // ============================
 func Log(s string) (uint64, error) {
-	logger.Debug(fmt.Sprintf("Contract Log: %s", s))
+	logger.Error(fmt.Sprintf("Contract Log: %s", s))
 	return 1, nil
 }
 func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
