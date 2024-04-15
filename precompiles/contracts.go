@@ -145,7 +145,7 @@ func Verify(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
-	ct, err := fhe.NewFheEncryptedFromBytes(input, uintType, true /* TODO: not sure + shouldn't be hardcoded */)
+	ct, err := fhe.NewFheEncryptedFromBytes(input, uintType, true, false /* TODO: not sure + shouldn't be hardcoded */)
 	if err != nil {
 		logger.Error(functionName+" failed to deserialize input ciphertext", "err", err, "len", len(input))
 		return nil, 0, vm.ErrExecutionReverted
