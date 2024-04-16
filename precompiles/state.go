@@ -37,12 +37,10 @@ func (fs *FheosState) GetRandomForGasEstimation() []byte {
 
 const FheosVersion = uint64(1001)
 
-const DBPath = "/home/user/fhenix/fheosdb"
-
 func getDbPath() string {
 	dbPath := os.Getenv("FHEOS_DB_PATH")
 	if dbPath == "" {
-		return DBPath
+		return os.TempDir() + "/fheos"
 	}
 
 	return dbPath
