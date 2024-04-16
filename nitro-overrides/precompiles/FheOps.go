@@ -12,6 +12,17 @@ type FheOps struct {
 	Address addr // 0x80
 }
 
+func (con FheOps) Log(c ctx, evm mech, s string) error {
+	tp := fheos.TxParamsFromEVM(evm)
+	gas, err := fheos.Log(s, &tp)
+
+	if err != nil {
+		return err
+	}
+
+	return c.Burn(gas)
+}
+
 func (con FheOps) Add(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte) ([]byte, error) {
 	tp := fheos.TxParamsFromEVM(evm)
 

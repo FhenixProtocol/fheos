@@ -7,6 +7,7 @@ import (
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 	"math/big"
 
+
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/log"
 )
@@ -71,6 +72,15 @@ func UtypeToString(utype byte) string {
 }
 
 // ============================================================
+
+func Log(s string, tp *TxParams) (uint64, error) {
+	if tp.GasEstimation {
+		return 1, nil
+	}
+
+	logger.Debug(fmt.Sprintf("Contract Log: %s", s))
+	return 1, nil
+}
 
 func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
 	functionName := "add"
@@ -180,7 +190,8 @@ func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) ([]byte, uin
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
 		randomHash := State.GetRandomForGasEstimation()
-		return randomHash[:], gas, nil
+		// FHENIX: A random issue occured with gas estimation of SealOutput, it was failing with out of gas.
+		return randomHash[:], 2 * gas, nil
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
