@@ -20,7 +20,7 @@ type FheosState struct {
 }
 
 func (fs *FheosState) GetZero(uintType fhe.EncryptionType) *fhe.FheEncrypted {
-	ct, err := fhe.NewFheEncrypted(*big.NewInt(0), uintType, true, false)
+	ct, err := fhe.NewFheEncrypted(*big.NewInt(0), uintType, true, false, false)
 	if err != nil {
 		return nil
 	}
@@ -137,50 +137,3 @@ func InitializeFheosState() error {
 
 	return nil
 }
-
-// The following functions are useful for future implementation of storage based on geth
-// The reason we are not using them now is because they store the entire map as bytes on every set
-// which is not efficient for large maps - not even for a few ciphertexts.
-//func InitializeFheosState(stateDB vm.StateDB, burner GasBurner) (*FheosState, error) {
-//	storage := NewStorage(stateDB, burner)
-//	fheosVersion, err := storage.GetUint64ByUint64(versionOffset)
-//	if err != nil {
-//		return nil, err
-//	}
-//	if fheosVersion != 0 {
-//		return nil, errors.New("fheos State is already initialized")
-//	}
-//
-//	_ = storage.SetUint64ByUint64(versionOffset, 1)
-//
-//	b, err := encodeMap(make(map[fhe.Hash]fhe.FheEncrypted))
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	ctStorage := storage.OpenBytesStorage([]byte{ctOffset})
-//	_ = ctStorage.Set(b)
-//
-//	aState, err := OpenFheosState(stateDB, burner)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	return aState, nil
-//}
-//
-//func OpenFheosState(stateDB vm.StateDB, burner GasBurner) (*FheosState, error) {
-//	storage := NewStorage(stateDB, burner)
-//	fheosVersion, err := storage.GetUint64ByUint64(versionOffset)
-//	if err != nil {
-//		return nil, err
-//	}
-//	if fheosVersion == 0 {
-//		return nil, errors.New("fheos State is uninitialized")
-//	}
-//	return &FheosState{
-//		fheosVersion,
-//		storage.OpenBytesStorage([]byte{ctOffset}),
-//		burner,
-//	}, nil
-//}
