@@ -68,7 +68,7 @@ func Log(s string, tp *TxParams) (uint64, error) {
 		return 1, nil
 	}
 
-	logger.Error(fmt.Sprintf("Contract Log: %s", s))
+	logger.Debug(fmt.Sprintf("Contract Log: %s", s))
 	return 1, nil
 }
 func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
