@@ -176,7 +176,8 @@ func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) ([]byte, uin
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
 		randomHash := State.GetRandomForGasEstimation()
-		return randomHash[:], gas, nil
+		// FHENIX: A random issue occured with gas estimation of SealOutput, it was failing with out of gas.
+		return randomHash[:], 2 * gas, nil
 	}
 
 	if shouldPrintPrecompileInfo(tp) {

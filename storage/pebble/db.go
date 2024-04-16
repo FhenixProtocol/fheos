@@ -25,7 +25,7 @@ type EthDbWrapper struct {
 // NewPebbleStorage ensures a single EthDbWrapper instance
 func NewStorage(path string) (*EthDbWrapper, error) {
 	once.Do(func() {
-		db, err := rawdb.NewPebbleDBDatabase(path, 128, 128, "fheos", false)
+		db, err := rawdb.NewPebbleDBDatabase(path, 128, 128, "fheos", false, false)
 		if err != nil {
 			log.Fatalf("Error creating PebbleDBDatabase: %v", err)
 		}

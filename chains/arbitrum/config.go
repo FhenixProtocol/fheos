@@ -19,3 +19,5 @@ func FhenixConfigAddOptions(prefix string, f *flag.FlagSet) {
 }
 
 type FhenixConfig = fhe.Config
+
+var ConfigDefault = fhe.ConfigDefault
