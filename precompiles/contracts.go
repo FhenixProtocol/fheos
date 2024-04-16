@@ -7,6 +7,7 @@ import (
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 	"math/big"
 
+
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/log"
 )
@@ -71,6 +72,14 @@ func UtypeToString(utype byte) string {
 }
 
 // ============================
+func Log(s string, tp *TxParams) (uint64, error) {
+	if tp.GasEstimation {
+		return 1, nil
+	}
+
+	logger.Debug(fmt.Sprintf("Contract Log: %s", s))
+	return 1, nil
+}
 func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
 	functionName := "add"
 
