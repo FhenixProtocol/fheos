@@ -6,6 +6,7 @@ import (
 	storage2 "github.com/fhenixprotocol/fheos/storage"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 	"math/big"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/log"
@@ -191,7 +192,7 @@ func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) (string, uin
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
-    return "0x" + strings.Repeat("00", 100), gas, nil
+		return "0x" + strings.Repeat("00", 100), gas, nil
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
