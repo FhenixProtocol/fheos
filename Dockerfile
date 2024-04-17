@@ -1,4 +1,4 @@
-ARG BRANCH=v0.2.0-alpha.0
+ARG BRANCH=latest
 ARG DOCKER_NAME=ghcr.io/fhenixprotocol/nitro/fhenix-node-builder:$BRANCH
 
 FROM rust:1.74-slim-bullseye as warp-drive-builder
@@ -23,7 +23,7 @@ COPY warp-drive/fhe-engine/Cargo.lock warp-drive/fhe-engine/Cargo.lock
 COPY warp-drive/fhe-bridge warp-drive/fhe-bridge
 
 # Update rust version & install packages
-RUN cd warp-drive/fhe-engine && RUSTFLAGS="-C target-cpu=native" cargo update
+RUN cd warp-drive/fhe-engine && cargo update
 
 # Copy the rest of the stuff so we can actually build it
 COPY warp-drive/ warp-drive/
@@ -51,7 +51,8 @@ COPY go-ethereum fheos/go-ethereum
 COPY chains fheos/chains
 COPY cmd fheos/cmd
 COPY precompiles fheos/precompiles
-
+COPY storage fheos/storage
+COPY hooks fheos/hooks
 RUN cd fheos/precompiles/ && pnpm install
 
 COPY gen.sh fheos/
@@ -72,6 +73,8 @@ COPY nitro-overrides/precompiles/FheOps.go precompiles/FheOps.go
 
 RUN go mod tidy
 
+RUN CGO_ENABLED=0 go install -ldflags "-s -w -extldflags '-static'" github.com/go-delve/delve/cmd/dlv@latest
+
 RUN go build -gcflags "all=-N -l" -ldflags="-X github.com/offchainlabs/nitro/cmd/util/confighelpers.version= -X github.com/offchainlabs/nitro/cmd/util/confighelpers.datetime= -X github.com/offchainlabs/nitro/cmd/util/confighelpers.modified=" -o target/bin/nitro "/workspace/cmd/nitro"
 
 COPY Makefile fheos/
@@ -79,6 +82,24 @@ COPY Makefile fheos/
 RUN cd fheos && make build
 
 FROM ghcr.io/fhenixprotocol/localfhenix:v0.1.0-beta5
+
+# **************** setup dlv
+
+ENV GOROOT=/usr/local/go
+ENV GOPATH=/go/
+ENV PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
+
+ADD https://go.dev/dl/go1.20.linux-amd64.tar.gz go.linux-amd64.tar.gz
+RUN sudo tar -C /usr/local -xzf go.linux-amd64.tar.gz
+
+RUN sudo chown user:user /usr/local/go
+
+RUN sudo mkdir /go
+RUN sudo chown user:user /go
+
+RUN CGO_ENABLED=0 go install -ldflags "-s -w -extldflags '-static'" github.com/go-delve/delve/cmd/dlv@latest
+
+# **************** setup fheos & warp drive
 
 RUN rm -rf /home/user/fhenix/fheosdb
 RUN mkdir -p /home/user/fhenix/fheosdb
@@ -89,15 +110,17 @@ COPY --from=warp-drive-builder /workspace/warp-drive/fhe-engine/config/fhe_engin
 COPY --from=winning /workspace/target/bin/nitro /usr/local/bin/
 COPY --from=winning /workspace/fheos/build/main /usr/local/bin/fheos
 
+# **************** setup scripts and configs
+
 COPY deployment/run.sh run.sh
 
 RUN sudo chmod +x ./run.sh
 RUN sudo chown -R user:user /home/user/keys
-
 RUN sed -i '/^keys_folder *=.*/s//keys_folder = "\/home\/user\/keys" /' /home/user/fhenix/fhe_engine.toml
+#RUN #sudo jq '.conf |= (.fhenix = .tfhe | del(.tfhe))' /config/sequencer_config.json > temp.json && sudo mv temp.json /config/sequencer_config.json
+COPY deployment/sequencer_config.json /config/sequencer_config.json
 
-RUN sudo jq '.conf |= (.fhenix = .tfhe | del(.tfhe))' /config/sequencer_config.json > temp.json && sudo mv temp.json /config/sequencer_config.json
-
+# **************** Run
 
 CMD ["./run.sh"]
-
+#CMD ["./run.sh", "--debug"]

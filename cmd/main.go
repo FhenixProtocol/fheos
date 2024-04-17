@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/fhenixprotocol/fheos/precompiles"
 	fhedriver "github.com/fhenixprotocol/warp-drive/fhe-driver"
 	"github.com/spf13/cobra"
@@ -38,8 +39,7 @@ func generateKeys() error {
 		}
 	}
 
-	err :=
-		fhedriver.GenerateFheKeys(0)
+	err := fhedriver.GenerateFheKeys(0)
 	if err != nil {
 		return fmt.Errorf("error from tfhe GenerateFheKeys: %s", err)
 	}
@@ -56,11 +56,6 @@ func initDbOnly() error {
 }
 
 func initFheos() (*precompiles.TxParams, error) {
-	err := generateKeys()
-	if err != nil {
-		return nil, err
-	}
-
 	if os.Getenv("FHEOS_DB_PATH") == "" {
 		err := os.Setenv("FHEOS_DB_PATH", "./fheosdb")
 		if err != nil {
@@ -68,7 +63,17 @@ func initFheos() (*precompiles.TxParams, error) {
 		}
 	}
 
-	err = precompiles.InitFheos(&fhedriver.ConfigDefault)
+	err := precompiles.InitFheConfig(&fhedriver.ConfigDefault)
+	if err != nil {
+		return nil, err
+	}
+
+	err = generateKeys()
+	if err != nil {
+		return nil, err
+	}
+
+	err = precompiles.InitializeFheosState()
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +83,7 @@ func initFheos() (*precompiles.TxParams, error) {
 		return nil, err
 	}
 
-	tp := precompiles.TxParams{false, false, true}
+	tp := precompiles.TxParams{false, false, true, nil, common.HexToAddress("0x0000000000000000000000000000000000000000")}
 
 	return &tp, err
 }

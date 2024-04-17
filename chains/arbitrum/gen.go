@@ -145,6 +145,7 @@ interface FheOps {
 			chunks := strings.Fields(line)
 			inner := strings.Split(chunks[1], "(")
 			Name = inner[0]
+
 			param := Param{
 				Name: "",
 				Type: "",
@@ -188,6 +189,10 @@ interface FheOps {
 					param.Type = "bytes memory"
 				}
 
+				if param.Type == "string" {
+					param.Type = "string memory"
+				}
+
 				if param.Type == "byte" {
 					param.Type = "uint8"
 				}
@@ -209,7 +214,7 @@ interface FheOps {
 			}
 
 			outLine += ") external pure"
-			if Ret != "" {
+			if Ret != "" && Name != "Log" {
 				if Ret == "[]byte" {
 					Ret = "bytes memory"
 				}
@@ -344,7 +349,6 @@ func Gen(parent string, output string) {
 	}
 
 	var operations []Operation
-
 	for _, f := range functions {
 		parameters := ""
 		innerParameters := ""
@@ -375,7 +379,9 @@ func Gen(parent string, output string) {
 			if count < (len(f.Inputs) - 1) {
 				parameters += ", "
 			}
-			innerParameters += ", "
+			if f.Name != "log" {
+				innerParameters += ", "
+			}
 		}
 
 		ret := "void"
@@ -419,7 +425,19 @@ type FheOps struct {
 }
 `)
 	defer file.Close()
+
+	logTemplate := GenerateLogTemplate()
+	_, err = file.WriteString(logTemplate)
+	if err != nil {
+		fmt.Println("Error writing")
+		return
+	}
+
 	for _, op := range operations {
+		if op.Name == "Log" {
+			continue
+		}
+
 		var template *template.Template
 		if strings.Contains(op.Name, "GetNetworkPublicKey") {
 			template = GenerateFHEOperationNoGasTemplate()
@@ -478,6 +496,23 @@ func (con FheOps) {{.Name}}(c ctx, evm mech{{.Inputs}}) ({{.ReturnType}}, error)
 	}
 
 	return tmpl
+}
+
+func GenerateLogTemplate() string {
+	templateText := `
+func (con FheOps) Log(c ctx, evm mech, s string) error {
+	tp := fheos.TxParamsFromEVM(evm)
+	gas, err := fheos.Log(s, &tp)
+
+	if err != nil {
+		return err
+	}
+
+	return c.Burn(gas)
+}
+`
+
+	return templateText
 }
 
 func GenerateFHEOperationTemplate() *template.Template {

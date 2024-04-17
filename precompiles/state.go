@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/ethereum/go-ethereum/metrics"
-	"github.com/fhenixprotocol/fheos/precompiles/storage"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
+	storage2 "github.com/fhenixprotocol/fheos/storage"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 	"math/big"
 	"os"
@@ -14,25 +14,39 @@ import (
 
 type FheosState struct {
 	FheosVersion uint64
-	Storage      storage.Storage
+	Storage      storage2.FheosStorage
 	EZero        [][]byte // Preencrypted 0s for each uint type
-	MaxUintValue *big.Int // This should contain the max value of the supported uint type
+	//MaxUintValue *big.Int // This should contain the max value of the supported uint type
 }
 
-const FheosVersion = uint64(1)
+func (fs *FheosState) GetZero(uintType fhe.EncryptionType) *fhe.FheEncrypted {
+	ct, err := fhe.EncryptPlainText(*big.NewInt(0), uintType)
+	if err != nil {
+		return nil
+	}
+	return ct
+}
 
-const DBPath = "/home/user/fhenix/fheosdb"
+func (fs *FheosState) GetRandomForGasEstimation() []byte {
+	return []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+		0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10,
+		0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
+		0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20,
+	}
+}
+
+const FheosVersion = uint64(1001)
 
 func getDbPath() string {
 	dbPath := os.Getenv("FHEOS_DB_PATH")
 	if dbPath == "" {
-		return DBPath
+		return os.TempDir() + "/fheos"
 	}
 
 	return dbPath
 }
 
-var state *FheosState = nil
+var State *FheosState = nil
 
 func (fs *FheosState) GetCiphertext(hash types.Hash) (*types.FheEncrypted, error) {
 	if metrics.Enabled {
@@ -63,12 +77,11 @@ func (fs *FheosState) SetCiphertext(ct *fhe.FheEncrypted) error {
 	return result
 }
 
-func createFheosState(storage *storage.Storage, version uint64) error {
-	state = &FheosState{
+func createFheosState(storage storage2.FheosStorage, version uint64) error {
+	State = &FheosState{
 		version,
-		*storage,
+		storage,
 		nil,
-		new(big.Int).SetUint64(^uint64(0)),
 	}
 
 	tempTp := TxParams{
@@ -87,87 +100,40 @@ func createFheosState(storage *storage.Storage, version uint64) error {
 		ezero[i], _, err = TrivialEncrypt(zero, byte(i), &tempTp)
 		if err != nil {
 			logger.Error("failed to encrypt 0 for ezero", "toType", i, "err", err)
-			return err
+			// don't error out - this should be handled dynamically later - otherwise it just requires the backend to do work
+			// that might not be necessary right now, and makes it more annoying for unit tests that might not need to encrypt
 		}
 	}
 	ezero[13], _, err = TrivialEncrypt(zero, byte(13), &tempTp)
 	if err != nil {
 		logger.Error("failed to encrypt 0 for ezero", "toType", 13, "err", err)
-		return err
 	}
 
-	state.EZero = ezero
+	State.EZero = ezero
 
 	return nil
 }
 
 func InitializeFheosState() error {
-	store := storage.InitStorage(getDbPath())
+	store, err := storage2.InitStorage(getDbPath())
 
-	if store == nil {
-		logger.Error("failed to open storage for fheos state")
-		return errors.New("failed to open storage for fheos state")
+	if err != nil {
+		logger.Error("failed to open storage for fheos State")
+		return err
 	}
 
-	err := store.PutVersion(FheosVersion)
+	err = store.PutVersion(FheosVersion)
 	if err != nil {
 		logger.Error("failed to write version into fheos db", "err", err)
 		return errors.New("failed to write version into fheos db")
 	}
 
-	err = createFheosState(&store, FheosVersion)
+	err = createFheosState(*store, FheosVersion)
 
 	if err != nil {
-		logger.Error("failed to create fheos state", "err", err)
-		return errors.New("failed to create fheos state")
+		logger.Error("failed to create fheos State", "err", err)
+		return errors.New("failed to create fheos State")
 	}
 
 	return nil
 }
-
-// The following functions are useful for future implementation of storage based on geth
-// The reason we are not using them now is because they store the entire map as bytes on every set
-// which is not efficient for large maps - not even for a few ciphertexts.
-//func InitializeFheosState(stateDB vm.StateDB, burner GasBurner) (*FheosState, error) {
-//	storage := NewStorage(stateDB, burner)
-//	fheosVersion, err := storage.GetUint64ByUint64(versionOffset)
-//	if err != nil {
-//		return nil, err
-//	}
-//	if fheosVersion != 0 {
-//		return nil, errors.New("fheos state is already initialized")
-//	}
-//
-//	_ = storage.SetUint64ByUint64(versionOffset, 1)
-//
-//	b, err := encodeMap(make(map[fhe.Hash]fhe.FheEncrypted))
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	ctStorage := storage.OpenBytesStorage([]byte{ctOffset})
-//	_ = ctStorage.Set(b)
-//
-//	aState, err := OpenFheosState(stateDB, burner)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	return aState, nil
-//}
-//
-//func OpenFheosState(stateDB vm.StateDB, burner GasBurner) (*FheosState, error) {
-//	storage := NewStorage(stateDB, burner)
-//	fheosVersion, err := storage.GetUint64ByUint64(versionOffset)
-//	if err != nil {
-//		return nil, err
-//	}
-//	if fheosVersion == 0 {
-//		return nil, errors.New("fheos state is uninitialized")
-//	}
-//	return &FheosState{
-//		fheosVersion,
-//		storage.OpenBytesStorage([]byte{ctOffset}),
-//		burner,
-//	}, nil
-//}
