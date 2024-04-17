@@ -677,7 +677,7 @@ func TrivialEncrypt(input []byte, toType byte, tp *TxParams) ([]byte, uint64, er
 	} else {
 		// we encrypt this using the computation key not the public key. Also, compact to save space in case this gets saved directly
 		// to storage
-		ct, err = fhe.NewFheEncrypted(valueToEncrypt, encryptToType, true, false, false)
+		ct, err = fhe.EncryptPlainText(valueToEncrypt, uintType)
 		if err != nil {
 			logger.Error("failed to create trivial encrypted value")
 			return nil, 0, vm.ErrExecutionReverted

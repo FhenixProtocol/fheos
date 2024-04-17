@@ -5,12 +5,12 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
+	"github.com/stretchr/testify/assert"
 	"math/rand"
 	"os"
 	"sync"
 	"testing"
 
-	"github.com/fhenixprotocol/fheos/precompiles"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 )
 
@@ -55,11 +55,6 @@ func init() {
 		panic(err)
 	}
 
-	err = precompiles.InitFheos(&fhe.ConfigDefault)
-	if err != nil {
-		panic(err)
-	}
-
 }
 
 // Helper function to generate a random Ciphertext
@@ -73,8 +68,10 @@ func randomCiphertext() *fhe.FheEncrypted {
 	_, _ = rand.Read(hash)
 
 	ct := &fhe.FheEncrypted{
-		Data:     serialization,
-		UintType: 2, // Assuming 0 is a valid UintType
+		Data:       serialization,
+		Compact:    true,
+		Compressed: true,
+		UintType:   2, // Assuming 0 is a valid UintType
 	}
 
 	ct.Hash()
@@ -165,6 +162,8 @@ func TestStorageCt(t *testing.T) {
 	if !bytes.Equal(retrievedCt.Data, ct.Data) || !((*fhe.FheEncrypted)(retrievedCt).Hash() == ct.Hash()) {
 		t.Errorf("Retrieved ciphertext does not match the original")
 	}
+	assert.Equal(t, ct.Compact, retrievedCt.Compact)
+	assert.Equal(t, ct.Compressed, retrievedCt.Compressed)
 }
 
 func TestStorageEphemeralCt(t *testing.T) {

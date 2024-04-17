@@ -20,7 +20,7 @@ type FheosState struct {
 }
 
 func (fs *FheosState) GetZero(uintType fhe.EncryptionType) *fhe.FheEncrypted {
-	ct, err := fhe.NewFheEncrypted(*big.NewInt(0), uintType, true, false, false)
+	ct, err := fhe.EncryptPlainText(*big.NewInt(0), uintType)
 	if err != nil {
 		return nil
 	}
