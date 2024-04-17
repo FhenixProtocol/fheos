@@ -192,7 +192,7 @@ func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) (string, uin
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
-		return "0x" + strings.Repeat("00", 100), gas, nil
+		return "0x" + strings.Repeat("00", 370), gas, nil
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
@@ -226,7 +226,7 @@ func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) (string, uin
 
 	logger.Debug(functionName+" success", "ciphertext-hash ", hex.EncodeToString(ctHash), "public-key", hex.EncodeToString(pk))
 
-	return "0x" + hex.EncodeToString(reencryptedValue), gas, nil
+	return string(reencryptedValue), gas, nil
 }
 
 func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
