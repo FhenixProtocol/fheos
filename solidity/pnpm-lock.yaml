@@ -78,8 +78,8 @@ devDependencies:
     specifier: ^6.9.0
     version: 6.9.1
   fhenixjs:
-    specifier: ^0.2.0-beta.1
-    version: 0.2.0-beta.1
+    specifier: ^0.2.0-beta.2
+    version: 0.2.0-beta.2
   fs-extra:
     specifier: ^10.1.0
     version: 10.1.0
@@ -3600,12 +3600,12 @@ packages:
       bser: 2.1.1
     dev: true
 
-  /fhenixjs@0.2.0-beta.1:
-    resolution: {integrity: sha512-4yu+/T0seHtkwMwtou/GWteWcKtkz9EJdTI/toJ3cT3+JCcxVegm3k8PrR5QLGck1tc/E5hBPfIOZOwJRDHn+A==}
+  /fhenixjs@0.2.0-beta.2:
+    resolution: {integrity: sha512-5HXkoN7SBdspm9QutKPfm3/tVSd9pT2Tf2SfRU0vlImcGYiTn/t0Oc9xc905lN8ecEd3zqzIkoMjk+vaaJuIJw==}
     dependencies:
       ethers: 6.9.1
-      node-tfhe: 0.5.3
-      tfhe: 0.5.3
+      node-tfhe: 0.6.1
+      tfhe: 0.6.1
       tweetnacl: 1.0.3
       tweetnacl-util: 0.15.1
     transitivePeerDependencies:
@@ -5363,8 +5363,8 @@ packages:
     resolution: {integrity: sha512-y10wOWt8yZpqXmOgRo77WaHEmhYQYGNA6y421PKsKYWEK8aW+cqAphborZDhqfyKrbZEN92CN1X2KbafY2s7Yw==}
     dev: true
 
-  /node-tfhe@0.5.3:
-    resolution: {integrity: sha512-72HFj9Lj9hC5PWaW5TH306uPAUUL6We2lAXLW6ibxwsLcSUgEL7NEVGz5MqAYa5PcwpVEvzLDZSHCFRz8glqaQ==}
+  /node-tfhe@0.6.1:
+    resolution: {integrity: sha512-p2BidmylEO+3v1Q4KqErNJC8z/Y2R+b+Yd42omweeII41AbgPM12RJCmvE9GMvr/ZbAn/H762JPijLH08oBUYQ==}
     dev: true
 
   /nofilter@3.1.0:
@@ -6362,8 +6362,8 @@ packages:
     resolution: {integrity: sha512-N+8UisAXDGk8PFXP4HAzVR9nbfmVJ3zYLAWiTIoqC5v5isinhr+r5uaO8+7r3BMfuNIufIsA7RdpVgacC2cSpw==}
     dev: true
 
-  /tfhe@0.5.3:
-    resolution: {integrity: sha512-LrZXKPzI/YsLwJA+y41uYvQU+G1/JbXea30eQXXFdLSeYPPO45a9jCL5ZqvkWZkRFA9Ox2/7t86+1ysR/1DNyw==}
+  /tfhe@0.6.1:
+    resolution: {integrity: sha512-csHYfEbejbQl4LVb1/37LY9AxiR9RqvzXsHT1wENMtGqIjNmev3T1aXyljooGc/4HuZmG8VjlUkX6CYvG4U80g==}
     dev: true
 
   /then-request@6.0.2:

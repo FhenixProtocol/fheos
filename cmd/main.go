@@ -39,8 +39,7 @@ func generateKeys() error {
 		}
 	}
 
-	err :=
-		fhedriver.GenerateFheKeys(0)
+	err := fhedriver.GenerateFheKeys(0)
 	if err != nil {
 		return fmt.Errorf("error from tfhe GenerateFheKeys: %s", err)
 	}
@@ -57,11 +56,6 @@ func initDbOnly() error {
 }
 
 func initFheos() (*precompiles.TxParams, error) {
-	err := generateKeys()
-	if err != nil {
-		return nil, err
-	}
-
 	if os.Getenv("FHEOS_DB_PATH") == "" {
 		err := os.Setenv("FHEOS_DB_PATH", "./fheosdb")
 		if err != nil {
@@ -69,7 +63,17 @@ func initFheos() (*precompiles.TxParams, error) {
 		}
 	}
 
-	err = precompiles.InitFheos(&fhedriver.ConfigDefault)
+	err := precompiles.InitFheConfig(&fhedriver.ConfigDefault)
+	if err != nil {
+		return nil, err
+	}
+
+	err = generateKeys()
+	if err != nil {
+		return nil, err
+	}
+
+	err = precompiles.InitializeFheosState()
 	if err != nil {
 		return nil, err
 	}
