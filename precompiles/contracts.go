@@ -7,33 +7,35 @@ import (
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 	"math/big"
 
-
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/log"
 )
 
 var logger log.Logger
 
+func init() {
+	InitLogger()
+}
+
 func InitLogger() {
 	logger = log.Root().New("module", "fheos")
 	fhe.SetLogger(log.Root().New("module", "go-tfhe"))
 }
 
-func initTfheConfig(fheConfig *fhe.Config) error {
+func InitFheConfig(fheConfig *fhe.Config) error {
 	err := fhe.Init(fheConfig)
 	if err != nil {
-		logger.Error("Failed to init tfhe config with", "error:", err)
+		logger.Error("Failed to init fhe config with", "error:", err)
 		return err
 	}
 
-	logger.Info("Successfully initialized tfhe config", "config", fheConfig)
+	logger.Info("Successfully initialized fhe config", "config", fheConfig)
 
 	return nil
 }
 
 func InitFheos(tfheConfig *fhe.Config) error {
-	InitLogger()
-	err := initTfheConfig(tfheConfig)
+	err := InitFheConfig(tfheConfig)
 	if err != nil {
 		return err
 	}
