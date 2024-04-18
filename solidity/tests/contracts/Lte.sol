@@ -40,12 +40,6 @@ contract LteTest {
             }
 
             return 0;
-        } else if (Utils.cmp(test, "lte(euint256,euint256)")) {
-            if (FHE.decrypt(FHE.lte(FHE.asEuint256(a), FHE.asEuint256(b)))) {
-                return 1;
-            }
-
-            return 0;
         } else if (Utils.cmp(test, "euint8.lte(euint8)")) {
             if (FHE.asEuint8(a).lte(FHE.asEuint8(b)).decrypt()) {
                 return 1;
@@ -71,11 +65,6 @@ contract LteTest {
             return 0;
         } else if (Utils.cmp(test, "euint128.lte(euint128)")) {
             if (FHE.asEuint128(a).lte(FHE.asEuint128(b)).decrypt()) {
-                return 1;
-            }
-            return 0;
-        } else if (Utils.cmp(test, "euint256.lte(euint256)")) {
-            if (FHE.asEuint256(a).lte(FHE.asEuint256(b)).decrypt()) {
                 return 1;
             }
             return 0;

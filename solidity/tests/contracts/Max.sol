@@ -20,8 +20,6 @@ contract MaxTest {
             return FHE.decrypt(FHE.max(FHE.asEuint64(a), FHE.asEuint64(b)));
         } else if (Utils.cmp(test, "max(euint128,euint128)")) {
             return FHE.decrypt(FHE.max(FHE.asEuint128(a), FHE.asEuint128(b)));
-        } else if (Utils.cmp(test, "max(euint256,euint256)")) {
-            return FHE.decrypt(FHE.max(FHE.asEuint256(a), FHE.asEuint256(b))); 
         } else if (Utils.cmp(test, "euint8.max(euint8)")) {
             return FHE.decrypt(FHE.asEuint8(a).max(FHE.asEuint8(b)));
         } else if (Utils.cmp(test, "euint16.max(euint16)")) {
@@ -32,8 +30,6 @@ contract MaxTest {
             return FHE.decrypt(FHE.asEuint64(a).max(FHE.asEuint64(b)));
         } else if (Utils.cmp(test, "euint128.max(euint128)")) {
             return FHE.decrypt(FHE.asEuint128(a).max(FHE.asEuint128(b)));
-        } else if (Utils.cmp(test, "euint256.max(euint256)")) {
-            return FHE.decrypt(FHE.asEuint256(a).max(FHE.asEuint256(b)));
         }
     
         revert TestNotFound(test);

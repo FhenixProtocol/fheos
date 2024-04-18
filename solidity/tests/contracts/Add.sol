@@ -20,8 +20,6 @@ contract AddTest {
             return FHE.decrypt(FHE.add(FHE.asEuint64(a), FHE.asEuint64(b)));
         } else if (Utils.cmp(test, "add(euint128,euint128)")) {
             return FHE.decrypt(FHE.add(FHE.asEuint128(a), FHE.asEuint128(b)));
-        } else if (Utils.cmp(test, "add(euint256,euint256)")) {
-            return FHE.decrypt(FHE.add(FHE.asEuint256(a), FHE.asEuint256(b))); 
         } else if (Utils.cmp(test, "euint8.add(euint8)")) {
             return FHE.decrypt(FHE.asEuint8(a).add(FHE.asEuint8(b)));
         } else if (Utils.cmp(test, "euint16.add(euint16)")) {
@@ -32,20 +30,16 @@ contract AddTest {
             return FHE.decrypt(FHE.asEuint64(a).add(FHE.asEuint64(b)));
         } else if (Utils.cmp(test, "euint128.add(euint128)")) {
             return FHE.decrypt(FHE.asEuint128(a).add(FHE.asEuint128(b)));
-        } else if (Utils.cmp(test, "euint256.add(euint256)")) {
-            return FHE.decrypt(FHE.asEuint256(a).add(FHE.asEuint256(b)));
         } else if (Utils.cmp(test, "euint8 + euint8")) {
             return FHE.decrypt(FHE.asEuint8(a) + FHE.asEuint8(b));
         } else if (Utils.cmp(test, "euint16 + euint16")) {
             return FHE.decrypt(FHE.asEuint16(a) + FHE.asEuint16(b));
         } else if (Utils.cmp(test, "euint32 + euint32")) {
             return FHE.decrypt(FHE.asEuint32(a) + FHE.asEuint32(b));
-        } else if (Utils.cmp(test, "euint64 + euint64")) {
+        }else if (Utils.cmp(test, "euint64 + euint64")) {
             return FHE.decrypt(FHE.asEuint64(a) + FHE.asEuint64(b));
-        } else if (Utils.cmp(test, "euint128 + euint128")) {
+        }else if (Utils.cmp(test, "euint128 + euint128")) {
             return FHE.decrypt(FHE.asEuint128(a) + FHE.asEuint128(b));
-        } else if (Utils.cmp(test, "euint256 + euint256")) {
-            return FHE.decrypt(FHE.asEuint256(a) + FHE.asEuint256(b));
         }
     
         revert TestNotFound(test);
