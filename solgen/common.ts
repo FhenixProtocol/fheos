@@ -29,6 +29,7 @@ export type AllTypes =
   | "none";
 
 export const SEALING_FUNCTION_NAME = "sealoutput";
+export const SEAL_RETURN_TYPE = "string";
 export const LOCAL_SEAL_FUNCTION_NAME = "seal";
 export const LOCAL_DECRYPT_FUNCTION_NAME = "decrypt";
 

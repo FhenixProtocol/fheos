@@ -4,6 +4,7 @@ import {
   EPlaintextType,
   EUintType,
   SEALING_FUNCTION_NAME,
+  SEAL_RETURN_TYPE,
   UnderlyingTypes,
   UintTypes,
   valueIsEncrypted,
@@ -83,7 +84,7 @@ library Common {
 }
 
 library Impl {
-    function sealoutput(uint8 utype, uint256 ciphertext, bytes32 publicKey) internal pure returns (bytes memory reencrypted) {
+    function sealoutput(uint8 utype, uint256 ciphertext, bytes32 publicKey) internal pure returns (${SEAL_RETURN_TYPE} memory reencrypted) {
         // Call the sealoutput precompile.
         reencrypted = FheOps(Precompiles.Fheos).sealOutput(utype, Common.toBytes(ciphertext), bytes.concat(publicKey));
 
@@ -673,7 +674,7 @@ export function testContractReq() {
 }
 
 export function testContractReencrypt() {
-  let func = `function ${SEALING_FUNCTION_NAME}(string calldata test, uint256 a, bytes32 pubkey) public pure returns (bytes memory reencrypted) {
+  let func = `function ${SEALING_FUNCTION_NAME}(string calldata test, uint256 a, bytes32 pubkey) public pure returns (${SEAL_RETURN_TYPE} memory reencrypted) {
         if (Utils.cmp(test, "${SEALING_FUNCTION_NAME}(euint8)")) {
             return FHE.${SEALING_FUNCTION_NAME}(FHE.asEuint8(a), pubkey);
         } else if (Utils.cmp(test, "${SEALING_FUNCTION_NAME}(euint16)")) {
@@ -700,7 +701,7 @@ export function testContractReencrypt() {
         revert TestNotFound(test);
     }`;
   const abi = `export interface SealoutputTestType extends BaseContract {
-    ${SEALING_FUNCTION_NAME}: (test: string, a: bigint, pubkey: Uint8Array) => Promise<Uint8Array>;
+    ${SEALING_FUNCTION_NAME}: (test: string, a: bigint, pubkey: Uint8Array) => Promise<string>;
 }\n`;
   return [generateTestContract(SEALING_FUNCTION_NAME, func, true), abi];
 }
@@ -1069,7 +1070,7 @@ export const CastBinding = (thisType: string, targetType: string) => {
 
 export const SealFromType = (thisType: string) => {
   return `
-    function ${LOCAL_SEAL_FUNCTION_NAME}(${thisType} value, bytes32 publicKey) internal pure returns (bytes memory) {
+    function ${LOCAL_SEAL_FUNCTION_NAME}(${thisType} value, bytes32 publicKey) internal pure returns (${SEAL_RETURN_TYPE} memory) {
         return FHE.sealoutput(value, publicKey);
     }`;
 };
