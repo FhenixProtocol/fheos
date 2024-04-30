@@ -4,4 +4,4 @@
 	url = git@github.com:FhenixProtocol/go-ethereum.git
 [submodule "warp-drive"]
 	path = warp-drive
-	url = https://github.com/fhenixprotocol/warp-drive.git
+	url = git@github.com:FhenixProtocol/warp-drive.git
