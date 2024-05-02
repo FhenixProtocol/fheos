@@ -306,11 +306,11 @@ describe("Test Lte", () => {
       cases,
     },
     {
-      function: ["lte(euint64,euint64)", "euint32.lte(euint64)"],
+      function: ["lte(euint64,euint64)", "euint64.lte(euint64)"],
       cases,
     },
     {
-      function: ["lte(euint128,euint128)", "euint32.lte(euint128)"],
+      function: ["lte(euint128,euint128)", "euint64.lte(euint128)"],
       cases,
     },
   ];
@@ -403,9 +403,7 @@ describe("Test Sub", () => {
         {
           a: aUnderflow,
           b: bUnderflow,
-          expectedResult: Number(
-            BigInt.asUintN(8, BigInt(aUnderflow - bUnderflow))
-          ),
+          expectedResult: BigInt.asUintN(64, BigInt(aUnderflow - bUnderflow)),
           name: " with underflow",
         },
       ],
@@ -421,9 +419,7 @@ describe("Test Sub", () => {
         {
           a: aUnderflow,
           b: bUnderflow,
-          expectedResult: Number(
-            BigInt.asUintN(8, BigInt(aUnderflow - bUnderflow))
-          ),
+          expectedResult: BigInt.asUintN(128, BigInt(aUnderflow - bUnderflow)),
           name: " with underflow",
         },
       ],
@@ -439,7 +435,7 @@ describe("Test Sub", () => {
             BigInt(testCase.a),
             BigInt(testCase.b)
           );
-          expect(decryptedResult).toBe(BigInt(testCase.expectedResult));
+          expect(BigInt(decryptedResult)).toBe(BigInt(testCase.expectedResult));
         });
       }
     }

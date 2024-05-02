@@ -7,7 +7,6 @@ import (
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 	"math/big"
 
-
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/log"
 )
