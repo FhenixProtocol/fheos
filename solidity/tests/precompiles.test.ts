@@ -87,18 +87,19 @@ const getFheContract = async (contractAddress: string) => {
 };
 
 describe("Test Add", () => {
-  const aOverflow8 = 2 ** 8 - 1;
-  const aOverflow16 = 2 ** 16 - 1;
-  const aOverflow32 = 2 ** 32 - 1;
-  const aOverflow64 = 2 ** 64 - 1;
-  const aOverflow128 = 2 ** 128 - 1;
-  const aUnderflow = 1;
+  const getMaxValue = (bits: number) => {
+    const val = BigInt.asUintN(bits, BigInt(1));
+    return (val << BigInt(bits)) - BigInt(2);
+  };
 
-  const bOverflow8 = aOverflow8 - 1;
-  const bOverflow16 = aOverflow16 - 1;
-  const bOverflow32 = aOverflow32 - 1;
-  const bOverflow64 = aOverflow64 - 1;
-  const bOverflow128 = aOverflow128 - 1;
+  const cases = [
+    { overflow: false, name: "" },
+    {
+      overflow: true,
+      name: " with overflow",
+    },
+  ];
+
   let contract;
 
   // We don't really need it as test but it is a test since it is async
@@ -110,17 +111,7 @@ describe("Test Add", () => {
   const testCases = [
     {
       function: ["add(euint8,euint8)", "euint8.add(euint8)", "euint8 + euint8"],
-      cases: [
-        { a: 1, b: 2, expectedResult: 3, name: "" },
-        {
-          a: aOverflow8,
-          b: bOverflow8,
-          expectedResult: Number(
-            BigInt.asUintN(8, BigInt(aOverflow8 + bOverflow8))
-          ),
-          name: " with overflow",
-        },
-      ],
+      cases,
       resType: 8,
     },
     {
@@ -129,17 +120,7 @@ describe("Test Add", () => {
         "euint16.add(euint16)",
         "euint16 + euint16",
       ],
-      cases: [
-        { a: 1, b: 2, expectedResult: 3, name: "" },
-        {
-          a: aOverflow16,
-          b: bOverflow16,
-          expectedResult: Number(
-            BigInt.asUintN(16, BigInt(aOverflow16 + bOverflow16))
-          ),
-          name: " with overflow",
-        },
-      ],
+      cases,
       resType: 16,
     },
     {
@@ -148,17 +129,7 @@ describe("Test Add", () => {
         "euint32.add(euint32)",
         "euint32 + euint32",
       ],
-      cases: [
-        { a: 1, b: 2, expectedResult: 3, name: "" },
-        {
-          a: aOverflow32,
-          b: bOverflow32,
-          expectedResult: Number(
-            BigInt.asUintN(32, BigInt(aOverflow32 + bOverflow32))
-          ),
-          name: " with overflow",
-        },
-      ],
+      cases,
       resType: 32,
     },
     {
@@ -167,17 +138,7 @@ describe("Test Add", () => {
         "euint64.add(euint64)",
         "euint64 + euint64",
       ],
-      cases: [
-        { a: 1, b: 2, expectedResult: 3, name: "" },
-        {
-          a: aOverflow64,
-          b: bOverflow64,
-          expectedResult: Number(
-            BigInt.asUintN(64, BigInt(aOverflow64 + bOverflow64))
-          ),
-          name: " with overflow",
-        },
-      ],
+      cases,
       resType: 64,
     },
     {
@@ -186,17 +147,7 @@ describe("Test Add", () => {
         "euint128.add(euint128)",
         "euint128 + euint128",
       ],
-      cases: [
-        { a: 1, b: 2, expectedResult: 3, name: "" },
-        {
-          a: aOverflow128,
-          b: bOverflow128,
-          expectedResult: Number(
-            BigInt.asUintN(128, BigInt(aOverflow128 + bOverflow128))
-          ),
-          name: " with overflow",
-        },
-      ],
+      cases,
       resType: 128,
     },
   ];
@@ -205,12 +156,14 @@ describe("Test Add", () => {
     for (const testFunc of test.function) {
       for (const testCase of test.cases) {
         it(`Test ${testFunc}${testCase.name}`, async () => {
-          const decryptedResult = await contract.add(
-            testFunc,
-            BigInt(testCase.a),
-            BigInt(testCase.b)
-          );
-          expect(decryptedResult).toBe(BigInt(testCase.expectedResult));
+          let a = BigInt.asUintN(test.resType, BigInt(2));
+          if (testCase.overflow) {
+            a = getMaxValue(test.resType);
+          }
+
+          const b = a - BigInt(1);
+          const decryptedResult = await contract.add(testFunc, a, b);
+          expect(decryptedResult).toBe(BigInt.asUintN(test.resType, a + b));
         });
       }
     }
@@ -310,7 +263,7 @@ describe("Test Lte", () => {
       cases,
     },
     {
-      function: ["lte(euint128,euint128)", "euint64.lte(euint128)"],
+      function: ["lte(euint128,euint128)", "euint128.lte(euint128)"],
       cases,
     },
   ];
@@ -1548,19 +1501,12 @@ describe("Test Not", () => {
     expect(contract).toBeTruthy();
   });
 
-  const cases = [
-    { a: 9, b: 15, expectedResult: 9 | 15, name: "" },
-    { a: 7, b: 0, expectedResult: 7, name: " a | 0" },
-    { a: 0, b: 5, expectedResult: 5, name: " 0 | b" },
-  ];
-
   const testCases = [
     {
       function: "not(euint8)",
       cases: [
         {
-          value: 0b11110000,
-          expectedResult: 0b00001111,
+          bits: 8,
           name: "",
         },
       ],
@@ -1569,8 +1515,7 @@ describe("Test Not", () => {
       function: "not(euint16)",
       cases: [
         {
-          value: 0b1111111100000000,
-          expectedResult: 0b0000000011111111,
+          bits: 16,
           name: "",
         },
       ],
@@ -1579,8 +1524,7 @@ describe("Test Not", () => {
       function: "not(euint32)",
       cases: [
         {
-          value: 0b11111111111111110000000000000000,
-          expectedResult: 0b00000000000000001111111111111111,
+          bits: 32,
           name: "",
         },
       ],
@@ -1588,26 +1532,24 @@ describe("Test Not", () => {
     {
       function: "not(ebool)",
       cases: [
-        { value: 1, expectedResult: 0, name: " !true" },
-        { value: 0, expectedResult: 1, name: " !false" },
+        { bits: 1, name: " !true" },
+        { bits: 1, name: " !false" },
       ],
     },
     {
       function: "not(euint64)",
       cases: [
         {
-          value: 0b1111111111111111111111111111111100000000000000000000000000000000,
-          expectedResult: 0b0000000000000000000000000000000011111111111111111111111111111111,
+          bits: 64,
           name: "",
         },
       ],
     },
     {
-      function: "not(euint64)",
+      function: "not(euint128)",
       cases: [
         {
-          value: 0b11111111111111111111111111111111111111111111111111111111111111110000000000000000000000000000000000000000000000000000000000000000,
-          expectedResult: 0b00000000000000000000000000000000000000000000000000000000000000001111111111111111111111111111111111111111111111111111111111111111,
+          bits: 128,
           name: "",
         },
       ],
@@ -1617,11 +1559,15 @@ describe("Test Not", () => {
   for (const test of testCases) {
     for (const testCase of test.cases) {
       it(`Test ${test.function}${testCase.name}`, async () => {
-        const decryptedResult = await contract.not(
-          test.function,
-          BigInt(testCase.value)
-        );
-        expect(decryptedResult).toBe(BigInt(testCase.expectedResult));
+        let val = BigInt(1);
+        let expectedResult = BigInt(0);
+        if (testCase.bits !== 1) {
+          val = BigInt.asUintN(testCase.bits, BigInt(1));
+          expectedResult = (val << BigInt(testCase.bits)) - BigInt(2);
+        }
+
+        const decryptedResult = await contract.not(test.function, BigInt(val));
+        expect(decryptedResult).toBe(expectedResult);
       });
     }
   }
