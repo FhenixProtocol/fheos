@@ -887,17 +887,17 @@ export function testContract2Arg(
             return FHE.decrypt(FHE.asEuint32(a) ${op} FHE.asEuint32(b));
         }`;
     if (isEuint64Allowed) {
-      func += `else if (Utils.cmp(test, "euint64 ${op} euint64")) {
+      func += ` else if (Utils.cmp(test, "euint64 ${op} euint64")) {
             return FHE.decrypt(FHE.asEuint64(a) ${op} FHE.asEuint64(b));
         }`;
     }
     if (isEuint128Allowed) {
-      func += `else if (Utils.cmp(test, "euint128 ${op} euint128")) {
+      func += ` else if (Utils.cmp(test, "euint128 ${op} euint128")) {
             return FHE.decrypt(FHE.asEuint128(a) ${op} FHE.asEuint128(b));
         }`;
     }
     if (isEuint256Allowed) {
-      func += `else if (Utils.cmp(test, "euint256 ${op} euint256")) {
+      func += ` else if (Utils.cmp(test, "euint256 ${op} euint256")) {
             return FHE.decrypt(FHE.asEuint256(a) ${op} FHE.asEuint256(b));
         }`;
     }
