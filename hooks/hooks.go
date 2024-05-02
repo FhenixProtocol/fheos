@@ -13,7 +13,6 @@ type FheOSHooks interface {
 	StoreCiphertextHook(contract common.Address, loc [32]byte, val [32]byte) error
 	StoreGasHook(contract common.Address, loc [32]byte, val [32]byte) (uint64, uint64)
 	LoadCiphertextHook() [32]byte
-
 	EvmCallStart()
 	EvmCallEnd(evmSuccess bool)
 }

@@ -117,7 +117,8 @@ COPY deployment/run.sh run.sh
 RUN sudo chmod +x ./run.sh
 RUN sudo chown -R user:user /home/user/keys
 RUN sed -i '/^keys_folder *=.*/s//keys_folder = "\/home\/user\/keys" /' /home/user/fhenix/fhe_engine.toml
-RUN sudo jq '.conf |= (.fhenix = .tfhe | del(.tfhe))' /config/sequencer_config.json > temp.json && sudo mv temp.json /config/sequencer_config.json
+#RUN #sudo jq '.conf |= (.fhenix = .tfhe | del(.tfhe))' /config/sequencer_config.json > temp.json && sudo mv temp.json /config/sequencer_config.json
+COPY deployment/sequencer_config.json /config/sequencer_config.json
 
 # **************** Run
 

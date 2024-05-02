@@ -69,7 +69,7 @@ contract WrappingERC20 is ERC20, Permissioned {
         _transferImpl(msg.sender, to, amount);
     }
 
-        // Transfers an encrypted amount.
+    // Transfers an encrypted amount.
     function _transferImpl(address from, address to, euint32 amount) internal {
         // Make sure the sender has enough tokens.
         euint32 amountToSend = FHE.select(amount.lt(_encBalances[from]), amount, FHE.asEuint32(0));
@@ -81,14 +81,13 @@ contract WrappingERC20 is ERC20, Permissioned {
 
     function balanceOfEncrypted(
         Permission calldata permission
-    ) public view onlySignedPublicKey(permission) returns (bytes memory) {
+    ) public view onlySignedPublicKey(permission) returns (string memory) {
         return FHE.sealoutput(_encBalances[msg.sender], permission.publicKey);
     }
 
     function getEncryptedTotalSupply(
         Permission calldata permission
-    ) public view onlySignedPublicKey(permission) returns (bytes memory) {
+    ) public view onlySignedPublicKey(permission) returns (string memory) {
         return FHE.sealoutput(totalEncryptedSupply, permission.publicKey);
     }
-
 }

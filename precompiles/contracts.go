@@ -6,6 +6,7 @@ import (
 	storage2 "github.com/fhenixprotocol/fheos/storage"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 	"math/big"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/log"
@@ -13,26 +14,29 @@ import (
 
 var logger log.Logger
 
+func init() {
+	InitLogger()
+}
+
 func InitLogger() {
 	logger = log.Root().New("module", "fheos")
 	fhe.SetLogger(log.Root().New("module", "go-tfhe"))
 }
 
-func initTfheConfig(fheConfig *fhe.Config) error {
+func InitFheConfig(fheConfig *fhe.Config) error {
 	err := fhe.Init(fheConfig)
 	if err != nil {
-		logger.Error("Failed to init tfhe config with", "error:", err)
+		logger.Error("Failed to init fhe config with", "error:", err)
 		return err
 	}
 
-	logger.Info("Successfully initialized tfhe config", "config", fheConfig)
+	logger.Info("Successfully initialized fhe config", "config", fheConfig)
 
 	return nil
 }
 
 func InitFheos(tfheConfig *fhe.Config) error {
-	InitLogger()
-	err := initTfheConfig(tfheConfig)
+	err := InitFheConfig(tfheConfig)
 	if err != nil {
 		return err
 	}
@@ -70,7 +74,8 @@ func UtypeToString(utype byte) string {
 	}
 }
 
-// ============================
+// ============================================================
+
 func Log(s string, tp *TxParams) (uint64, error) {
 	if tp.GasEstimation {
 		return 1, nil
@@ -79,6 +84,7 @@ func Log(s string, tp *TxParams) (uint64, error) {
 	logger.Debug(fmt.Sprintf("Contract Log: %s", s))
 	return 1, nil
 }
+
 func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
 	functionName := "add"
 
@@ -132,6 +138,8 @@ func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	return resultHash[:], gas, nil
 }
 
+// Verify takes inputs from the user and runs them through verification. Note that we will always get ciphertexts that
+// are public-key encrypted and compressed. Anything else will fail
 func Verify(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 	functionName := "verify"
 
@@ -153,13 +161,14 @@ func Verify(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
-	ct, err := fhe.NewFheEncryptedFromBytes(input, uintType, true /* TODO: not sure + shouldn't be hardcoded */)
+	ct := fhe.NewFheEncryptedFromBytes(input, uintType, true, false /* TODO: not sure + shouldn't be hardcoded */)
+	err := ct.Verify()
 	if err != nil {
-		logger.Error(functionName+" failed to deserialize input ciphertext", "err", err, "len", len(input))
+		logger.Info(fmt.Sprintf("failed to verify ciphertext %s for type %d - was input corrupted?", ct.Hash().Hex(), uintType))
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	err = storeCipherText(storage, ct)
+	err = storeCipherText(storage, &ct)
 	if err != nil {
 		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -169,23 +178,21 @@ func Verify(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 	return ct.GetHashBytes(), gas, nil
 }
 
-func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) ([]byte, uint64, error) {
+func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) (string, uint64, error) {
 	//solgen: bool math
 	functionName := "sealOutput"
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 
 	if !isValidType(utype) {
 		logger.Error("invalid ciphertext", "type", utype)
-		return nil, 0, vm.ErrExecutionReverted
+		return "", 0, vm.ErrExecutionReverted
 	}
 
 	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
-		randomHash := State.GetRandomForGasEstimation()
-		// FHENIX: A random issue occured with gas estimation of SealOutput, it was failing with out of gas.
-		return randomHash[:], 2 * gas, nil
+		return "0x" + strings.Repeat("00", 370), gas, nil
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
@@ -195,32 +202,31 @@ func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) ([]byte, uin
 	if len(ctHash) != 32 {
 		msg := functionName + " ciphertext's hashes need to be 32 bytes long"
 		logger.Error(msg, "ciphertext-hash", hex.EncodeToString(ctHash), "hash-len", len(ctHash))
-		return nil, 0, vm.ErrExecutionReverted
+		return "", 0, vm.ErrExecutionReverted
 	}
 
 	if len(pk) != 32 {
 		msg := functionName + " public key need to be 32 bytes long"
 		logger.Error(msg, "public-key", hex.EncodeToString(pk), "len", len(pk))
-		return nil, 0, vm.ErrExecutionReverted
+		return "", 0, vm.ErrExecutionReverted
 	}
 
 	ct := getCiphertext(storage, fhe.BytesToHash(ctHash))
 	if ct == nil {
 		msg := functionName + " unverified ciphertext handle"
 		logger.Error(msg, "ciphertext-hash", hex.EncodeToString(ctHash))
-		return nil, 0, vm.ErrExecutionReverted
-
+		return "", 0, vm.ErrExecutionReverted
 	}
 
 	reencryptedValue, err := fhe.SealOutput(*ct, pk)
 	if err != nil {
 		logger.Error(functionName+" failed to encrypt to user key", "err", err)
-		return nil, 0, vm.ErrExecutionReverted
+		return "", 0, vm.ErrExecutionReverted
 	}
 
 	logger.Debug(functionName+" success", "ciphertext-hash ", hex.EncodeToString(ctHash), "public-key", hex.EncodeToString(pk))
 
-	return reencryptedValue, gas, nil
+	return string(reencryptedValue), gas, nil
 }
 
 func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
@@ -621,6 +627,9 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams) ([]byte, uint64, 
 	return resHash[:], gas, nil
 }
 
+// TrivialEncrypt takes a plaintext number and encrypts it to a _compact_ ciphertext
+// using the server/computation key - obviously this doesn't hide any information as the
+// number was known plaintext
 func TrivialEncrypt(input []byte, toType byte, tp *TxParams) ([]byte, uint64, error) {
 	functionName := "trivialEncrypt"
 
@@ -664,9 +673,9 @@ func TrivialEncrypt(input []byte, toType byte, tp *TxParams) ([]byte, uint64, er
 		}
 
 	} else {
-		// we encrypt this using the computation key no the public key. Also, compact to save space in case this gets saved directly
+		// we encrypt this using the computation key not the public key. Also, compact to save space in case this gets saved directly
 		// to storage
-		ct, err = fhe.NewFheEncrypted(valueToEncrypt, encryptToType, true, false)
+		ct, err = fhe.EncryptPlainText(valueToEncrypt, uintType)
 		if err != nil {
 			logger.Error("failed to create trivial encrypted value")
 			return nil, 0, vm.ErrExecutionReverted
