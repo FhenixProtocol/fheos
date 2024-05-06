@@ -484,7 +484,7 @@ func GenerateFHEOperationNoGasTemplate() *template.Template {
 	templateText := `
 func (con FheOps) {{.Name}}(c ctx, evm mech{{.Inputs}}) ({{.ReturnType}}, error) {
 
-	tp := fheos.TxParamsFromEVM(evm)
+	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	return fheos.{{.Name}}({{.InnerInputs}}&tp)
 }
 `
@@ -501,7 +501,7 @@ func (con FheOps) {{.Name}}(c ctx, evm mech{{.Inputs}}) ({{.ReturnType}}, error)
 func GenerateLogTemplate() string {
 	templateText := `
 func (con FheOps) Log(c ctx, evm mech, s string) error {
-	tp := fheos.TxParamsFromEVM(evm)
+	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	gas, err := fheos.Log(s, &tp)
 
 	if err != nil {
@@ -518,8 +518,7 @@ func (con FheOps) Log(c ctx, evm mech, s string) error {
 func GenerateFHEOperationTemplate() *template.Template {
 	templateText := `
 func (con FheOps) {{.Name}}(c ctx, evm mech{{.Inputs}}) ({{.ReturnType}}, error) {
-	tp := fheos.TxParamsFromEVM(evm)
-
+	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "{{.Name}}", fheos.UtypeToString({{.OperationTypeName}}))
 		defer func(start time.Time) {

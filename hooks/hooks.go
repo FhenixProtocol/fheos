@@ -6,7 +6,6 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	fheos "github.com/fhenixprotocol/fheos/precompiles"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
-	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 )
 
 type FheOSHooks interface {
@@ -54,7 +53,6 @@ func (h FheOSHooksImpl) LoadCiphertextHook() [32]byte {
 }
 
 func (h FheOSHooksImpl) EvmCallStart() {
-
 	// don't really need this? Or maybe to start a new ephemeral storage?
 	// But how do we know how to keep the context thread safe? Ugh, do we need 2 dbs now?
 }
@@ -75,7 +73,7 @@ func (h FheOSHooksImpl) EvmCallEnd(evmSuccess bool) {
 				log.Crit("Error getting ciphertext from storage when trying to store in lts - state corruption detected", "err", err)
 				continue
 			}
-			err = fheos.State.SetCiphertext((*fhe.FheEncrypted)(cipherText))
+			err = fheos.State.SetCiphertext(cipherText)
 			if err != nil {
 				log.Crit("Error storing ciphertext in LTS - state corruption detected", "err", err)
 			}

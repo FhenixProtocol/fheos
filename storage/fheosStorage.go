@@ -13,11 +13,11 @@ type FheosStorage struct {
 	diskStore types.Storage
 }
 
-func (fs *FheosStorage) PutCt(h types.Hash, cipher *types.FheEncrypted) error {
+func (fs *FheosStorage) PutCt(h types.Hash, cipher *types.CipherTextRepresentation) error {
 	return fs.diskStore.PutCt(h, cipher)
 }
 
-func (fs *FheosStorage) GetCt(h types.Hash) (*types.FheEncrypted, error) {
+func (fs *FheosStorage) GetCt(h types.Hash) (*types.CipherTextRepresentation, error) {
 	return fs.diskStore.GetCt(h)
 }
 

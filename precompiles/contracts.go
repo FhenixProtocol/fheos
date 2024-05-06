@@ -106,7 +106,7 @@ func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash)
+	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+": inputs not verified", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -126,7 +126,7 @@ func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	err = storeCipherText(storage, result)
+	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -168,7 +168,7 @@ func Verify(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	err = storeCipherText(storage, &ct)
+	err = storeCipherText(storage, &ct, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -211,7 +211,7 @@ func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) (string, uin
 		return "", 0, vm.ErrExecutionReverted
 	}
 
-	ct := getCiphertext(storage, fhe.BytesToHash(ctHash))
+	ct := getCiphertext(storage, fhe.BytesToHash(ctHash), tp.ContractAddress)
 	if ct == nil {
 		msg := functionName + " unverified ciphertext handle"
 		logger.Error(msg, "ciphertext-hash", hex.EncodeToString(ctHash))
@@ -255,7 +255,7 @@ func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	ct := getCiphertext(storage, fhe.BytesToHash(input))
+	ct := getCiphertext(storage, fhe.BytesToHash(input), tp.ContractAddress)
 	if ct == nil {
 		msg := functionName + " unverified ciphertext handle"
 		logger.Error(msg, " input ", hex.EncodeToString(input))
@@ -294,7 +294,7 @@ func Lte(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash)
+	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+": inputs not verified", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -312,7 +312,7 @@ func Lte(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	err = storeCipherText(storage, result)
+	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -344,7 +344,7 @@ func Sub(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash)
+	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+": inputs not verified", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -362,7 +362,7 @@ func Sub(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	err = storeCipherText(storage, result)
+	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -394,7 +394,7 @@ func Mul(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash)
+	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+": inputs not verified", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -412,7 +412,7 @@ func Mul(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	err = storeCipherText(storage, result)
+	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -445,7 +445,7 @@ func Lt(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash)
+	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+": inputs not verified", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -463,7 +463,7 @@ func Lt(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	err = storeCipherText(storage, result)
+	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -495,7 +495,7 @@ func Select(utype byte, controlHash []byte, ifTrueHash []byte, ifFalseHash []byt
 		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
-	control, ifTrue, ifFalse, err := get3VerifiedOperands(storage, controlHash, ifTrueHash, ifFalseHash)
+	control, ifTrue, ifFalse, err := get3VerifiedOperands(storage, controlHash, ifTrueHash, ifFalseHash, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+": inputs not verified control len: ", len(controlHash), " ifTrue len: ", len(ifTrueHash), " ifFalse len: ", len(ifFalseHash), " err: ", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -513,7 +513,7 @@ func Select(utype byte, controlHash []byte, ifTrueHash []byte, ifFalseHash []byt
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	err = storeCipherText(storage, result)
+	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -552,7 +552,7 @@ func Req(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	ct := getCiphertext(storage, fhe.BytesToHash(input))
+	ct := getCiphertext(storage, fhe.BytesToHash(input), tp.ContractAddress)
 	if ct == nil {
 		msg := functionName + " unverified handle"
 		logger.Error(msg, " input ", hex.EncodeToString(input))
@@ -595,7 +595,7 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams) ([]byte, uint64, 
 		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
-	ct := getCiphertext(storage, fhe.BytesToHash(input))
+	ct := getCiphertext(storage, fhe.BytesToHash(input), tp.ContractAddress)
 	if ct == nil {
 		logger.Error(functionName + " input not verified")
 		return nil, 0, vm.ErrExecutionReverted
@@ -612,7 +612,7 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams) ([]byte, uint64, 
 
 	resHash := res.Hash()
 
-	err = storeCipherText(storage, res)
+	err = storeCipherText(storage, res, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -694,7 +694,7 @@ func TrivialEncrypt(input []byte, toType byte, tp *TxParams) ([]byte, uint64, er
 	}
 
 	ctHash := ct.Hash()
-	err = storeCipherText(storage, ct)
+	err = storeCipherText(storage, ct, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -727,7 +727,7 @@ func Div(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash)
+	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+": inputs not verified", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -745,7 +745,7 @@ func Div(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	err = storeCipherText(storage, result)
+	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -779,7 +779,7 @@ func Gt(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash)
+	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+": inputs not verified", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -797,7 +797,7 @@ func Gt(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	err = storeCipherText(storage, result)
+	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -831,7 +831,7 @@ func Gte(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash)
+	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+" inputs not verified", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -848,7 +848,7 @@ func Gte(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-	err = storeCipherText(storage, result)
+	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -881,7 +881,7 @@ func Rem(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash)
+	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+" inputs not verified", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -898,7 +898,7 @@ func Rem(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-	err = storeCipherText(storage, result)
+	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -932,7 +932,7 @@ func And(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash)
+	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+" inputs not verified", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -950,7 +950,7 @@ func And(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	err = storeCipherText(storage, result)
+	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -984,7 +984,7 @@ func Or(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash)
+	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+" inputs not verified", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -1002,7 +1002,7 @@ func Or(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	err = storeCipherText(storage, result)
+	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -1036,7 +1036,7 @@ func Xor(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash)
+	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+" inputs not verified", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -1053,7 +1053,7 @@ func Xor(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-	err = storeCipherText(storage, result)
+	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -1088,7 +1088,7 @@ func Eq(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash)
+	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+" inputs not verified", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -1105,7 +1105,7 @@ func Eq(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-	err = storeCipherText(storage, result)
+	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -1140,7 +1140,7 @@ func Ne(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash)
+	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+" inputs not verified", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -1157,7 +1157,7 @@ func Ne(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-	err = storeCipherText(storage, result)
+	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -1190,7 +1190,7 @@ func Min(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash)
+	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+" inputs not verified", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -1207,7 +1207,7 @@ func Min(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-	err = storeCipherText(storage, result)
+	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -1240,7 +1240,7 @@ func Max(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash)
+	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+" inputs not verified", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -1257,7 +1257,7 @@ func Max(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-	err = storeCipherText(storage, result)
+	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -1290,7 +1290,7 @@ func Shl(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash)
+	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+" inputs not verified", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -1307,7 +1307,7 @@ func Shl(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-	err = storeCipherText(storage, result)
+	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -1340,7 +1340,7 @@ func Shr(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash)
+	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+" inputs not verified", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -1357,7 +1357,7 @@ func Shr(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-	err = storeCipherText(storage, result)
+	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -1390,7 +1390,7 @@ func Not(utype byte, value []byte, tp *TxParams) ([]byte, uint64, error) {
 		logger.Info("Starting new precompiled contract function: " + functionName)
 	}
 
-	ct := getCiphertext(storage, fhe.BytesToHash(value))
+	ct := getCiphertext(storage, fhe.BytesToHash(value), tp.ContractAddress)
 	if ct == nil {
 		msg := "not unverified ciphertext handle"
 		logger.Error(msg, "input", hex.EncodeToString(value))
@@ -1403,7 +1403,7 @@ func Not(utype byte, value []byte, tp *TxParams) ([]byte, uint64, error) {
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	err = storeCipherText(storage, result)
+	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted

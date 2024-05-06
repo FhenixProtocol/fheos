@@ -14,11 +14,11 @@ import (
 )
 
 type TxParams struct {
-	Commit        bool
-	GasEstimation bool
-	EthCall       bool
-	CiphertextDb  *memorydb.Database
-	Contract      common.Address
+	Commit          bool
+	GasEstimation   bool
+	EthCall         bool
+	CiphertextDb    *memorydb.Database
+	ContractAddress common.Address
 }
 
 type GasBurner interface {
@@ -26,14 +26,14 @@ type GasBurner interface {
 	Burned() uint64
 }
 
-func TxParamsFromEVM(evm *vm.EVM) TxParams {
+func TxParamsFromEVM(evm *vm.EVM, callerContract common.Address) TxParams {
 	var tp TxParams
 	tp.Commit = evm.Commit
 	tp.GasEstimation = evm.GasEstimation
 	tp.EthCall = evm.EthCall
 
 	tp.CiphertextDb = evm.CiphertextDb
-	tp.Contract = evm.Origin
+	tp.ContractAddress = callerContract
 
 	return tp
 }
@@ -43,25 +43,25 @@ type Precompile struct {
 	Address  common.Address
 }
 
-func getCiphertext(state *storage.MultiStore, ciphertextHash fhe.Hash) *fhe.FheEncrypted {
-	ct, err := state.GetCt(types.Hash(ciphertextHash))
+func getCiphertext(state *storage.MultiStore, ciphertextHash fhe.Hash, caller common.Address) *fhe.FheEncrypted {
+	ct, err := state.GetCt(types.Hash(ciphertextHash), caller)
 	if err != nil {
-		logger.Error("reading ciphertext from State resulted with error: ", err)
+		logger.Error("reading ciphertext from State resulted with error: ", err.Error())
 		return nil
 	}
 
 	return (*fhe.FheEncrypted)(ct)
 }
-func get2VerifiedOperands(storage *storage.MultiStore, lhsHash []byte, rhsHash []byte) (lhs *fhe.FheEncrypted, rhs *fhe.FheEncrypted, err error) {
+func get2VerifiedOperands(storage *storage.MultiStore, lhsHash []byte, rhsHash []byte, caller common.Address) (lhs *fhe.FheEncrypted, rhs *fhe.FheEncrypted, err error) {
 	if len(lhsHash) != 32 || len(rhsHash) != 32 {
 		return nil, nil, errors.New("ciphertext's hashes need to be 32 bytes long")
 	}
 
-	lhs = getCiphertext(storage, fhe.BytesToHash(lhsHash))
+	lhs = getCiphertext(storage, fhe.BytesToHash(lhsHash), caller)
 	if lhs == nil {
 		return nil, nil, errors.New("unverified ciphertext handle")
 	}
-	rhs = getCiphertext(storage, fhe.BytesToHash(rhsHash))
+	rhs = getCiphertext(storage, fhe.BytesToHash(rhsHash), caller)
 	if rhs == nil {
 		return nil, nil, errors.New("unverified ciphertext handle")
 	}
@@ -69,20 +69,20 @@ func get2VerifiedOperands(storage *storage.MultiStore, lhsHash []byte, rhsHash [
 	return
 }
 
-func get3VerifiedOperands(storage *storage.MultiStore, controlHash []byte, ifTrueHash []byte, ifFalseHash []byte) (control *fhe.FheEncrypted, ifTrue *fhe.FheEncrypted, ifFalse *fhe.FheEncrypted, err error) {
+func get3VerifiedOperands(storage *storage.MultiStore, controlHash []byte, ifTrueHash []byte, ifFalseHash []byte, caller common.Address) (control *fhe.FheEncrypted, ifTrue *fhe.FheEncrypted, ifFalse *fhe.FheEncrypted, err error) {
 	if len(controlHash) != 32 || len(ifTrueHash) != 32 || len(ifFalseHash) != 32 {
 		return nil, nil, nil, errors.New("ciphertext's hashes need to be 32 bytes long")
 	}
 
-	control = getCiphertext(storage, fhe.BytesToHash(controlHash))
+	control = getCiphertext(storage, fhe.BytesToHash(controlHash), caller)
 	if control == nil {
 		return nil, nil, nil, errors.New("unverified ciphertext handle")
 	}
-	ifTrue = getCiphertext(storage, fhe.BytesToHash(ifTrueHash))
+	ifTrue = getCiphertext(storage, fhe.BytesToHash(ifTrueHash), caller)
 	if ifTrue == nil {
 		return nil, nil, nil, errors.New("unverified ciphertext handle")
 	}
-	ifFalse = getCiphertext(storage, fhe.BytesToHash(ifFalseHash))
+	ifFalse = getCiphertext(storage, fhe.BytesToHash(ifFalseHash), caller)
 	if ifFalse == nil {
 		return nil, nil, nil, errors.New("unverified ciphertext handle")
 	}
@@ -90,8 +90,8 @@ func get3VerifiedOperands(storage *storage.MultiStore, controlHash []byte, ifTru
 	return
 }
 
-func storeCipherText(storage *storage.MultiStore, ct *fhe.FheEncrypted) error {
-	err := storage.PutCt(types.Hash(ct.Hash()), (*types.FheEncrypted)(ct))
+func storeCipherText(storage *storage.MultiStore, ct *fhe.FheEncrypted, owner common.Address) error {
+	err := storage.PutCt(types.Hash(ct.Hash()), (*types.FheEncrypted)(ct), owner)
 	if err != nil {
 		logger.Error("failed importing ciphertext to state: ", err)
 		return err
