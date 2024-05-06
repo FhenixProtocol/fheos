@@ -40,12 +40,6 @@ contract GtTest {
             }
 
             return 0;
-        } else if (Utils.cmp(test, "gt(euint256,euint256)")) {
-            if (FHE.decrypt(FHE.gt(FHE.asEuint256(a), FHE.asEuint256(b)))) {
-                return 1;
-            }
-
-            return 0;
         } else if (Utils.cmp(test, "euint8.gt(euint8)")) {
             if (FHE.asEuint8(a).gt(FHE.asEuint8(b)).decrypt()) {
                 return 1;
@@ -71,11 +65,6 @@ contract GtTest {
             return 0;
         } else if (Utils.cmp(test, "euint128.gt(euint128)")) {
             if (FHE.asEuint128(a).gt(FHE.asEuint128(b)).decrypt()) {
-                return 1;
-            }
-            return 0;
-        } else if (Utils.cmp(test, "euint256.gt(euint256)")) {
-            if (FHE.asEuint256(a).gt(FHE.asEuint256(b)).decrypt()) {
                 return 1;
             }
             return 0;

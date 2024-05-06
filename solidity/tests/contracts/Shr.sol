@@ -20,8 +20,6 @@ contract ShrTest {
             return FHE.decrypt(FHE.shr(FHE.asEuint64(a), FHE.asEuint64(b)));
         } else if (Utils.cmp(test, "shr(euint128,euint128)")) {
             return FHE.decrypt(FHE.shr(FHE.asEuint128(a), FHE.asEuint128(b)));
-        } else if (Utils.cmp(test, "shr(euint256,euint256)")) {
-            return FHE.decrypt(FHE.shr(FHE.asEuint256(a), FHE.asEuint256(b))); 
         } else if (Utils.cmp(test, "euint8.shr(euint8)")) {
             return FHE.decrypt(FHE.asEuint8(a).shr(FHE.asEuint8(b)));
         } else if (Utils.cmp(test, "euint16.shr(euint16)")) {
@@ -32,8 +30,6 @@ contract ShrTest {
             return FHE.decrypt(FHE.asEuint64(a).shr(FHE.asEuint64(b)));
         } else if (Utils.cmp(test, "euint128.shr(euint128)")) {
             return FHE.decrypt(FHE.asEuint128(a).shr(FHE.asEuint128(b)));
-        } else if (Utils.cmp(test, "euint256.shr(euint256)")) {
-            return FHE.decrypt(FHE.asEuint256(a).shr(FHE.asEuint256(b)));
         }
     
         revert TestNotFound(test);

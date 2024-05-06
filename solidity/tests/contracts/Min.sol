@@ -20,8 +20,6 @@ contract MinTest {
             return FHE.decrypt(FHE.min(FHE.asEuint64(a), FHE.asEuint64(b)));
         } else if (Utils.cmp(test, "min(euint128,euint128)")) {
             return FHE.decrypt(FHE.min(FHE.asEuint128(a), FHE.asEuint128(b)));
-        } else if (Utils.cmp(test, "min(euint256,euint256)")) {
-            return FHE.decrypt(FHE.min(FHE.asEuint256(a), FHE.asEuint256(b))); 
         } else if (Utils.cmp(test, "euint8.min(euint8)")) {
             return FHE.decrypt(FHE.asEuint8(a).min(FHE.asEuint8(b)));
         } else if (Utils.cmp(test, "euint16.min(euint16)")) {
@@ -32,8 +30,6 @@ contract MinTest {
             return FHE.decrypt(FHE.asEuint64(a).min(FHE.asEuint64(b)));
         } else if (Utils.cmp(test, "euint128.min(euint128)")) {
             return FHE.decrypt(FHE.asEuint128(a).min(FHE.asEuint128(b)));
-        } else if (Utils.cmp(test, "euint256.min(euint256)")) {
-            return FHE.decrypt(FHE.asEuint256(a).min(FHE.asEuint256(b)));
         }
     
         revert TestNotFound(test);

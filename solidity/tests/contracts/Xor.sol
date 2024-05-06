@@ -20,8 +20,6 @@ contract XorTest {
             return FHE.decrypt(FHE.xor(FHE.asEuint64(a), FHE.asEuint64(b)));
         } else if (Utils.cmp(test, "xor(euint128,euint128)")) {
             return FHE.decrypt(FHE.xor(FHE.asEuint128(a), FHE.asEuint128(b)));
-        } else if (Utils.cmp(test, "xor(euint256,euint256)")) {
-            return FHE.decrypt(FHE.xor(FHE.asEuint256(a), FHE.asEuint256(b))); 
         } else if (Utils.cmp(test, "euint8.xor(euint8)")) {
             return FHE.decrypt(FHE.asEuint8(a).xor(FHE.asEuint8(b)));
         } else if (Utils.cmp(test, "euint16.xor(euint16)")) {
@@ -32,8 +30,6 @@ contract XorTest {
             return FHE.decrypt(FHE.asEuint64(a).xor(FHE.asEuint64(b)));
         } else if (Utils.cmp(test, "euint128.xor(euint128)")) {
             return FHE.decrypt(FHE.asEuint128(a).xor(FHE.asEuint128(b)));
-        } else if (Utils.cmp(test, "euint256.xor(euint256)")) {
-            return FHE.decrypt(FHE.asEuint256(a).xor(FHE.asEuint256(b)));
         } else if (Utils.cmp(test, "euint8 ^ euint8")) {
             return FHE.decrypt(FHE.asEuint8(a) ^ FHE.asEuint8(b));
         } else if (Utils.cmp(test, "euint16 ^ euint16")) {
@@ -44,8 +40,6 @@ contract XorTest {
             return FHE.decrypt(FHE.asEuint64(a) ^ FHE.asEuint64(b));
         } else if (Utils.cmp(test, "euint128 ^ euint128")) {
             return FHE.decrypt(FHE.asEuint128(a) ^ FHE.asEuint128(b));
-        } else if (Utils.cmp(test, "euint256 ^ euint256")) {
-            return FHE.decrypt(FHE.asEuint256(a) ^ FHE.asEuint256(b));
         } else if (Utils.cmp(test, "xor(ebool,ebool)")) {
             bool aBool = true;
             bool bBool = true;

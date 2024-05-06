@@ -12,13 +12,14 @@ import {
   LOCAL_SEAL_FUNCTION_NAME,
   LOCAL_DECRYPT_FUNCTION_NAME,
   toPlaintextType,
+  AllowedOperations,
 } from "./common";
 
 export const preamble = () => {
   return `// SPDX-License-Identifier: BSD-3-Clause-Clear
 // solhint-disable one-contract-per-file
 
-pragma solidity >=0.8.19 <0.8.25;
+pragma solidity >=0.8.19 <=0.8.25;
 
 import {Precompiles, FheOps} from "./FheOS.sol";
 
@@ -468,6 +469,18 @@ export function SolTemplate2Arg(
 }
 
 export function testContract2ArgBoolRes(name: string, isBoolean: boolean) {
+  const isEuint64Allowed = IsOperationAllowed(
+    name,
+    EInputType.indexOf("euint64")
+  );
+  const isEuint128Allowed = IsOperationAllowed(
+    name,
+    EInputType.indexOf("euint128")
+  );
+  const isEuint256Allowed = IsOperationAllowed(
+    name,
+    EInputType.indexOf("euint256")
+  );
   let func = `function ${name}(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
         if (Utils.cmp(test, "${name}(euint8,euint8)")) {
             if (FHE.decrypt(FHE.${name}(FHE.asEuint8(a), FHE.asEuint8(b)))) {
@@ -487,25 +500,36 @@ export function testContract2ArgBoolRes(name: string, isBoolean: boolean) {
             }
 
             return 0;
-        } else if (Utils.cmp(test, "${name}(euint64,euint64)")) {
+        }`;
+  if (isEuint64Allowed) {
+    func += ` else if (Utils.cmp(test, "${name}(euint64,euint64)")) {
             if (FHE.decrypt(FHE.${name}(FHE.asEuint64(a), FHE.asEuint64(b)))) {
                 return 1;
             }
 
             return 0;
-        } else if (Utils.cmp(test, "${name}(euint128,euint128)")) {
+        }`;
+  }
+  if (isEuint128Allowed) {
+    func += ` else if (Utils.cmp(test, "${name}(euint128,euint128)")) {
             if (FHE.decrypt(FHE.${name}(FHE.asEuint128(a), FHE.asEuint128(b)))) {
                 return 1;
             }
 
             return 0;
-        } else if (Utils.cmp(test, "${name}(euint256,euint256)")) {
+        }`;
+  }
+  if (isEuint256Allowed) {
+    func += ` else if (Utils.cmp(test, "${name}(euint256,euint256)")) {
             if (FHE.decrypt(FHE.${name}(FHE.asEuint256(a), FHE.asEuint256(b)))) {
                 return 1;
             }
 
             return 0;
-        } else if (Utils.cmp(test, "euint8.${name}(euint8)")) {
+        }`;
+  }
+
+  func += ` else if (Utils.cmp(test, "euint8.${name}(euint8)")) {
             if (FHE.asEuint8(a).${name}(FHE.asEuint8(b)).decrypt()) {
                 return 1;
             }
@@ -523,22 +547,32 @@ export function testContract2ArgBoolRes(name: string, isBoolean: boolean) {
             }
 
             return 0;
-        } else if (Utils.cmp(test, "euint64.${name}(euint64)")) {
+        }`;
+
+  if (isEuint64Allowed) {
+    func += ` else if (Utils.cmp(test, "euint64.${name}(euint64)")) {
             if (FHE.asEuint64(a).${name}(FHE.asEuint64(b)).decrypt()) {
                 return 1;
             }
             return 0;
-        } else if (Utils.cmp(test, "euint128.${name}(euint128)")) {
+        }`;
+  }
+  if (isEuint128Allowed) {
+    func += ` else if (Utils.cmp(test, "euint128.${name}(euint128)")) {
             if (FHE.asEuint128(a).${name}(FHE.asEuint128(b)).decrypt()) {
                 return 1;
             }
             return 0;
-        } else if (Utils.cmp(test, "euint256.${name}(euint256)")) {
+        }`;
+  }
+  if (isEuint256Allowed) {
+    func += ` else if (Utils.cmp(test, "euint256.${name}(euint256)")) {
             if (FHE.asEuint256(a).${name}(FHE.asEuint256(b)).decrypt()) {
                 return 1;
             }
             return 0;
         }`;
+  }
   if (isBoolean) {
     func += ` else if (Utils.cmp(test, "${name}(ebool,ebool)")) {
             bool aBool = true;
@@ -582,6 +616,18 @@ export function testContract2ArgBoolRes(name: string, isBoolean: boolean) {
 }
 
 export function testContract1Arg(name: string) {
+  const isEuint64Allowed = IsOperationAllowed(
+    name,
+    EInputType.indexOf("euint64")
+  );
+  const isEuint128Allowed = IsOperationAllowed(
+    name,
+    EInputType.indexOf("euint128")
+  );
+  const isEuint256Allowed = IsOperationAllowed(
+    name,
+    EInputType.indexOf("euint256")
+  );
   let func = `function ${name}(string calldata test, uint256 a) public pure returns (uint256 output) {
         if (Utils.cmp(test, "${name}(euint8)")) {
             return FHE.decrypt(FHE.${name}(FHE.asEuint8(a)));
@@ -589,13 +635,23 @@ export function testContract1Arg(name: string) {
             return FHE.decrypt(FHE.${name}(FHE.asEuint16(a)));
         } else if (Utils.cmp(test, "${name}(euint32)")) {
             return FHE.decrypt(FHE.${name}(FHE.asEuint32(a)));
-        } else if (Utils.cmp(test, "${name}(euint64)")) {
+        }`;
+  if (isEuint64Allowed) {
+    func += ` else if (Utils.cmp(test, "${name}(euint64)")) {
             return FHE.decrypt(FHE.${name}(FHE.asEuint64(a)));
-        } else if (Utils.cmp(test, "${name}(euint128)")) {
+        }`;
+  }
+  if (isEuint128Allowed) {
+    func += ` else if (Utils.cmp(test, "${name}(euint128)")) {
             return FHE.decrypt(FHE.${name}(FHE.asEuint128(a)));
-        } else if (Utils.cmp(test, "${name}(euint256)")) {
+        }`;
+  }
+  if (isEuint256Allowed) {
+    func += ` else if (Utils.cmp(test, "${name}(euint256)")) {
             return FHE.decrypt(FHE.${name}(FHE.asEuint256(a)));
-        } else if (Utils.cmp(test, "${name}(ebool)")) {
+        }`;
+  }
+  func += ` else if (Utils.cmp(test, "${name}(ebool)")) {
             bool aBool = true;
             if (a == 0) {
                 aBool = false;
@@ -719,8 +775,6 @@ export function testContract3Arg(name: string) {
             return FHE.decrypt(FHE.${name}(condition, FHE.asEuint64(a), FHE.asEuint64(b)));
         } else if (Utils.cmp(test, "${name}: euint128")) {
             return FHE.decrypt(FHE.${name}(condition, FHE.asEuint128(a), FHE.asEuint128(b)));
-        } else if (Utils.cmp(test, "${name}: euint256")) {
-            return FHE.decrypt(FHE.${name}(condition, FHE.asEuint256(a), FHE.asEuint256(b)));
         } else if (Utils.cmp(test, "${name}: ebool")) {
             bool aBool = true;
             bool bBool = true;
@@ -747,11 +801,37 @@ export function testContract3Arg(name: string) {
   return [generateTestContract(name, func, true), abi];
 }
 
+export const IsOperationAllowed = (
+  functionName: string,
+  inputIdx: number
+): boolean => {
+  const regexes = AllowedOperations[inputIdx];
+  for (let regex of regexes) {
+    if (!new RegExp(regex).test(functionName.toLowerCase())) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
 export function testContract2Arg(
   name: string,
   isBoolean: boolean,
   op?: string
 ) {
+  const isEuint64Allowed = IsOperationAllowed(
+    name,
+    EInputType.indexOf("euint64")
+  );
+  const isEuint128Allowed = IsOperationAllowed(
+    name,
+    EInputType.indexOf("euint128")
+  );
+  const isEuint256Allowed = IsOperationAllowed(
+    name,
+    EInputType.indexOf("euint256")
+  );
   let func = `function ${name}(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
         if (Utils.cmp(test, "${name}(euint8,euint8)")) {
             return FHE.decrypt(FHE.${name}(FHE.asEuint8(a), FHE.asEuint8(b)));
@@ -759,25 +839,45 @@ export function testContract2Arg(
             return FHE.decrypt(FHE.${name}(FHE.asEuint16(a), FHE.asEuint16(b)));
         } else if (Utils.cmp(test, "${name}(euint32,euint32)")) {
             return FHE.decrypt(FHE.${name}(FHE.asEuint32(a), FHE.asEuint32(b)));
-        } else if (Utils.cmp(test, "${name}(euint64,euint64)")) {
+        }`;
+  if (isEuint64Allowed) {
+    func += ` else if (Utils.cmp(test, "${name}(euint64,euint64)")) {
             return FHE.decrypt(FHE.${name}(FHE.asEuint64(a), FHE.asEuint64(b)));
-        } else if (Utils.cmp(test, "${name}(euint128,euint128)")) {
+        }`;
+  }
+  if (isEuint128Allowed) {
+    func += ` else if (Utils.cmp(test, "${name}(euint128,euint128)")) {
             return FHE.decrypt(FHE.${name}(FHE.asEuint128(a), FHE.asEuint128(b)));
-        } else if (Utils.cmp(test, "${name}(euint256,euint256)")) {
+        }`;
+  }
+  if (isEuint256Allowed) {
+    func += ` else if (Utils.cmp(test, "${name}(euint256,euint256)")) {
             return FHE.decrypt(FHE.${name}(FHE.asEuint256(a), FHE.asEuint256(b))); 
-        } else if (Utils.cmp(test, "euint8.${name}(euint8)")) {
+        }`;
+  }
+  func += ` else if (Utils.cmp(test, "euint8.${name}(euint8)")) {
             return FHE.decrypt(FHE.asEuint8(a).${name}(FHE.asEuint8(b)));
         } else if (Utils.cmp(test, "euint16.${name}(euint16)")) {
             return FHE.decrypt(FHE.asEuint16(a).${name}(FHE.asEuint16(b)));
         } else if (Utils.cmp(test, "euint32.${name}(euint32)")) {
             return FHE.decrypt(FHE.asEuint32(a).${name}(FHE.asEuint32(b)));
-        } else if (Utils.cmp(test, "euint64.${name}(euint64)")) {
+        }`;
+
+  if (isEuint64Allowed) {
+    func += ` else if (Utils.cmp(test, "euint64.${name}(euint64)")) {
             return FHE.decrypt(FHE.asEuint64(a).${name}(FHE.asEuint64(b)));
-        } else if (Utils.cmp(test, "euint128.${name}(euint128)")) {
+        }`;
+  }
+  if (isEuint128Allowed) {
+    func += ` else if (Utils.cmp(test, "euint128.${name}(euint128)")) {
             return FHE.decrypt(FHE.asEuint128(a).${name}(FHE.asEuint128(b)));
-        } else if (Utils.cmp(test, "euint256.${name}(euint256)")) {
+        }`;
+  }
+  if (isEuint256Allowed) {
+    func += ` else if (Utils.cmp(test, "euint256.${name}(euint256)")) {
             return FHE.decrypt(FHE.asEuint256(a).${name}(FHE.asEuint256(b)));
         }`;
+  }
   if (op) {
     func += ` else if (Utils.cmp(test, "euint8 ${op} euint8")) {
             return FHE.decrypt(FHE.asEuint8(a) ${op} FHE.asEuint8(b));
@@ -785,13 +885,22 @@ export function testContract2Arg(
             return FHE.decrypt(FHE.asEuint16(a) ${op} FHE.asEuint16(b));
         } else if (Utils.cmp(test, "euint32 ${op} euint32")) {
             return FHE.decrypt(FHE.asEuint32(a) ${op} FHE.asEuint32(b));
-        } else if (Utils.cmp(test, "euint64 ${op} euint64")) {
+        }`;
+    if (isEuint64Allowed) {
+      func += ` else if (Utils.cmp(test, "euint64 ${op} euint64")) {
             return FHE.decrypt(FHE.asEuint64(a) ${op} FHE.asEuint64(b));
-        } else if (Utils.cmp(test, "euint128 ${op} euint128")) {
+        }`;
+    }
+    if (isEuint128Allowed) {
+      func += ` else if (Utils.cmp(test, "euint128 ${op} euint128")) {
             return FHE.decrypt(FHE.asEuint128(a) ${op} FHE.asEuint128(b));
-        } else if (Utils.cmp(test, "euint256 ${op} euint256")) {
+        }`;
+    }
+    if (isEuint256Allowed) {
+      func += ` else if (Utils.cmp(test, "euint256 ${op} euint256")) {
             return FHE.decrypt(FHE.asEuint256(a) ${op} FHE.asEuint256(b));
         }`;
+    }
   }
   if (isBoolean) {
     func += ` else if (Utils.cmp(test, "${name}(ebool,ebool)")) {
@@ -984,10 +1093,7 @@ export function SolTemplate3Arg(
   }
 }
 
-function operatorFunctionName(
-  funcName: string,
-  forType: EUintType
-) {
+function operatorFunctionName(funcName: string, forType: EUintType) {
   return `operator${capitalize(funcName)}${capitalize(forType)}`;
 }
 
@@ -1077,7 +1183,9 @@ export const SealFromType = (thisType: string) => {
 
 export const DecryptBinding = (thisType: string) => {
   return `
-    function ${LOCAL_DECRYPT_FUNCTION_NAME}(${thisType} value) internal pure returns (${toPlaintextType(thisType)}) {
+    function ${LOCAL_DECRYPT_FUNCTION_NAME}(${thisType} value) internal pure returns (${toPlaintextType(
+    thisType
+  )}) {
         return FHE.decrypt(value);
     }`;
 };

@@ -268,10 +268,8 @@ func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	bgDecrypted := new(big.Int).SetUint64(decryptedValue)
-
 	logger.Debug(functionName+" success", "input", hex.EncodeToString(input))
-	return bgDecrypted, gas, nil
+	return decryptedValue, gas, nil
 }
 
 func Lte(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
@@ -673,6 +671,19 @@ func TrivialEncrypt(input []byte, toType byte, tp *TxParams) ([]byte, uint64, er
 		}
 
 	} else {
+		// Check if value is not overflowing the type
+		maxOfType := fhe.MaxOfType(uintType)
+		if maxOfType == nil {
+			logger.Error("failed to create trivially encrypted value, type is not supported.")
+			return nil, 0, vm.ErrExecutionReverted
+		}
+
+		// If value is bigger than the maximal value that is supported by the type
+		if valueToEncrypt.Cmp(maxOfType) > 0 {
+			logger.Error("failed to create trivially encrypted value, value is too large for type.")
+			return nil, 0, vm.ErrExecutionReverted
+		}
+
 		// we encrypt this using the computation key not the public key. Also, compact to save space in case this gets saved directly
 		// to storage
 		ct, err = fhe.EncryptPlainText(valueToEncrypt, uintType)
