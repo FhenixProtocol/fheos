@@ -2239,6 +2239,17 @@ describe("Test AsEuint256", () => {
     expect(decryptedResult).toBe(value);
   });
 
+  it(`From plaintext`, async () => {
+    // We want to make sure that numbers that are higher than max of uint128 but lower than max of uint256 are handled correctly
+    // Before a fix was introduced, there were some code sections that were converting the results of decryption to 64bits representations.
+    // This was causing the numbers to be truncated and the results to be incorrect.
+    // This test is to make sure that the fix is working correctly.
+    // The number is 2^128 + 1 which is not representable in uint128 but is representable in uint256 and also is not aligned by 64 bits, previously, with the bug present the result was just 1
+    const bigNumber = BigInt(2) ** BigInt(128) + BigInt(1);
+    let decryptedResult = await contract.castFromPlaintextToEuint256(bigNumber);
+    expect(decryptedResult).toBe(bigNumber);
+  });
+
   it(`From pre encrypted`, async () => {
     const encInput = await fheContract.instance.encrypt_uint256(value); // Adjust encryption method if necessary
     let decryptedResult = await contract.castFromPreEncryptedToEuint256(
