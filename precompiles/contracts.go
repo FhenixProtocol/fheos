@@ -1392,7 +1392,7 @@ func Not(utype byte, value []byte, tp *TxParams) ([]byte, uint64, error) {
 
 	ct := getCiphertext(storage, fhe.BytesToHash(value), tp.ContractAddress)
 	if ct == nil {
-		msg := "not unverified ciphertext handle"
+		msg := "unverified ciphertext handle"
 		logger.Error(msg, "input", hex.EncodeToString(value))
 		return nil, 0, vm.ErrExecutionReverted
 	}
