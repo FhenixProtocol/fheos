@@ -48,7 +48,7 @@ func (ms *MultiStore) getCtHelper(h types.Hash) (*types.CipherTextRepresentation
 	return ct, err
 }
 
-func (ms *MultiStore) GetCt(h types.Hash, caller common.Address) (*types.FheEncrypted, error) {
+func (ms *MultiStore) GetCtRepresentation(h types.Hash, caller common.Address) (*types.CipherTextRepresentation, error) {
 	ct, err := ms.getCtHelper(h)
 	if err != nil {
 		return nil, err
@@ -58,22 +58,27 @@ func (ms *MultiStore) GetCt(h types.Hash, caller common.Address) (*types.FheEncr
 		return nil, fmt.Errorf("contract is not allowed to access the ciphertext")
 	}
 
+	return ct, nil
+}
+func (ms *MultiStore) GetCt(h types.Hash, caller common.Address) (*types.FheEncrypted, error) {
+	ct, err := ms.GetCtRepresentation(h, caller)
+	if (err != nil) || (ct == nil) {
+		return nil, err
+	}
+
 	return ct.Data, nil
 }
-
-func (ms *MultiStore) isOwner(h types.Hash, owner common.Address) (bool, error) {
-	ct, err := ms.getCtHelper(h)
-	if err != nil {
-		return false, err
+func (ms *MultiStore) isOwner(ct *types.CipherTextRepresentation, owner common.Address) (bool, error) {
+	if ct == nil {
+		return false, fmt.Errorf("ciphertext not found")
 	}
 
 	return slices.Contains(ct.Owners, owner), nil
 }
 
-func (ms *MultiStore) AddOwner(h types.Hash, owner common.Address) error {
-	ct, err := ms.getCtHelper(h)
-	if err != nil {
-		return err
+func (ms *MultiStore) AddOwner(h types.Hash, ct *types.CipherTextRepresentation, owner common.Address) error {
+	if ct == nil {
+		return fmt.Errorf("ciphertext not found")
 	}
 
 	ct.Owners = append(ct.Owners, owner)

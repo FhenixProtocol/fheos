@@ -14,6 +14,7 @@ type FheOSHooks interface {
 	LoadCiphertextHook() [32]byte
 	EvmCallStart()
 	EvmCallEnd(evmSuccess bool)
+	ContractCall(callType int, caller common.Address, addr common.Address, input []byte)
 }
 
 type FheOSHooksImpl struct {
@@ -79,6 +80,75 @@ func (h FheOSHooksImpl) EvmCallEnd(evmSuccess bool) {
 			}
 		}
 	}
+}
+
+func isCiphertextHash(param [32]byte) bool {
+	// Currently we have no indication if 32bytes are representing ciphertext hash or not
+	// We are filtering out those params who start with at least 6 zeroes as they are PROBABLY!! size indication and not hashes
+	// In the future we might add "deadbeaf" to indicate if hash is a ciphertext, this will be changes accordingly
+	// FHENIX: If there is a problem with ciphertext ownership, check for collision here
+
+	// check if param starts with at least 6 zeroes
+	for i := 0; i < 6; i++ {
+		if param[i] != 0 {
+			return true
+		}
+	}
+
+	return false
+}
+
+// ContractCall The purpose of this hook is to be able to pass ownership for a ciphertext to the contract that has been called if the caller is an owner
+// The function parses the input for ciphertexts and pass ownership for each ciphertext
+func (h FheOSHooksImpl) ContractCall(callType int, caller common.Address, addr common.Address, input []byte) {
+	// Input is built as the following:
+	//  first 4 bytes are indicating what is the function the is being called
+	// 	from now on every param is a 32 byte value
+	//  if the param is dynamically sized (string, bytes, etc.) the 32 bytes will only indicate the offset of the actual value in "input"
+	//  when going to offset you will find 32 bytes indicating the length of the value
+	//  and then the value itself, each value in the array is padded to 32 bytes
+
+	// Skip delegate calls??????????
+	if callType == vm.CallTypeDelegateCall {
+		return
+	}
+
+	inputLen := len(input)
+	if inputLen <= 4 {
+		return
+	}
+
+	inputLen -= 4
+
+	if inputLen%32 != 0 {
+		log.Warn("Invalid input length for contract call", "input", input)
+	}
+
+	paramsCount := inputLen / 32
+	var hash [32]byte
+	for i := 0; i < paramsCount; i++ {
+		offset := 4 + i*32
+		copy(hash[:], input[offset:offset+32])
+
+		if !isCiphertextHash(hash) {
+			continue
+		}
+
+		log.Error("LIORRRRRRRRR found a ciphertext hash", "hash", hash)
+
+		storage := storage2.NewMultiStore(h.evm.CiphertextDb, &fheos.State.Storage)
+		// will return ct if hash exists AND if caller is one of the owners
+		// otherwise we have nothing to do anymore
+		ct, _ := storage.GetCtRepresentation(hash, caller)
+		if ct == nil {
+			continue
+		}
+
+		_ = storage.AddOwner(hash, ct, addr)
+
+		log.Info("Contract has been added as an owner to the ciphertext", "contract", addr, "ciphertext", hash)
+	}
+
 }
 
 func NewFheOSHooks(evm *vm.EVM) FheOSHooksImpl {
