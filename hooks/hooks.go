@@ -14,7 +14,7 @@ type FheOSHooks interface {
 	LoadCiphertextHook() [32]byte
 	EvmCallStart()
 	EvmCallEnd(evmSuccess bool)
-	ContractCall(callType int, caller common.Address, addr common.Address, input []byte)
+	ContractCall(isSimulation bool, callType int, caller common.Address, addr common.Address, input []byte)
 }
 
 type FheOSHooksImpl struct {
@@ -98,9 +98,59 @@ func isCiphertextHash(param [32]byte) bool {
 	return false
 }
 
+func shouldIgnoreContract(caller common.Address, addr common.Address) bool {
+	// Address of a user and not a contract
+	userAddress := common.HexToAddress("0x0000000000000000000000000000000000000000")
+	// Address of our precompiled contract - just to be sure we don't waste time on it
+	precompilesAddress := common.HexToAddress("0x0000000000000000000000000000000000000080")
+
+	if caller.Cmp(userAddress) == 0 {
+		return true
+	}
+
+	if addr.Cmp(precompilesAddress) == 0 {
+		return true
+	}
+
+	return false
+}
+
+func (h FheOSHooksImpl) iterateHashes(data []byte, dataType string, owner common.Address, newOwner common.Address) {
+	// iterate through the data and check if the hash is a ciphertext hash
+	// if it is, add the owner to the ciphertext
+	// if not, continue
+	dataLen := len(data)
+	if dataLen%32 != 0 {
+		log.Warn("Data is not aligned to 32 bytes", "type", dataType, "length", dataLen)
+	}
+
+	paramsCount := dataLen / 32
+	var hash [32]byte
+	for i := 0; i < paramsCount; i++ {
+		offset := i * 32
+		copy(hash[:], data[offset:offset+32])
+
+		if !isCiphertextHash(hash) {
+			continue
+		}
+
+		storage := storage2.NewMultiStore(h.evm.CiphertextDb, &fheos.State.Storage)
+		// will return ct if hash exists AND if caller is one of the owners
+		// otherwise we have nothing to do anymore
+		ct, _ := storage.GetCtRepresentation(hash, owner)
+		if ct == nil {
+			continue
+		}
+
+		_ = storage.AddOwner(hash, ct, newOwner)
+
+		log.Info("Contract has been added as an owner to the ciphertext", "contract", newOwner, "ciphertext", hash)
+	}
+}
+
 // ContractCall The purpose of this hook is to be able to pass ownership for a ciphertext to the contract that has been called if the caller is an owner
 // The function parses the input for ciphertexts and pass ownership for each ciphertext
-func (h FheOSHooksImpl) ContractCall(callType int, caller common.Address, addr common.Address, input []byte) {
+func (h FheOSHooksImpl) ContractCall(isSimulation bool, callType int, caller common.Address, addr common.Address, input []byte) {
 	// Input is built as the following:
 	//  first 4 bytes are indicating what is the function the is being called
 	// 	from now on every param is a 32 byte value
@@ -113,42 +163,38 @@ func (h FheOSHooksImpl) ContractCall(callType int, caller common.Address, addr c
 		return
 	}
 
-	inputLen := len(input)
-	if inputLen <= 4 {
+	// Skip this logic in simulations for now as it won't affect the gas estimation code
+	// FHENIX: When implementing sync decryption should remove this
+	if isSimulation {
 		return
 	}
 
-	inputLen -= 4
-
-	if inputLen%32 != 0 {
-		log.Warn("Invalid input length for contract call", "input", input)
+	if shouldIgnoreContract(caller, addr) {
+		return
 	}
 
-	paramsCount := inputLen / 32
-	var hash [32]byte
-	for i := 0; i < paramsCount; i++ {
-		offset := 4 + i*32
-		copy(hash[:], input[offset:offset+32])
-
-		if !isCiphertextHash(hash) {
-			continue
-		}
-
-		log.Error("LIORRRRRRRRR found a ciphertext hash", "hash", hash)
-
-		storage := storage2.NewMultiStore(h.evm.CiphertextDb, &fheos.State.Storage)
-		// will return ct if hash exists AND if caller is one of the owners
-		// otherwise we have nothing to do anymore
-		ct, _ := storage.GetCtRepresentation(hash, caller)
-		if ct == nil {
-			continue
-		}
-
-		_ = storage.AddOwner(hash, ct, addr)
-
-		log.Info("Contract has been added as an owner to the ciphertext", "contract", addr, "ciphertext", hash)
+	if len(input) <= 4 {
+		return
 	}
 
+	h.iterateHashes(input[4:], "input", caller, addr)
+}
+
+func (h FheOSHooksImpl) ContractCallReturn(isSimulation bool, callType int, caller common.Address, addr common.Address, output []byte) {
+	// If a contract returns a value, we should check if it contains any ciphertexts
+	// If so, we should pass ownership of the ciphertexts to the caller
+
+	// Skip this logic in simulations for now as it won't affect the gas estimation code
+	// FHENIX: When implementing sync decryption should remove this
+	if isSimulation {
+		return
+	}
+
+	if shouldIgnoreContract(caller, addr) {
+		return
+	}
+
+	h.iterateHashes(output, "input", addr, caller)
 }
 
 func NewFheOSHooks(evm *vm.EVM) FheOSHooksImpl {

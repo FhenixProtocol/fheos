@@ -81,6 +81,15 @@ func (ms *MultiStore) AddOwner(h types.Hash, ct *types.CipherTextRepresentation,
 		return fmt.Errorf("ciphertext not found")
 	}
 
+	isOwner, err := ms.isOwner(ct, owner)
+	if err != nil {
+		return err
+	}
+
+	if isOwner {
+		return nil
+	}
+
 	ct.Owners = append(ct.Owners, owner)
 	return ms.ephemeral.PutCt(h, ct)
 }
