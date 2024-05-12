@@ -64,6 +64,15 @@ contract AsEuint32Test {
         revert TestNotFound(test);
     }
 
+    function castFromEaddressToEuint32(uint256 val, string calldata test) public pure returns (uint32) {
+        if (Utils.cmp(test, "bound")) {
+            return FHE.asEaddress(val).toU32().decrypt();
+        } else if (Utils.cmp(test, "regular")) {
+            return FHE.decrypt(FHE.asEuint32(FHE.asEaddress(val)));
+        }
+        revert TestNotFound(test);
+    }
+
     function castFromPlaintextToEuint32(uint256 val) public pure returns (uint32) {
         return FHE.decrypt(FHE.asEuint32(val));
     }

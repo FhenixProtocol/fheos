@@ -64,6 +64,15 @@ contract AsEuint128Test {
         revert TestNotFound(test);
     }
 
+    function castFromEaddressToEuint128(uint256 val, string calldata test) public pure returns (uint128) {
+        if (Utils.cmp(test, "bound")) {
+            return FHE.asEaddress(val).toU128().decrypt();
+        } else if (Utils.cmp(test, "regular")) {
+            return FHE.decrypt(FHE.asEuint128(FHE.asEaddress(val)));
+        }
+        revert TestNotFound(test);
+    }
+
     function castFromPlaintextToEuint128(uint256 val) public pure returns (uint128) {
         return FHE.decrypt(FHE.asEuint128(val));
     }

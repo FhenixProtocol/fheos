@@ -46,6 +46,12 @@ contract EqTest {
             }
 
             return 0;
+        } else if (Utils.cmp(test, "eq(eaddress,eaddress)")) {
+            if (FHE.decrypt(FHE.eq(FHE.asEaddress(a), FHE.asEaddress(b)))) {
+                return 1;
+            }
+
+            return 0;
         } else if (Utils.cmp(test, "euint8.eq(euint8)")) {
             if (FHE.asEuint8(a).eq(FHE.asEuint8(b)).decrypt()) {
                 return 1;
@@ -76,6 +82,11 @@ contract EqTest {
             return 0;
         } else if (Utils.cmp(test, "euint256.eq(euint256)")) {
             if (FHE.asEuint256(a).eq(FHE.asEuint256(b)).decrypt()) {
+                return 1;
+            }
+            return 0;
+        } else if (Utils.cmp(test, "eaddress.eq(eaddress)")) {
+            if (FHE.asEaddress(a).eq(FHE.asEaddress(b)).decrypt()) {
                 return 1;
             }
             return 0;

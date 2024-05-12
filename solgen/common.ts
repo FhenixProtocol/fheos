@@ -6,6 +6,7 @@ export const EInputType = [
   "euint64",
   "euint128",
   "euint256",
+  "eaddress",
 ];
 export const AllowedOperations = [
   [".*"],
@@ -14,7 +15,8 @@ export const AllowedOperations = [
   [".*"],
   ["^(?!div)", "^(?!rem)"],
   ["^(?!div)", "^(?!rem)", "^(?!mul)"],
-  ["ne|eq|sealoutput|seal|decrypt"],
+  ["ne|eq|sealoutput|select|seal|decrypt"],
+  ["decrypt|eq|ne|select|sealoutput"],
 ];
 export const EComparisonType = ["ebool"];
 export const EPlaintextType = [
@@ -25,6 +27,7 @@ export const EPlaintextType = [
   "uint64",
   "uint128",
   "uint256",
+  "address",
 ];
 export type EUintType =
   | "ebool"
@@ -33,7 +36,8 @@ export type EUintType =
   | "euint32"
   | "euint64"
   | "euint128"
-  | "euint256";
+  | "euint256"
+  | "eaddress";
 export type PlaintextType =
   | "bool"
   | "uint8"
@@ -41,7 +45,8 @@ export type PlaintextType =
   | "uint32"
   | "uint64"
   | "uint128"
-  | "uint256";
+  | "uint256"
+  | "address";
 export type AllTypes =
   | PlaintextType
   | EUintType
@@ -65,6 +70,7 @@ export const UnderlyingTypes: Record<EUintType, string> = {
   euint64: "uint256",
   euint128: "uint256",
   euint256: "uint256",
+  eaddress: "uint256",
 };
 
 export const UintTypes: Record<EUintType, string> = {
@@ -75,6 +81,7 @@ export const UintTypes: Record<EUintType, string> = {
   euint64: "Common.EUINT64_TFHE",
   euint128: "Common.EUINT128_TFHE",
   euint256: "Common.EUINT256_TFHE",
+  eaddress: "Common.EADDRESS_TFHE",
 };
 
 interface OperatorMap {

@@ -47,6 +47,7 @@ library Common {
     uint8 internal constant EUINT64_TFHE = 3;
     uint8 internal constant EUINT128_TFHE = 4;
     uint8 internal constant EUINT256_TFHE = 5;
+    uint8 internal constant EADDRESS_TFHE = 12;
     // uint8 internal constant INT_BGV = 12;
     uint8 internal constant EBOOL_TFHE = 13;
     
@@ -76,6 +77,10 @@ library Common {
 
     function bigIntToUint256(uint256 i) internal pure returns (uint256) {
         return i;
+    }
+
+    function bigIntToAddress(uint256 i) internal pure returns (address) {
+      return address(uint160(i));
     }
     
     function toBytes(uint256 x) internal pure returns (bytes memory b) {
@@ -173,6 +178,10 @@ library FHE {
         return euint256.unwrap(v) != 0;
     }
 
+    function isInitialized(eaddress v) internal pure returns (bool) {
+        return eaddress.unwrap(v) != 0;
+    }
+
     function getValue(bytes memory a) private pure returns (uint256 value) {
         assembly {
             value := mload(add(a, 0x20))
@@ -215,6 +224,10 @@ const castFromEncrypted = (
 
 const castFromPlaintext = (name: string, toType: string): string => {
   return `Impl.trivialEncrypt(${name}, Common.${toType.toUpperCase()}_TFHE)`;
+};
+
+const castFromAddress = (name: string, toType: string): string => {
+  return `Impl.trivialEncrypt(uint256(uint160(${name})), Common.${toType.toUpperCase()}_TFHE)`;
 };
 
 const castFromBytes = (name: string, toType: string): string => {
@@ -272,6 +285,10 @@ export const AsTypeFunction = (fromType: string, toType: string) => {
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input`;
     castString = castFromBytes("value", toType);
+  } else if (fromType == "address" && toType == "eaddress") {
+    docString += `
+    /// Allows for a better user experience when working with eaddresses`;
+    castString = castFromAddress("value", toType);
   } else if (EPlaintextType.includes(fromType)) {
     castString = castFromPlaintext("value", toType);
   } else if (toType === "ebool") {
@@ -304,7 +321,7 @@ function TypeCastTestingFunction(
     ? `FHE.as${capitalize(fromTypeEncrypted)}(val)`
     : "val";
   let retTypeTs = retType === "bool" ? "boolean" : retType;
-  retTypeTs = retTypeTs.includes("uint") ? "bigint" : retTypeTs;
+  retTypeTs = retTypeTs.includes("uint") || retTypeTs.includes("address") ? "bigint" : retTypeTs;
 
   let abi: string;
   let func = "\n\n    ";
@@ -481,6 +498,10 @@ export function testContract2ArgBoolRes(name: string, isBoolean: boolean) {
     name,
     EInputType.indexOf("euint256")
   );
+  const isEaddressAllowed = IsOperationAllowed(
+    name,
+    EInputType.indexOf("eaddress")
+  )
   let func = `function ${name}(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
         if (Utils.cmp(test, "${name}(euint8,euint8)")) {
             if (FHE.decrypt(FHE.${name}(FHE.asEuint8(a), FHE.asEuint8(b)))) {
@@ -528,7 +549,15 @@ export function testContract2ArgBoolRes(name: string, isBoolean: boolean) {
             return 0;
         }`;
   }
+  if (isEaddressAllowed) {
+    func += ` else if (Utils.cmp(test, "${name}(eaddress,eaddress)")) {
+            if (FHE.decrypt(FHE.${name}(FHE.asEaddress(a), FHE.asEaddress(b)))) {
+                return 1;
+            }
 
+            return 0;
+        }`;
+  }
   func += ` else if (Utils.cmp(test, "euint8.${name}(euint8)")) {
             if (FHE.asEuint8(a).${name}(FHE.asEuint8(b)).decrypt()) {
                 return 1;
@@ -568,6 +597,14 @@ export function testContract2ArgBoolRes(name: string, isBoolean: boolean) {
   if (isEuint256Allowed) {
     func += ` else if (Utils.cmp(test, "euint256.${name}(euint256)")) {
             if (FHE.asEuint256(a).${name}(FHE.asEuint256(b)).decrypt()) {
+                return 1;
+            }
+            return 0;
+        }`;
+  }
+  if (isEaddressAllowed) {
+    func += ` else if (Utils.cmp(test, "eaddress.${name}(eaddress)")) {
+            if (FHE.asEaddress(a).${name}(FHE.asEaddress(b)).decrypt()) {
                 return 1;
             }
             return 0;
@@ -1162,6 +1199,7 @@ export const OperatorBinding = (
 };
 
 const shortenType = (type: string) => {
+  if (type === "eaddress") {return "Eaddress";}
   return type === "ebool" ? "Bool" : "U" + type.slice(5); // get only number at the end
 };
 
