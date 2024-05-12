@@ -11,7 +11,7 @@ contract Ownership {
     euint32 private contractResponse;
 
     function inc(euint32 c) public returns (euint32) {
-        return FHE.add(counter, FHE.asEuint32(1));
+        return FHE.add(c, FHE.asEuint32(1));
     }
 
     function setPlain(uint32 val) public {
@@ -40,7 +40,7 @@ contract Ownership {
     }
 
     function setQ(euint32 value) public view returns (euint32) {
-        return FHE.add(counter, FHE.asEuint32(1));
+        return FHE.add(value, FHE.asEuint32(1));
     }
 
     function getResp() public view returns (uint256) {
