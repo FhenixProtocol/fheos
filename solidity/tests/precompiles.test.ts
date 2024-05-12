@@ -1195,8 +1195,6 @@ describe("Test Eq", () => {
             BigInt(testCase.a),
             BigInt(testCase.b)
           );
-          console.log(decryptedResult)
-          console.log(funcName)
           expect(decryptedResult).toBe(BigInt(testCase.expectedResult));
         });
       }
