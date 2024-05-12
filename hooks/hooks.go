@@ -15,6 +15,7 @@ type FheOSHooks interface {
 	EvmCallStart()
 	EvmCallEnd(evmSuccess bool)
 	ContractCall(isSimulation bool, callType int, caller common.Address, addr common.Address, input []byte)
+	ContractCallReturn(isSimulation bool, callType int, caller common.Address, addr common.Address, output []byte)
 }
 
 type FheOSHooksImpl struct {
