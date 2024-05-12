@@ -101,9 +101,11 @@ func isCiphertextHash(param [32]byte) bool {
 
 func shouldIgnoreContract(caller common.Address, addr common.Address) bool {
 	// Address of a user and not a contract
-	userAddress := common.HexToAddress("0x0000000000000000000000000000000000000000")
+	const NilAddress = "0x0000000000000000000000000000000000000000"
+	const FheosPrecompilesAddress = "0x0000000000000000000000000000000000000080"
+	userAddress := common.HexToAddress(NilAddress)
 	// Address of our precompiled contract - just to be sure we don't waste time on it
-	precompilesAddress := common.HexToAddress("0x0000000000000000000000000000000000000080")
+	precompilesAddress := common.HexToAddress(FheosPrecompilesAddress)
 
 	if caller.Cmp(userAddress) == 0 {
 		return true
@@ -120,22 +122,25 @@ func (h FheOSHooksImpl) iterateHashes(data []byte, dataType string, owner common
 	// iterate through the data and check if the hash is a ciphertext hash
 	// if it is, add the owner to the ciphertext
 	// if not, continue
+
+	const EvmVariableLen = 32
 	dataLen := len(data)
 	if dataLen%32 != 0 {
 		log.Warn("Data is not aligned to 32 bytes", "type", dataType, "length", dataLen)
 	}
 
-	paramsCount := dataLen / 32
-	var hash [32]byte
+	paramsCount := dataLen / EvmVariableLen
+	var hash [EvmVariableLen]byte
+	storage := storage2.NewMultiStore(h.evm.CiphertextDb, &fheos.State.Storage)
+
 	for i := 0; i < paramsCount; i++ {
-		offset := i * 32
-		copy(hash[:], data[offset:offset+32])
+		offset := i * EvmVariableLen
+		copy(hash[:], data[offset:offset+EvmVariableLen])
 
 		if !isCiphertextHash(hash) {
 			continue
 		}
 
-		storage := storage2.NewMultiStore(h.evm.CiphertextDb, &fheos.State.Storage)
 		// will return ct if hash exists AND if caller is one of the owners
 		// otherwise we have nothing to do anymore
 		ct, _ := storage.GetCtRepresentation(hash, owner)

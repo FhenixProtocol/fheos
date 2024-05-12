@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"encoding/hex"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethdb/memorydb"
@@ -34,6 +35,19 @@ func (ms *MultiStore) PutCt(h types.Hash, cipher *types.FheEncrypted, owner comm
 	return ms.ephemeral.PutCt(h, ciphertext)
 }
 
+// AppendCt stores a ciphertext in the ephemeral storage - it does NOT mark it as LTS. The reason is that we want only SSTORE to mark it as LTS, which is
+// called not only by the precompiles, only by the EVM hook from the evm interpreter.
+// When a CT with the same hash exists in the disk storage, an owner is added to the list of owners.
+func (ms *MultiStore) AppendCt(h types.Hash, cipher *types.FheEncrypted, owner common.Address) error {
+	ct, _ := ms.getCtHelper(h)
+	if ct != nil {
+		ct.Owners = append(ct.Owners, owner)
+		return ms.ephemeral.PutCt(h, ct)
+	}
+
+	return ms.PutCt(h, cipher, owner)
+}
+
 func (ms *MultiStore) getCtHelper(h types.Hash) (*types.CipherTextRepresentation, error) {
 	ct, err := ms.ephemeral.GetCt(h)
 
@@ -55,7 +69,7 @@ func (ms *MultiStore) GetCtRepresentation(h types.Hash, caller common.Address) (
 	}
 
 	if !slices.Contains(ct.Owners, caller) {
-		return nil, fmt.Errorf("contract is not allowed to access the ciphertext")
+		return nil, fmt.Errorf("contract is not allowed to access the ciphertext (ct: %s, contract: %s)", hex.EncodeToString(h[:]), caller.String())
 	}
 
 	return ct, nil
