@@ -72,7 +72,6 @@ export interface AsEboolTestType extends BaseContract {
     castFromEuint64ToEbool: (val: bigint, test: string) => Promise<boolean>;
     castFromEuint128ToEbool: (val: bigint, test: string) => Promise<boolean>;
     castFromEuint256ToEbool: (val: bigint, test: string) => Promise<boolean>;
-    castFromEaddressToEbool: (val: bigint, test: string) => Promise<boolean>;
     castFromPlaintextToEbool: (val: bigint) => Promise<boolean>;
     castFromPreEncryptedToEbool: (val: Uint8Array) => Promise<boolean>;
 }
@@ -83,7 +82,6 @@ export interface AsEuint8TestType extends BaseContract {
     castFromEuint64ToEuint8: (val: bigint, test: string) => Promise<bigint>;
     castFromEuint128ToEuint8: (val: bigint, test: string) => Promise<bigint>;
     castFromEuint256ToEuint8: (val: bigint, test: string) => Promise<bigint>;
-    castFromEaddressToEuint8: (val: bigint, test: string) => Promise<bigint>;
     castFromPlaintextToEuint8: (val: bigint) => Promise<bigint>;
     castFromPreEncryptedToEuint8: (val: Uint8Array) => Promise<bigint>;
 }
@@ -94,7 +92,6 @@ export interface AsEuint16TestType extends BaseContract {
     castFromEuint64ToEuint16: (val: bigint, test: string) => Promise<bigint>;
     castFromEuint128ToEuint16: (val: bigint, test: string) => Promise<bigint>;
     castFromEuint256ToEuint16: (val: bigint, test: string) => Promise<bigint>;
-    castFromEaddressToEuint16: (val: bigint, test: string) => Promise<bigint>;
     castFromPlaintextToEuint16: (val: bigint) => Promise<bigint>;
     castFromPreEncryptedToEuint16: (val: Uint8Array) => Promise<bigint>;
 }
@@ -105,7 +102,6 @@ export interface AsEuint32TestType extends BaseContract {
     castFromEuint64ToEuint32: (val: bigint, test: string) => Promise<bigint>;
     castFromEuint128ToEuint32: (val: bigint, test: string) => Promise<bigint>;
     castFromEuint256ToEuint32: (val: bigint, test: string) => Promise<bigint>;
-    castFromEaddressToEuint32: (val: bigint, test: string) => Promise<bigint>;
     castFromPlaintextToEuint32: (val: bigint) => Promise<bigint>;
     castFromPreEncryptedToEuint32: (val: Uint8Array) => Promise<bigint>;
 }
@@ -116,7 +112,6 @@ export interface AsEuint64TestType extends BaseContract {
     castFromEuint32ToEuint64: (val: bigint, test: string) => Promise<bigint>;
     castFromEuint128ToEuint64: (val: bigint, test: string) => Promise<bigint>;
     castFromEuint256ToEuint64: (val: bigint, test: string) => Promise<bigint>;
-    castFromEaddressToEuint64: (val: bigint, test: string) => Promise<bigint>;
     castFromPlaintextToEuint64: (val: bigint) => Promise<bigint>;
     castFromPreEncryptedToEuint64: (val: Uint8Array) => Promise<bigint>;
 }
@@ -127,7 +122,6 @@ export interface AsEuint128TestType extends BaseContract {
     castFromEuint32ToEuint128: (val: bigint, test: string) => Promise<bigint>;
     castFromEuint64ToEuint128: (val: bigint, test: string) => Promise<bigint>;
     castFromEuint256ToEuint128: (val: bigint, test: string) => Promise<bigint>;
-    castFromEaddressToEuint128: (val: bigint, test: string) => Promise<bigint>;
     castFromPlaintextToEuint128: (val: bigint) => Promise<bigint>;
     castFromPreEncryptedToEuint128: (val: Uint8Array) => Promise<bigint>;
 }
@@ -143,12 +137,6 @@ export interface AsEuint256TestType extends BaseContract {
     castFromPreEncryptedToEuint256: (val: Uint8Array) => Promise<bigint>;
 }
 export interface AsEaddressTestType extends BaseContract {
-    castFromEboolToEaddress: (val: bigint, test: string) => Promise<bigint>;
-    castFromEuint8ToEaddress: (val: bigint, test: string) => Promise<bigint>;
-    castFromEuint16ToEaddress: (val: bigint, test: string) => Promise<bigint>;
-    castFromEuint32ToEaddress: (val: bigint, test: string) => Promise<bigint>;
-    castFromEuint64ToEaddress: (val: bigint, test: string) => Promise<bigint>;
-    castFromEuint128ToEaddress: (val: bigint, test: string) => Promise<bigint>;
     castFromEuint256ToEaddress: (val: bigint, test: string) => Promise<bigint>;
     castFromPlaintextToEaddress: (val: bigint) => Promise<bigint>;
     castFromPreEncryptedToEaddress: (val: Uint8Array) => Promise<bigint>;

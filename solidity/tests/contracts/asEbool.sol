@@ -64,15 +64,6 @@ contract AsEboolTest {
         revert TestNotFound(test);
     }
 
-    function castFromEaddressToEbool(uint256 val, string calldata test) public pure returns (bool) {
-        if (Utils.cmp(test, "bound")) {
-            return FHE.asEaddress(val).toBool().decrypt();
-        } else if (Utils.cmp(test, "regular")) {
-            return FHE.decrypt(FHE.asEbool(FHE.asEaddress(val)));
-        }
-        revert TestNotFound(test);
-    }
-
     function castFromPlaintextToEbool(uint256 val) public pure returns (bool) {
         return FHE.decrypt(FHE.asEbool(val));
     }

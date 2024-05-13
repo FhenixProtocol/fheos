@@ -351,8 +351,12 @@ export function AsTypeTestingContract(type: string) {
   let abi = `export interface As${capitalize(
     type
   )}TestType extends BaseContract {\n`;
-  for (const fromType of EInputType.concat("uint256", "bytes memory")) {
-    if (type === fromType) {
+  // Although casts from eaddress to types with < 256 bits are possible, we don't want to test them.
+  let eaddressAllowedTypes = ["euint256", "uint256", "bytes memory"];
+  let fromTypeCollection = type === "eaddress" ? eaddressAllowedTypes : EInputType.concat("uint256", "bytes memory");
+
+  for (const fromType of fromTypeCollection) {
+    if (type === fromType || (fromType === "eaddress" && !eaddressAllowedTypes.includes(type))) {
       continue;
     }
 
