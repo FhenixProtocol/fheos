@@ -55,14 +55,18 @@ contract Ownership {
 
     function staticTest(address next) public  {
         (bool success, bytes memory ret) = next.staticcall(abi.encodeWithSignature("setStatic(uint256)", euint32.unwrap(inc(counter))));
-        revert CallFailed("staticcall failed");
+        if (!success) {
+            revert CallFailed("staticcall failed");
+        }
 
         contractResponse = abi.decode(ret, (euint32));
     }
 
     function delegateTest(address next) public {
         (bool success, bytes memory ret) = next.delegatecall(abi.encodeWithSignature("set(uint256)", euint32.unwrap(inc(counter))));
-        revert CallFailed("delegatecall failed");
+         if (!success) {
+            revert CallFailed("delegatecall failed");
+        }
 
         contractResponse = abi.decode(ret, (euint32));
     }
