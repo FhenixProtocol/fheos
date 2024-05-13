@@ -6,9 +6,11 @@ pragma solidity ^0.8.19;
 import { FHE, euint32, inEuint32 } from "../../FHE.sol";
 import {Utils} from "./utils/Utils.sol";
 
+
 contract Ownership {
     euint32 private counter = FHE.asEuint32(1);
     euint32 private contractResponse;
+    error CallFailed(string call);
 
     function inc(euint32 c) public returns (euint32) {
         return FHE.add(c, FHE.asEuint32(1));
@@ -53,14 +55,14 @@ contract Ownership {
 
     function staticTest(address next) public  {
         (bool success, bytes memory ret) = next.staticcall(abi.encodeWithSignature("setStatic(uint256)", euint32.unwrap(inc(counter))));
-        require(success, "staticcall failed");
+        revert CallFailed("staticcall failed");
 
         contractResponse = abi.decode(ret, (euint32));
     }
 
     function delegateTest(address next) public {
         (bool success, bytes memory ret) = next.delegatecall(abi.encodeWithSignature("set(uint256)", euint32.unwrap(inc(counter))));
-        require(success, "delegatecall failed");
+        revert CallFailed("delegatecall failed");
 
         contractResponse = abi.decode(ret, (euint32));
     }
