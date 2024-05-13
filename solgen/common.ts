@@ -8,15 +8,32 @@ export const EInputType = [
   "euint256",
   "eaddress",
 ];
+
+/*---------------- HELPFUL PREDEFINED CONSTS -----------------*/
+// FYI: Operations ["sealoutput", "seal", "decrypt", "ne"] are the minimum required for
+// non failing generated code.
+
+const patternAllowedOperationsEbool = [".*"];
+const patternAllowedOperationsEuint8 = [".*"];
+const patternAllowedOperationsEuint16 = [".*"];
+const patternAllowedOperationsEuint32 = [".*"];
+
+const patternAllowedOperationsEuint64 = ["^(?!div)", "^(?!rem)"];
+const patternAllowedOperationsEuint128 = ["^(?!div)", "^(?!rem)", "^(?!mul)"];
+
+const patternAllowedOperationsEuint256 =   ["ne|eq|sealoutput|select|seal|decrypt"];
+const patternAllowedOperationsEaddress =   ["ne|^eq$|sealoutput|select|seal|decrypt"];
+/*------------------------------------------------------------*/
+
 export const AllowedOperations = [
-  [".*"],
-  [".*"],
-  [".*"],
-  [".*"],
-  ["^(?!div)", "^(?!rem)"],
-  ["^(?!div)", "^(?!rem)", "^(?!mul)"],
-  ["ne|eq|sealoutput|select|seal|decrypt"],
-  ["decrypt|^eq$|ne|select|seal|sealoutput"],
+  patternAllowedOperationsEbool,
+  patternAllowedOperationsEuint8,
+  patternAllowedOperationsEuint16,
+  patternAllowedOperationsEuint32,
+  patternAllowedOperationsEuint64,
+  patternAllowedOperationsEuint128,
+  patternAllowedOperationsEuint256,
+  patternAllowedOperationsEaddress,
 ];
 export const EComparisonType = ["ebool"];
 export const EPlaintextType = [
