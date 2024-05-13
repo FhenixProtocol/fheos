@@ -1090,17 +1090,6 @@ library FHE {
         bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
         FheOps(Precompiles.Fheos).req(Common.EUINT256_TFHE, inputAsBytes);
     }
-    /// @notice Performs the req operation on a ciphertext
-    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
-    /// @param input1 the input ciphertext
-    function req(eaddress input1) internal pure  {
-        if (!isInitialized(input1)) {
-            input1 = asEaddress(0);
-        }
-        uint256 unwrappedInput1 = eaddress.unwrap(input1);
-        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        FheOps(Precompiles.Fheos).req(Common.EADDRESS_TFHE, inputAsBytes);
-    }
     /// @notice This functions performs the div operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
     ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access

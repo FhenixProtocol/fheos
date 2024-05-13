@@ -16,7 +16,7 @@ export const AllowedOperations = [
   ["^(?!div)", "^(?!rem)"],
   ["^(?!div)", "^(?!rem)", "^(?!mul)"],
   ["ne|eq|sealoutput|select|seal|decrypt"],
-  ["decrypt|eq|ne|select|sealoutput"],
+  ["decrypt|^eq$|ne|select|sealoutput"],
 ];
 export const EComparisonType = ["ebool"];
 export const EPlaintextType = [
