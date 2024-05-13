@@ -79,7 +79,7 @@ func (es *EphemeralStorageImpl) MarkForPersistence(contract common.Address, h ty
 	return es.memstore.Put(key, encodedLts)
 }
 
-func (es *EphemeralStorageImpl) PutCt(h types.Hash, cipher *types.FheEncrypted) error {
+func (es *EphemeralStorageImpl) PutCt(h types.Hash, cipher *types.CipherTextRepresentation) error {
 
 	if es.memstore == nil {
 		return errors.New("memstore is nil")
@@ -95,7 +95,7 @@ func (es *EphemeralStorageImpl) PutCt(h types.Hash, cipher *types.FheEncrypted) 
 	return es.memstore.Put(h[:], buf.Bytes())
 }
 
-func (es *EphemeralStorageImpl) GetCt(h types.Hash) (*types.FheEncrypted, error) {
+func (es *EphemeralStorageImpl) GetCt(h types.Hash) (*types.CipherTextRepresentation, error) {
 
 	if es.memstore == nil {
 		return nil, errors.New("memstore is nil")
@@ -106,7 +106,7 @@ func (es *EphemeralStorageImpl) GetCt(h types.Hash) (*types.FheEncrypted, error)
 		return nil, err
 	}
 
-	var cipher types.FheEncrypted
+	var cipher types.CipherTextRepresentation
 	err = gob.NewDecoder(bytes.NewBuffer(val)).Decode(&cipher)
 	if err != nil {
 		return nil, err

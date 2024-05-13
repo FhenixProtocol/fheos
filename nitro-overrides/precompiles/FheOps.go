@@ -13,7 +13,7 @@ type FheOps struct {
 }
 
 func (con FheOps) Log(c ctx, evm mech, s string) error {
-	tp := fheos.TxParamsFromEVM(evm)
+	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	gas, err := fheos.Log(s, &tp)
 
 	if err != nil {
@@ -24,8 +24,7 @@ func (con FheOps) Log(c ctx, evm mech, s string) error {
 }
 
 func (con FheOps) Add(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte) ([]byte, error) {
-	tp := fheos.TxParamsFromEVM(evm)
-
+	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "Add", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
@@ -61,8 +60,7 @@ func (con FheOps) Add(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 }
 
 func (con FheOps) And(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte) ([]byte, error) {
-	tp := fheos.TxParamsFromEVM(evm)
-
+	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "And", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
@@ -98,8 +96,7 @@ func (con FheOps) And(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 }
 
 func (con FheOps) Cast(c ctx, evm mech, utype byte, input []byte, toType byte) ([]byte, error) {
-	tp := fheos.TxParamsFromEVM(evm)
-
+	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "Cast", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
@@ -135,8 +132,7 @@ func (con FheOps) Cast(c ctx, evm mech, utype byte, input []byte, toType byte) (
 }
 
 func (con FheOps) Decrypt(c ctx, evm mech, utype byte, input []byte) (*big.Int, error) {
-	tp := fheos.TxParamsFromEVM(evm)
-
+	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "Decrypt", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
@@ -172,8 +168,7 @@ func (con FheOps) Decrypt(c ctx, evm mech, utype byte, input []byte) (*big.Int, 
 }
 
 func (con FheOps) Div(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte) ([]byte, error) {
-	tp := fheos.TxParamsFromEVM(evm)
-
+	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "Div", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
@@ -209,8 +204,7 @@ func (con FheOps) Div(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 }
 
 func (con FheOps) Eq(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte) ([]byte, error) {
-	tp := fheos.TxParamsFromEVM(evm)
-
+	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "Eq", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
@@ -247,13 +241,12 @@ func (con FheOps) Eq(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 
 func (con FheOps) GetNetworkPublicKey(c ctx, evm mech) ([]byte, error) {
 
-	tp := fheos.TxParamsFromEVM(evm)
+	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	return fheos.GetNetworkPublicKey(&tp)
 }
 
 func (con FheOps) Gt(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte) ([]byte, error) {
-	tp := fheos.TxParamsFromEVM(evm)
-
+	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "Gt", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
@@ -289,8 +282,7 @@ func (con FheOps) Gt(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 }
 
 func (con FheOps) Gte(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte) ([]byte, error) {
-	tp := fheos.TxParamsFromEVM(evm)
-
+	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "Gte", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
@@ -326,8 +318,7 @@ func (con FheOps) Gte(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 }
 
 func (con FheOps) Lt(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte) ([]byte, error) {
-	tp := fheos.TxParamsFromEVM(evm)
-
+	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "Lt", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
@@ -363,8 +354,7 @@ func (con FheOps) Lt(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 }
 
 func (con FheOps) Lte(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte) ([]byte, error) {
-	tp := fheos.TxParamsFromEVM(evm)
-
+	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "Lte", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
@@ -400,8 +390,7 @@ func (con FheOps) Lte(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 }
 
 func (con FheOps) Max(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte) ([]byte, error) {
-	tp := fheos.TxParamsFromEVM(evm)
-
+	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "Max", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
@@ -437,8 +426,7 @@ func (con FheOps) Max(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 }
 
 func (con FheOps) Min(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte) ([]byte, error) {
-	tp := fheos.TxParamsFromEVM(evm)
-
+	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "Min", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
@@ -474,8 +462,7 @@ func (con FheOps) Min(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 }
 
 func (con FheOps) Mul(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte) ([]byte, error) {
-	tp := fheos.TxParamsFromEVM(evm)
-
+	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "Mul", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
@@ -511,8 +498,7 @@ func (con FheOps) Mul(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 }
 
 func (con FheOps) Ne(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte) ([]byte, error) {
-	tp := fheos.TxParamsFromEVM(evm)
-
+	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "Ne", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
@@ -548,8 +534,7 @@ func (con FheOps) Ne(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 }
 
 func (con FheOps) Not(c ctx, evm mech, utype byte, value []byte) ([]byte, error) {
-	tp := fheos.TxParamsFromEVM(evm)
-
+	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "Not", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
@@ -585,8 +570,7 @@ func (con FheOps) Not(c ctx, evm mech, utype byte, value []byte) ([]byte, error)
 }
 
 func (con FheOps) Or(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte) ([]byte, error) {
-	tp := fheos.TxParamsFromEVM(evm)
-
+	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "Or", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
@@ -622,8 +606,7 @@ func (con FheOps) Or(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 }
 
 func (con FheOps) Rem(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte) ([]byte, error) {
-	tp := fheos.TxParamsFromEVM(evm)
-
+	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "Rem", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
@@ -659,8 +642,7 @@ func (con FheOps) Rem(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 }
 
 func (con FheOps) Req(c ctx, evm mech, utype byte, input []byte) ([]byte, error) {
-	tp := fheos.TxParamsFromEVM(evm)
-
+	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "Req", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
@@ -696,8 +678,7 @@ func (con FheOps) Req(c ctx, evm mech, utype byte, input []byte) ([]byte, error)
 }
 
 func (con FheOps) SealOutput(c ctx, evm mech, utype byte, ctHash []byte, pk []byte) (string, error) {
-	tp := fheos.TxParamsFromEVM(evm)
-
+	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "SealOutput", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
@@ -733,8 +714,7 @@ func (con FheOps) SealOutput(c ctx, evm mech, utype byte, ctHash []byte, pk []by
 }
 
 func (con FheOps) Select(c ctx, evm mech, utype byte, controlHash []byte, ifTrueHash []byte, ifFalseHash []byte) ([]byte, error) {
-	tp := fheos.TxParamsFromEVM(evm)
-
+	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "Select", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
@@ -770,8 +750,7 @@ func (con FheOps) Select(c ctx, evm mech, utype byte, controlHash []byte, ifTrue
 }
 
 func (con FheOps) Shl(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte) ([]byte, error) {
-	tp := fheos.TxParamsFromEVM(evm)
-
+	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "Shl", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
@@ -807,8 +786,7 @@ func (con FheOps) Shl(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 }
 
 func (con FheOps) Shr(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte) ([]byte, error) {
-	tp := fheos.TxParamsFromEVM(evm)
-
+	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "Shr", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
@@ -844,8 +822,7 @@ func (con FheOps) Shr(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 }
 
 func (con FheOps) Sub(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte) ([]byte, error) {
-	tp := fheos.TxParamsFromEVM(evm)
-
+	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "Sub", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
@@ -881,8 +858,7 @@ func (con FheOps) Sub(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 }
 
 func (con FheOps) TrivialEncrypt(c ctx, evm mech, input []byte, toType byte) ([]byte, error) {
-	tp := fheos.TxParamsFromEVM(evm)
-
+	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "TrivialEncrypt", fheos.UtypeToString(toType))
 		defer func(start time.Time) {
@@ -918,8 +894,7 @@ func (con FheOps) TrivialEncrypt(c ctx, evm mech, input []byte, toType byte) ([]
 }
 
 func (con FheOps) Verify(c ctx, evm mech, utype byte, input []byte) ([]byte, error) {
-	tp := fheos.TxParamsFromEVM(evm)
-
+	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "Verify", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
@@ -955,8 +930,7 @@ func (con FheOps) Verify(c ctx, evm mech, utype byte, input []byte) ([]byte, err
 }
 
 func (con FheOps) Xor(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte) ([]byte, error) {
-	tp := fheos.TxParamsFromEVM(evm)
-
+	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "Xor", fheos.UtypeToString(utype))
 		defer func(start time.Time) {

@@ -84,7 +84,7 @@ func (p *EthDbWrapper) PutVersion(v uint64) error {
 	return p.db.Put(key, buf.Bytes())
 }
 
-func (p *EthDbWrapper) PutCt(h types.Hash, cipher *types.FheEncrypted) error {
+func (p *EthDbWrapper) PutCt(h types.Hash, cipher *types.CipherTextRepresentation) error {
 	// Serialize Ciphertext
 	var buf bytes.Buffer
 	err := gob.NewEncoder(&buf).Encode(cipher)
@@ -96,13 +96,13 @@ func (p *EthDbWrapper) PutCt(h types.Hash, cipher *types.FheEncrypted) error {
 	return p.db.Put(h[:], buf.Bytes())
 }
 
-func (p *EthDbWrapper) GetCt(h types.Hash) (*types.FheEncrypted, error) {
+func (p *EthDbWrapper) GetCt(h types.Hash) (*types.CipherTextRepresentation, error) {
 	val, err := p.db.Get(h[:])
 	if err != nil {
 		return nil, err
 	}
 
-	var cipher types.FheEncrypted
+	var cipher types.CipherTextRepresentation
 	err = gob.NewDecoder(bytes.NewBuffer(val)).Decode(&cipher)
 	if err != nil {
 		return nil, err

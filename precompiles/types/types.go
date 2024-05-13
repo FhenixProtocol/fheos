@@ -1,11 +1,19 @@
 package types
 
-import "github.com/fhenixprotocol/warp-drive/fhe-driver"
+import (
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/fhenixprotocol/warp-drive/fhe-driver"
+)
 
 type DataType uint64
 
 type Hash fhe.Hash
 type FheEncrypted fhe.FheEncrypted
+
+type CipherTextRepresentation struct {
+	Data   *FheEncrypted
+	Owners []common.Address
+}
 
 type Storage interface {
 	// don't really need these
@@ -17,8 +25,8 @@ type Storage interface {
 }
 
 type FheCipherTextStorage interface {
-	PutCt(h Hash, cipher *FheEncrypted) error
-	GetCt(h Hash) (*FheEncrypted, error)
+	PutCt(h Hash, cipher *CipherTextRepresentation) error
+	GetCt(h Hash) (*CipherTextRepresentation, error)
 
 	HasCt(h Hash) bool
 }

@@ -1,6 +1,8 @@
 import { AddCaller, AddCallee } from "../types/tests/contracts/Tx.sol";
+import { Ownership } from "../types/tests/contracts/Ownership";
 import { createFheInstance, deployContract } from "./utils";
-import {ethers} from "hardhat";
+import { ethers } from "hardhat";
+import exp = require("constants");
 
 describe("Test Transactions Scenarios", () => {
   let contractCaller: AddCaller;
@@ -11,7 +13,9 @@ describe("Test Transactions Scenarios", () => {
     contractCallee = (await deployContract("AddCallee")) as AddCallee;
     expect(contractCallee).toBeTruthy();
 
-    contractCaller = (await deployContract("AddCaller", [contractCallee])) as AddCaller;
+    contractCaller = (await deployContract("AddCaller", [
+      contractCallee,
+    ])) as AddCaller;
     expect(contractCaller).toBeTruthy();
     contractAddr = await contractCaller.getAddress();
     expect(contractAddr).toBeTruthy();
@@ -26,7 +30,9 @@ describe("Test Transactions Scenarios", () => {
     contractCallee = (await deployContract("AddCallee")) as AddCallee;
     expect(contractCallee).toBeTruthy();
 
-    contractCaller = (await deployContract("AddCaller", [contractCallee])) as AddCaller;
+    contractCaller = (await deployContract("AddCaller", [
+      contractCallee,
+    ])) as AddCaller;
     expect(contractCaller).toBeTruthy();
     contractAddr = await contractCaller.getAddress();
     expect(contractAddr).toBeTruthy();
@@ -37,15 +43,23 @@ describe("Test Transactions Scenarios", () => {
     const encInput = await instance.encrypt_uint32(8);
 
     // 1 - static call
-    const encCounter = await contractCaller.addTx.staticCall(encInput, permit.publicKey);
+    const encCounter = await contractCaller.addTx.staticCall(
+      encInput,
+      permit.publicKey
+    );
     const counterStatic = instance.unseal(contractAddr, encCounter);
     expect(Number(counterStatic)).toEqual(8);
 
     // 2 - real call + query
-    const encCounterReceipt = await contractCaller.addTx(encInput, permit.publicKey);
+    const encCounterReceipt = await contractCaller.addTx(
+      encInput,
+      permit.publicKey
+    );
     await encCounterReceipt.wait();
 
-    const getCounterResponse = await contractCaller.getCounter(permit.publicKey);
+    const getCounterResponse = await contractCaller.getCounter(
+      permit.publicKey
+    );
     const counter = instance.unseal(contractAddr, getCounterResponse);
     expect(Number(counter)).toEqual(8);
   });
@@ -57,15 +71,24 @@ describe("Test Transactions Scenarios", () => {
     const { instance, permit } = await createFheInstance(contractAddr);
 
     // 1 - static call
-    const encCounter = await contractCaller.addViaContractCallAsPlain.staticCall(9, permit.publicKey);
+    const encCounter =
+      await contractCaller.addViaContractCallAsPlain.staticCall(
+        9,
+        permit.publicKey
+      );
     const counterStatic = instance.unseal(contractAddr, encCounter);
     expect(Number(counterStatic)).toEqual(9);
 
     // 2 - real call + query
-    const encCounterReceipt = await contractCaller.addViaContractCallAsPlain(9, permit.publicKey);
+    const encCounterReceipt = await contractCaller.addViaContractCallAsPlain(
+      9,
+      permit.publicKey
+    );
     await encCounterReceipt.wait();
 
-    const getCounterResponse = await contractCaller.getCounter(permit.publicKey);
+    const getCounterResponse = await contractCaller.getCounter(
+      permit.publicKey
+    );
     const counter = instance.unseal(contractAddr, getCounterResponse);
     expect(Number(counter)).toEqual(9);
   });
@@ -75,15 +98,23 @@ describe("Test Transactions Scenarios", () => {
     const encInput = await instance.encrypt_uint32(10);
 
     // 1 - static call
-    const encCounter = await contractCaller.addViaContractCall.staticCall(encInput, permit.publicKey);
+    const encCounter = await contractCaller.addViaContractCall.staticCall(
+      encInput,
+      permit.publicKey
+    );
     const counterStatic = instance.unseal(contractAddr, encCounter);
     expect(Number(counterStatic)).toEqual(10);
 
     // 2 - real call + query
-    const encCounterReceipt = await contractCaller.addViaContractCall(encInput, permit.publicKey);
+    const encCounterReceipt = await contractCaller.addViaContractCall(
+      encInput,
+      permit.publicKey
+    );
     await encCounterReceipt.wait();
 
-    const getCounterResponse = await contractCaller.getCounter(permit.publicKey);
+    const getCounterResponse = await contractCaller.getCounter(
+      permit.publicKey
+    );
     const counter = instance.unseal(contractAddr, getCounterResponse);
     expect(Number(counter)).toEqual(10);
   });
@@ -93,15 +124,23 @@ describe("Test Transactions Scenarios", () => {
     const encInput = await instance.encrypt_uint32(11);
 
     // 1 - static call
-    const encCounter = await contractCaller.addViaContractCallU32.staticCall(encInput, permit.publicKey);
+    const encCounter = await contractCaller.addViaContractCallU32.staticCall(
+      encInput,
+      permit.publicKey
+    );
     const counterStatic = instance.unseal(contractAddr, encCounter);
     expect(Number(counterStatic)).toEqual(11);
 
     // 2 - real call + query
-    const encCounterReceipt = await contractCaller.addViaContractCallU32(encInput, permit.publicKey);
+    const encCounterReceipt = await contractCaller.addViaContractCallU32(
+      encInput,
+      permit.publicKey
+    );
     await encCounterReceipt.wait();
 
-    const getCounterResponse = await contractCaller.getCounter(permit.publicKey);
+    const getCounterResponse = await contractCaller.getCounter(
+      permit.publicKey
+    );
     const counter = instance.unseal(contractAddr, getCounterResponse);
     expect(Number(counter)).toEqual(11);
   });
@@ -111,15 +150,24 @@ describe("Test Transactions Scenarios", () => {
     const encInput = await instance.encrypt_uint32(11);
 
     // 1 - static call
-    const encCounter = await contractCaller.addViaViewContractCallU32.staticCall(encInput, permit.publicKey);
+    const encCounter =
+      await contractCaller.addViaViewContractCallU32.staticCall(
+        encInput,
+        permit.publicKey
+      );
     const counterStatic = instance.unseal(contractAddr, encCounter);
     expect(Number(counterStatic)).toEqual(16);
 
     // 2 - real call + query
-    const encCounterReceipt = await contractCaller.addViaViewContractCallU32(encInput, permit.publicKey);
+    const encCounterReceipt = await contractCaller.addViaViewContractCallU32(
+      encInput,
+      permit.publicKey
+    );
     await encCounterReceipt.wait();
 
-    const getCounterResponse = await contractCaller.getCounter(permit.publicKey);
+    const getCounterResponse = await contractCaller.getCounter(
+      permit.publicKey
+    );
     const counter = instance.unseal(contractAddr, getCounterResponse);
     expect(Number(counter)).toEqual(16);
   });
@@ -128,15 +176,23 @@ describe("Test Transactions Scenarios", () => {
     const { instance, permit } = await createFheInstance(contractAddr);
 
     // 1 - static call
-    const encCounter = await contractCaller.addDelegatePlain.staticCall(12, permit.publicKey);
+    const encCounter = await contractCaller.addDelegatePlain.staticCall(
+      12,
+      permit.publicKey
+    );
     const counterStatic = instance.unseal(contractAddr, encCounter);
     expect(Number(counterStatic)).toEqual(24);
 
     // 2 - real call + query
-    const encCounterReceipt = await contractCaller.addDelegatePlain(12, permit.publicKey);
+    const encCounterReceipt = await contractCaller.addDelegatePlain(
+      12,
+      permit.publicKey
+    );
     await encCounterReceipt.wait();
 
-    const getCounterResponse = await contractCaller.getCounter(permit.publicKey);
+    const getCounterResponse = await contractCaller.getCounter(
+      permit.publicKey
+    );
     const counter = instance.unseal(contractAddr, getCounterResponse);
     expect(Number(counter)).toEqual(24);
   });
@@ -146,15 +202,23 @@ describe("Test Transactions Scenarios", () => {
     const encInput = await instance.encrypt_uint32(13);
 
     // 1 - static call
-    const encCounter = await contractCaller.addDelegate.staticCall(encInput, permit.publicKey);
+    const encCounter = await contractCaller.addDelegate.staticCall(
+      encInput,
+      permit.publicKey
+    );
     const counterStatic = instance.unseal(contractAddr, encCounter);
     expect(Number(counterStatic)).toEqual(26);
 
     // 2 - real call + query
-    const encCounterReceipt = await contractCaller.addDelegate(encInput, permit.publicKey);
+    const encCounterReceipt = await contractCaller.addDelegate(
+      encInput,
+      permit.publicKey
+    );
     await encCounterReceipt.wait();
 
-    const getCounterResponse = await contractCaller.getCounter(permit.publicKey);
+    const getCounterResponse = await contractCaller.getCounter(
+      permit.publicKey
+    );
     const counter = instance.unseal(contractAddr, getCounterResponse);
     expect(Number(counter)).toEqual(26);
   });
@@ -164,18 +228,88 @@ describe("Test Transactions Scenarios", () => {
     const encInput = await instance.encrypt_uint32(14);
 
     // 1 - static call
-    const encCounter = await contractCaller.addDelegate.staticCall(encInput, permit.publicKey);
+    const encCounter = await contractCaller.addDelegate.staticCall(
+      encInput,
+      permit.publicKey
+    );
     const counterStatic = instance.unseal(contractAddr, encCounter);
     expect(Number(counterStatic)).toEqual(28);
 
     // 2 - real call + query
-    const encCounterReceipt = await contractCaller.addDelegateU32(encInput, permit.publicKey);
+    const encCounterReceipt = await contractCaller.addDelegateU32(
+      encInput,
+      permit.publicKey
+    );
     await encCounterReceipt.wait();
 
-    const getCounterResponse = await contractCaller.getCounter(permit.publicKey);
+    const getCounterResponse = await contractCaller.getCounter(
+      permit.publicKey
+    );
     const counter = instance.unseal(contractAddr, getCounterResponse);
     expect(Number(counter)).toEqual(28);
   });
 
   // function addDelegate(inEuint32 calldata value, bytes32 publicKey) public returns (bytes memory) {
+});
+
+describe("Test CT Ownership", () => {
+  let methods = [
+    { name: "callTest", stateExpectation: 2, expectedResponse: 3 },
+    { name: "staticTest", stateExpectation: 1, expectedResponse: 4 },
+    { name: "queryTest", stateExpectation: 1, expectedResponse: 2 },
+    { name: "delegateTest", stateExpectation: 1, expectedResponse: 3 },
+  ];
+  let expectedCounter = 1;
+
+  let contracts = new Array<Ownership>(methods.length + 1);
+  let contractAddrs = new Array<string>(methods.length + 1);
+  beforeAll(async () => {
+    // contracts.length = methods.length + 1
+    for (let i = 0; i <= methods.length; i++) {
+      const contract = (await deployContract("Ownership")) as Ownership;
+      expect(contract).toBeTruthy();
+
+      contracts[i] = contract;
+
+      const contractAddr = await contract.getAddress();
+      expect(contractAddr).toBeTruthy();
+
+      contractAddrs[i] = contractAddr;
+    }
+  });
+
+  it.skip("Full chain", async () => {
+    for (let i = 0; i < methods.length; i++) {
+      const contract = contracts[i];
+      const method = methods[i];
+
+      let response = await contract.resetContractResponse();
+      await response.wait();
+
+      response = await contract[method.name](contracts[i + 1]);
+      await response.wait();
+
+      const returnCounter = await contract.getResp();
+      expect(Number(returnCounter)).toEqual(method.expectedResponse);
+
+      const counter = await contracts[i + 1].get();
+      expect(Number(counter)).toEqual(method.stateExpectation);
+    }
+  });
+
+  it("Broken chain", async () => {
+    const caller = contracts[2];
+    const callee = contracts[3];
+    const tx = await caller.setPlain(100);
+    await tx.wait();
+    const response = await caller.getEnc();
+    let failed = false;
+    try {
+      const resp = await callee.set(response);
+    } catch (err) {
+      failed = true;
+    }
+
+    expect(failed).toBeTruthy();
+  });
 });

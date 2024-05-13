@@ -48,7 +48,7 @@ func getDbPath() string {
 
 var State *FheosState = nil
 
-func (fs *FheosState) GetCiphertext(hash types.Hash) (*types.FheEncrypted, error) {
+func (fs *FheosState) GetCiphertext(hash types.Hash) (*types.CipherTextRepresentation, error) {
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "db", "get")
 		defer func(start time.Time) {
@@ -61,7 +61,7 @@ func (fs *FheosState) GetCiphertext(hash types.Hash) (*types.FheEncrypted, error
 	return fs.Storage.GetCt(hash)
 }
 
-func (fs *FheosState) SetCiphertext(ct *fhe.FheEncrypted) error {
+func (fs *FheosState) SetCiphertext(ct *types.CipherTextRepresentation) error {
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "db", "put")
 		defer func(start time.Time) {
@@ -72,7 +72,7 @@ func (fs *FheosState) SetCiphertext(ct *fhe.FheEncrypted) error {
 		}(time.Now())
 	}
 
-	result := fs.Storage.PutCt(types.Hash(ct.Hash()), (*types.FheEncrypted)(ct))
+	result := fs.Storage.PutCt(types.Hash((*fhe.FheEncrypted)(ct.Data).Hash()), ct)
 
 	return result
 }
