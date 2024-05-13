@@ -46,6 +46,12 @@ contract NeTest {
             }
 
             return 0;
+        } else if (Utils.cmp(test, "ne(eaddress,eaddress)")) {
+            if (FHE.decrypt(FHE.ne(FHE.asEaddress(a), FHE.asEaddress(b)))) {
+                return 1;
+            }
+
+            return 0;
         } else if (Utils.cmp(test, "euint8.ne(euint8)")) {
             if (FHE.asEuint8(a).ne(FHE.asEuint8(b)).decrypt()) {
                 return 1;
@@ -76,6 +82,11 @@ contract NeTest {
             return 0;
         } else if (Utils.cmp(test, "euint256.ne(euint256)")) {
             if (FHE.asEuint256(a).ne(FHE.asEuint256(b)).decrypt()) {
+                return 1;
+            }
+            return 0;
+        } else if (Utils.cmp(test, "eaddress.ne(eaddress)")) {
+            if (FHE.asEaddress(a).ne(FHE.asEaddress(b)).decrypt()) {
                 return 1;
             }
             return 0;

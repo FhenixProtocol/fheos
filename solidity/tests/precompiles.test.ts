@@ -30,7 +30,7 @@ import {
   SealoutputTestType,
   AsEuint64TestType,
   AsEuint128TestType,
-  AsEuint256TestType,
+  AsEuint256TestType, AsEaddressTestType,
 } from "./abis";
 
 const deployContractFromSigner = async (
@@ -1146,7 +1146,6 @@ describe("Test Eq", () => {
     { a: 2, b: 1, expectedResult: 0, name: " a > b" },
     { a: 3, b: 3, expectedResult: 1, name: " a == b" },
   ];
-
   const testCases = [
     {
       function: ["eq(euint8,euint8)", "euint8.eq(euint8)"],
@@ -1170,6 +1169,10 @@ describe("Test Eq", () => {
     },
     {
       function: ["eq(euint256,euint256)", "euint256.eq(euint256)"],
+      cases,
+    },
+    {
+      function: ["eq(eaddress,eaddress)", "eaddress.eq(eaddress)"],
       cases,
     },
     {
@@ -2256,5 +2259,62 @@ describe("Test AsEuint256", () => {
       encInput.data
     );
     expect(decryptedResult).toBe(value);
+  });
+});
+describe("Test AsEaddress", () => {
+  let contract;
+  let fheContract;
+
+  it(`Test Contract Deployment`, async () => {
+    const baseContract = await deployContract("AsEaddressTest");
+    contract = baseContract as AsEaddressTestType;
+
+    const contractAddress = await baseContract.getAddress();
+    fheContract = await getFheContract(contractAddress);
+
+    expect(contract).toBeTruthy();
+    expect(fheContract).toBeTruthy();
+  });
+
+  const value = BigInt(455113547441765951074000967332144802967768096399n); //0x4fB7FF4e004FcADbff708d8d873592B2044d5E8f
+  const funcTypes = ["regular", "bound"];
+
+
+  for (const funcType of funcTypes) {
+    it(`From euint256 - ${funcType}`, async () => {
+      let decryptedResult = await contract.castFromEuint256ToEaddress(
+          value,
+          funcType
+      );
+      let decimal = BigInt(decryptedResult);
+      expect(decimal).toBe(value);
+    });
+  }
+
+  it(`From plaintext`, async () => {
+    let decryptedResult = await contract.castFromPlaintextToEaddress(value);
+    let decimal = BigInt(decryptedResult);
+    expect(decimal).toBe(value);
+  });
+
+  it(`From plaintext`, async () => {
+    // We want to make sure that numbers that are higher than max of uint128 but lower than max of uint256 are handled correctly
+    // Before a fix was introduced, there were some code sections that were converting the results of decryption to 64bits representations.
+    // This was causing the numbers to be truncated and the results to be incorrect.
+    // This test is to make sure that the fix is working correctly.
+    // The number is 2^128 + 1 which is not representable in uint128 but is representable in uint256 and also is not aligned by 64 bits, previously, with the bug present the result was just 1
+    const bigNumber = BigInt(2) ** BigInt(128) + BigInt(1);
+    let decryptedResult = await contract.castFromPlaintextToEaddress(bigNumber);
+    let decimal = BigInt(decryptedResult);
+    expect(decimal).toBe(bigNumber);
+  });
+
+  it(`From pre encrypted`, async () => {
+    const encInput = await fheContract.instance.encrypt_uint256(value); // Adjust encryption method if necessary
+    let decryptedResult = await contract.castFromPreEncryptedToEaddress(
+        encInput.data
+    );
+    let decimal = BigInt(decryptedResult);
+    expect(decimal).toBe(value);
   });
 });

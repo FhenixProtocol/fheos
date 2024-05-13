@@ -132,8 +132,14 @@ export interface AsEuint256TestType extends BaseContract {
     castFromEuint32ToEuint256: (val: bigint, test: string) => Promise<bigint>;
     castFromEuint64ToEuint256: (val: bigint, test: string) => Promise<bigint>;
     castFromEuint128ToEuint256: (val: bigint, test: string) => Promise<bigint>;
+    castFromEaddressToEuint256: (val: bigint, test: string) => Promise<bigint>;
     castFromPlaintextToEuint256: (val: bigint) => Promise<bigint>;
     castFromPreEncryptedToEuint256: (val: Uint8Array) => Promise<bigint>;
+}
+export interface AsEaddressTestType extends BaseContract {
+    castFromEuint256ToEaddress: (val: bigint, test: string) => Promise<bigint>;
+    castFromPlaintextToEaddress: (val: bigint) => Promise<bigint>;
+    castFromPreEncryptedToEaddress: (val: Uint8Array) => Promise<bigint>;
 }
 
 

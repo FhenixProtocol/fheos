@@ -6,15 +6,34 @@ export const EInputType = [
   "euint64",
   "euint128",
   "euint256",
+  "eaddress",
 ];
+
+/*---------------- HELPFUL PREDEFINED CONSTS -----------------*/
+// FYI: Operations ["sealoutput", "seal", "decrypt", "ne"] are the minimum required for
+// non failing generated code.
+
+const patternAllowedOperationsEbool = [".*"];
+const patternAllowedOperationsEuint8 = [".*"];
+const patternAllowedOperationsEuint16 = [".*"];
+const patternAllowedOperationsEuint32 = [".*"];
+
+const patternAllowedOperationsEuint64 = ["^(?!div)", "^(?!rem)"];
+const patternAllowedOperationsEuint128 = ["^(?!div)", "^(?!rem)", "^(?!mul)"];
+
+const patternAllowedOperationsEuint256 =   ["ne|eq|sealoutput|select|seal|decrypt"];
+const patternAllowedOperationsEaddress =   ["ne|^eq$|sealoutput|select|seal|decrypt"];
+/*------------------------------------------------------------*/
+
 export const AllowedOperations = [
-  [".*"],
-  [".*"],
-  [".*"],
-  [".*"],
-  ["^(?!div)", "^(?!rem)"],
-  ["^(?!div)", "^(?!rem)", "^(?!mul)"],
-  ["ne|eq|sealoutput|seal|decrypt"],
+  patternAllowedOperationsEbool,
+  patternAllowedOperationsEuint8,
+  patternAllowedOperationsEuint16,
+  patternAllowedOperationsEuint32,
+  patternAllowedOperationsEuint64,
+  patternAllowedOperationsEuint128,
+  patternAllowedOperationsEuint256,
+  patternAllowedOperationsEaddress,
 ];
 export const EComparisonType = ["ebool"];
 export const EPlaintextType = [
@@ -25,6 +44,7 @@ export const EPlaintextType = [
   "uint64",
   "uint128",
   "uint256",
+  "address",
 ];
 export type EUintType =
   | "ebool"
@@ -33,7 +53,8 @@ export type EUintType =
   | "euint32"
   | "euint64"
   | "euint128"
-  | "euint256";
+  | "euint256"
+  | "eaddress";
 export type PlaintextType =
   | "bool"
   | "uint8"
@@ -41,7 +62,8 @@ export type PlaintextType =
   | "uint32"
   | "uint64"
   | "uint128"
-  | "uint256";
+  | "uint256"
+  | "address";
 export type AllTypes =
   | PlaintextType
   | EUintType
@@ -65,6 +87,7 @@ export const UnderlyingTypes: Record<EUintType, string> = {
   euint64: "uint256",
   euint128: "uint256",
   euint256: "uint256",
+  eaddress: "uint256",
 };
 
 export const UintTypes: Record<EUintType, string> = {
@@ -75,6 +98,7 @@ export const UintTypes: Record<EUintType, string> = {
   euint64: "Common.EUINT64_TFHE",
   euint128: "Common.EUINT128_TFHE",
   euint256: "Common.EUINT256_TFHE",
+  eaddress: "Common.EADDRESS_TFHE",
 };
 
 interface OperatorMap {

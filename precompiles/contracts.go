@@ -67,6 +67,8 @@ func UtypeToString(utype byte) string {
 		return "uint128"
 	case fhe.Uint256:
 		return "uint256"
+	case fhe.Address:
+		return "address"
 	case fhe.Bool:
 		return "bool"
 	default:

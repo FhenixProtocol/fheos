@@ -367,7 +367,7 @@ const main = async () => {
   // generate casting functions
   for (let fromType of EInputType.concat("uint256", "bytes memory")) {
     for (let toType of EInputType) {
-      if (fromType === toType) {
+      if (fromType === toType) { 
         // todo: this is a bit wierd, but I'm using this place to create asXXX functions for the cast from the input types (inXXX)
         const inputTypeName = `in${capitalize(fromType)}`;
         outputFile += AsTypeFunction(inputTypeName, toType);
@@ -377,7 +377,9 @@ const main = async () => {
       outputFile += AsTypeFunction(fromType, toType);
     }
   }
-
+  // (Hardcoded) For a better UX we need to be able to cast address to eaddress, the following line does so:
+  outputFile += AsTypeFunction('address', 'eaddress')
+  
   for (let type of EInputType) {
     const functionName = `as${capitalize(type)}`;
     const testContract = AsTypeTestingContract(type);
@@ -423,6 +425,7 @@ const main = async () => {
 
   EInputType.forEach((encryptedType) => {
     outputFile += BindingLibraryType(encryptedType);
+
     BindMathOperators.forEach((fnToBind) => {
       let foundFnDef = solidityHeaders.find((funcHeader) => {
         const fnDef = parseFunctionDefinition(funcHeader);
@@ -465,6 +468,7 @@ const main = async () => {
         outputFile += CastBinding(encryptedType, otherType);
       }
     );
+
     outputFile += SealFromType(encryptedType);
     outputFile += DecryptBinding(encryptedType);
 
