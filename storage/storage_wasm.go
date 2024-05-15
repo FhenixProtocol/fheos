@@ -36,11 +36,11 @@ func (store FheosStorage) PutVersion(v uint64) error {
 	return nil
 }
 
-func (store FheosStorage) PutCt(h types.Hash, cipher *types.FheEncrypted) error {
+func (store FheosStorage) PutCt(h types.Hash, cipher *types.CipherTextRepresentation) error {
 	return nil
 }
 
-func (store FheosStorage) GetCt(h types.Hash) (*types.FheEncrypted, error) {
+func (store FheosStorage) GetCt(h types.Hash) (*types.CipherTextRepresentation, error) {
 	return nil, nil
 }
 
