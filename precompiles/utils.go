@@ -110,44 +110,28 @@ func evaluateRequire(ct *fhe.FheEncrypted) bool {
 	return fhe.Require(ct)
 }
 
-type fheUintType uint8
-
-const (
-	FheUint8  fheUintType = 0
-	FheUint16 fheUintType = 1
-	FheUint32 fheUintType = 2
-
-	FheUint64  fheUintType = 3
-	FheUint128 fheUintType = 4
-	FheUint256 fheUintType = 5
-
-	FheBool fheUintType = 13
-)
-
-func isValidType(t byte) bool {
-	return t >= uint8(FheUint8) && t <= uint8(FheBool)
-}
-
 func FakeDecryptionResult(encType fhe.EncryptionType) *big.Int {
 
-	decryptionType := fheUintType(encType)
-
-	switch decryptionType {
-	case FheUint8:
+	switch encType {
+	case fhe.Uint8:
 		return big.NewInt(math.MaxUint8 / 2)
-	case FheUint16:
+	case fhe.Uint16:
 		return big.NewInt(math.MaxInt16 / 2)
-	case FheUint32:
+	case fhe.Uint32:
 		return big.NewInt(math.MaxUint32 / 2)
-	case FheUint64:
+	case fhe.Uint64:
 		return big.NewInt(math.MaxUint64 / 2)
-	case FheUint128:
+	case fhe.Uint128:
 		value := &big.Int{}
 		value.SetString("2222222222222222222222222222222", 16)
 		return value
-	case FheUint256:
+	case fhe.Uint256:
 		value := &big.Int{}
 		value.SetString("2222222222222222222222222222222222222222222222222", 16)
+		return value
+	case fhe.Address:
+		value := &big.Int{}
+		value.SetString("Dd4BEac65bad064932FB21aE7Ba2aa6e8fbc41A4", 16)
 		return value
 	default:
 		return big.NewInt(0)

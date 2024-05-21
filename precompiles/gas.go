@@ -1,256 +1,201 @@
 package precompiles
 
 import (
+	"github.com/fhenixprotocol/fheos/precompiles/types"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 )
 
-// we calculated gas using the results of the following test results: https://github.com/FhenixProtocol/fheos/actions/runs/7475858194/job/20344926903
-// we considered the time that it took to run division of two euint32s as a pivot that will take 1M gas and calculated how much gas is if for 1ms of runtime
-// 1M / 4800ms = 209 gas per 1ms
-
-func getGasForPrecompile(precompileName string, uintType fhe.EncryptionType) uint64 {
-	return getRawPrecompileGas(precompileName, uintType) * 209
+func getGasForPrecompile(precompileName types.PrecompileName, uintType fhe.EncryptionType) uint64 {
+	return getRawPrecompileGas(precompileName, uintType)
 }
 
-func getRawPrecompileGas(precompileName string, uintType fhe.EncryptionType) uint64 {
+func getRawPrecompileGas(precompileName types.PrecompileName, uintType fhe.EncryptionType) uint64 {
 	switch precompileName {
-	case "add":
+	case types.Verify:
+		switch uintType {
+		case fhe.Uint8, fhe.Uint16, fhe.Uint32:
+			return 65000
+		case fhe.Uint64, fhe.Uint128, fhe.Uint256, fhe.Address:
+			return 300000
+		}
+	case types.Cast:
 		switch uintType {
 		case fhe.Uint8:
-			return 35
+			return 75000
 		case fhe.Uint16:
-			return 73
+			return 85000
 		case fhe.Uint32:
-			return 163
+			return 105000
+		case fhe.Uint64:
+			return 120000
+		case fhe.Uint128:
+			return 140000
+		case fhe.Uint256:
+			return 175000
+		case fhe.Address:
+			return 150000
 		}
-	case "verify":
+	case types.SealOutput, types.Require:
+		return 150000
+	case types.Decrypt:
 		switch uintType {
 		case fhe.Uint8:
-			return 44
-		case fhe.Uint16:
-			return 44
-		case fhe.Uint32:
-			return 44
+			return 25000
+		default:
+			return 150000
 		}
-	case "sealOutput":
+	case types.Sub, types.Add:
 		switch uintType {
 		case fhe.Uint8:
-			return 23
+			return 50000
 		case fhe.Uint16:
-			return 23
+			return 65000
 		case fhe.Uint32:
-			return 23
+			return 120000
+		case fhe.Uint64:
+			return 175000
+		case fhe.Uint128:
+			return 290000
 		}
-	case "decrypt": // No test, roughly estimated as sealOutput - trivialEncrypt
+	case types.Mul:
 		switch uintType {
 		case fhe.Uint8:
-			return 18
+			return 40000
 		case fhe.Uint16:
-			return 18
+			return 70000
 		case fhe.Uint32:
-			return 18
+			return 125000
+		case fhe.Uint64:
+			return 280000
 		}
-	case "lte":
+	case types.Select:
+		switch uintType {
+		case fhe.Uint8, fhe.Uint16:
+			return 55000
+		case fhe.Uint32:
+			return 85000
+		case fhe.Uint64:
+			return 125000
+		case fhe.Uint128:
+			return 225000
+		case fhe.Bool:
+			return 35000
+		}
+	case types.Div, types.Rem:
 		switch uintType {
 		case fhe.Uint8:
-			return 18
+			return 125000
 		case fhe.Uint16:
-			return 29
+			return 335000
 		case fhe.Uint32:
-			return 43
+			return 1003000
+		case fhe.Uint64:
+			return 2000000
 		}
-	case "sub":
+	case types.Gt, types.Lt, types.Gte, types.Lte:
 		switch uintType {
 		case fhe.Uint8:
-			return 35
+			return 40000
 		case fhe.Uint16:
-			return 73
+			return 50000
 		case fhe.Uint32:
-			return 163
+			return 75000
+		case fhe.Uint64:
+			return 125000
+		case fhe.Uint128:
+			return 190000
 		}
-	case "mul":
+	case types.Or, types.Xor, types.And:
 		switch uintType {
 		case fhe.Uint8:
-			return 94
+			return 40000
 		case fhe.Uint16:
-			return 311
+			return 50000
 		case fhe.Uint32:
-			return 1127
+			return 75000
+		case fhe.Uint64:
+			return 130000
+		case fhe.Uint128:
+			return 200000
+		case fhe.Bool:
+			return 28000
 		}
-	case "lt":
+	case types.Eq, types.Ne:
 		switch uintType {
 		case fhe.Uint8:
-			return 22
+			return 40000
 		case fhe.Uint16:
-			return 36
+			return 50000
 		case fhe.Uint32:
-			return 60
+			return 65000
+		case fhe.Uint64:
+			return 120000
+		case fhe.Uint128:
+			return 180000
+		case fhe.Uint256:
+			return 260000
+		case fhe.Bool:
+			return 35000
+		case fhe.Address:
+			return 210000
 		}
-	case "select":
+	case types.Min, types.Max:
 		switch uintType {
 		case fhe.Uint8:
-			return 214
+			return 45000
 		case fhe.Uint16:
-			return 316
+			return 55000
 		case fhe.Uint32:
-			return 549
+			return 100000
+		case fhe.Uint64:
+			return 145000
+		case fhe.Uint128:
+			return 250000
 		}
-	case "require": // Took the values when there was no crash as for crash gas is irrelevant as it will be reverted
+	case types.Shl, types.Shr:
 		switch uintType {
 		case fhe.Uint8:
-			return 65
+			return 65000
 		case fhe.Uint16:
-			return 65
+			return 90000
 		case fhe.Uint32:
-			return 65
+			return 130000
+		case fhe.Uint64:
+			return 210000
+		case fhe.Uint128:
+			return 355000
 		}
-	case "trivialEncrypt":
+	case types.Not:
 		switch uintType {
 		case fhe.Uint8:
-			return 5
+			return 42000
 		case fhe.Uint16:
-			return 5
+			return 35000
 		case fhe.Uint32:
-			return 5
+			return 49000
+		case fhe.Uint64:
+			return 85000
+		case fhe.Uint128:
+			return 120000
+		case fhe.Bool:
+			return 28000
 		}
-	case "cast":
+	case types.GetNetworkKey:
+		// this is never meant to be called in the context of a tx, so we give a pretty high gas cost just to avoid DoS
+		return 200000
+	case types.TrivialEncrypt:
 		switch uintType {
-		case fhe.Uint8:
-			return 5
-		case fhe.Uint16:
-			return 5
+		case fhe.Uint8, fhe.Uint16:
+			return 20000
 		case fhe.Uint32:
-			return 5
+			return 30000
+		case fhe.Uint64:
+			return 35000
+		case fhe.Uint128:
+			return 65000
+		case fhe.Uint256, fhe.Address:
+			return 70000
 		}
-	case "div":
-		switch uintType {
-		case fhe.Uint8:
-			return 447
-		case fhe.Uint16:
-			return 1310
-		case fhe.Uint32:
-			return 4800
-		}
-	case "gt":
-		switch uintType {
-		case fhe.Uint8:
-			return 21
-		case fhe.Uint16:
-			return 29
-		case fhe.Uint32:
-			return 45
-		}
-	case "gte":
-		switch uintType {
-		case fhe.Uint8:
-			return 21
-		case fhe.Uint16:
-			return 29
-		case fhe.Uint32:
-			return 45
-		}
-	case "rem":
-		switch uintType {
-		case fhe.Uint8:
-			return 447
-		case fhe.Uint16:
-			return 1310
-		case fhe.Uint32:
-			return 4800
-		}
-	case "and":
-		switch uintType {
-		case fhe.Uint8:
-			return 13
-		case fhe.Uint16:
-			return 21
-		case fhe.Uint32:
-			return 38
-		}
-	case "or":
-		switch uintType {
-		case fhe.Uint8:
-			return 13
-		case fhe.Uint16:
-			return 21
-		case fhe.Uint32:
-			return 38
-		}
-	case "xor":
-		switch uintType {
-		case fhe.Uint8:
-			return 13
-		case fhe.Uint16:
-			return 21
-		case fhe.Uint32:
-			return 38
-		}
-	case "eq":
-		switch uintType {
-		case fhe.Uint8:
-			return 18
-		case fhe.Uint16:
-			return 25
-		case fhe.Uint32:
-			return 50
-		}
-	case "ne":
-		switch uintType {
-		case fhe.Uint8:
-			return 18
-		case fhe.Uint16:
-			return 25
-		case fhe.Uint32:
-			return 50
-		}
-	case "min":
-		switch uintType {
-		case fhe.Uint8:
-			return 41
-		case fhe.Uint16:
-			return 75
-		case fhe.Uint32:
-			return 135
-		}
-	case "max":
-		switch uintType {
-		case fhe.Uint8:
-			return 41
-		case fhe.Uint16:
-			return 75
-		case fhe.Uint32:
-			return 135
-		}
-	case "shl":
-		switch uintType {
-		case fhe.Uint8:
-			return 82
-		case fhe.Uint16:
-			return 190
-		case fhe.Uint32:
-			return 422
-		}
-	case "shr":
-		switch uintType {
-		case fhe.Uint8:
-			return 82
-		case fhe.Uint16:
-			return 190
-		case fhe.Uint32:
-			return 422
-		}
-	case "not":
-		switch uintType {
-		case fhe.Uint8:
-			return 12
-		case fhe.Uint16:
-			return 22
-		case fhe.Uint32:
-			return 36
-		}
-	default:
-		panic("invalid precompile name")
 	}
-
 	return 0
 }
