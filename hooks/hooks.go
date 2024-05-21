@@ -6,6 +6,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	fheos "github.com/fhenixprotocol/fheos/precompiles"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
+	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 )
 
 type FheOSHooks interface {
@@ -28,7 +29,7 @@ func (h FheOSHooksImpl) StoreCiphertextHook(contract common.Address, loc [32]byt
 	storage := storage2.NewEphemeralStorage(h.evm.CiphertextDb)
 
 	// if this value isn't in our storage - i.e. isn't a ciphertext - we just noop
-	if !storage.HasCt(val) {
+	if !fhe.IsCtHash(val) {
 		return nil
 	}
 
@@ -83,22 +84,6 @@ func (h FheOSHooksImpl) EvmCallEnd(evmSuccess bool) {
 	}
 }
 
-func isCiphertextHash(param [32]byte) bool {
-	// Currently we have no indication if 32bytes are representing ciphertext hash or not
-	// We are filtering out those params who start with at least 6 zeroes as they are PROBABLY!! size indication and not hashes
-	// In the future we might add "deadbeaf" to indicate if hash is a ciphertext, this will be changes accordingly
-	// FHENIX: If there is a problem with ciphertext ownership, check for collision here
-
-	// check if param starts with at least 6 zeroes
-	for i := 0; i < 6; i++ {
-		if param[i] != 0 {
-			return true
-		}
-	}
-
-	return false
-}
-
 func shouldIgnoreContract(caller common.Address, addr common.Address) bool {
 	// Address of a user and not a contract
 	const NilAddress = "0x0000000000000000000000000000000000000000"
@@ -137,7 +122,7 @@ func (h FheOSHooksImpl) iterateHashes(data []byte, dataType string, owner common
 		offset := i * EvmVariableLen
 		copy(hash[:], data[offset:offset+EvmVariableLen])
 
-		if !isCiphertextHash(hash) {
+		if !fhe.IsCtHash(hash) {
 			continue
 		}
 
