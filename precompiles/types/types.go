@@ -10,6 +10,10 @@ type DataType uint64
 type Hash fhe.Hash
 type FheEncrypted fhe.FheEncrypted
 
+func IsValidType(t fhe.EncryptionType) bool {
+	return t >= fhe.Uint8 && t <= fhe.Bool
+}
+
 type CipherTextRepresentation struct {
 	Data   *FheEncrypted
 	Owners []common.Address

@@ -110,10 +110,6 @@ func evaluateRequire(ct *fhe.FheEncrypted) bool {
 	return fhe.Require(ct)
 }
 
-func isValidType(t fhe.EncryptionType) bool {
-	return t >= fhe.Uint8 && t <= fhe.Bool
-}
-
 func FakeDecryptionResult(encType fhe.EncryptionType) *big.Int {
 
 	switch encType {

@@ -93,7 +93,7 @@ func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 
 	uintType := fhe.EncryptionType(utype)
-	if !isValidType(uintType) {
+	if !types.IsValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
@@ -147,7 +147,7 @@ func Verify(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 	uintType := fhe.EncryptionType(utype)
-	if !isValidType(uintType) {
+	if !types.IsValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
@@ -185,7 +185,7 @@ func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) (string, uin
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 
 	uintType := fhe.EncryptionType(utype)
-	if !isValidType(uintType) {
+	if !types.IsValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return "", 0, vm.ErrExecutionReverted
 	}
@@ -234,7 +234,7 @@ func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
 	functionName := types.Decrypt
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 	uintType := fhe.EncryptionType(utype)
-	if !isValidType(uintType) {
+	if !types.IsValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
@@ -277,7 +277,7 @@ func Lte(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 	uintType := fhe.EncryptionType(utype)
-	if !isValidType(uintType) {
+	if !types.IsValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
@@ -326,7 +326,7 @@ func Sub(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 	uintType := fhe.EncryptionType(utype)
-	if !isValidType(uintType) {
+	if !types.IsValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
@@ -375,7 +375,7 @@ func Mul(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 	uintType := fhe.EncryptionType(utype)
-	if !isValidType(uintType) {
+	if !types.IsValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
@@ -425,7 +425,7 @@ func Lt(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 	uintType := fhe.EncryptionType(utype)
-	if !isValidType(uintType) {
+	if !types.IsValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
@@ -474,7 +474,7 @@ func Select(utype byte, controlHash []byte, ifTrueHash []byte, ifFalseHash []byt
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 	uintType := fhe.EncryptionType(utype)
-	if !isValidType(uintType) {
+	if !types.IsValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
@@ -525,7 +525,7 @@ func Req(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 	uintType := fhe.EncryptionType(utype)
-	if !isValidType(uintType) {
+	if !types.IsValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
@@ -568,11 +568,11 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams) ([]byte, uint64, 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 
 	uintType := fhe.EncryptionType(utype)
-	if !isValidType(uintType) {
+	if !types.IsValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-	if !isValidType(fhe.EncryptionType(toType)) {
+	if !types.IsValidType(fhe.EncryptionType(toType)) {
 		logger.Error("invalid type to cast to")
 		return nil, 0, vm.ErrExecutionReverted
 	}
@@ -626,7 +626,7 @@ func TrivialEncrypt(input []byte, toType byte, tp *TxParams) ([]byte, uint64, er
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 
 	uintType := fhe.EncryptionType(toType)
-	if !isValidType(uintType) {
+	if !types.IsValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", toType)
 		return nil, 0, vm.ErrExecutionReverted
 	}
@@ -703,7 +703,7 @@ func Div(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 	uintType := fhe.EncryptionType(utype)
-	if !isValidType(uintType) {
+	if !types.IsValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
@@ -754,7 +754,7 @@ func Gt(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 	uintType := fhe.EncryptionType(utype)
-	if !isValidType(uintType) {
+	if !types.IsValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
@@ -805,7 +805,7 @@ func Gte(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 	uintType := fhe.EncryptionType(utype)
-	if !isValidType(uintType) {
+	if !types.IsValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
@@ -854,7 +854,7 @@ func Rem(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 	uintType := fhe.EncryptionType(utype)
-	if !isValidType(uintType) {
+	if !types.IsValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
@@ -904,7 +904,7 @@ func And(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 	uintType := fhe.EncryptionType(utype)
-	if !isValidType(uintType) {
+	if !types.IsValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
@@ -955,7 +955,7 @@ func Or(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 	uintType := fhe.EncryptionType(utype)
-	if !isValidType(uintType) {
+	if !types.IsValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
@@ -1006,7 +1006,7 @@ func Xor(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 	uintType := fhe.EncryptionType(utype)
-	if !isValidType(uintType) {
+	if !types.IsValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
@@ -1057,7 +1057,7 @@ func Eq(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 	uintType := fhe.EncryptionType(utype)
-	if !isValidType(uintType) {
+	if !types.IsValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
@@ -1108,7 +1108,7 @@ func Ne(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 	uintType := fhe.EncryptionType(utype)
-	if !isValidType(uintType) {
+	if !types.IsValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
@@ -1157,7 +1157,7 @@ func Min(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 	uintType := fhe.EncryptionType(utype)
-	if !isValidType(uintType) {
+	if !types.IsValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
@@ -1206,7 +1206,7 @@ func Max(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 	uintType := fhe.EncryptionType(utype)
-	if !isValidType(uintType) {
+	if !types.IsValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
@@ -1255,7 +1255,7 @@ func Shl(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 	uintType := fhe.EncryptionType(utype)
-	if !isValidType(uintType) {
+	if !types.IsValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
@@ -1304,7 +1304,7 @@ func Shr(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 	uintType := fhe.EncryptionType(utype)
-	if !isValidType(uintType) {
+	if !types.IsValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
@@ -1353,7 +1353,7 @@ func Not(utype byte, value []byte, tp *TxParams) ([]byte, uint64, error) {
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 	uintType := fhe.EncryptionType(utype)
-	if !isValidType(uintType) {
+	if !types.IsValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
