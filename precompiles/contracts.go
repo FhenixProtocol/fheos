@@ -3,6 +3,7 @@ package precompiles
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 	"math/big"
@@ -88,15 +89,14 @@ func Log(s string, tp *TxParams) (uint64, error) {
 }
 
 func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
-	functionName := "add"
-
+	functionName := types.Add
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
-	if !isValidType(utype) {
+
+	uintType := fhe.EncryptionType(utype)
+	if !isValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-
-	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -105,17 +105,17 @@ func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function: " + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+": inputs not verified", "err", err)
+		logger.Error(functionName.String()+": inputs not verified", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	if lhs.UintType != rhs.UintType || (lhs.UintType != uintType) {
-		msg := functionName + " operand type mismatch"
+		msg := functionName.String() + " operand type mismatch"
 		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
 		return nil, 0, vm.ErrExecutionReverted
 	}
@@ -124,34 +124,33 @@ func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 	result, err := lhs.Add(rhs)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	resultHash := result.Hash()
 
-	logger.Debug(functionName+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
+	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
 	return resultHash[:], gas, nil
 }
 
 // Verify takes inputs from the user and runs them through verification. Note that we will always get ciphertexts that
 // are public-key encrypted and compressed. Anything else will fail
 func Verify(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
-	functionName := "verify"
+	functionName := types.Verify
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
-	if !isValidType(utype) {
+	uintType := fhe.EncryptionType(utype)
+	if !isValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-
-	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -160,7 +159,7 @@ func Verify(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function: " + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
 	ct := fhe.NewFheEncryptedFromBytes(input, uintType, true, false /* TODO: not sure + shouldn't be hardcoded */)
@@ -172,25 +171,24 @@ func Verify(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 
 	err = storeCipherText(storage, &ct, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	logger.Debug(functionName+" success", "contractAddress", tp.ContractAddress, "ctHash", ct.Hash().Hex())
+	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "ctHash", ct.Hash().Hex())
 	return ct.GetHashBytes(), gas, nil
 }
 
 func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) (string, uint64, error) {
 	//solgen: bool math
-	functionName := "sealOutput"
+	functionName := types.SealOutput
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 
-	if !isValidType(utype) {
+	uintType := fhe.EncryptionType(utype)
+	if !isValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return "", 0, vm.ErrExecutionReverted
 	}
-
-	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -198,49 +196,48 @@ func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) (string, uin
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function: " + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
 	if len(ctHash) != 32 {
-		msg := functionName + " ciphertext's hashes need to be 32 bytes long"
+		msg := functionName.String() + " ciphertext's hashes need to be 32 bytes long"
 		logger.Error(msg, "ciphertext-hash", hex.EncodeToString(ctHash), "hash-len", len(ctHash))
 		return "", 0, vm.ErrExecutionReverted
 	}
 
 	if len(pk) != 32 {
-		msg := functionName + " public key need to be 32 bytes long"
+		msg := functionName.String() + " public key need to be 32 bytes long"
 		logger.Error(msg, "public-key", hex.EncodeToString(pk), "len", len(pk))
 		return "", 0, vm.ErrExecutionReverted
 	}
 
 	ct := getCiphertext(storage, fhe.BytesToHash(ctHash), tp.ContractAddress)
 	if ct == nil {
-		msg := functionName + " unverified ciphertext handle"
+		msg := functionName.String() + " unverified ciphertext handle"
 		logger.Error(msg, "ciphertext-hash", hex.EncodeToString(ctHash))
 		return "", 0, vm.ErrExecutionReverted
 	}
 
 	reencryptedValue, err := fhe.SealOutput(*ct, pk)
 	if err != nil {
-		logger.Error(functionName+" failed to encrypt to user key", "err", err)
+		logger.Error(functionName.String()+" failed to encrypt to user key", "err", err)
 		return "", 0, vm.ErrExecutionReverted
 	}
 
-	logger.Debug(functionName+" success", "contractAddress", tp.ContractAddress, "ciphertext-hash ", hex.EncodeToString(ctHash), "public-key", hex.EncodeToString(pk))
+	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "ciphertext-hash ", hex.EncodeToString(ctHash), "public-key", hex.EncodeToString(pk))
 
 	return string(reencryptedValue), gas, nil
 }
 
 func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
 	//solgen: output plaintext
-	functionName := "decrypt"
+	functionName := types.Decrypt
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
-	if !isValidType(utype) {
+	uintType := fhe.EncryptionType(utype)
+	if !isValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-
-	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -248,18 +245,18 @@ func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function: " + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
 	if len(input) != 32 {
-		msg := functionName + " input len must be 32 bytes"
+		msg := functionName.String() + " input len must be 32 bytes"
 		logger.Error(msg, "input", hex.EncodeToString(input), "len", len(input))
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ct := getCiphertext(storage, fhe.BytesToHash(input), tp.ContractAddress)
 	if ct == nil {
-		msg := functionName + " unverified ciphertext handle"
+		msg := functionName.String() + " unverified ciphertext handle"
 		logger.Error(msg, " input ", hex.EncodeToString(input))
 		return nil, 0, vm.ErrExecutionReverted
 	}
@@ -270,21 +267,20 @@ func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	logger.Debug(functionName+" success", "contractAddress", tp.ContractAddress, "input", hex.EncodeToString(input))
+	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "input", hex.EncodeToString(input))
 	return decryptedValue, gas, nil
 }
 
 func Lte(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
 	//solgen: return ebool
-	functionName := "lte"
+	functionName := types.Lte
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
-	if !isValidType(utype) {
+	uintType := fhe.EncryptionType(utype)
+	if !isValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-
-	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -293,48 +289,47 @@ func Lte(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function: " + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+": inputs not verified", "err", err)
+		logger.Error(functionName.String()+": inputs not verified", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	if lhs.UintType != rhs.UintType {
-		msg := functionName + " operand type mismatch"
+		msg := functionName.String() + " operand type mismatch"
 		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	result, err := lhs.Lte(rhs)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	resultHash := result.Hash()
-	logger.Debug(functionName+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
+	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
 	return resultHash[:], gas, nil
 }
 
 func Sub(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
-	functionName := "sub"
+	functionName := types.Sub
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
-	if !isValidType(utype) {
+	uintType := fhe.EncryptionType(utype)
+	if !isValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-
-	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -343,48 +338,47 @@ func Sub(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function: " + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+": inputs not verified", "err", err)
+		logger.Error(functionName.String()+": inputs not verified", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	if lhs.UintType != rhs.UintType {
-		msg := functionName + " operand type mismatch"
+		msg := functionName.String() + " operand type mismatch"
 		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	result, err := lhs.Sub(rhs)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	resultHash := result.Hash()
-	logger.Debug(functionName+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
+	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
 	return resultHash[:], gas, nil
 }
 
 func Mul(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
-	functionName := "mul"
+	functionName := types.Mul
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
-	if !isValidType(utype) {
+	uintType := fhe.EncryptionType(utype)
+	if !isValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-
-	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -393,30 +387,30 @@ func Mul(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function: " + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+": inputs not verified", "err", err)
+		logger.Error(functionName.String()+": inputs not verified", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	if lhs.UintType != rhs.UintType {
-		msg := functionName + " operand type mismatch"
+		msg := functionName.String() + " operand type mismatch"
 		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	result, err := lhs.Mul(rhs)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -427,15 +421,14 @@ func Mul(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 func Lt(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
 	//solgen: return ebool
-	functionName := "lt"
+	functionName := types.Lt
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
-	if !isValidType(utype) {
+	uintType := fhe.EncryptionType(utype)
+	if !isValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-
-	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -444,48 +437,47 @@ func Lt(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function: " + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+": inputs not verified", "err", err)
+		logger.Error(functionName.String()+": inputs not verified", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	if lhs.UintType != rhs.UintType {
-		msg := functionName + " operand type mismatch"
+		msg := functionName.String() + " operand type mismatch"
 		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	result, err := lhs.Lt(rhs)
 	if err != nil {
-		logger.Error(functionName+"  failed", "err", err)
+		logger.Error(functionName.String()+"  failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	resultHash := result.Hash()
-	logger.Debug(functionName+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
+	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
 	return resultHash[:], gas, nil
 }
 
 func Select(utype byte, controlHash []byte, ifTrueHash []byte, ifFalseHash []byte, tp *TxParams) ([]byte, uint64, error) {
-	functionName := "select"
+	functionName := types.Select
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
-	if !isValidType(utype) {
+	uintType := fhe.EncryptionType(utype)
+	if !isValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-
-	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -494,50 +486,49 @@ func Select(utype byte, controlHash []byte, ifTrueHash []byte, ifFalseHash []byt
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function: " + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
 	control, ifTrue, ifFalse, err := get3VerifiedOperands(storage, controlHash, ifTrueHash, ifFalseHash, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+": inputs not verified control len: ", len(controlHash), " ifTrue len: ", len(ifTrueHash), " ifFalse len: ", len(ifFalseHash), " err: ", err)
+		logger.Error(functionName.String()+": inputs not verified control len: ", len(controlHash), " ifTrue len: ", len(ifTrueHash), " ifFalse len: ", len(ifFalseHash), " err: ", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	if uintType != ifTrue.UintType || ifTrue.UintType != ifFalse.UintType {
-		msg := functionName + " operands type mismatch"
+		msg := functionName.String() + " operands type mismatch"
 		logger.Error(msg, " ifTrue ", ifTrue.UintType, " ifFalse ", ifFalse.UintType)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	result, err := control.Select(ifTrue, ifFalse)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	resultHash := result.Hash()
-	logger.Debug(functionName+" success", "contractAddress", tp.ContractAddress, "control", control.Hash().Hex(), "ifTrue", ifTrue.Hash().Hex(), "ifFalse", ifTrue.Hash().Hex(), "result", resultHash.Hex())
+	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "control", control.Hash().Hex(), "ifTrue", ifTrue.Hash().Hex(), "ifFalse", ifTrue.Hash().Hex(), "result", resultHash.Hex())
 	return resultHash[:], gas, nil
 }
 
 func Req(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 	//solgen: input encrypted
 	//solgen: return none
-	functionName := "require"
+	functionName := types.Require
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
-	if !isValidType(utype) {
+	uintType := fhe.EncryptionType(utype)
+	if !isValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-
-	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -545,18 +536,18 @@ func Req(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function: " + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
 	if len(input) != 32 {
-		msg := functionName + " input len must be 32 bytes"
+		msg := functionName.String() + " input len must be 32 bytes"
 		logger.Error(msg, " input ", hex.EncodeToString(input), " len ", len(input))
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ct := getCiphertext(storage, fhe.BytesToHash(input), tp.ContractAddress)
 	if ct == nil {
-		msg := functionName + " unverified handle"
+		msg := functionName.String() + " unverified handle"
 		logger.Error(msg, " input ", hex.EncodeToString(input))
 		return nil, 0, vm.ErrExecutionReverted
 	}
@@ -564,7 +555,7 @@ func Req(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 	ev := evaluateRequire(ct)
 
 	if !ev {
-		msg := functionName + " condition not met"
+		msg := functionName.String() + " condition not met"
 		logger.Error(msg)
 		return nil, 0, vm.ErrExecutionReverted
 	}
@@ -573,19 +564,18 @@ func Req(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 }
 
 func Cast(utype byte, input []byte, toType byte, tp *TxParams) ([]byte, uint64, error) {
-	functionName := "cast"
+	functionName := types.Cast
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 
-	if !isValidType(utype) {
+	uintType := fhe.EncryptionType(utype)
+	if !isValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-	if !isValidType(toType) {
+	if !isValidType(fhe.EncryptionType(toType)) {
 		logger.Error("invalid type to cast to")
 		return nil, 0, vm.ErrExecutionReverted
 	}
-
-	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -594,12 +584,12 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams) ([]byte, uint64, 
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function: " + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
 	ct := getCiphertext(storage, fhe.BytesToHash(input), tp.ContractAddress)
 	if ct == nil {
-		logger.Error(functionName + " input not verified")
+		logger.Error(functionName.String() + " input not verified")
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -616,12 +606,12 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams) ([]byte, uint64, 
 
 	err = storeCipherText(storage, res, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Debug(functionName+" success", "contractAddress", tp.ContractAddress, "ctHash", resHash.Hex())
+		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "ctHash", resHash.Hex())
 	}
 
 	return resHash[:], gas, nil
@@ -631,15 +621,15 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams) ([]byte, uint64, 
 // using the server/computation key - obviously this doesn't hide any information as the
 // number was known plaintext
 func TrivialEncrypt(input []byte, toType byte, tp *TxParams) ([]byte, uint64, error) {
-	functionName := "trivialEncrypt"
+	functionName := types.TrivialEncrypt
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
-	if !isValidType(toType) {
+
+	uintType := fhe.EncryptionType(toType)
+	if !isValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", toType)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-
-	uintType := fhe.EncryptionType(toType)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -648,11 +638,11 @@ func TrivialEncrypt(input []byte, toType byte, tp *TxParams) ([]byte, uint64, er
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function: " + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
 	if len(input) != 32 {
-		msg := functionName + " input len must be 32 bytes"
+		msg := functionName.String() + " input len must be 32 bytes"
 		logger.Error(msg, " input ", hex.EncodeToString(input), " len ", len(input))
 		return nil, 0, vm.ErrExecutionReverted
 	}
@@ -698,26 +688,25 @@ func TrivialEncrypt(input []byte, toType byte, tp *TxParams) ([]byte, uint64, er
 	ctHash := ct.Hash()
 	err = storeCipherText(storage, ct, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Debug(functionName+" success", "contractAddress", tp.ContractAddress, "ctHash", ctHash.Hex(), "valueToEncrypt", valueToEncrypt.Uint64())
+		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "ctHash", ctHash.Hex(), "valueToEncrypt", valueToEncrypt.Uint64())
 	}
 	return ctHash[:], gas, nil
 }
 
 func Div(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
-	functionName := "div"
+	functionName := types.Div
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
-	if !isValidType(utype) {
+	uintType := fhe.EncryptionType(utype)
+	if !isValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-
-	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -726,50 +715,49 @@ func Div(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function: " + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+": inputs not verified", "err", err)
+		logger.Error(functionName.String()+": inputs not verified", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	if lhs.UintType != rhs.UintType {
-		msg := functionName + " operand type mismatch"
+		msg := functionName.String() + " operand type mismatch"
 		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	result, err := lhs.Div(rhs)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := result.Hash()
 
-	logger.Debug(functionName+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
 func Gt(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
 	//solgen: return ebool
-	functionName := "gt"
+	functionName := types.Gt
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
-	if !isValidType(utype) {
+	uintType := fhe.EncryptionType(utype)
+	if !isValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-
-	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -778,50 +766,49 @@ func Gt(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function: " + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+": inputs not verified", "err", err)
+		logger.Error(functionName.String()+": inputs not verified", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	if lhs.UintType != rhs.UintType {
-		msg := functionName + " operand type mismatch"
+		msg := functionName.String() + " operand type mismatch"
 		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	result, err := lhs.Gt(rhs)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := result.Hash()
 
-	logger.Debug(functionName+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
 func Gte(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
 	//solgen: return ebool
-	functionName := "gte"
+	functionName := types.Gte
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
-	if !isValidType(utype) {
+	uintType := fhe.EncryptionType(utype)
+	if !isValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-
-	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -830,48 +817,47 @@ func Gte(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function: " + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+" inputs not verified", "err", err)
+		logger.Error(functionName.String()+" inputs not verified", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	if lhs.UintType != rhs.UintType {
-		msg := functionName + " operand type mismatch"
+		msg := functionName.String() + " operand type mismatch"
 		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	result, err := lhs.Gte(rhs)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := result.Hash()
 
-	logger.Debug(functionName+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
 func Rem(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
-	functionName := "rem"
+	functionName := types.Rem
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
-	if !isValidType(utype) {
+	uintType := fhe.EncryptionType(utype)
+	if !isValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-
-	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -880,49 +866,48 @@ func Rem(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function: " + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+" inputs not verified", "err", err)
+		logger.Error(functionName.String()+" inputs not verified", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	if lhs.UintType != rhs.UintType {
-		msg := functionName + " operand type mismatch"
+		msg := functionName.String() + " operand type mismatch"
 		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	result, err := lhs.Rem(rhs)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := result.Hash()
 
-	logger.Debug(functionName+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
 func And(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
 	//solgen: bool math
-	functionName := "and"
+	functionName := types.And
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
-	if !isValidType(utype) {
+	uintType := fhe.EncryptionType(utype)
+	if !isValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-
-	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -931,50 +916,49 @@ func And(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function: " + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+" inputs not verified", "err", err)
+		logger.Error(functionName.String()+" inputs not verified", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	if lhs.UintType != rhs.UintType {
-		msg := functionName + " operand type mismatch"
+		msg := functionName.String() + " operand type mismatch"
 		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	result, err := lhs.And(rhs)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := result.Hash()
 
-	logger.Debug(functionName+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
 func Or(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
 	//solgen: bool math
-	functionName := "or"
+	functionName := types.Or
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
-	if !isValidType(utype) {
+	uintType := fhe.EncryptionType(utype)
+	if !isValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-
-	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -983,50 +967,49 @@ func Or(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function: " + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+" inputs not verified", "err", err)
+		logger.Error(functionName.String()+" inputs not verified", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	if lhs.UintType != rhs.UintType {
-		msg := functionName + " operand type mismatch"
+		msg := functionName.String() + " operand type mismatch"
 		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	result, err := lhs.Or(rhs)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := result.Hash()
 
-	logger.Debug(functionName+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
 func Xor(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
 	//solgen: bool math
-	functionName := "xor"
+	functionName := types.Xor
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
-	if !isValidType(utype) {
+	uintType := fhe.EncryptionType(utype)
+	if !isValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-
-	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -1035,50 +1018,49 @@ func Xor(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function: " + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+" inputs not verified", "err", err)
+		logger.Error(functionName.String()+" inputs not verified", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	if lhs.UintType != rhs.UintType {
-		msg := functionName + " operand type mismatch"
+		msg := functionName.String() + " operand type mismatch"
 		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	result, err := lhs.Xor(rhs)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := result.Hash()
 
-	logger.Debug(functionName+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
 func Eq(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
 	//solgen: bool math
 	//solgen: return ebool
-	functionName := "eq"
+	functionName := types.Eq
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
-	if !isValidType(utype) {
+	uintType := fhe.EncryptionType(utype)
+	if !isValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-
-	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -1087,50 +1069,49 @@ func Eq(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function: " + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+" inputs not verified", "err", err)
+		logger.Error(functionName.String()+" inputs not verified", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	if lhs.UintType != rhs.UintType {
-		msg := functionName + " operand type mismatch"
+		msg := functionName.String() + " operand type mismatch"
 		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	result, err := lhs.Eq(rhs)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := result.Hash()
 
-	logger.Debug(functionName+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
 func Ne(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
 	//solgen: bool math
 	//solgen: return ebool
-	functionName := "ne"
+	functionName := types.Ne
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
-	if !isValidType(utype) {
+	uintType := fhe.EncryptionType(utype)
+	if !isValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-
-	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -1139,48 +1120,47 @@ func Ne(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function: " + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+" inputs not verified", "err", err)
+		logger.Error(functionName.String()+" inputs not verified", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	if lhs.UintType != rhs.UintType {
-		msg := functionName + " operand type mismatch"
+		msg := functionName.String() + " operand type mismatch"
 		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	result, err := lhs.Ne(rhs)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := result.Hash()
 
-	logger.Debug(functionName+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
 func Min(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
-	functionName := "min"
+	functionName := types.Min
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
-	if !isValidType(utype) {
+	uintType := fhe.EncryptionType(utype)
+	if !isValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-
-	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -1189,48 +1169,47 @@ func Min(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function: " + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+" inputs not verified", "err", err)
+		logger.Error(functionName.String()+" inputs not verified", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	if lhs.UintType != rhs.UintType {
-		msg := functionName + " operand type mismatch"
+		msg := functionName.String() + " operand type mismatch"
 		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	result, err := lhs.Min(rhs)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := result.Hash()
 
-	logger.Debug(functionName+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
 func Max(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
-	functionName := "max"
+	functionName := types.Max
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
-	if !isValidType(utype) {
+	uintType := fhe.EncryptionType(utype)
+	if !isValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-
-	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -1239,48 +1218,47 @@ func Max(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function: " + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+" inputs not verified", "err", err)
+		logger.Error(functionName.String()+" inputs not verified", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	if lhs.UintType != rhs.UintType {
-		msg := functionName + " operand type mismatch"
+		msg := functionName.String() + " operand type mismatch"
 		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	result, err := lhs.Max(rhs)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := result.Hash()
 
-	logger.Debug(functionName+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
 func Shl(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
-	functionName := "shl"
+	functionName := types.Shl
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
-	if !isValidType(utype) {
+	uintType := fhe.EncryptionType(utype)
+	if !isValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-
-	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -1289,48 +1267,47 @@ func Shl(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function: " + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+" inputs not verified", "err", err)
+		logger.Error(functionName.String()+" inputs not verified", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	if lhs.UintType != rhs.UintType {
-		msg := functionName + " operand type mismatch"
+		msg := functionName.String() + " operand type mismatch"
 		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	result, err := lhs.Shl(rhs)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := result.Hash()
 
-	logger.Debug(functionName+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
 func Shr(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
-	functionName := "shr"
+	functionName := types.Shr
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
-	if !isValidType(utype) {
+	uintType := fhe.EncryptionType(utype)
+	if !isValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-
-	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -1339,48 +1316,47 @@ func Shr(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function: " + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
 	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+" inputs not verified", "err", err)
+		logger.Error(functionName.String()+" inputs not verified", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	if lhs.UintType != rhs.UintType {
-		msg := functionName + " operand type mismatch"
+		msg := functionName.String() + " operand type mismatch"
 		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	result, err := lhs.Shr(rhs)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := result.Hash()
 
-	logger.Debug(functionName+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
 func Not(utype byte, value []byte, tp *TxParams) ([]byte, uint64, error) {
-	functionName := "not"
+	functionName := types.Not
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
-	if !isValidType(utype) {
+	uintType := fhe.EncryptionType(utype)
+	if !isValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-
-	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
@@ -1389,7 +1365,7 @@ func Not(utype byte, value []byte, tp *TxParams) ([]byte, uint64, error) {
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function: " + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
 	ct := getCiphertext(storage, fhe.BytesToHash(value), tp.ContractAddress)
@@ -1407,20 +1383,20 @@ func Not(utype byte, value []byte, tp *TxParams) ([]byte, uint64, error) {
 
 	err = storeCipherText(storage, result, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName+" failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	resultHash := result.Hash()
-	logger.Debug(functionName+" success", "contractAddress", tp.ContractAddress, "input", ct.Hash().Hex(), "result", resultHash.Hex())
+	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "input", ct.Hash().Hex(), "result", resultHash.Hex())
 	return resultHash[:], gas, nil
 }
 
 func GetNetworkPublicKey(tp *TxParams) ([]byte, error) {
-	functionName := "getNetworkPublicKey"
+	functionName := types.GetNetworkKey
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function: " + functionName)
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
 	pk, err := fhe.PublicKey(0)
