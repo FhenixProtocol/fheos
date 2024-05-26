@@ -241,7 +241,7 @@ func (con FheOps) Eq(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 }
 
 func (con FheOps) GetNetworkPublicKey(c ctx, evm mech) ([]byte, error) {
-	if con.CachedNetworkPublicKey == nil {
+	if con.CachedNetworkPublicKey == nil || len(con.CachedNetworkPublicKey) == 0 {
 		tp := fheos.TxParamsFromEVM(evm, c.caller)
 		tempNetworkPublicKey, err := fheos.GetNetworkPublicKey(&tp)
 		if err != nil {
