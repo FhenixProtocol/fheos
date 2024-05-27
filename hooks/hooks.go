@@ -5,11 +5,12 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/log"
 	fheos "github.com/fhenixprotocol/fheos/precompiles"
+	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
 )
 
 type FheOSHooks interface {
-	StoreCiphertextHook(contract common.Address, loc [32]byte, val [32]byte) error
+	StoreCiphertextHook(contract common.Address, loc [32]byte, original common.Hash, val [32]byte) error
 	StoreGasHook(contract common.Address, loc [32]byte, val [32]byte) (uint64, uint64)
 	LoadCiphertextHook() [32]byte
 	EvmCallStart()
@@ -22,17 +23,50 @@ type FheOSHooksImpl struct {
 	evm *vm.EVM
 }
 
-func (h FheOSHooksImpl) StoreCiphertextHook(contract common.Address, loc [32]byte, val [32]byte) error {
+func (h FheOSHooksImpl) UpdateCiphertextReferences(original common.Hash, val [32]byte) error {
+	storage := fheos.State.Storage
+
+	_, isFromMemory, err := storage.GetCtForStore(val)
+
+	// If something goes wrong, we just return, it can be some random value that is not a ciphertext
+	if err != nil {
+		return false, nil
+	}
+
+	err = fheos.State.ReferenceCiphertext(val)
+	if err != nil {
+		return false, nil
+	}
+
+	if (original != common.Hash{}) {
+		// if the original hash is not empty, we are updating a value
+		// we need to dereference the old value from the storage
+		err := fheos.State.DereferenceCiphertext(types.Hash(original))
+		if err != nil {
+			log.Error("Failed to dereference old ciphertext", "err", err)
+			return false, err
+		}
+	}
+
+	return isFromMemory, nil
+}
+
+func (h FheOSHooksImpl) StoreCiphertextHook(contract common.Address, loc [32]byte, original common.Hash, val [32]byte) error {
 	// marks the ciphertext as lts - should be stored in long term storage when/if the tx is successful
 	// option - better to flush all at the end of the tx from memdb, or define a memdb in fheos that is flushed at the end of the tx?
 	storage := storage2.NewEphemeralStorage(h.evm.CiphertextDb)
+
+	err := h.UpdateCiphertextReferences(original, val)
+	if err != nil {
+		return err
+	}
 
 	// if this value isn't in our storage - i.e. isn't a ciphertext - we just noop
 	if !storage.HasCt(val) {
 		return nil
 	}
 
-	err := storage.MarkForPersistence(contract, val)
+	err = storage.MarkForPersistence(contract, val)
 	if err != nil {
 		log.Crit("Error marking ciphertext as LTS", "err", err)
 		return err

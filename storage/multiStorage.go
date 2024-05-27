@@ -52,11 +52,14 @@ func (ms *MultiStore) getCtHelper(h types.Hash) (*types.CipherTextRepresentation
 	ct, err := ms.ephemeral.GetCt(h)
 
 	if err != nil && err.Error() == "not found" {
-		ct, err = ms.disk.GetCt(h)
-	}
+		sharedCt, err := ms.disk.GetCt(h)
+		if err != nil {
+			return nil, err
+		}
 
-	if err != nil {
-		return nil, err
+		if sharedCt != nil {
+			ct = &sharedCt.Ciphertext
+		}
 	}
 
 	return ct, err
