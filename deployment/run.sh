@@ -66,7 +66,7 @@ if [[ "${DEBUG_MODE}" -eq 0 ]]; then
           --graphql.vhosts "*" \
           --graphql.corsdomain "*" \
           --conf.env-prefix "NITRO" \
-          --log-level 4
+          --conf.fhenix.log-level 4
 fi
 
 # Start in debug mode if requested
