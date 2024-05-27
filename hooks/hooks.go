@@ -24,9 +24,8 @@ type FheOSHooksImpl struct {
 	evm *vm.EVM
 }
 
-func (h FheOSHooksImpl) UpdateCiphertextReferences(epStorage storage2.EphemeralStorage, original common.Hash, val [32]byte) (bool, error) {
+func (h FheOSHooksImpl) UpdateCiphertextReferences(epStorage storage2.EphemeralStorage, original common.Hash, newHash types.Hash) (bool, error) {
 	// Check whether the value is not a newly created value (i.e. not in memory but is in store)
-	newHash := types.Hash(val)
 	isInMemory := epStorage.HasCt(newHash)
 	if !isInMemory {
 		ct, err := fheos.State.Storage.GetCt(newHash)
@@ -57,12 +56,18 @@ func (h FheOSHooksImpl) StoreCiphertextHook(contract common.Address, loc [32]byt
 	// option - better to flush all at the end of the tx from memdb, or define a memdb in fheos that is flushed at the end of the tx?
 	storage := storage2.NewEphemeralStorage(h.evm.CiphertextDb)
 
-	isInMemory, err := h.UpdateCiphertextReferences(storage, original, val)
+	// Skip for non-ciphertext
+	ctHash := types.Hash(val)
+	if fhe.IsCtHash(ctHash) {
+		return nil
+	}
+
+	isInMemory, err := h.UpdateCiphertextReferences(storage, original, ctHash)
 	if err != nil {
 		return err
 	}
 
-	// if this value isn't in our storage - i.e. isn't a ciphertext - we just noop
+	// Skip for values who are not in memory as there is nothing to persist
 	if !isInMemory {
 		return nil
 	}
