@@ -42,4 +42,6 @@ type FheInternalCipherTextStorage interface {
 	GetCt(h Hash) (*SharedCiphertext, error)
 
 	HasCt(h Hash) bool
+
+	DeleteCt(h Hash) error
 }
