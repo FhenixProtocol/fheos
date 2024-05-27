@@ -85,16 +85,17 @@ func (fs *FheosState) DereferenceCiphertext(hash types.Hash) error {
 
 	sharedCt.RefCount--
 	if sharedCt.RefCount == 0 {
-		// TODO: delete
-		logger.Info("Deleting ciphertext", "hash", hex.EncodeToString(hash[:]))
+		logger.Info("Deleted ciphertext", "hash", hex.EncodeToString(hash[:]))
+		return fs.Storage.DeleteCt(hash)
 	}
 
+	logger.Info("Decremented ciphertext ref count", "hash", hex.EncodeToString(hash[:]), "newRefCount", sharedCt.RefCount)
 	return fs.Storage.PutCt(hash, sharedCt)
 }
 
 func (fs *FheosState) incrementRefCountHelper(ctHash types.Hash, sharedCt *types.SharedCiphertext) error {
 	sharedCt.RefCount++
-	logger.Info("Incrementing ciphertext ref count", "hash", hex.EncodeToString(ctHash[:]), "refCount", sharedCt.RefCount)
+	logger.Info("Incremented ciphertext ref count", "hash", hex.EncodeToString(ctHash[:]), "newRefCount", sharedCt.RefCount)
 	return fs.Storage.PutCt(ctHash, sharedCt)
 }
 
@@ -123,14 +124,8 @@ func (fs *FheosState) SetCiphertext(ct *types.CipherTextRepresentation) error {
 	return fs.incrementRefCountHelper(ctHash, currentCt)
 }
 
-func (fs *FheosState) ReferenceCiphertext(hash types.Hash) error {
-	currentCt, err := fs.Storage.GetCt(hash)
-	if err != nil {
-		logger.Error("Failed to increment ciphertext's ref count", "error", err)
-		return err
-	}
-
-	return fs.incrementRefCountHelper(hash, currentCt)
+func (fs *FheosState) ReferenceCiphertext(hash types.Hash, ct *types.SharedCiphertext) error {
+	return fs.incrementRefCountHelper(hash, ct)
 }
 
 func createFheosState(storage storage2.FheosStorage, version uint64) error {

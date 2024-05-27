@@ -23,19 +23,19 @@ type FheOSHooksImpl struct {
 	evm *vm.EVM
 }
 
-func (h FheOSHooksImpl) UpdateCiphertextReferences(original common.Hash, val [32]byte) error {
-	storage := fheos.State.Storage
-
-	_, isFromMemory, err := storage.GetCtForStore(val)
-
-	// If something goes wrong, we just return, it can be some random value that is not a ciphertext
-	if err != nil {
-		return false, nil
-	}
-
-	err = fheos.State.ReferenceCiphertext(val)
-	if err != nil {
-		return false, nil
+func (h FheOSHooksImpl) UpdateCiphertextReferences(epStorage storage2.EphemeralStorage, original common.Hash, val [32]byte) (bool, error) {
+	// Check whether the value is not a newly created value (i.e. not in memory but is in store)
+	newHash := types.Hash(val)
+	isInMemory := epStorage.HasCt(newHash)
+	if !isInMemory {
+		ct, err := fheos.State.Storage.GetCt(newHash)
+		if (err == nil) && (ct != nil) {
+			err = fheos.State.ReferenceCiphertext(newHash, ct)
+			if err != nil {
+				log.Error("Failed to reference new ciphertext", "err", err)
+				return isInMemory, err
+			}
+		}
 	}
 
 	if (original != common.Hash{}) {
@@ -44,11 +44,11 @@ func (h FheOSHooksImpl) UpdateCiphertextReferences(original common.Hash, val [32
 		err := fheos.State.DereferenceCiphertext(types.Hash(original))
 		if err != nil {
 			log.Error("Failed to dereference old ciphertext", "err", err)
-			return false, err
+			return isInMemory, err
 		}
 	}
 
-	return isFromMemory, nil
+	return isInMemory, nil
 }
 
 func (h FheOSHooksImpl) StoreCiphertextHook(contract common.Address, loc [32]byte, original common.Hash, val [32]byte) error {
@@ -56,13 +56,13 @@ func (h FheOSHooksImpl) StoreCiphertextHook(contract common.Address, loc [32]byt
 	// option - better to flush all at the end of the tx from memdb, or define a memdb in fheos that is flushed at the end of the tx?
 	storage := storage2.NewEphemeralStorage(h.evm.CiphertextDb)
 
-	err := h.UpdateCiphertextReferences(original, val)
+	isInMemory, err := h.UpdateCiphertextReferences(storage, original, val)
 	if err != nil {
 		return err
 	}
 
 	// if this value isn't in our storage - i.e. isn't a ciphertext - we just noop
-	if !storage.HasCt(val) {
+	if !isInMemory {
 		return nil
 	}
 

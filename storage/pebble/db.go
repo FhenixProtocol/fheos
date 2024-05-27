@@ -84,6 +84,10 @@ func (p *EthDbWrapper) PutVersion(v uint64) error {
 	return p.db.Put(key, buf.Bytes())
 }
 
+func (p *EthDbWrapper) DeleteCt(h types.Hash) error {
+	return p.db.Delete(h[:])
+}
+
 func (p *EthDbWrapper) PutCt(h types.Hash, cipher *types.SharedCiphertext) error {
 	// Serialize Ciphertext
 	var buf bytes.Buffer
