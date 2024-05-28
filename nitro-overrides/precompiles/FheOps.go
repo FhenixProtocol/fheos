@@ -9,7 +9,8 @@ import (
 )
 
 type FheOps struct {
-	Address addr // 0x80
+	Address                addr // 0x80
+	CachedNetworkPublicKey []byte
 }
 
 func (con FheOps) Log(c ctx, evm mech, s string) error {
@@ -240,9 +241,15 @@ func (con FheOps) Eq(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 }
 
 func (con FheOps) GetNetworkPublicKey(c ctx, evm mech) ([]byte, error) {
-
-	tp := fheos.TxParamsFromEVM(evm, c.caller)
-	return fheos.GetNetworkPublicKey(&tp)
+	if con.CachedNetworkPublicKey == nil || len(con.CachedNetworkPublicKey) == 0 {
+		tp := fheos.TxParamsFromEVM(evm, c.caller)
+		tempNetworkPublicKey, err := fheos.GetNetworkPublicKey(&tp)
+		if err != nil {
+			return nil, err
+		}
+		con.CachedNetworkPublicKey = tempNetworkPublicKey
+	}
+	return con.CachedNetworkPublicKey, nil
 }
 
 func (con FheOps) Gt(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte) ([]byte, error) {
