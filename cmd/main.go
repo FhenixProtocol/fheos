@@ -83,7 +83,14 @@ func initFheos() (*precompiles.TxParams, error) {
 		return nil, err
 	}
 
-	tp := precompiles.TxParams{false, false, true, nil, common.HexToAddress("0x0000000000000000000000000000000000000000")}
+	tp := precompiles.TxParams{
+		Commit:          false,
+		GasEstimation:   false,
+		EthCall:         true,
+		CiphertextDb:    nil,
+		ContractAddress: common.HexToAddress("0x0000000000000000000000000000000000000000"),
+		TxHash:          [32]byte{},
+	}
 
 	return &tp, err
 }
