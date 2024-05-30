@@ -19,6 +19,7 @@ type TxParams struct {
 	EthCall         bool
 	CiphertextDb    *memorydb.Database
 	ContractAddress common.Address
+	TxHash          common.Hash
 }
 
 type GasBurner interface {
@@ -34,6 +35,8 @@ func TxParamsFromEVM(evm *vm.EVM, callerContract common.Address) TxParams {
 
 	tp.CiphertextDb = evm.CiphertextDb
 	tp.ContractAddress = callerContract
+
+	tp.TxHash = evm.TransactionHash
 
 	return tp
 }
