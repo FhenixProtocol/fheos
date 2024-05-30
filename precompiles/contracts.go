@@ -3,11 +3,12 @@ package precompiles
 import (
 	"encoding/hex"
 	"fmt"
+	"math/big"
+	"strings"
+
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
-	"math/big"
-	"strings"
 
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/log"
@@ -240,13 +241,6 @@ func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
 	}
 
 	gas := getGasForPrecompile(functionName, uintType)
-	if tp.GasEstimation {
-		return FakeDecryptionResult(uintType), gas, nil
-	}
-
-	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function: " + functionName.String())
-	}
 
 	if len(input) != 32 {
 		msg := functionName.String() + " input len must be 32 bytes"
@@ -254,7 +248,24 @@ func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	ct := getCiphertext(storage, fhe.BytesToHash(input), tp.ContractAddress)
+	hash := fhe.BytesToHash(input)
+	// TODO if hash exists in collection of resolved asyncs, return the result
+	if false {
+	} else {
+		// TODO start new thread with decrypt operation.
+
+		return FakeDecryptionResult(uintType), gas, vm.ErrAsyncOp
+	}
+
+	// if tp.GasEstimation {
+	// 	return FakeDecryptionResult(uintType), gas, nil
+	// }
+
+	if shouldPrintPrecompileInfo(tp) {
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
+	}
+
+	ct := getCiphertext(storage, hash, tp.ContractAddress)
 	if ct == nil {
 		msg := functionName.String() + " unverified ciphertext handle"
 		logger.Error(msg, " input ", hex.EncodeToString(input))
