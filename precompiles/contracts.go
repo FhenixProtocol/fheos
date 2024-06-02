@@ -7,6 +7,7 @@ import (
 	storage2 "github.com/fhenixprotocol/fheos/storage"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 	"math/big"
+	"os"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/core/vm"
@@ -14,6 +15,7 @@ import (
 )
 
 var logger log.Logger
+var warpDriveLogger log.Logger
 
 func init() {
 	InitLogger()
@@ -21,11 +23,22 @@ func init() {
 
 func InitLogger() {
 	logger = log.Root().New("module", "fheos")
-	fhe.SetLogger(log.Root().New("module", "go-tfhe"))
+	warpDriveLogger = log.Root().New("module", "warp-drive")
+	fhe.SetLogger(warpDriveLogger)
 }
 
 func InitFheConfig(fheConfig *fhe.Config) error {
+	logFormat := log.TerminalFormat(true)
+	glogger := log.NewGlogHandler(log.StreamHandler(os.Stderr, logFormat))
+	glogger.Verbosity(log.Lvl(fheConfig.LogLevel))
+
+	logger.SetHandler(glogger)
+	warpDriveLogger.SetHandler(glogger)
+
+	fhe.SetLogger(warpDriveLogger)
+
 	err := fhe.Init(fheConfig)
+
 	if err != nil {
 		logger.Error("Failed to init fhe config with", "error:", err)
 		return err
