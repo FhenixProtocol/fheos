@@ -116,7 +116,14 @@ func (h FheOSHooksImpl) iterateHashes(data []byte, dataType string, owner common
 
 	paramsCount := dataLen / EvmVariableLen
 	var hash [EvmVariableLen]byte
-	storage := storage2.NewMultiStore(h.evm.CiphertextDb, &fheos.State.Storage)
+
+	state := fheos.State
+	if state == nil {
+		log.Warn("Fheos state is not initialized (can be ignored if it is a part of the unittests)")
+		return
+	}
+
+	storage := storage2.NewMultiStore(h.evm.CiphertextDb, &state.Storage)
 
 	for i := 0; i < paramsCount; i++ {
 		offset := i * EvmVariableLen
