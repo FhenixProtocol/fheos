@@ -239,19 +239,21 @@ export function generateBenchContract(
   importTypes: boolean = false
 ) {
   const importStatement = importTypes
-    ? `\nimport {ebool, euint8} from "../../FHE.sol";`
+    ? `\nimport {ebool, euint8} from "../../../FHE.sol";`
     : "";
   return `// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import {FHE} from "../../FHE.sol";${importStatement}
-import {Utils} from "./utils/Utils.sol";
-
-error TestNotFound(string test);
+import {FHE} from "../../../FHE.sol";${importStatement}
 
 contract ${capitalize(name)}Bench {
-    using Utils for *;
-    
+    private euint8 a8;
+    private euint16 a16;
+    private euint32 a32;
+    private euint64 a64;
+    private euint128 a128;
+    private euint256 a256;
+  
     ${testFunc}
 }
 `;
@@ -259,31 +261,17 @@ contract ${capitalize(name)}Bench {
 
 export function benchContractReq() {
   // Req is failing on EthCall so we need to make it as tx for now
-  let func = `function req(string calldata test, uint256 a) public {
-        if (Utils.cmp(test, "req(euint8)")) {
-            FHE.req(FHE.asEuint8(a));
-        } else if (Utils.cmp(test, "req(euint16)")) {
-            FHE.req(FHE.asEuint16(a));
-        } else if (Utils.cmp(test, "req(euint32)")) {
-            FHE.req(FHE.asEuint32(a));
-        } else if (Utils.cmp(test, "req(euint64)")) {
-            FHE.req(FHE.asEuint64(a));
-        } else if (Utils.cmp(test, "req(euint128)")) {
-            FHE.req(FHE.asEuint128(a));
-        } else if (Utils.cmp(test, "req(euint256)")) {
-            FHE.req(FHE.asEuint256(a));
-        } else if (Utils.cmp(test, "req(ebool)")) {
-            bool b = true;
-            if (a == 0) {
-                b = false;
-            }
-            FHE.req(FHE.asEbool(b));
-        } else {
-            revert TestNotFound(test);
-        }
+  // todo: check the claim that req failing on EthCall
+  let func = `function load32(inEuint32 _a) public {
+        a32 = FHE.asEuint32(a);
+    }
+    
+    function benchReq32() public view {
+        FHE.req(a32);
     }`;
+  // todo verify that the ts input should be bytes for inEuints
   const abi = `export interface ReqBenchType extends BaseContract {
-    req: (test: string, a: bigint) => Promise<{}>;
+    req: (a: bytes) => Promise<{}>;
 }\n`;
   return [generateBenchContract("req", func), abi];
 }

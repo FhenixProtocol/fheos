@@ -451,13 +451,11 @@ const main = async () => {
   for (let type of EInputType) {
     const functionName = `as${capitalize(type)}`;
     const testContract = AsTypeTestingContract(type);
-    // TODO add asTypeBenchContract
+    // TODO verify if needed to bench asType functions
 
     testContracts[functionName] = testContract[0];
-    benchContracts[functionName] = testContract[0];
 
     testContractsAbis += testContract[1];
-    benchContractAbis += testContract[1];
     importLineHelper += `${capitalize(functionName)}TestType,\n`;
   }
 
