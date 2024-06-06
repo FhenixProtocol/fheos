@@ -10,13 +10,6 @@ import {
   SolTemplate1Arg,
   SolTemplate2Arg,
   SolTemplate3Arg,
-  testContract2Arg,
-  testContract1Arg,
-  testContract3Arg,
-  testContract2ArgBoolRes,
-  testContractReencrypt,
-  testContractReq,
-  AsTypeTestingContract,
   genAbiFile,
   capitalize,
   CastBinding,
@@ -24,6 +17,17 @@ import {
   DecryptBinding,
   IsOperationAllowed,
 } from "./templates/library";
+
+import {
+  testContract2Arg,
+  testContract1Arg,
+  testContract3Arg,
+  testContract2ArgBoolRes,
+  testContractReencrypt,
+  testContractReq,
+  AsTypeTestingContract,
+} from "./templates/testContracts";
+
 import {
   AllTypes,
   BindMathOperators,
