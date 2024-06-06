@@ -5,6 +5,7 @@ import {
   SEAL_RETURN_TYPE,
   LOCAL_SEAL_FUNCTION_NAME,
   AllowedOperations,
+  capitalize,
 } from "../common";
 
 function TypeCastTestingFunction(
@@ -82,8 +83,6 @@ export function AsTypeTestingContract(type: string) {
 
   return [generateTestContract(`As${capitalize(type)}`, funcs), abi];
 }
-
-export const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export function testContract2ArgBoolRes(name: string, isBoolean: boolean) {
   const isEuint64Allowed = IsOperationAllowed(

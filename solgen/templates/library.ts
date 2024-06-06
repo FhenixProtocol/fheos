@@ -12,6 +12,7 @@ import {
   LOCAL_DECRYPT_FUNCTION_NAME,
   toPlaintextType,
   AllowedOperations,
+  capitalize,
 } from "../common";
 
 export const preamble = () => {
@@ -310,7 +311,6 @@ const wrapType = (resultType: EUintType, inputName: string): string =>
   `${resultType}.wrap(${inputName})`;
 const asEuintFuncName = (typeName: EUintType): string =>
   `as${capitalize(typeName)}`;
-export const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export function SolTemplate2Arg(
   name: string,
