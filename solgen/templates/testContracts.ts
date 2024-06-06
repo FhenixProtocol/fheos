@@ -1,11 +1,11 @@
 import {
   EInputType,
-  EUintType,
   SEALING_FUNCTION_NAME,
   SEAL_RETURN_TYPE,
   LOCAL_SEAL_FUNCTION_NAME,
   AllowedOperations,
   capitalize,
+  shortenType,
 } from "../common";
 
 function TypeCastTestingFunction(
@@ -594,8 +594,3 @@ export function testContract2Arg(
 }\n`;
   return [generateTestContract(name, func), abi];
 }
-
-const shortenType = (type: string) => {
-  if (type === "eaddress") {return "Eaddress";}
-  return type === "ebool" ? "Bool" : "U" + type.slice(5); // get only number at the end
-};

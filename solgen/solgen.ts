@@ -11,7 +11,6 @@ import {
   SolTemplate2Arg,
   SolTemplate3Arg,
   genAbiFile,
-  capitalize,
   CastBinding,
   SealFromType,
   DecryptBinding,
@@ -39,7 +38,7 @@ import {
   isComparisonType,
   isBitwiseOp,
   SEALING_FUNCTION_NAME,
-  AllowedOperations,
+  capitalize,
 } from "./common";
 
 interface FunctionMetadata {

@@ -272,3 +272,9 @@ export const toPlaintextType = (value: string): PlaintextType => {
 };
 
 export const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+export const shortenType = (type: string) => {
+  if (type === "eaddress") {return "Eaddress";}
+  return type === "ebool" ? "Bool" : "U" + type.slice(5); // get only number at the end
+};
+

@@ -10,9 +10,10 @@ import {
   valueIsPlaintext,
   LOCAL_SEAL_FUNCTION_NAME,
   LOCAL_DECRYPT_FUNCTION_NAME,
-  toPlaintextType,
   AllowedOperations,
+  toPlaintextType,
   capitalize,
+  shortenType,
 } from "../common";
 
 export const preamble = () => {
@@ -626,11 +627,6 @@ export const OperatorBinding = (
     function ${funcName}(${funcParams}) internal pure returns (${returnType}) {
         return FHE.${funcName}(${unaryParameters});
     }`;
-};
-
-const shortenType = (type: string) => {
-  if (type === "eaddress") {return "Eaddress";}
-  return type === "ebool" ? "Bool" : "U" + type.slice(5); // get only number at the end
 };
 
 export const CastBinding = (thisType: string, targetType: string) => {
