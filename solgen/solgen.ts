@@ -26,6 +26,13 @@ import {
   testContractReq,
   AsTypeTestingContract,
 } from "./templates/testContracts";
+import {
+  benchContract1Arg,
+  benchContract2Arg,
+  benchContract2ArgBoolRes, benchContract3Arg,
+  benchContractReencrypt,
+  benchContractReq
+} from "./templates/benchContracts";
 
 import {
   AllTypes,
@@ -227,11 +234,11 @@ const generateSolidityBenchContract = (metadata: FunctionMetadata): string[] => 
   } = metadata;
 
   if (functionName === "req") {
-    return testContractReq();
+    return benchContractReq();
   }
 
   if (functionName === SEALING_FUNCTION_NAME) {
-    return testContractReencrypt();
+    return benchContractReencrypt();
   }
 
   if (
@@ -240,9 +247,9 @@ const generateSolidityBenchContract = (metadata: FunctionMetadata): string[] => 
     inputs[1] === "encrypted"
   ) {
     if (returnValueType === "ebool") {
-      return testContract2ArgBoolRes(functionName, isBooleanMathOp);
+      return benchContract2ArgBoolRes(functionName, isBooleanMathOp);
     }
-    return testContract2Arg(
+    return benchContract2Arg(
       functionName,
       isBooleanMathOp,
       getOperator(functionName)
@@ -254,11 +261,11 @@ const generateSolidityBenchContract = (metadata: FunctionMetadata): string[] => 
     inputs[0] === "encrypted" &&
     returnValueType === "encrypted"
   ) {
-    return testContract1Arg(functionName);
+    return benchContract1Arg(functionName);
   }
 
   if (inputCount === 3) {
-    return testContract3Arg(functionName);
+    return benchContract3Arg(functionName);
   }
 
   console.log(

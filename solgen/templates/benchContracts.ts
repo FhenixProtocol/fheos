@@ -7,7 +7,7 @@ import {
   capitalize,
 } from "../common";
 
-export function testContract2ArgBoolRes(name: string, isBoolean: boolean) {
+export function benchContract2ArgBoolRes(name: string, isBoolean: boolean) {
   const isEuint64Allowed = IsOperationAllowed(
     name,
     EInputType.indexOf("euint64")
@@ -168,13 +168,13 @@ export function testContract2ArgBoolRes(name: string, isBoolean: boolean) {
 
   const abi = `export interface ${capitalize(
     name
-  )}TestType extends BaseContract {
+  )}BenchType extends BaseContract {
     ${name}: (test: string, a: bigint, b: bigint) => Promise<bigint>;
 }\n`;
-  return [generateTestContract(name, func), abi];
+  return [generateBenchContract(name, func), abi];
 }
 
-export function testContract1Arg(name: string) {
+export function benchContract1Arg(name: string) {
   const isEuint64Allowed = IsOperationAllowed(
     name,
     EInputType.indexOf("euint64")
@@ -227,13 +227,13 @@ export function testContract1Arg(name: string) {
     }`;
   const abi = `export interface ${capitalize(
     name
-  )}TestType extends BaseContract {
+  )}BenchType extends BaseContract {
     ${name}: (test: string, a: bigint) => Promise<bigint>;
 }\n`;
-  return [generateTestContract(name, func), abi];
+  return [generateBenchContract(name, func), abi];
 }
 
-export function generateTestContract(
+export function generateBenchContract(
   name: string,
   testFunc: string,
   importTypes: boolean = false
@@ -249,7 +249,7 @@ import {Utils} from "./utils/Utils.sol";
 
 error TestNotFound(string test);
 
-contract ${capitalize(name)}Test {
+contract ${capitalize(name)}Bench {
     using Utils for *;
     
     ${testFunc}
@@ -257,7 +257,7 @@ contract ${capitalize(name)}Test {
 `;
 }
 
-export function testContractReq() {
+export function benchContractReq() {
   // Req is failing on EthCall so we need to make it as tx for now
   let func = `function req(string calldata test, uint256 a) public {
         if (Utils.cmp(test, "req(euint8)")) {
@@ -282,13 +282,13 @@ export function testContractReq() {
             revert TestNotFound(test);
         }
     }`;
-  const abi = `export interface ReqTestType extends BaseContract {
+  const abi = `export interface ReqBenchType extends BaseContract {
     req: (test: string, a: bigint) => Promise<{}>;
 }\n`;
-  return [generateTestContract("req", func), abi];
+  return [generateBenchContract("req", func), abi];
 }
 
-export function testContractReencrypt() {
+export function benchContractReencrypt() {
   let func = `function ${SEALING_FUNCTION_NAME}(string calldata test, uint256 a, bytes32 pubkey) public pure returns (${SEAL_RETURN_TYPE} memory reencrypted) {
         if (Utils.cmp(test, "${SEALING_FUNCTION_NAME}(euint8)")) {
             return FHE.${SEALING_FUNCTION_NAME}(FHE.asEuint8(a), pubkey);
@@ -315,13 +315,13 @@ export function testContractReencrypt() {
         }
         revert TestNotFound(test);
     }`;
-  const abi = `export interface SealoutputTestType extends BaseContract {
+  const abi = `export interface SealoutputBenchType extends BaseContract {
     ${SEALING_FUNCTION_NAME}: (test: string, a: bigint, pubkey: Uint8Array) => Promise<string>;
 }\n`;
-  return [generateTestContract(SEALING_FUNCTION_NAME, func, true), abi];
+  return [generateBenchContract(SEALING_FUNCTION_NAME, func, true), abi];
 }
 
-export function testContract3Arg(name: string) {
+export function benchContract3Arg(name: string) {
   let func = `function ${name}(string calldata test, bool c, uint256 a, uint256 b) public pure returns (uint256 output) {
         ebool condition = FHE.asEbool(c);
         if (Utils.cmp(test, "${name}: euint8")) {
@@ -354,10 +354,10 @@ export function testContract3Arg(name: string) {
     }`;
   const abi = `export interface ${capitalize(
     name
-  )}TestType extends BaseContract {
+  )}BenchType extends BaseContract {
     ${name}: (test: string, c: boolean, a: bigint, b: bigint) => Promise<bigint>;
 }\n`;
-  return [generateTestContract(name, func, true), abi];
+  return [generateBenchContract(name, func, true), abi];
 }
 
 export const IsOperationAllowed = (
@@ -374,7 +374,7 @@ export const IsOperationAllowed = (
   return true;
 };
 
-export function testContract2Arg(
+export function benchContract2Arg(
   name: string,
   isBoolean: boolean,
   op?: string
@@ -512,8 +512,8 @@ export function testContract2Arg(
     }`;
   const abi = `export interface ${capitalize(
     name
-  )}TestType extends BaseContract {
+  )}BenchType extends BaseContract {
     ${name}: (test: string, a: bigint, b: bigint) => Promise<bigint>;
 }\n`;
-  return [generateTestContract(name, func), abi];
+  return [generateBenchContract(name, func), abi];
 }
