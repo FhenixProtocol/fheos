@@ -46,5 +46,6 @@ clean-gen:
 	-not -name 'wERC20.sol' \
 	-not -name 'Utils.sol' \
 	-delete
+	rm solidity/tests/contracts/bench/*
 	rm solidity/FHE.sol
 	rm solidity/FheOS.sol

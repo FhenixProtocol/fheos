@@ -215,6 +215,59 @@ const generateSolidityTestContract = (metadata: FunctionMetadata): string[] => {
   return ["", ""];
 };
 
+/** Generates a Solidity bench contract based on the provided metadata */
+const generateSolidityBenchContract = (metadata: FunctionMetadata): string[] => {
+  const {
+    functionName,
+    inputCount,
+    hasDifferentInputTypes,
+    returnValueType,
+    inputs,
+    isBooleanMathOp,
+  } = metadata;
+
+  if (functionName === "req") {
+    return testContractReq();
+  }
+
+  if (functionName === SEALING_FUNCTION_NAME) {
+    return testContractReencrypt();
+  }
+
+  if (
+    inputCount === 2 &&
+    inputs[0] === "encrypted" &&
+    inputs[1] === "encrypted"
+  ) {
+    if (returnValueType === "ebool") {
+      return testContract2ArgBoolRes(functionName, isBooleanMathOp);
+    }
+    return testContract2Arg(
+      functionName,
+      isBooleanMathOp,
+      getOperator(functionName)
+    );
+  }
+
+  if (
+    inputCount === 1 &&
+    inputs[0] === "encrypted" &&
+    returnValueType === "encrypted"
+  ) {
+    return testContract1Arg(functionName);
+  }
+
+  if (inputCount === 3) {
+    return testContract3Arg(functionName);
+  }
+
+  console.log(
+    `Function ${functionName} with ${inputCount} inputs that are ${inputs} is not implemented`
+  );
+
+  return ["", ""];
+};
+
 /**
  * Generates a Solidity function based on the provided metadata
  * This generates all the different types of function headers that can exist
@@ -339,16 +392,21 @@ const main = async () => {
   let metadata = await generateMetadataPayload();
   let solidityHeaders: string[] = [];
   const testContracts: Record<string, string> = {};
+  const benchContracts: Record<string, string> = {};
   let testContractsAbis = "";
+  let benchContractAbis = "";
   let importLineHelper: string = "import { ";
   for (let func of metadata) {
     // Decrypt is already tested in every test contract
     if (func.functionName !== "decrypt") {
       // this generates test contract for every function
       const testContract = generateSolidityTestContract(func);
+      const benchContract = generateSolidityBenchContract(func);
       if (testContract[0] !== "") {
         testContracts[capitalize(func.functionName)] = testContract[0];
+        benchContracts[capitalize(func.functionName)] = benchContract[0];
         testContractsAbis += testContract[1];
+        benchContractAbis += benchContract[1];
         importLineHelper += `${capitalize(func.functionName)}TestType,\n`;
       }
     }
@@ -386,9 +444,13 @@ const main = async () => {
   for (let type of EInputType) {
     const functionName = `as${capitalize(type)}`;
     const testContract = AsTypeTestingContract(type);
+    // TODO add asTypeBenchContract
 
     testContracts[functionName] = testContract[0];
+    benchContracts[functionName] = testContract[0];
+
     testContractsAbis += testContract[1];
+    benchContractAbis += testContract[1];
     importLineHelper += `${capitalize(functionName)}TestType,\n`;
   }
 
@@ -486,7 +548,15 @@ const main = async () => {
     );
   }
 
+  for (const benchContract of Object.entries(benchContracts)) {
+    fs.writeFileSync(
+      `../solidity/tests/contracts/bench/${benchContract[0]}.sol`,
+      benchContract[1]
+    );
+  }
+
   fs.writeFileSync("../solidity/tests/abis.ts", genAbiFile(testContractsAbis));
+  fs.writeFileSync("../solidity/tests/bench_abis.ts", genAbiFile(benchContractAbis));
   console.log(importLineHelper);
 };
 
