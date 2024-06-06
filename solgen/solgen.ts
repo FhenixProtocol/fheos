@@ -23,7 +23,7 @@ import {
   SealFromType,
   DecryptBinding,
   IsOperationAllowed,
-} from "./templates";
+} from "./templates/library";
 import {
   AllTypes,
   BindMathOperators,

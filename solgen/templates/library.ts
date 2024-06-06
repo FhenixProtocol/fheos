@@ -13,7 +13,7 @@ import {
   LOCAL_DECRYPT_FUNCTION_NAME,
   toPlaintextType,
   AllowedOperations,
-} from "./common";
+} from "../common";
 
 export const preamble = () => {
   return `// SPDX-License-Identifier: BSD-3-Clause-Clear
