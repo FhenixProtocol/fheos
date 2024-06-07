@@ -2,22 +2,66 @@
 pragma solidity ^0.8.17;
 
 import {FHE} from "../../../FHE.sol";
-import {ebool, euint8} from "../../../FHE.sol";
+import {
+	ebool, inEbool,
+	euint8, inEuint8,
+	euint16, inEuint16,
+	euint32, inEuint32,
+	euint64, inEuint64,
+	euint128, inEuint128,
+	euint256, inEuint256
+} from "../../../FHE.sol";
 
 contract ReqBench {
+	ebool internal aBool;
+	euint8 internal a8;
+	euint16 internal a16;
+	euint32 internal a32;
+	euint64 internal a64;
+	euint128 internal a128;
+	euint256 internal a256;
 
-    euint8 internal a8;
-    euint16 internal a16;
-    euint32 internal a32;
-    euint64 internal a64;
-    euint128 internal a128;
-    euint256 internal a256;
-  
+    function loadBool(inEbool _a) public {
+        a32 = FHE.asEbool(_a);
+    }
+    function load8(inEuint8 _a) public {
+        a32 = FHE.asEuint8(_a);
+    }
+    function load16(inEuint16 _a) public {
+        a32 = FHE.asEuint16(_a);
+    }
     function load32(inEuint32 _a) public {
         a32 = FHE.asEuint32(_a);
     }
-    
+    function load64(inEuint64 _a) public {
+        a32 = FHE.asEuint64(_a);
+    }
+    function load128(inEuint128 _a) public {
+        a32 = FHE.asEuint128(_a);
+    }
+    function load256(inEuint256 _a) public {
+        a32 = FHE.asEuint256(_a);
+    }
+
+    function benchReqBool() public view {
+        FHE.req(aBool);
+    }
+    function benchReq8() public view {
+        FHE.req(a8);
+    }
+    function benchReq16() public view {
+        FHE.req(a16);
+    }
     function benchReq32() public view {
         FHE.req(a32);
+    }
+    function benchReq64() public view {
+        FHE.req(a64);
+    }
+    function benchReq128() public view {
+        FHE.req(a128);
+    }
+    function benchReq256() public view {
+        FHE.req(a256);
     }
 }

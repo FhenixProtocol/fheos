@@ -2,33 +2,58 @@
 pragma solidity ^0.8.17;
 
 import {FHE} from "../../../FHE.sol";
-import {ebool, euint8} from "../../../FHE.sol";
+import {
+	ebool, inEbool,
+	euint8, inEuint8,
+	euint16, inEuint16,
+	euint32, inEuint32,
+	euint64, inEuint64,
+	euint128, inEuint128
+} from "../../../FHE.sol";
 
 contract NotBench {
-function not(string calldata test, uint256 a) public pure returns (uint256 output) {
-        if (Utils.cmp(test, "not(euint8)")) {
-            return FHE.decrypt(FHE.not(FHE.asEuint8(a)));
-        } else if (Utils.cmp(test, "not(euint16)")) {
-            return FHE.decrypt(FHE.not(FHE.asEuint16(a)));
-        } else if (Utils.cmp(test, "not(euint32)")) {
-            return FHE.decrypt(FHE.not(FHE.asEuint32(a)));
-        } else if (Utils.cmp(test, "not(euint64)")) {
-            return FHE.decrypt(FHE.not(FHE.asEuint64(a)));
-        } else if (Utils.cmp(test, "not(euint128)")) {
-            return FHE.decrypt(FHE.not(FHE.asEuint128(a)));
-        } else if (Utils.cmp(test, "not(ebool)")) {
-            bool aBool = true;
-            if (a == 0) {
-                aBool = false;
-            }
+	ebool internal aBool;
+	euint8 internal a8;
+	euint16 internal a16;
+	euint32 internal a32;
+	euint64 internal a64;
+	euint128 internal a128;
 
-            if (FHE.decrypt(FHE.not(FHE.asEbool(aBool)))) {
-                return 1;
-            }
+    function loadBool(inEbool _a) public {
+        a32 = FHE.asEbool(_a);
+    }
+    function load8(inEuint8 _a) public {
+        a32 = FHE.asEuint8(_a);
+    }
+    function load16(inEuint16 _a) public {
+        a32 = FHE.asEuint16(_a);
+    }
+    function load32(inEuint32 _a) public {
+        a32 = FHE.asEuint32(_a);
+    }
+    function load64(inEuint64 _a) public {
+        a32 = FHE.asEuint64(_a);
+    }
+    function load128(inEuint128 _a) public {
+        a32 = FHE.asEuint128(_a);
+    }
 
-            return 0;
-        }
-        
-        revert TestNotFound(test);
+    function benchNotBool() public view {
+        FHE.not(aBool);
+    }
+    function benchNot8() public view {
+        FHE.not(a8);
+    }
+    function benchNot16() public view {
+        FHE.not(a16);
+    }
+    function benchNot32() public view {
+        FHE.not(a32);
+    }
+    function benchNot64() public view {
+        FHE.not(a64);
+    }
+    function benchNot128() public view {
+        FHE.not(a128);
     }
 }

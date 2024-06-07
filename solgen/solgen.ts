@@ -29,7 +29,7 @@ import {
 import {
   benchContract1Arg,
   benchContract2Arg,
-  benchContract2ArgBoolRes, benchContract3Arg,
+  benchContract3Arg,
   benchContractReencrypt,
   benchContractReq
 } from "./templates/benchContracts";
@@ -233,9 +233,9 @@ const generateSolidityBenchContract = (metadata: FunctionMetadata): string[] => 
     isBooleanMathOp,
   } = metadata;
 
-  if (functionName === "req") {
-    return benchContractReq();
-  }
+  // if (functionName === "req") {
+  //   return benchContractReq();
+  // }
 
   if (functionName === SEALING_FUNCTION_NAME) {
     return benchContractReencrypt();
@@ -246,13 +246,11 @@ const generateSolidityBenchContract = (metadata: FunctionMetadata): string[] => 
     inputs[0] === "encrypted" &&
     inputs[1] === "encrypted"
   ) {
-    return benchContract2ArgBoolRes(functionName);
+    return benchContract2Arg(functionName);
   }
 
   if (
-    inputCount === 1 &&
-    inputs[0] === "encrypted" &&
-    returnValueType === "encrypted"
+    inputCount === 1
   ) {
     return benchContract1Arg(functionName);
   }

@@ -21,7 +21,7 @@ export interface SelectBenchType extends BaseContract {
     select: (test: string, c: boolean, a: bigint, b: bigint) => Promise<bigint>;
 }
 export interface ReqBenchType extends BaseContract {
-    req: (a: bytes) => Promise<{}>;
+    req: (_a: bytes, _b: bytes) => Promise<bigint>;
 }
 export interface DivBenchType extends BaseContract {
     div: (_a: bytes, _b: bytes) => Promise<bigint>;
@@ -63,7 +63,7 @@ export interface ShrBenchType extends BaseContract {
     shr: (_a: bytes, _b: bytes) => Promise<bigint>;
 }
 export interface NotBenchType extends BaseContract {
-    not: (test: string, a: bigint) => Promise<bigint>;
+    not: (_a: bytes, _b: bytes) => Promise<bigint>;
 }
 
 

@@ -53,54 +53,41 @@ export function benchContract2Arg(name: string) {
 }
 
 export function benchContract1Arg(name: string) {
-  const isEuint64Allowed = IsOperationAllowed(name, "euint64");
-  const isEuint128Allowed = IsOperationAllowed(name, "euint128");
-  const isEuint256Allowed = IsOperationAllowed(name, "euint256");
+  let importTypes = ``;
+  let privateVarsA = ``;
+  let funcLoad = "";
+  let funcBench = "";
 
-  let func = `function ${name}(string calldata test, uint256 a) public pure returns (uint256 output) {
-        if (Utils.cmp(test, "${name}(euint8)")) {
-            return FHE.decrypt(FHE.${name}(FHE.asEuint8(a)));
-        } else if (Utils.cmp(test, "${name}(euint16)")) {
-            return FHE.decrypt(FHE.${name}(FHE.asEuint16(a)));
-        } else if (Utils.cmp(test, "${name}(euint32)")) {
-            return FHE.decrypt(FHE.${name}(FHE.asEuint32(a)));
-        }`;
-  if (isEuint64Allowed) {
-    func += ` else if (Utils.cmp(test, "${name}(euint64)")) {
-            return FHE.decrypt(FHE.${name}(FHE.asEuint64(a)));
-        }`;
-  }
-  if (isEuint128Allowed) {
-    func += ` else if (Utils.cmp(test, "${name}(euint128)")) {
-            return FHE.decrypt(FHE.${name}(FHE.asEuint128(a)));
-        }`;
-  }
-  if (isEuint256Allowed) {
-    func += ` else if (Utils.cmp(test, "${name}(euint256)")) {
-            return FHE.decrypt(FHE.${name}(FHE.asEuint256(a)));
-        }`;
-  }
-  func += ` else if (Utils.cmp(test, "${name}(ebool)")) {
-            bool aBool = true;
-            if (a == 0) {
-                aBool = false;
-            }
-
-            if (FHE.decrypt(FHE.${name}(FHE.asEbool(aBool)))) {
-                return 1;
-            }
-
-            return 0;
-        }
-        
-        revert TestNotFound(test);
+  for (let inputType of EInputType) {
+    if (IsOperationAllowed(name, inputType)) {
+      importTypes += "\n\t" + inputType + ", " + toInType(inputType) + ",";
+      privateVarsA += `\t${inputType} internal a${toVarSuffix(inputType)};\n`;
+      funcLoad += `
+    function load${toVarSuffix(inputType)}(${toInType(inputType)} _a) public {
+        a32 = FHE.${toAsType(inputType)}(_a);
     }`;
+
+      // todo: should this return something? should we verify the decrypted result of the operation?
+      funcBench += `
+    function bench${capitalize(name)}${toVarSuffix(inputType)}() public view {
+        FHE.${name}(a${toVarSuffix(inputType)});
+    }`;
+    }
+  }
+
+  const func = privateVarsA + funcLoad + "\n" + funcBench;
+  importTypes = importTypes.slice(0, -1); // remove last comma
+  const importStatement = `import {${importTypes}
+} from "../../../FHE.sol";`;
+
+  // todo: verify that the ts input should be bytes for inEuints
+  // todo: add all abi functions
   const abi = `export interface ${capitalize(
     name
   )}BenchType extends BaseContract {
-    ${name}: (test: string, a: bigint) => Promise<bigint>;
+    ${name}: (_a: bytes, _b: bytes) => Promise<bigint>;
 }\n`;
-  return [generateBenchContract(name, func), abi];
+  return [generateBenchContract(name, func, importStatement), abi];
 }
 
 export function generateBenchContract(
