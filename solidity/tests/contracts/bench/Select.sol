@@ -5,14 +5,7 @@ import {FHE} from "../../../FHE.sol";
 import {ebool, euint8} from "../../../FHE.sol";
 
 contract SelectBench {
-    private euint8 a8;
-    private euint16 a16;
-    private euint32 a32;
-    private euint64 a64;
-    private euint128 a128;
-    private euint256 a256;
-  
-    function select(string calldata test, bool c, uint256 a, uint256 b) public pure returns (uint256 output) {
+function select(string calldata test, bool c, uint256 a, uint256 b) public pure returns (uint256 output) {
         ebool condition = FHE.asEbool(c);
         if (Utils.cmp(test, "select: euint8")) {
             return FHE.decrypt(FHE.select(condition, FHE.asEuint8(a), FHE.asEuint8(b)));

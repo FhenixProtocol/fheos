@@ -8,6 +8,7 @@ import {
 } from "../common";
 
 const secondInputPrivateVariables = `private euint8 b8;
+    private euint16 b8;
     private euint16 b16;
     private euint32 b32;
     private euint64 b64;
@@ -16,158 +17,38 @@ const secondInputPrivateVariables = `private euint8 b8;
     private eaddress bAddress;
 `;
 
-export function benchContract2ArgBoolRes(name: string, isBoolean: boolean) {
-  // todo only add local varibles whose types are allowed by the current operation
-  let func = secondInputPrivateVariables;
-  const isEuint64Allowed = IsOperationAllowed(
-    name,
-    EInputType.indexOf("euint64")
-  );
-  const isEuint128Allowed = IsOperationAllowed(
-    name,
-    EInputType.indexOf("euint128")
-  );
-  const isEuint256Allowed = IsOperationAllowed(
-    name,
-    EInputType.indexOf("euint256")
-  );
-  const isEaddressAllowed = IsOperationAllowed(
-    name,
-    EInputType.indexOf("eaddress")
-  )
-  func += `
-    function load32(inEuint32 _a, inEuint32 _b) public {
-        a32 = FHE.asEuint32(_a);
-        b32 = FHE.asEuint32(_b);
-    }
-    
-    function bench${capitalize(name)}32() public view {
-        FHE.${name}(a32, b32);
-    }`;
-  func += ``;
-  // if (isEuint64Allowed) {
-  //   func += ` else if (Utils.cmp(test, "${name}(euint64,euint64)")) {
-  //           if (FHE.decrypt(FHE.${name}(FHE.asEuint64(a), FHE.asEuint64(b)))) {
-  //               return 1;
-  //           }
-  //
-  //           return 0;
-  //       }`;
-  // }
-  // if (isEuint128Allowed) {
-  //   func += ` else if (Utils.cmp(test, "${name}(euint128,euint128)")) {
-  //           if (FHE.decrypt(FHE.${name}(FHE.asEuint128(a), FHE.asEuint128(b)))) {
-  //               return 1;
-  //           }
-  //
-  //           return 0;
-  //       }`;
-  // }
-  // if (isEuint256Allowed) {
-  //   func += ` else if (Utils.cmp(test, "${name}(euint256,euint256)")) {
-  //           if (FHE.decrypt(FHE.${name}(FHE.asEuint256(a), FHE.asEuint256(b)))) {
-  //               return 1;
-  //           }
-  //
-  //           return 0;
-  //       }`;
-  // }
-  // if (isEaddressAllowed) {
-  //   func += ` else if (Utils.cmp(test, "${name}(eaddress,eaddress)")) {
-  //           if (FHE.decrypt(FHE.${name}(FHE.asEaddress(a), FHE.asEaddress(b)))) {
-  //               return 1;
-  //           }
-  //
-  //           return 0;
-  //       }`;
-  // }
-  // func += ` else if (Utils.cmp(test, "euint8.${name}(euint8)")) {
-  //           if (FHE.asEuint8(a).${name}(FHE.asEuint8(b)).decrypt()) {
-  //               return 1;
-  //           }
-  //
-  //           return 0;
-  //       } else if (Utils.cmp(test, "euint16.${name}(euint16)")) {
-  //           if (FHE.asEuint16(a).${name}(FHE.asEuint16(b)).decrypt()) {
-  //               return 1;
-  //           }
-  //
-  //           return 0;
-  //       } else if (Utils.cmp(test, "euint32.${name}(euint32)")) {
-  //           if (FHE.asEuint32(a).${name}(FHE.asEuint32(b)).decrypt()) {
-  //               return 1;
-  //           }
-  //
-  //           return 0;
-  //       }`;
-  //
-  // if (isEuint64Allowed) {
-  //   func += ` else if (Utils.cmp(test, "euint64.${name}(euint64)")) {
-  //           if (FHE.asEuint64(a).${name}(FHE.asEuint64(b)).decrypt()) {
-  //               return 1;
-  //           }
-  //           return 0;
-  //       }`;
-  // }
-  // if (isEuint128Allowed) {
-  //   func += ` else if (Utils.cmp(test, "euint128.${name}(euint128)")) {
-  //           if (FHE.asEuint128(a).${name}(FHE.asEuint128(b)).decrypt()) {
-  //               return 1;
-  //           }
-  //           return 0;
-  //       }`;
-  // }
-  // if (isEuint256Allowed) {
-  //   func += ` else if (Utils.cmp(test, "euint256.${name}(euint256)")) {
-  //           if (FHE.asEuint256(a).${name}(FHE.asEuint256(b)).decrypt()) {
-  //               return 1;
-  //           }
-  //           return 0;
-  //       }`;
-  // }
-  // if (isEaddressAllowed) {
-  //   func += ` else if (Utils.cmp(test, "eaddress.${name}(eaddress)")) {
-  //           if (FHE.asEaddress(a).${name}(FHE.asEaddress(b)).decrypt()) {
-  //               return 1;
-  //           }
-  //           return 0;
-  //       }`;
-  // }
-  // if (isBoolean) {
-  //   func += ` else if (Utils.cmp(test, "${name}(ebool,ebool)")) {
-  //           bool aBool = true;
-  //           bool bBool = true;
-  //           if (a == 0) {
-  //               aBool = false;
-  //           }
-  //           if (b == 0) {
-  //               bBool = false;
-  //           }
-  //           if (FHE.decrypt(FHE.${name}(FHE.asEbool(aBool), FHE.asEbool(bBool)))) {
-  //               return 1;
-  //           }
-  //
-  //           return 0;
-  //       } else if (Utils.cmp(test, "ebool.${name}(ebool)")) {
-  //           bool aBool = true;
-  //           bool bBool = true;
-  //           if (a == 0) {
-  //               aBool = false;
-  //           }
-  //           if (b == 0) {
-  //               bBool = false;
-  //           }
-  //           if (FHE.asEbool(aBool).${name}(FHE.asEbool(bBool)).decrypt()) {
-  //               return 1;
-  //           }
-  //           return 0;
-  //       }`;
-  // }
-  // func += `
-  //       revert TestNotFound(test);
-  //   }`;
+export const toVarSuffix = (inputType: string) => capitalize(inputType.slice(1).replace("uint", ""));
+export const toInType = (inputType: string) => "inE" + inputType.slice(1);
+export const toAsType = (inputType: string) => "asE" + inputType.slice(1);
 
-  // todo verify that the ts input should be bytes for inEuints
+export function benchContract2ArgBoolRes(name: string) {
+  let privateVarsA = ``;
+  let privateVarsB = ``;
+  let funcLoad = "";
+  let funcBench = "";
+
+  for (let inputType of EInputType) {
+    if (IsOperationAllowed(name, inputType)) {
+      privateVarsA += `\tprivate ${inputType} a${toVarSuffix(inputType)};\n`;
+      privateVarsB += `\tprivate ${inputType} b${toVarSuffix(inputType)};\n`;
+      funcLoad += `
+    function load${toVarSuffix(inputType)}(${toInType(inputType)} _a, ${toInType(inputType)} _b) public {
+        a32 = FHE.${toAsType(inputType)}(_a);
+        b32 = FHE.${toAsType(inputType)}(_b);
+    }`;
+
+      // todo: should this return something? should we verify the decrypted result of the operation?
+      funcBench += `
+    function bench${capitalize(name)}${toVarSuffix(inputType)}() public view {
+        FHE.${name}(a${toVarSuffix(inputType)}, b${toVarSuffix(inputType)});
+    }`;
+    }
+  }
+
+  const func = privateVarsA + "\n" + privateVarsB + funcLoad + "\n" + funcBench;
+
+  // todo: verify that the ts input should be bytes for inEuints
+  // todo: add all abi functions
   const abi = `export interface ${capitalize(
     name
   )}BenchType extends BaseContract {
@@ -177,18 +58,10 @@ export function benchContract2ArgBoolRes(name: string, isBoolean: boolean) {
 }
 
 export function benchContract1Arg(name: string) {
-  const isEuint64Allowed = IsOperationAllowed(
-    name,
-    EInputType.indexOf("euint64")
-  );
-  const isEuint128Allowed = IsOperationAllowed(
-    name,
-    EInputType.indexOf("euint128")
-  );
-  const isEuint256Allowed = IsOperationAllowed(
-    name,
-    EInputType.indexOf("euint256")
-  );
+  const isEuint64Allowed = IsOperationAllowed(name, "euint64");
+  const isEuint128Allowed = IsOperationAllowed(name, "euint128");
+  const isEuint256Allowed = IsOperationAllowed(name, "euint256");
+
   let func = `function ${name}(string calldata test, uint256 a) public pure returns (uint256 output) {
         if (Utils.cmp(test, "${name}(euint8)")) {
             return FHE.decrypt(FHE.${name}(FHE.asEuint8(a)));
@@ -249,15 +122,7 @@ pragma solidity ^0.8.17;
 import {FHE} from "../../../FHE.sol";${importStatement}
 
 contract ${capitalize(name)}Bench {
-    private euint8 a8;
-    private euint16 a16;
-    private euint32 a32;
-    private euint64 a64;
-    private euint128 a128;
-    private euint256 a256;
-    private eaddress aAddress;
-  
-    ${testFunc}
+${testFunc}
 }
 `;
 }
@@ -265,7 +130,15 @@ contract ${capitalize(name)}Bench {
 export function benchContractReq() {
   // Req is failing on EthCall so we need to make it as tx for now
   // todo: check the claim that req failing on EthCall
-  let func = `function load32(inEuint32 _a) public {
+  let func = `
+    private euint8 a8;
+    private euint16 a16;
+    private euint32 a32;
+    private euint64 a64;
+    private euint128 a128;
+    private euint256 a256;
+  
+    function load32(inEuint32 _a) public {
         a32 = FHE.asEuint32(_a);
     }
     
@@ -351,10 +224,11 @@ export function benchContract3Arg(name: string) {
   return [generateBenchContract(name, func, true), abi];
 }
 
-export const IsOperationAllowed = (
+const IsOperationAllowed = (
   functionName: string,
-  inputIdx: number
+  dataType: string,
 ): boolean => {
+  const inputIdx= EInputType.indexOf(dataType)
   const regexes = AllowedOperations[inputIdx];
   for (let regex of regexes) {
     if (!new RegExp(regex).test(functionName.toLowerCase())) {
@@ -370,18 +244,10 @@ export function benchContract2Arg(
   isBoolean: boolean,
   op?: string
 ) {
-  const isEuint64Allowed = IsOperationAllowed(
-    name,
-    EInputType.indexOf("euint64")
-  );
-  const isEuint128Allowed = IsOperationAllowed(
-    name,
-    EInputType.indexOf("euint128")
-  );
-  const isEuint256Allowed = IsOperationAllowed(
-    name,
-    EInputType.indexOf("euint256")
-  );
+  const isEuint64Allowed = IsOperationAllowed(name, "euint64");
+  const isEuint128Allowed = IsOperationAllowed(name, "euint128");
+  const isEuint256Allowed = IsOperationAllowed(name, "euint256");
+
   let func = `function ${name}(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
         if (Utils.cmp(test, "${name}(euint8,euint8)")) {
             return FHE.decrypt(FHE.${name}(FHE.asEuint8(a), FHE.asEuint8(b)));

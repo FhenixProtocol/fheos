@@ -4,73 +4,61 @@ pragma solidity ^0.8.17;
 import {FHE} from "../../../FHE.sol";
 
 contract GteBench {
-    private euint8 a8;
-    private euint16 a16;
-    private euint32 a32;
-    private euint64 a64;
-    private euint128 a128;
-    private euint256 a256;
-  
-    function gte(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
-        if (Utils.cmp(test, "gte(euint8,euint8)")) {
-            if (FHE.decrypt(FHE.gte(FHE.asEuint8(a), FHE.asEuint8(b)))) {
-                return 1;
-            }
+	private ebool aBool;
+	private euint8 a8;
+	private euint16 a16;
+	private euint32 a32;
+	private euint64 a64;
+	private euint128 a128;
 
-            return 0;
-        } else if (Utils.cmp(test, "gte(euint16,euint16)")) {
-            if (FHE.decrypt(FHE.gte(FHE.asEuint16(a), FHE.asEuint16(b)))) {
-                return 1;
-            }
+	private ebool bBool;
+	private euint8 b8;
+	private euint16 b16;
+	private euint32 b32;
+	private euint64 b64;
+	private euint128 b128;
 
-            return 0;
-        } else if (Utils.cmp(test, "gte(euint32,euint32)")) {
-            if (FHE.decrypt(FHE.gte(FHE.asEuint32(a), FHE.asEuint32(b)))) {
-                return 1;
-            }
+    function loadBool(inEbool _a, inEbool _b) public {
+        a32 = FHE.asEbool(_a);
+        b32 = FHE.asEbool(_b);
+    }
+    function load8(inEuint8 _a, inEuint8 _b) public {
+        a32 = FHE.asEuint8(_a);
+        b32 = FHE.asEuint8(_b);
+    }
+    function load16(inEuint16 _a, inEuint16 _b) public {
+        a32 = FHE.asEuint16(_a);
+        b32 = FHE.asEuint16(_b);
+    }
+    function load32(inEuint32 _a, inEuint32 _b) public {
+        a32 = FHE.asEuint32(_a);
+        b32 = FHE.asEuint32(_b);
+    }
+    function load64(inEuint64 _a, inEuint64 _b) public {
+        a32 = FHE.asEuint64(_a);
+        b32 = FHE.asEuint64(_b);
+    }
+    function load128(inEuint128 _a, inEuint128 _b) public {
+        a32 = FHE.asEuint128(_a);
+        b32 = FHE.asEuint128(_b);
+    }
 
-            return 0;
-        } else if (Utils.cmp(test, "gte(euint64,euint64)")) {
-            if (FHE.decrypt(FHE.gte(FHE.asEuint64(a), FHE.asEuint64(b)))) {
-                return 1;
-            }
-
-            return 0;
-        } else if (Utils.cmp(test, "gte(euint128,euint128)")) {
-            if (FHE.decrypt(FHE.gte(FHE.asEuint128(a), FHE.asEuint128(b)))) {
-                return 1;
-            }
-
-            return 0;
-        } else if (Utils.cmp(test, "euint8.gte(euint8)")) {
-            if (FHE.asEuint8(a).gte(FHE.asEuint8(b)).decrypt()) {
-                return 1;
-            }
-
-            return 0;
-        } else if (Utils.cmp(test, "euint16.gte(euint16)")) {
-            if (FHE.asEuint16(a).gte(FHE.asEuint16(b)).decrypt()) {
-                return 1;
-            }
-
-            return 0;
-        } else if (Utils.cmp(test, "euint32.gte(euint32)")) {
-            if (FHE.asEuint32(a).gte(FHE.asEuint32(b)).decrypt()) {
-                return 1;
-            }
-
-            return 0;
-        } else if (Utils.cmp(test, "euint64.gte(euint64)")) {
-            if (FHE.asEuint64(a).gte(FHE.asEuint64(b)).decrypt()) {
-                return 1;
-            }
-            return 0;
-        } else if (Utils.cmp(test, "euint128.gte(euint128)")) {
-            if (FHE.asEuint128(a).gte(FHE.asEuint128(b)).decrypt()) {
-                return 1;
-            }
-            return 0;
-        }
-        revert TestNotFound(test);
+    function benchGteBool() public view {
+        FHE.gte(aBool, bBool);
+    }
+    function benchGte8() public view {
+        FHE.gte(a8, b8);
+    }
+    function benchGte16() public view {
+        FHE.gte(a16, b16);
+    }
+    function benchGte32() public view {
+        FHE.gte(a32, b32);
+    }
+    function benchGte64() public view {
+        FHE.gte(a64, b64);
+    }
+    function benchGte128() public view {
+        FHE.gte(a128, b128);
     }
 }

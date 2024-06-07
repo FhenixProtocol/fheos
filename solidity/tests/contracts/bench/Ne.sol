@@ -4,122 +4,79 @@ pragma solidity ^0.8.17;
 import {FHE} from "../../../FHE.sol";
 
 contract NeBench {
-    private euint8 a8;
-    private euint16 a16;
-    private euint32 a32;
-    private euint64 a64;
-    private euint128 a128;
-    private euint256 a256;
-  
-    function ne(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
-        if (Utils.cmp(test, "ne(euint8,euint8)")) {
-            if (FHE.decrypt(FHE.ne(FHE.asEuint8(a), FHE.asEuint8(b)))) {
-                return 1;
-            }
+	private ebool aBool;
+	private euint8 a8;
+	private euint16 a16;
+	private euint32 a32;
+	private euint64 a64;
+	private euint128 a128;
+	private euint256 a256;
+	private eaddress aAddress;
 
-            return 0;
-        } else if (Utils.cmp(test, "ne(euint16,euint16)")) {
-            if (FHE.decrypt(FHE.ne(FHE.asEuint16(a), FHE.asEuint16(b)))) {
-                return 1;
-            }
+	private ebool bBool;
+	private euint8 b8;
+	private euint16 b16;
+	private euint32 b32;
+	private euint64 b64;
+	private euint128 b128;
+	private euint256 b256;
+	private eaddress bAddress;
 
-            return 0;
-        } else if (Utils.cmp(test, "ne(euint32,euint32)")) {
-            if (FHE.decrypt(FHE.ne(FHE.asEuint32(a), FHE.asEuint32(b)))) {
-                return 1;
-            }
+    function loadBool(inEbool _a, inEbool _b) public {
+        a32 = FHE.asEbool(_a);
+        b32 = FHE.asEbool(_b);
+    }
+    function load8(inEuint8 _a, inEuint8 _b) public {
+        a32 = FHE.asEuint8(_a);
+        b32 = FHE.asEuint8(_b);
+    }
+    function load16(inEuint16 _a, inEuint16 _b) public {
+        a32 = FHE.asEuint16(_a);
+        b32 = FHE.asEuint16(_b);
+    }
+    function load32(inEuint32 _a, inEuint32 _b) public {
+        a32 = FHE.asEuint32(_a);
+        b32 = FHE.asEuint32(_b);
+    }
+    function load64(inEuint64 _a, inEuint64 _b) public {
+        a32 = FHE.asEuint64(_a);
+        b32 = FHE.asEuint64(_b);
+    }
+    function load128(inEuint128 _a, inEuint128 _b) public {
+        a32 = FHE.asEuint128(_a);
+        b32 = FHE.asEuint128(_b);
+    }
+    function load256(inEuint256 _a, inEuint256 _b) public {
+        a32 = FHE.asEuint256(_a);
+        b32 = FHE.asEuint256(_b);
+    }
+    function loadAddress(inEaddress _a, inEaddress _b) public {
+        a32 = FHE.asEaddress(_a);
+        b32 = FHE.asEaddress(_b);
+    }
 
-            return 0;
-        } else if (Utils.cmp(test, "ne(euint64,euint64)")) {
-            if (FHE.decrypt(FHE.ne(FHE.asEuint64(a), FHE.asEuint64(b)))) {
-                return 1;
-            }
-
-            return 0;
-        } else if (Utils.cmp(test, "ne(euint128,euint128)")) {
-            if (FHE.decrypt(FHE.ne(FHE.asEuint128(a), FHE.asEuint128(b)))) {
-                return 1;
-            }
-
-            return 0;
-        } else if (Utils.cmp(test, "ne(euint256,euint256)")) {
-            if (FHE.decrypt(FHE.ne(FHE.asEuint256(a), FHE.asEuint256(b)))) {
-                return 1;
-            }
-
-            return 0;
-        } else if (Utils.cmp(test, "ne(eaddress,eaddress)")) {
-            if (FHE.decrypt(FHE.ne(FHE.asEaddress(a), FHE.asEaddress(b)))) {
-                return 1;
-            }
-
-            return 0;
-        } else if (Utils.cmp(test, "euint8.ne(euint8)")) {
-            if (FHE.asEuint8(a).ne(FHE.asEuint8(b)).decrypt()) {
-                return 1;
-            }
-
-            return 0;
-        } else if (Utils.cmp(test, "euint16.ne(euint16)")) {
-            if (FHE.asEuint16(a).ne(FHE.asEuint16(b)).decrypt()) {
-                return 1;
-            }
-
-            return 0;
-        } else if (Utils.cmp(test, "euint32.ne(euint32)")) {
-            if (FHE.asEuint32(a).ne(FHE.asEuint32(b)).decrypt()) {
-                return 1;
-            }
-
-            return 0;
-        } else if (Utils.cmp(test, "euint64.ne(euint64)")) {
-            if (FHE.asEuint64(a).ne(FHE.asEuint64(b)).decrypt()) {
-                return 1;
-            }
-            return 0;
-        } else if (Utils.cmp(test, "euint128.ne(euint128)")) {
-            if (FHE.asEuint128(a).ne(FHE.asEuint128(b)).decrypt()) {
-                return 1;
-            }
-            return 0;
-        } else if (Utils.cmp(test, "euint256.ne(euint256)")) {
-            if (FHE.asEuint256(a).ne(FHE.asEuint256(b)).decrypt()) {
-                return 1;
-            }
-            return 0;
-        } else if (Utils.cmp(test, "eaddress.ne(eaddress)")) {
-            if (FHE.asEaddress(a).ne(FHE.asEaddress(b)).decrypt()) {
-                return 1;
-            }
-            return 0;
-        } else if (Utils.cmp(test, "ne(ebool,ebool)")) {
-            bool aBool = true;
-            bool bBool = true;
-            if (a == 0) {
-                aBool = false;
-            }
-            if (b == 0) {
-                bBool = false;
-            }
-            if (FHE.decrypt(FHE.ne(FHE.asEbool(aBool), FHE.asEbool(bBool)))) {
-                return 1;
-            }
-
-            return 0;
-        } else if (Utils.cmp(test, "ebool.ne(ebool)")) {
-            bool aBool = true;
-            bool bBool = true;
-            if (a == 0) {
-                aBool = false;
-            }
-            if (b == 0) {
-                bBool = false;
-            }
-            if (FHE.asEbool(aBool).ne(FHE.asEbool(bBool)).decrypt()) {
-                return 1;
-            }
-            return 0;
-        }
-        revert TestNotFound(test);
+    function benchNeBool() public view {
+        FHE.ne(aBool, bBool);
+    }
+    function benchNe8() public view {
+        FHE.ne(a8, b8);
+    }
+    function benchNe16() public view {
+        FHE.ne(a16, b16);
+    }
+    function benchNe32() public view {
+        FHE.ne(a32, b32);
+    }
+    function benchNe64() public view {
+        FHE.ne(a64, b64);
+    }
+    function benchNe128() public view {
+        FHE.ne(a128, b128);
+    }
+    function benchNe256() public view {
+        FHE.ne(a256, b256);
+    }
+    function benchNeAddress() public view {
+        FHE.ne(aAddress, bAddress);
     }
 }

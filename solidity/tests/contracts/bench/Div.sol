@@ -4,34 +4,43 @@ pragma solidity ^0.8.17;
 import {FHE} from "../../../FHE.sol";
 
 contract DivBench {
-    private euint8 a8;
-    private euint16 a16;
-    private euint32 a32;
-    private euint64 a64;
-    private euint128 a128;
-    private euint256 a256;
-  
-    function div(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
-        if (Utils.cmp(test, "div(euint8,euint8)")) {
-            return FHE.decrypt(FHE.div(FHE.asEuint8(a), FHE.asEuint8(b)));
-        } else if (Utils.cmp(test, "div(euint16,euint16)")) {
-            return FHE.decrypt(FHE.div(FHE.asEuint16(a), FHE.asEuint16(b)));
-        } else if (Utils.cmp(test, "div(euint32,euint32)")) {
-            return FHE.decrypt(FHE.div(FHE.asEuint32(a), FHE.asEuint32(b)));
-        } else if (Utils.cmp(test, "euint8.div(euint8)")) {
-            return FHE.decrypt(FHE.asEuint8(a).div(FHE.asEuint8(b)));
-        } else if (Utils.cmp(test, "euint16.div(euint16)")) {
-            return FHE.decrypt(FHE.asEuint16(a).div(FHE.asEuint16(b)));
-        } else if (Utils.cmp(test, "euint32.div(euint32)")) {
-            return FHE.decrypt(FHE.asEuint32(a).div(FHE.asEuint32(b)));
-        } else if (Utils.cmp(test, "euint8 / euint8")) {
-            return FHE.decrypt(FHE.asEuint8(a) / FHE.asEuint8(b));
-        } else if (Utils.cmp(test, "euint16 / euint16")) {
-            return FHE.decrypt(FHE.asEuint16(a) / FHE.asEuint16(b));
-        } else if (Utils.cmp(test, "euint32 / euint32")) {
-            return FHE.decrypt(FHE.asEuint32(a) / FHE.asEuint32(b));
-        }
-    
-        revert TestNotFound(test);
+	private ebool aBool;
+	private euint8 a8;
+	private euint16 a16;
+	private euint32 a32;
+
+	private ebool bBool;
+	private euint8 b8;
+	private euint16 b16;
+	private euint32 b32;
+
+    function loadBool(inEbool _a, inEbool _b) public {
+        a32 = FHE.asEbool(_a);
+        b32 = FHE.asEbool(_b);
+    }
+    function load8(inEuint8 _a, inEuint8 _b) public {
+        a32 = FHE.asEuint8(_a);
+        b32 = FHE.asEuint8(_b);
+    }
+    function load16(inEuint16 _a, inEuint16 _b) public {
+        a32 = FHE.asEuint16(_a);
+        b32 = FHE.asEuint16(_b);
+    }
+    function load32(inEuint32 _a, inEuint32 _b) public {
+        a32 = FHE.asEuint32(_a);
+        b32 = FHE.asEuint32(_b);
+    }
+
+    function benchDivBool() public view {
+        FHE.div(aBool, bBool);
+    }
+    function benchDiv8() public view {
+        FHE.div(a8, b8);
+    }
+    function benchDiv16() public view {
+        FHE.div(a16, b16);
+    }
+    function benchDiv32() public view {
+        FHE.div(a32, b32);
     }
 }

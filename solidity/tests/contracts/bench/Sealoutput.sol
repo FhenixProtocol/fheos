@@ -5,14 +5,7 @@ import {FHE} from "../../../FHE.sol";
 import {ebool, euint8} from "../../../FHE.sol";
 
 contract SealoutputBench {
-    private euint8 a8;
-    private euint16 a16;
-    private euint32 a32;
-    private euint64 a64;
-    private euint128 a128;
-    private euint256 a256;
-  
-    function sealoutput(string calldata test, uint256 a, bytes32 pubkey) public pure returns (string memory reencrypted) {
+function sealoutput(string calldata test, uint256 a, bytes32 pubkey) public pure returns (string memory reencrypted) {
         if (Utils.cmp(test, "sealoutput(euint8)")) {
             return FHE.sealoutput(FHE.asEuint8(a), pubkey);
         } else if (Utils.cmp(test, "sealoutput(euint16)")) {

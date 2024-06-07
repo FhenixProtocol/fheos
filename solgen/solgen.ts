@@ -246,14 +246,14 @@ const generateSolidityBenchContract = (metadata: FunctionMetadata): string[] => 
     inputs[0] === "encrypted" &&
     inputs[1] === "encrypted"
   ) {
-    if (returnValueType === "ebool") {
-      return benchContract2ArgBoolRes(functionName, isBooleanMathOp);
-    }
-    return benchContract2Arg(
-      functionName,
-      isBooleanMathOp,
-      getOperator(functionName)
-    );
+    // if (returnValueType === "ebool") {
+    return benchContract2ArgBoolRes(functionName);
+    // }
+    // return benchContract2Arg(
+    //   functionName,
+    //   isBooleanMathOp,
+    //   getOperator(functionName)
+    // );
   }
 
   if (
