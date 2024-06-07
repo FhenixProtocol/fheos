@@ -31,7 +31,6 @@ import {
   benchContract2Arg,
   benchContract3Arg,
   benchContractReencrypt,
-  benchContractReq
 } from "./templates/benchContracts";
 
 import {
@@ -227,15 +226,8 @@ const generateSolidityBenchContract = (metadata: FunctionMetadata): string[] => 
   const {
     functionName,
     inputCount,
-    hasDifferentInputTypes,
-    returnValueType,
     inputs,
-    isBooleanMathOp,
   } = metadata;
-
-  // if (functionName === "req") {
-  //   return benchContractReq();
-  // }
 
   if (functionName === SEALING_FUNCTION_NAME) {
     return benchContractReencrypt();

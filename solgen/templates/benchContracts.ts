@@ -107,31 +107,6 @@ ${testFunc}
 `;
 }
 
-export function benchContractReq() {
-  // Req is failing on EthCall so we need to make it as tx for now
-  // todo: check the claim that req failing on EthCall
-  let func = `
-    euint8 internal a8;
-    euint16 internal a16;
-    euint32 internal a32;
-    euint64 internal a64;
-    euint128 internal a128;
-    euint256 internal a256;
-  
-    function load32(inEuint32 _a) public {
-        a32 = FHE.asEuint32(_a);
-    }
-    
-    function benchReq32() public view {
-        FHE.req(a32);
-    }`;
-  // todo verify that the ts input should be bytes for inEuints
-  const abi = `export interface ReqBenchType extends BaseContract {
-    req: (a: bytes) => Promise<{}>;
-}\n`;
-  return [generateBenchContract("req", func), abi];
-}
-
 export function benchContractReencrypt() {
   let func = `function ${SEALING_FUNCTION_NAME}(string calldata test, uint256 a, bytes32 pubkey) public pure returns (${SEAL_RETURN_TYPE} memory reencrypted) {
         if (Utils.cmp(test, "${SEALING_FUNCTION_NAME}(euint8)")) {
