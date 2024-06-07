@@ -16,7 +16,7 @@ export interface LtBenchType extends BaseContract {
     lt: (_a: bytes, _b: bytes) => Promise<bigint>;
 }
 export interface SelectBenchType extends BaseContract {
-    select: (test: string, c: boolean, a: bigint, b: bigint) => Promise<bigint>;
+    select: (_a: bytes, _b: bytes) => Promise<bigint>;
 }
 export interface ReqBenchType extends BaseContract {
     req: (_a: bytes, _b: bytes) => Promise<bigint>;

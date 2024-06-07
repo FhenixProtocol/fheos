@@ -9,6 +9,7 @@ import {
 
 export const toVarSuffix = (inputType: string) => capitalize(inputType.slice(1).replace("uint", ""));
 export const toInType = (inputType: string) => "inE" + inputType.slice(1);
+export const toInTypeFunction = (inputType: string) => toInType(inputType) + " calldata";
 export const toAsType = (inputType: string) => "asE" + inputType.slice(1);
 
 export function benchContract2Arg(name: string) {
@@ -24,9 +25,9 @@ export function benchContract2Arg(name: string) {
       privateVarsA += `\t${inputType} internal a${toVarSuffix(inputType)};\n`;
       privateVarsB += `\t${inputType} internal b${toVarSuffix(inputType)};\n`;
       funcLoad += `
-    function load${toVarSuffix(inputType)}(${toInType(inputType)} _a, ${toInType(inputType)} _b) public {
-        a32 = FHE.${toAsType(inputType)}(_a);
-        b32 = FHE.${toAsType(inputType)}(_b);
+    function load${toVarSuffix(inputType)}(${toInTypeFunction(inputType)} _a, ${toInTypeFunction(inputType)} _b) public {
+        a${toVarSuffix(inputType)} = FHE.${toAsType(inputType)}(_a);
+        b${toVarSuffix(inputType)} = FHE.${toAsType(inputType)}(_b);
     }`;
 
       // todo: should this return something? should we verify the decrypted result of the operation?
@@ -63,8 +64,8 @@ export function benchContract1Arg(name: string) {
       importTypes += "\n\t" + inputType + ", " + toInType(inputType) + ",";
       privateVarsA += `\t${inputType} internal a${toVarSuffix(inputType)};\n`;
       funcLoad += `
-    function load${toVarSuffix(inputType)}(${toInType(inputType)} _a) public {
-        a32 = FHE.${toAsType(inputType)}(_a);
+    function load${toVarSuffix(inputType)}(${toInTypeFunction(inputType)} _a) public {
+        a${toVarSuffix(inputType)} = FHE.${toAsType(inputType)}(_a);
     }`;
 
       // todo: should this return something? should we verify the decrypted result of the operation?
@@ -119,8 +120,8 @@ export function benchContractReencrypt() {
       importTypes += "\n\t" + inputType + ", " + toInType(inputType) + ",";
       privateVarsA += `\t${inputType} internal a${toVarSuffix(inputType)};\n`;
       funcLoad += `
-    function load${toVarSuffix(inputType)}(${toInType(inputType)} _a, bytes32 _pubkey) public {
-        a32 = FHE.${toAsType(inputType)}(_a);
+    function load${toVarSuffix(inputType)}(${toInTypeFunction(inputType)} _a, bytes32 _pubkey) public {
+        a${toVarSuffix(inputType)} = FHE.${toAsType(inputType)}(_a);
         pubkey = _pubkey;
     }`;
 
@@ -146,42 +147,45 @@ export function benchContractReencrypt() {
 }
 
 export function benchContract3Arg(name: string) {
-  let func = `function ${name}(string calldata test, bool c, uint256 a, uint256 b) public pure returns (uint256 output) {
-        ebool condition = FHE.asEbool(c);
-        if (Utils.cmp(test, "${name}: euint8")) {
-            return FHE.decrypt(FHE.${name}(condition, FHE.asEuint8(a), FHE.asEuint8(b)));
-        } else if (Utils.cmp(test, "${name}: euint16")) {
-            return FHE.decrypt(FHE.${name}(condition, FHE.asEuint16(a), FHE.asEuint16(b)));
-        } else if (Utils.cmp(test, "${name}: euint32")) {
-            return FHE.decrypt(FHE.${name}(condition, FHE.asEuint32(a), FHE.asEuint32(b)));
-        } else if (Utils.cmp(test, "${name}: euint64")) {
-            return FHE.decrypt(FHE.${name}(condition, FHE.asEuint64(a), FHE.asEuint64(b)));
-        } else if (Utils.cmp(test, "${name}: euint128")) {
-            return FHE.decrypt(FHE.${name}(condition, FHE.asEuint128(a), FHE.asEuint128(b)));
-        } else if (Utils.cmp(test, "${name}: ebool")) {
-            bool aBool = true;
-            bool bBool = true;
-            if (a == 0) {
-                aBool = false;
-            }
-            if (b == 0) {
-                bBool = false;
-            }
+  let importTypes = ``;
+  let privateVarsA = `\tebool internal control;\n\n`;
+  let privateVarsB = ``;
+  let funcLoad = "";
+  let funcBench = "";
 
-            if(FHE.decrypt(FHE.${name}(condition, FHE.asEbool(aBool), FHE.asEbool(bBool)))) {
-                return 1;
-            }
-            return 0;
-        } 
-        
-        revert TestNotFound(test);
+  for (let inputType of EInputType) {
+    if (IsOperationAllowed(name, inputType)) {
+      importTypes += "\n\t" + inputType + ", " + toInType(inputType) + ",";
+      privateVarsA += `\t${inputType} internal a${toVarSuffix(inputType)};\n`;
+      privateVarsB += `\t${inputType} internal b${toVarSuffix(inputType)};\n`;
+      funcLoad += `
+    function load${toVarSuffix(inputType)}(inEbool calldata _control, ${toInTypeFunction(inputType)} _a, ${toInTypeFunction(inputType)} _b) public {
+        control = FHE.asEbool(_control);
+        a${toVarSuffix(inputType)} = FHE.${toAsType(inputType)}(_a);
+        b${toVarSuffix(inputType)} = FHE.${toAsType(inputType)}(_b);
     }`;
+
+      // todo: should this return something? should we verify the decrypted result of the operation?
+      funcBench += `
+    function bench${capitalize(name)}${toVarSuffix(inputType)}() public view {
+        FHE.${name}(control, a${toVarSuffix(inputType)}, b${toVarSuffix(inputType)});
+    }`;
+    }
+  }
+
+  const func = privateVarsA + "\n" + privateVarsB + funcLoad + "\n" + funcBench;
+  importTypes = importTypes.slice(0, -1); // remove last comma
+  const importStatement = `import {${importTypes}
+} from "../../../FHE.sol";`;
+
+  // todo: verify that the ts input should be bytes for inEuints
+  // todo: add all abi functions
   const abi = `export interface ${capitalize(
     name
   )}BenchType extends BaseContract {
-    ${name}: (test: string, c: boolean, a: bigint, b: bigint) => Promise<bigint>;
+    ${name}: (_a: bytes, _b: bytes) => Promise<bigint>;
 }\n`;
-  return [generateBenchContract(name, func), abi];
+  return [generateBenchContract(name, func, importStatement), abi];
 }
 
 const IsOperationAllowed = (

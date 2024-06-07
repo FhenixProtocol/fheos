@@ -24,36 +24,36 @@ contract SealoutputBench {
 	euint256 internal a256;
 	eaddress internal aAddress;
 
-    function loadBool(inEbool _a, bytes32 _pubkey) public {
-        a32 = FHE.asEbool(_a);
+    function loadBool(inEbool calldata _a, bytes32 _pubkey) public {
+        aBool = FHE.asEbool(_a);
         pubkey = _pubkey;
     }
-    function load8(inEuint8 _a, bytes32 _pubkey) public {
-        a32 = FHE.asEuint8(_a);
+    function load8(inEuint8 calldata _a, bytes32 _pubkey) public {
+        a8 = FHE.asEuint8(_a);
         pubkey = _pubkey;
     }
-    function load16(inEuint16 _a, bytes32 _pubkey) public {
-        a32 = FHE.asEuint16(_a);
+    function load16(inEuint16 calldata _a, bytes32 _pubkey) public {
+        a16 = FHE.asEuint16(_a);
         pubkey = _pubkey;
     }
-    function load32(inEuint32 _a, bytes32 _pubkey) public {
+    function load32(inEuint32 calldata _a, bytes32 _pubkey) public {
         a32 = FHE.asEuint32(_a);
         pubkey = _pubkey;
     }
-    function load64(inEuint64 _a, bytes32 _pubkey) public {
-        a32 = FHE.asEuint64(_a);
+    function load64(inEuint64 calldata _a, bytes32 _pubkey) public {
+        a64 = FHE.asEuint64(_a);
         pubkey = _pubkey;
     }
-    function load128(inEuint128 _a, bytes32 _pubkey) public {
-        a32 = FHE.asEuint128(_a);
+    function load128(inEuint128 calldata _a, bytes32 _pubkey) public {
+        a128 = FHE.asEuint128(_a);
         pubkey = _pubkey;
     }
-    function load256(inEuint256 _a, bytes32 _pubkey) public {
-        a32 = FHE.asEuint256(_a);
+    function load256(inEuint256 calldata _a, bytes32 _pubkey) public {
+        a256 = FHE.asEuint256(_a);
         pubkey = _pubkey;
     }
-    function loadAddress(inEaddress _a, bytes32 _pubkey) public {
-        a32 = FHE.asEaddress(_a);
+    function loadAddress(inEaddress calldata _a, bytes32 _pubkey) public {
+        aAddress = FHE.asEaddress(_a);
         pubkey = _pubkey;
     }
 

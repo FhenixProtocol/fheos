@@ -21,26 +21,26 @@ contract ReqBench {
 	euint128 internal a128;
 	euint256 internal a256;
 
-    function loadBool(inEbool _a) public {
-        a32 = FHE.asEbool(_a);
+    function loadBool(inEbool calldata _a) public {
+        aBool = FHE.asEbool(_a);
     }
-    function load8(inEuint8 _a) public {
-        a32 = FHE.asEuint8(_a);
+    function load8(inEuint8 calldata _a) public {
+        a8 = FHE.asEuint8(_a);
     }
-    function load16(inEuint16 _a) public {
-        a32 = FHE.asEuint16(_a);
+    function load16(inEuint16 calldata _a) public {
+        a16 = FHE.asEuint16(_a);
     }
-    function load32(inEuint32 _a) public {
+    function load32(inEuint32 calldata _a) public {
         a32 = FHE.asEuint32(_a);
     }
-    function load64(inEuint64 _a) public {
-        a32 = FHE.asEuint64(_a);
+    function load64(inEuint64 calldata _a) public {
+        a64 = FHE.asEuint64(_a);
     }
-    function load128(inEuint128 _a) public {
-        a32 = FHE.asEuint128(_a);
+    function load128(inEuint128 calldata _a) public {
+        a128 = FHE.asEuint128(_a);
     }
-    function load256(inEuint256 _a) public {
-        a32 = FHE.asEuint256(_a);
+    function load256(inEuint256 calldata _a) public {
+        a256 = FHE.asEuint256(_a);
     }
 
     function benchReqBool() public view {
