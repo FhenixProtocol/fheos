@@ -108,36 +108,41 @@ ${testFunc}
 }
 
 export function benchContractReencrypt() {
-  let func = `function ${SEALING_FUNCTION_NAME}(string calldata test, uint256 a, bytes32 pubkey) public pure returns (${SEAL_RETURN_TYPE} memory reencrypted) {
-        if (Utils.cmp(test, "${SEALING_FUNCTION_NAME}(euint8)")) {
-            return FHE.${SEALING_FUNCTION_NAME}(FHE.asEuint8(a), pubkey);
-        } else if (Utils.cmp(test, "${SEALING_FUNCTION_NAME}(euint16)")) {
-            return FHE.${SEALING_FUNCTION_NAME}(FHE.asEuint16(a), pubkey);
-        } else if (Utils.cmp(test, "${SEALING_FUNCTION_NAME}(euint32)")) {
-            return FHE.${SEALING_FUNCTION_NAME}(FHE.asEuint32(a), pubkey);
-        } else if (Utils.cmp(test, "${SEALING_FUNCTION_NAME}(euint64)")) {
-            return FHE.${SEALING_FUNCTION_NAME}(FHE.asEuint64(a), pubkey);
-        } else if (Utils.cmp(test, "${SEALING_FUNCTION_NAME}(euint128)")) {
-            return FHE.${SEALING_FUNCTION_NAME}(FHE.asEuint128(a), pubkey);
-        } else if (Utils.cmp(test, "${SEALING_FUNCTION_NAME}(euint256)")) {
-            return FHE.${SEALING_FUNCTION_NAME}(FHE.asEuint256(a), pubkey);
-        } else if (Utils.cmp(test, "${SEALING_FUNCTION_NAME}(ebool)")) {
-            bool b = true;
-            if (a == 0) {
-                b = false;
-            }
+  // let func = `function ${SEALING_FUNCTION_NAME}(string calldata test, uint256 a, bytes32 pubkey) public pure returns (${SEAL_RETURN_TYPE} memory reencrypted) {
+  let importTypes = ``;
+  let privateVarsA = `\tbytes32 internal pubkey;\n`;
+  let funcLoad = "";
+  let funcBench = "";
 
-            return FHE.${SEALING_FUNCTION_NAME}(FHE.asEbool(b), pubkey);
-        } else if (Utils.cmp(test, "${LOCAL_SEAL_FUNCTION_NAME}(euint8)")) {
-            euint8 aEnc = FHE.asEuint8(a);
-            return aEnc.${LOCAL_SEAL_FUNCTION_NAME}(pubkey);
-        }
-        revert TestNotFound(test);
+  for (let inputType of EInputType) {
+    if (IsOperationAllowed(SEALING_FUNCTION_NAME, inputType)) {
+      importTypes += "\n\t" + inputType + ", " + toInType(inputType) + ",";
+      privateVarsA += `\t${inputType} internal a${toVarSuffix(inputType)};\n`;
+      funcLoad += `
+    function load${toVarSuffix(inputType)}(${toInType(inputType)} _a, bytes32 _pubkey) public {
+        a32 = FHE.${toAsType(inputType)}(_a);
+        pubkey = _pubkey;
     }`;
+
+      // todo: should this return something? should we verify the decrypted result of the operation?
+      funcBench += `
+    function bench${capitalize(SEALING_FUNCTION_NAME)}${toVarSuffix(inputType)}() public view {
+        FHE.${SEALING_FUNCTION_NAME}(a${toVarSuffix(inputType)}, pubkey);
+    }`;
+    }
+  }
+
+  const func = privateVarsA + funcLoad + "\n" + funcBench;
+  importTypes = importTypes.slice(0, -1); // remove last comma
+  const importStatement = `import {${importTypes}
+} from "../../../FHE.sol";`;
+
+  // todo: verify that the ts input should be bytes for inEuints
+  // todo: add all abi functions
   const abi = `export interface SealoutputBenchType extends BaseContract {
-    ${SEALING_FUNCTION_NAME}: (test: string, a: bigint, pubkey: Uint8Array) => Promise<string>;
-}\n`;
-  return [generateBenchContract(SEALING_FUNCTION_NAME, func), abi];
+    ${SEALING_FUNCTION_NAME}: (test: string, a: bigint, pubkey: Uint8Array) => Promise<string>;`;
+
+  return [generateBenchContract(SEALING_FUNCTION_NAME, func, importStatement), abi];
 }
 
 export function benchContract3Arg(name: string) {

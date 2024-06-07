@@ -3,9 +3,7 @@ export interface AddBenchType extends BaseContract {
     add: (_a: bytes, _b: bytes) => Promise<bigint>;
 }
 export interface SealoutputBenchType extends BaseContract {
-    sealoutput: (test: string, a: bigint, pubkey: Uint8Array) => Promise<string>;
-}
-export interface LteBenchType extends BaseContract {
+    sealoutput: (test: string, a: bigint, pubkey: Uint8Array) => Promise<string>;export interface LteBenchType extends BaseContract {
     lte: (_a: bytes, _b: bytes) => Promise<bigint>;
 }
 export interface SubBenchType extends BaseContract {
