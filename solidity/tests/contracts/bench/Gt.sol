@@ -3,7 +3,6 @@ pragma solidity ^0.8.17;
 
 import {FHE} from "../../../FHE.sol";
 import {
-	ebool, inEbool,
 	euint8, inEuint8,
 	euint16, inEuint16,
 	euint32, inEuint32,
@@ -12,24 +11,18 @@ import {
 } from "../../../FHE.sol";
 
 contract GtBench {
-	ebool internal aBool;
 	euint8 internal a8;
 	euint16 internal a16;
 	euint32 internal a32;
 	euint64 internal a64;
 	euint128 internal a128;
 
-	ebool internal bBool;
 	euint8 internal b8;
 	euint16 internal b16;
 	euint32 internal b32;
 	euint64 internal b64;
 	euint128 internal b128;
 
-    function loadBool(inEbool calldata _a, inEbool calldata _b) public {
-        aBool = FHE.asEbool(_a);
-        bBool = FHE.asEbool(_b);
-    }
     function load8(inEuint8 calldata _a, inEuint8 calldata _b) public {
         a8 = FHE.asEuint8(_a);
         b8 = FHE.asEuint8(_b);
@@ -51,9 +44,6 @@ contract GtBench {
         b128 = FHE.asEuint128(_b);
     }
 
-    function benchGtBool() public view {
-        FHE.gt(aBool, bBool);
-    }
     function benchGt8() public view {
         FHE.gt(a8, b8);
     }

@@ -13,7 +13,7 @@ export const EInputType = [
 // FYI: Operations ["sealoutput", "seal", "decrypt", "ne"] are the minimum required for
 // non failing generated code.
 
-const patternAllowedOperationsEbool = [".*"];
+const patternAllowedOperationsEbool = ["ne|eq|and|or|xor|sealoutput|select|seal|decrypt"];
 const patternAllowedOperationsEuint8 = [".*"];
 const patternAllowedOperationsEuint16 = [".*"];
 const patternAllowedOperationsEuint32 = [".*"];

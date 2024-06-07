@@ -3,7 +3,6 @@ pragma solidity ^0.8.17;
 
 import {FHE} from "../../../FHE.sol";
 import {
-	ebool, inEbool,
 	euint8, inEuint8,
 	euint16, inEuint16,
 	euint32, inEuint32,
@@ -11,22 +10,16 @@ import {
 } from "../../../FHE.sol";
 
 contract MulBench {
-	ebool internal aBool;
 	euint8 internal a8;
 	euint16 internal a16;
 	euint32 internal a32;
 	euint64 internal a64;
 
-	ebool internal bBool;
 	euint8 internal b8;
 	euint16 internal b16;
 	euint32 internal b32;
 	euint64 internal b64;
 
-    function loadBool(inEbool calldata _a, inEbool calldata _b) public {
-        aBool = FHE.asEbool(_a);
-        bBool = FHE.asEbool(_b);
-    }
     function load8(inEuint8 calldata _a, inEuint8 calldata _b) public {
         a8 = FHE.asEuint8(_a);
         b8 = FHE.asEuint8(_b);
@@ -44,9 +37,6 @@ contract MulBench {
         b64 = FHE.asEuint64(_b);
     }
 
-    function benchMulBool() public view {
-        FHE.mul(aBool, bBool);
-    }
     function benchMul8() public view {
         FHE.mul(a8, b8);
     }
