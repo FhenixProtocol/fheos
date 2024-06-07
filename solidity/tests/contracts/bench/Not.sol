@@ -2,6 +2,7 @@
 pragma solidity ^0.8.17;
 
 import {FHE} from "../../../FHE.sol";
+import {ebool, euint8} from "../../../FHE.sol";
 
 contract NotBench {
 function not(string calldata test, uint256 a) public pure returns (uint256 output) {

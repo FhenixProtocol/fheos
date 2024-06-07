@@ -2,25 +2,35 @@
 pragma solidity ^0.8.17;
 
 import {FHE} from "../../../FHE.sol";
+import {
+	ebool, inEbool,
+	euint8, inEuint8,
+	euint16, inEuint16,
+	euint32, inEuint32,
+	euint64, inEuint64,
+	euint128, inEuint128,
+	euint256, inEuint256,
+	eaddress, inEaddress
+} from "../../../FHE.sol";
 
 contract EqBench {
-	private ebool aBool;
-	private euint8 a8;
-	private euint16 a16;
-	private euint32 a32;
-	private euint64 a64;
-	private euint128 a128;
-	private euint256 a256;
-	private eaddress aAddress;
+	ebool internal aBool;
+	euint8 internal a8;
+	euint16 internal a16;
+	euint32 internal a32;
+	euint64 internal a64;
+	euint128 internal a128;
+	euint256 internal a256;
+	eaddress internal aAddress;
 
-	private ebool bBool;
-	private euint8 b8;
-	private euint16 b16;
-	private euint32 b32;
-	private euint64 b64;
-	private euint128 b128;
-	private euint256 b256;
-	private eaddress bAddress;
+	ebool internal bBool;
+	euint8 internal b8;
+	euint16 internal b16;
+	euint32 internal b32;
+	euint64 internal b64;
+	euint128 internal b128;
+	euint256 internal b256;
+	eaddress internal bAddress;
 
     function loadBool(inEbool _a, inEbool _b) public {
         a32 = FHE.asEbool(_a);

@@ -2,15 +2,16 @@
 pragma solidity ^0.8.17;
 
 import {FHE} from "../../../FHE.sol";
+import {ebool, euint8} from "../../../FHE.sol";
 
 contract ReqBench {
 
-    private euint8 a8;
-    private euint16 a16;
-    private euint32 a32;
-    private euint64 a64;
-    private euint128 a128;
-    private euint256 a256;
+    euint8 internal a8;
+    euint16 internal a16;
+    euint32 internal a32;
+    euint64 internal a64;
+    euint128 internal a128;
+    euint256 internal a256;
   
     function load32(inEuint32 _a) public {
         a32 = FHE.asEuint32(_a);

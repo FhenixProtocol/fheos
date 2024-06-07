@@ -7,21 +7,12 @@ import {
   capitalize,
 } from "../common";
 
-const secondInputPrivateVariables = `private euint8 b8;
-    private euint16 b8;
-    private euint16 b16;
-    private euint32 b32;
-    private euint64 b64;
-    private euint128 b128;
-    private euint256 b256;
-    private eaddress bAddress;
-`;
-
 export const toVarSuffix = (inputType: string) => capitalize(inputType.slice(1).replace("uint", ""));
 export const toInType = (inputType: string) => "inE" + inputType.slice(1);
 export const toAsType = (inputType: string) => "asE" + inputType.slice(1);
 
 export function benchContract2ArgBoolRes(name: string) {
+  let importTypes = ``;
   let privateVarsA = ``;
   let privateVarsB = ``;
   let funcLoad = "";
@@ -29,8 +20,9 @@ export function benchContract2ArgBoolRes(name: string) {
 
   for (let inputType of EInputType) {
     if (IsOperationAllowed(name, inputType)) {
-      privateVarsA += `\tprivate ${inputType} a${toVarSuffix(inputType)};\n`;
-      privateVarsB += `\tprivate ${inputType} b${toVarSuffix(inputType)};\n`;
+      importTypes += "\n\t" + inputType + ", " + toInType(inputType) + ",";
+      privateVarsA += `\t${inputType} internal a${toVarSuffix(inputType)};\n`;
+      privateVarsB += `\t${inputType} internal b${toVarSuffix(inputType)};\n`;
       funcLoad += `
     function load${toVarSuffix(inputType)}(${toInType(inputType)} _a, ${toInType(inputType)} _b) public {
         a32 = FHE.${toAsType(inputType)}(_a);
@@ -46,6 +38,9 @@ export function benchContract2ArgBoolRes(name: string) {
   }
 
   const func = privateVarsA + "\n" + privateVarsB + funcLoad + "\n" + funcBench;
+  importTypes = importTypes.slice(0, -1); // remove last comma
+  const importStatement = `import {${importTypes}
+} from "../../../FHE.sol";`;
 
   // todo: verify that the ts input should be bytes for inEuints
   // todo: add all abi functions
@@ -54,7 +49,7 @@ export function benchContract2ArgBoolRes(name: string) {
   )}BenchType extends BaseContract {
     ${name}: (_a: bytes, _b: bytes) => Promise<bigint>;
 }\n`;
-  return [generateBenchContract(name, func), abi];
+  return [generateBenchContract(name, func, importStatement), abi];
 }
 
 export function benchContract1Arg(name: string) {
@@ -111,15 +106,13 @@ export function benchContract1Arg(name: string) {
 export function generateBenchContract(
   name: string,
   testFunc: string,
-  importTypes: boolean = false
+  importStatement: string = `import {ebool, euint8} from "../../../FHE.sol";`,
 ) {
-  const importStatement = importTypes
-    ? `\nimport {ebool, euint8} from "../../../FHE.sol";`
-    : "";
   return `// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import {FHE} from "../../../FHE.sol";${importStatement}
+import {FHE} from "../../../FHE.sol";
+${importStatement}
 
 contract ${capitalize(name)}Bench {
 ${testFunc}
@@ -131,12 +124,12 @@ export function benchContractReq() {
   // Req is failing on EthCall so we need to make it as tx for now
   // todo: check the claim that req failing on EthCall
   let func = `
-    private euint8 a8;
-    private euint16 a16;
-    private euint32 a32;
-    private euint64 a64;
-    private euint128 a128;
-    private euint256 a256;
+    euint8 internal a8;
+    euint16 internal a16;
+    euint32 internal a32;
+    euint64 internal a64;
+    euint128 internal a128;
+    euint256 internal a256;
   
     function load32(inEuint32 _a) public {
         a32 = FHE.asEuint32(_a);
@@ -182,7 +175,7 @@ export function benchContractReencrypt() {
   const abi = `export interface SealoutputBenchType extends BaseContract {
     ${SEALING_FUNCTION_NAME}: (test: string, a: bigint, pubkey: Uint8Array) => Promise<string>;
 }\n`;
-  return [generateBenchContract(SEALING_FUNCTION_NAME, func, true), abi];
+  return [generateBenchContract(SEALING_FUNCTION_NAME, func), abi];
 }
 
 export function benchContract3Arg(name: string) {
@@ -221,7 +214,7 @@ export function benchContract3Arg(name: string) {
   )}BenchType extends BaseContract {
     ${name}: (test: string, c: boolean, a: bigint, b: bigint) => Promise<bigint>;
 }\n`;
-  return [generateBenchContract(name, func, true), abi];
+  return [generateBenchContract(name, func), abi];
 }
 
 const IsOperationAllowed = (
