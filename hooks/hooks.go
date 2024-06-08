@@ -25,8 +25,9 @@ type FheOSHooksImpl struct {
 }
 
 func (h FheOSHooksImpl) UpdateCiphertextReferences(epStorage storage2.EphemeralStorage, original common.Hash, newHash types.Hash) (bool, error) {
-	// Check whether the value is not a newly created value (i.e. not in memory but is in store)
+	// Don't ref count trivially encrypted values
 	isInMemory := epStorage.HasCt(newHash)
+	// Check whether the value is not a newly created value (i.e. not in memory but is in store)
 	if !isInMemory {
 		ct, err := fheos.State.Storage.GetCt(newHash)
 		if (err == nil) && (ct != nil) {
@@ -38,10 +39,11 @@ func (h FheOSHooksImpl) UpdateCiphertextReferences(epStorage storage2.EphemeralS
 		}
 	}
 
-	if (original != common.Hash{}) {
+	originalHash := types.Hash(original)
+	if (original != common.Hash{}) && !fhe.IsTriviallyEncryptedCtHash(originalHash) {
 		// if the original hash is not empty, we are updating a value
 		// we need to dereference the old value from the storage
-		err := fheos.State.DereferenceCiphertext(types.Hash(original))
+		err := fheos.State.DereferenceCiphertext(originalHash)
 		if err != nil {
 			log.Error("Failed to dereference old ciphertext", "err", err)
 			return isInMemory, err
@@ -58,7 +60,7 @@ func (h FheOSHooksImpl) StoreCiphertextHook(contract common.Address, loc [32]byt
 
 	// Skip for non-ciphertext
 	ctHash := types.Hash(val)
-	if fhe.IsCtHash(ctHash) {
+	if !fhe.IsCtHash(ctHash) {
 		return nil
 	}
 
@@ -115,7 +117,7 @@ func (h FheOSHooksImpl) EvmCallEnd(evmSuccess bool) {
 				log.Crit("Error getting ciphertext from storage when trying to store in lts - state corruption detected", "err", err)
 				continue
 			}
-			err = fheos.State.SetCiphertext(cipherText)
+			err = fheos.State.SetCiphertext(contractCiphertext.CipherTextHash, cipherText)
 			if err != nil {
 				log.Crit("Error storing ciphertext in LTS - state corruption detected", "err", err)
 			}
@@ -195,7 +197,7 @@ func (h FheOSHooksImpl) ContractCall(isSimulation bool, callType int, caller com
 	//  when going to offset you will find 32 bytes indicating the length of the value
 	//  and then the value itself, each value in the array is padded to 32 bytes
 
-	// Skip delegate calls??????????
+	// Skip delegate calls - The owner remains the same
 	if callType == vm.CallTypeDelegateCall {
 		return
 	}

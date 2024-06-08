@@ -8,7 +8,6 @@ import (
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
-	"math/big"
 	"os"
 	"time"
 )
@@ -16,16 +15,7 @@ import (
 type FheosState struct {
 	FheosVersion uint64
 	Storage      storage2.FheosStorage
-	EZero        [][]byte // Preencrypted 0s for each uint type
 	//MaxUintValue *big.Int // This should contain the max value of the supported uint type
-}
-
-func (fs *FheosState) GetZero(uintType fhe.EncryptionType) *fhe.FheEncrypted {
-	ct, err := fhe.EncryptPlainText(*big.NewInt(0), uintType)
-	if err != nil {
-		return nil
-	}
-	return ct
 }
 
 func (fs *FheosState) GetRandomForGasEstimation() []byte {
@@ -94,12 +84,17 @@ func (fs *FheosState) DereferenceCiphertext(hash types.Hash) error {
 }
 
 func (fs *FheosState) incrementRefCountHelper(ctHash types.Hash, sharedCt *types.SharedCiphertext) error {
+	// Skip count for trivially encrypted ciphertexts
+	if fhe.IsTriviallyEncryptedCtHash(ctHash) {
+		return nil
+	}
+
 	sharedCt.RefCount++
 	logger.Info("Incremented ciphertext ref count", "hash", hex.EncodeToString(ctHash[:]), "newRefCount", sharedCt.RefCount)
 	return fs.Storage.PutCt(ctHash, sharedCt)
 }
 
-func (fs *FheosState) SetCiphertext(ct *types.CipherTextRepresentation) error {
+func (fs *FheosState) SetCiphertext(ctHash types.Hash, ct *types.CipherTextRepresentation) error {
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "db", "put")
 		defer func(start time.Time) {
@@ -109,8 +104,6 @@ func (fs *FheosState) SetCiphertext(ct *types.CipherTextRepresentation) error {
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
 		}(time.Now())
 	}
-
-	ctHash := types.Hash((*fhe.FheEncrypted)(ct.Data).Hash())
 
 	currentCt, err := fs.Storage.GetCt(ctHash)
 	if err != nil {
@@ -128,41 +121,11 @@ func (fs *FheosState) ReferenceCiphertext(hash types.Hash, ct *types.SharedCiphe
 	return fs.incrementRefCountHelper(hash, ct)
 }
 
-func createFheosState(storage storage2.FheosStorage, version uint64) error {
+func createFheosState(storage storage2.FheosStorage, version uint64) {
 	State = &FheosState{
 		version,
 		storage,
-		nil,
 	}
-
-	tempTp := TxParams{
-		Commit:        false,
-		GasEstimation: false,
-		EthCall:       true,
-	}
-
-	// todo: refactor this - currently it causes crashing and weirdness if you try to add a new type
-	// also it's not very flexible
-	zero := make([]byte, 32)
-	var err error
-	ezero := make([][]byte, 14)
-
-	for i := 0; i < 6; i++ {
-		ezero[i], _, err = TrivialEncrypt(zero, byte(i), &tempTp)
-		if err != nil {
-			logger.Error("failed to encrypt 0 for ezero", "toType", i, "err", err)
-			// don't error out - this should be handled dynamically later - otherwise it just requires the backend to do work
-			// that might not be necessary right now, and makes it more annoying for unit tests that might not need to encrypt
-		}
-	}
-	ezero[13], _, err = TrivialEncrypt(zero, byte(13), &tempTp)
-	if err != nil {
-		logger.Error("failed to encrypt 0 for ezero", "toType", 13, "err", err)
-	}
-
-	State.EZero = ezero
-
-	return nil
 }
 
 func InitializeFheosState() error {
@@ -179,12 +142,7 @@ func InitializeFheosState() error {
 		return errors.New("failed to write version into fheos db")
 	}
 
-	err = createFheosState(*store, FheosVersion)
-
-	if err != nil {
-		logger.Error("failed to create fheos State", "err", err)
-		return errors.New("failed to create fheos State")
-	}
+	createFheosState(*store, FheosVersion)
 
 	return nil
 }

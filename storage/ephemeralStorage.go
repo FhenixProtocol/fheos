@@ -80,7 +80,6 @@ func (es *EphemeralStorageImpl) MarkForPersistence(contract common.Address, h ty
 }
 
 func (es *EphemeralStorageImpl) PutCt(h types.Hash, cipher *types.CipherTextRepresentation) error {
-
 	if es.memstore == nil {
 		return errors.New("memstore is nil")
 	}

@@ -32,14 +32,15 @@ func (ms *MultiStore) PutCt(h types.Hash, cipher *types.FheEncrypted, owner comm
 		Data:   cipher,
 		Owners: owners,
 	}
-	return ms.ephemeral.PutCt(h, ciphertext)
+	err := ms.ephemeral.PutCt(h, ciphertext)
+	return err
 }
 
 // AppendCt stores a ciphertext in the ephemeral storage - it does NOT mark it as LTS. The reason is that we want only SSTORE to mark it as LTS, which is
 // called not only by the precompiles, only by the EVM hook from the evm interpreter.
 // When a CT with the same hash exists in the disk storage, an owner is added to the list of owners.
 func (ms *MultiStore) AppendCt(h types.Hash, cipher *types.FheEncrypted, owner common.Address) error {
-	ct, _ := ms.getCtHelper(h)
+	ct, _ := ms.getCtHelper(h, true)
 	if ct != nil {
 		ct.Owners = append(ct.Owners, owner)
 		return ms.ephemeral.PutCt(h, ct)
@@ -48,11 +49,12 @@ func (ms *MultiStore) AppendCt(h types.Hash, cipher *types.FheEncrypted, owner c
 	return ms.PutCt(h, cipher, owner)
 }
 
-func (ms *MultiStore) getCtHelper(h types.Hash) (*types.CipherTextRepresentation, error) {
+func (ms *MultiStore) getCtHelper(h types.Hash, isOnlyMemory bool) (*types.CipherTextRepresentation, error) {
 	ct, err := ms.ephemeral.GetCt(h)
 
-	if err != nil && err.Error() == "not found" {
-		sharedCt, err := ms.disk.GetCt(h)
+	if !isOnlyMemory && err != nil && err.Error() == "not found" {
+		var sharedCt *types.SharedCiphertext
+		sharedCt, err = ms.disk.GetCt(h)
 		if err != nil {
 			return nil, err
 		}
@@ -66,7 +68,7 @@ func (ms *MultiStore) getCtHelper(h types.Hash) (*types.CipherTextRepresentation
 }
 
 func (ms *MultiStore) GetCtRepresentation(h types.Hash, caller common.Address) (*types.CipherTextRepresentation, error) {
-	ct, err := ms.getCtHelper(h)
+	ct, err := ms.getCtHelper(h, false)
 	if err != nil {
 		return nil, err
 	}
@@ -109,6 +111,10 @@ func (ms *MultiStore) AddOwner(h types.Hash, ct *types.CipherTextRepresentation,
 
 	ct.Owners = append(ct.Owners, owner)
 	return ms.ephemeral.PutCt(h, ct)
+}
+
+func (ms *MultiStore) Has(h types.Hash) bool {
+	return ms.ephemeral.HasCt(h)
 }
 
 func NewMultiStore(db *memorydb.Database, disk *FheosStorage) *MultiStore {
