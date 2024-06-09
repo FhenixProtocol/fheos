@@ -27,6 +27,7 @@ import {
   AsTypeTestingContract,
 } from "./templates/testContracts";
 import {
+  AsTypeBenchmarkContract,
   benchContract1Arg,
   benchContract2Arg,
   benchContract3Arg,
@@ -255,7 +256,7 @@ const generateSolidityBenchContract = (metadata: FunctionMetadata): string => {
     `Function ${functionName} with ${inputCount} inputs that are ${inputs} is not implemented`
   );
 
-  return ["", ""];
+  return "";
 };
 
 /**
@@ -434,6 +435,7 @@ const main = async () => {
     const testContract = AsTypeTestingContract(type);
 
     testContracts[functionName] = testContract[0];
+    benchContracts[functionName] = AsTypeBenchmarkContract(type);
 
     testContractsAbis += testContract[1];
     importLineHelper += `${capitalize(functionName)}TestType,\n`;

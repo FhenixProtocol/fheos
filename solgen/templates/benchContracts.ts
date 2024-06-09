@@ -27,7 +27,7 @@ const IsOperationAllowed = (
 
 export function generateBenchContract(
   name: string,
-  testFunc: string,
+  body: string,
   importStatement: string = `import {ebool, euint8} from "../../../FHE.sol";`,
 ) {
   return `// SPDX-License-Identifier: MIT
@@ -37,7 +37,7 @@ import {FHE} from "../../../FHE.sol";
 ${importStatement}
 
 contract ${capitalize(name)}Bench {
-${testFunc}
+${body}
 }
 `;
 }
@@ -57,7 +57,6 @@ export function benchContract1Arg(name: string) {
         a${toVarSuffix(inputType)} = FHE.${toAsType(inputType)}(_a);
     }`;
 
-      // todo: should this return something? should we verify the decrypted result of the operation?
       funcBench += `
     function bench${capitalize(name)}${toVarSuffix(inputType)}() public view {
         FHE.${name}(a${toVarSuffix(inputType)});
@@ -70,7 +69,7 @@ export function benchContract1Arg(name: string) {
   const importStatement = `import {${importTypes}
 } from "../../../FHE.sol";`;
 
-  return [generateBenchContract(name, func, importStatement)];
+  return generateBenchContract(name, func, importStatement);
 }
 
 export function benchContract2Arg(name: string) {
@@ -91,7 +90,6 @@ export function benchContract2Arg(name: string) {
         b${toVarSuffix(inputType)} = FHE.${toAsType(inputType)}(_b);
     }`;
 
-      // todo: should this return something? should we verify the decrypted result of the operation?
       funcBench += `
     function bench${capitalize(name)}${toVarSuffix(inputType)}() public view {
         FHE.${name}(a${toVarSuffix(inputType)}, b${toVarSuffix(inputType)});
@@ -104,7 +102,7 @@ export function benchContract2Arg(name: string) {
   const importStatement = `import {${importTypes}
 } from "../../../FHE.sol";`;
 
-  return [generateBenchContract(name, func, importStatement)];
+  return generateBenchContract(name, func, importStatement);
 }
 
 export function benchContract3Arg(name: string) {
@@ -126,7 +124,6 @@ export function benchContract3Arg(name: string) {
         b${toVarSuffix(inputType)} = FHE.${toAsType(inputType)}(_b);
     }`;
 
-      // todo: should this return something? should we verify the decrypted result of the operation?
       funcBench += `
     function bench${capitalize(name)}${toVarSuffix(inputType)}() public view {
         FHE.${name}(control, a${toVarSuffix(inputType)}, b${toVarSuffix(inputType)});
@@ -139,7 +136,7 @@ export function benchContract3Arg(name: string) {
   const importStatement = `import {${importTypes}
 } from "../../../FHE.sol";`;
 
-  return [generateBenchContract(name, func, importStatement)];
+  return generateBenchContract(name, func, importStatement);
 }
 
 export function benchContractReencrypt() {
@@ -158,7 +155,6 @@ export function benchContractReencrypt() {
         pubkey = _pubkey;
     }`;
 
-      // todo: should this return something? should we verify the decrypted result of the operation?
       funcBench += `
     function bench${capitalize(SEALING_FUNCTION_NAME)}${toVarSuffix(inputType)}() public view {
         FHE.${SEALING_FUNCTION_NAME}(a${toVarSuffix(inputType)}, pubkey);
@@ -171,78 +167,49 @@ export function benchContractReencrypt() {
   const importStatement = `import {${importTypes}
 } from "../../../FHE.sol";`;
 
-  return [generateBenchContract(SEALING_FUNCTION_NAME, func, importStatement)];
+  return generateBenchContract(SEALING_FUNCTION_NAME, func, importStatement);
 }
 
 export function AsTypeBenchmarkContract(type: string) {
-  let funcs = "";
+  let privateVarsA = "";
+  let importTypes = "";
+  let loads = "";
+  let casts = "";
+
   // Although casts from eaddress to types with < 256 bits are possible, we don't want to bench them.
-  let eaddressAllowedTypes = ["euint256", "uint256", "bytes memory"];
-  let fromTypeCollection = type === "eaddress" ? eaddressAllowedTypes : EInputType.concat("uint256", "bytes memory");
+  let eaddressAllowedTypes = ["euint256"];
+  let fromTypeCollection = type === "eaddress" ? eaddressAllowedTypes : EInputType;
 
-  for (const fromType of fromTypeCollection) {
-    if (type === fromType || (fromType === "eaddress" && !eaddressAllowedTypes.includes(type))) {
-      continue;
-    }
+  for (let fromType of fromTypeCollection) {
+    importTypes += "\n\t" + fromType + ", " + toInType(fromType) + ",";
 
-    const fromTypeTs = fromType === "bytes memory" ? "Uint8Array" : `bigint`;
-    const fromTypeSol = fromType === "bytes memory" ? fromType : `uint256`;
-    const fromTypeEncrypted = EInputType.includes(fromType)
-      ? fromType
-      : undefined;
-    const contractInfo = TypeCastBenchmarkFunction(
-      fromTypeSol,
-      fromTypeTs,
-      type,
-      fromTypeEncrypted
-    );
-    funcs += contractInfo[0];
-    abi += contractInfo[1];
+    privateVarsA += `\t${fromType} internal a${toVarSuffix(fromType)};\n`;
+
+    loads += `\n\tfunction load${toVarSuffix(fromType)}(${toInTypeFunction(fromType)} _a) public {
+        a${toVarSuffix(fromType)} = FHE.${toAsType(fromType)}(_a);
+    }`;
+    casts += `\n\tfunction benchCast${capitalize(fromType)}To${capitalize(type)}() public view {
+        FHE.${toAsType(type)}(a${toVarSuffix(fromType)});
+    }`;
   }
 
-  funcs = funcs.slice(1);
-  abi += `}\n`;
+  // deal with casting from built-in types
+  let builtInTypes = {"uint256": "Plain256", "bytes memory": "Bytes"};
+  for (const [builtInType, varSuffix] of Object.entries(builtInTypes)) {
+    privateVarsA += `\t${builtInType} internal a${varSuffix};\n`;
 
-  return [generateBenchContract(`As${capitalize(type)}`, funcs), abi];
-}
-
-function TypeCastBenchmarkFunction(
-  fromType: string,
-  fromTypeForTs: string,
-  toType: string,
-  fromTypeEncrypted?: string
-) {
-  let to = capitalize(toType);
-  const retType = to.slice(1);
-  let testType = fromTypeEncrypted ? fromTypeEncrypted : fromType;
-  testType =
-    testType === "bytes memory" ? "PreEncrypted" : capitalize(testType);
-  testType = testType === "Uint256" ? "Plaintext" : testType;
-  const encryptedVal = fromTypeEncrypted
-    ? `FHE.as${capitalize(fromTypeEncrypted)}(val)`
-    : "val";
-  let retTypeTs = retType === "bool" ? "boolean" : retType;
-  retTypeTs = retTypeTs.includes("uint") || retTypeTs.includes("address") ? "bigint" : retTypeTs;
-
-  let abi: string;
-  let func = "\n\n    ";
-
-  if (testType === "PreEncrypted" || testType === "Plaintext") {
-    func += `function castFrom${testType}To${to}(${fromType} val) public pure returns (${retType}) {
-        return FHE.decrypt(FHE.as${to}(${encryptedVal}));
+    loads += `\n\tfunction load${varSuffix}(${builtInType} _a) public {
+        a${varSuffix} = _a;
     }`;
-    abi = `    castFrom${testType}To${to}: (val: ${fromTypeForTs}) => Promise<${retTypeTs}>;\n`;
-  } else {
-    func += `function castFrom${testType}To${to}(${fromType} val, string calldata test) public pure returns (${retType}) {
-        if (Utils.cmp(test, "bound")) {
-            return ${encryptedVal}.to${shortenType(toType)}().decrypt();
-        } else if (Utils.cmp(test, "regular")) {
-            return FHE.decrypt(FHE.as${to}(${encryptedVal}));
-        }
-        revert TestNotFound(test);
+    casts += `\n\tfunction benchCast${capitalize(builtInType.split(" ")[0])}To${capitalize(type)}() public view {
+        FHE.${toAsType(type)}(a${varSuffix});
     }`;
-    abi = `    castFrom${testType}To${to}: (val: ${fromTypeForTs}, test: string) => Promise<${retTypeTs}>;\n`;
   }
 
-  return [func, abi];
+  const body = privateVarsA + loads + "\n" + casts;
+  importTypes = importTypes.slice(0, -1); // remove last comma
+  const importStatement = `import {${importTypes}
+} from "../../../FHE.sol";`;
+
+  return generateBenchContract(`As${capitalize(type)}`, body, importStatement);
 }
