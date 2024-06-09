@@ -70,14 +70,7 @@ export function benchContract1Arg(name: string) {
   const importStatement = `import {${importTypes}
 } from "../../../FHE.sol";`;
 
-  // todo: verify that the ts input should be bytes for inEuints
-  // todo: add all abi functions
-  const abi = `export interface ${capitalize(
-    name
-  )}BenchType extends BaseContract {
-    ${name}: (_a: bytes, _b: bytes) => Promise<bigint>;
-}\n`;
-  return [generateBenchContract(name, func, importStatement), abi];
+  return [generateBenchContract(name, func, importStatement)];
 }
 
 export function benchContract2Arg(name: string) {
@@ -111,14 +104,7 @@ export function benchContract2Arg(name: string) {
   const importStatement = `import {${importTypes}
 } from "../../../FHE.sol";`;
 
-  // todo: verify that the ts input should be bytes for inEuints
-  // todo: add all abi functions
-  const abi = `export interface ${capitalize(
-    name
-  )}BenchType extends BaseContract {
-    ${name}: (_a: bytes, _b: bytes) => Promise<bigint>;
-}\n`;
-  return [generateBenchContract(name, func, importStatement), abi];
+  return [generateBenchContract(name, func, importStatement)];
 }
 
 export function benchContract3Arg(name: string) {
@@ -153,14 +139,7 @@ export function benchContract3Arg(name: string) {
   const importStatement = `import {${importTypes}
 } from "../../../FHE.sol";`;
 
-  // todo: verify that the ts input should be bytes for inEuints
-  // todo: add all abi functions
-  const abi = `export interface ${capitalize(
-    name
-  )}BenchType extends BaseContract {
-    ${name}: (_a: bytes, _b: bytes) => Promise<bigint>;
-}\n`;
-  return [generateBenchContract(name, func, importStatement), abi];
+  return [generateBenchContract(name, func, importStatement)];
 }
 
 export function benchContractReencrypt() {
@@ -192,10 +171,78 @@ export function benchContractReencrypt() {
   const importStatement = `import {${importTypes}
 } from "../../../FHE.sol";`;
 
-  // todo: verify that the ts input should be bytes for inEuints
-  // todo: add all abi functions
-  const abi = `export interface SealoutputBenchType extends BaseContract {
-    ${SEALING_FUNCTION_NAME}: (test: string, a: bigint, pubkey: Uint8Array) => Promise<string>;`;
+  return [generateBenchContract(SEALING_FUNCTION_NAME, func, importStatement)];
+}
 
-  return [generateBenchContract(SEALING_FUNCTION_NAME, func, importStatement), abi];
+export function AsTypeBenchmarkContract(type: string) {
+  let funcs = "";
+  // Although casts from eaddress to types with < 256 bits are possible, we don't want to bench them.
+  let eaddressAllowedTypes = ["euint256", "uint256", "bytes memory"];
+  let fromTypeCollection = type === "eaddress" ? eaddressAllowedTypes : EInputType.concat("uint256", "bytes memory");
+
+  for (const fromType of fromTypeCollection) {
+    if (type === fromType || (fromType === "eaddress" && !eaddressAllowedTypes.includes(type))) {
+      continue;
+    }
+
+    const fromTypeTs = fromType === "bytes memory" ? "Uint8Array" : `bigint`;
+    const fromTypeSol = fromType === "bytes memory" ? fromType : `uint256`;
+    const fromTypeEncrypted = EInputType.includes(fromType)
+      ? fromType
+      : undefined;
+    const contractInfo = TypeCastBenchmarkFunction(
+      fromTypeSol,
+      fromTypeTs,
+      type,
+      fromTypeEncrypted
+    );
+    funcs += contractInfo[0];
+    abi += contractInfo[1];
+  }
+
+  funcs = funcs.slice(1);
+  abi += `}\n`;
+
+  return [generateBenchContract(`As${capitalize(type)}`, funcs), abi];
+}
+
+function TypeCastBenchmarkFunction(
+  fromType: string,
+  fromTypeForTs: string,
+  toType: string,
+  fromTypeEncrypted?: string
+) {
+  let to = capitalize(toType);
+  const retType = to.slice(1);
+  let testType = fromTypeEncrypted ? fromTypeEncrypted : fromType;
+  testType =
+    testType === "bytes memory" ? "PreEncrypted" : capitalize(testType);
+  testType = testType === "Uint256" ? "Plaintext" : testType;
+  const encryptedVal = fromTypeEncrypted
+    ? `FHE.as${capitalize(fromTypeEncrypted)}(val)`
+    : "val";
+  let retTypeTs = retType === "bool" ? "boolean" : retType;
+  retTypeTs = retTypeTs.includes("uint") || retTypeTs.includes("address") ? "bigint" : retTypeTs;
+
+  let abi: string;
+  let func = "\n\n    ";
+
+  if (testType === "PreEncrypted" || testType === "Plaintext") {
+    func += `function castFrom${testType}To${to}(${fromType} val) public pure returns (${retType}) {
+        return FHE.decrypt(FHE.as${to}(${encryptedVal}));
+    }`;
+    abi = `    castFrom${testType}To${to}: (val: ${fromTypeForTs}) => Promise<${retTypeTs}>;\n`;
+  } else {
+    func += `function castFrom${testType}To${to}(${fromType} val, string calldata test) public pure returns (${retType}) {
+        if (Utils.cmp(test, "bound")) {
+            return ${encryptedVal}.to${shortenType(toType)}().decrypt();
+        } else if (Utils.cmp(test, "regular")) {
+            return FHE.decrypt(FHE.as${to}(${encryptedVal}));
+        }
+        revert TestNotFound(test);
+    }`;
+    abi = `    castFrom${testType}To${to}: (val: ${fromTypeForTs}, test: string) => Promise<${retTypeTs}>;\n`;
+  }
+
+  return [func, abi];
 }

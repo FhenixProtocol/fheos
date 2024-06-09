@@ -222,7 +222,7 @@ const generateSolidityTestContract = (metadata: FunctionMetadata): string[] => {
 };
 
 /** Generates a Solidity bench contract based on the provided metadata */
-const generateSolidityBenchContract = (metadata: FunctionMetadata): string[] => {
+const generateSolidityBenchContract = (metadata: FunctionMetadata): string => {
   const {
     functionName,
     inputCount,
@@ -384,7 +384,6 @@ const main = async () => {
   const testContracts: Record<string, string> = {};
   const benchContracts: Record<string, string> = {};
   let testContractsAbis = "";
-  let benchContractAbis = "";
   let importLineHelper: string = "import { ";
   for (let func of metadata) {
     // Decrypt is already tested in every test contract
@@ -394,9 +393,8 @@ const main = async () => {
       const benchContract = generateSolidityBenchContract(func);
       if (testContract[0] !== "") {
         testContracts[capitalize(func.functionName)] = testContract[0];
-        benchContracts[capitalize(func.functionName)] = benchContract[0];
+        benchContracts[capitalize(func.functionName)] = benchContract;
         testContractsAbis += testContract[1];
-        benchContractAbis += benchContract[1];
         importLineHelper += `${capitalize(func.functionName)}TestType,\n`;
       }
     }
@@ -434,7 +432,6 @@ const main = async () => {
   for (let type of EInputType) {
     const functionName = `as${capitalize(type)}`;
     const testContract = AsTypeTestingContract(type);
-    // TODO verify if needed to bench asType functions
 
     testContracts[functionName] = testContract[0];
 
@@ -544,7 +541,6 @@ const main = async () => {
   }
 
   fs.writeFileSync("../solidity/tests/abis.ts", genAbiFile(testContractsAbis));
-  fs.writeFileSync("../solidity/tests/bench_abis.ts", genAbiFile(benchContractAbis));
   console.log(importLineHelper);
 };
 
