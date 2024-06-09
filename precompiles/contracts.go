@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
+	"sync"
 
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
@@ -32,8 +33,13 @@ func (po PendingOps) IsResolved() bool {
 	return po.pending == len(po.ops)
 }
 
+type SafeOps struct {
+	Mu  sync.Mutex
+	Ops map[common.Hash]PendingOps
+}
+
 // Maps tx_hash -> pending_ops
-var TxPendingOps = make(map[common.Hash]PendingOps) // TODO should we make this a struct and add a bool "failed" so we won't run the tx again if one of the decrypts failed?
+var OpsInTx = SafeOps{Ops: make(map[common.Hash]PendingOps)}
 
 func init() {
 	InitLogger()
@@ -274,15 +280,17 @@ func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
 
 	hash := fhe.BytesToHash(input)
 
+	OpsInTx.Mu.Lock()
+	defer OpsInTx.Mu.Unlock()
 	// Keep track of how many pending async ops there are to make sure later on that everything is resolved
-	if _, ok := TxPendingOps[tp.TxHash]; ok {
+	if _, ok := OpsInTx.Ops[tp.TxHash]; ok {
 		logger.Debug("tx already has pending ops")
 		// TODO is this a good solution for if a CT hash changes while we compute the async op?
 		// it will just add another pending op and will remain pending
 		// that will probably mean that we'll need to implement a maximum for pending ops to prevent DoS
 
 		// If hash already calculated, just return the result
-		if op, ok := TxPendingOps[tp.TxHash].ops[hash]; ok {
+		if op, ok := OpsInTx.Ops[tp.TxHash].ops[hash]; ok {
 			logger.Debug("hash already calculated", "hash", hash.Hex(), "result", op)
 			if op.err != nil {
 				logger.Error("failed to decrypt ciphertext", "error", op.err)
@@ -291,11 +299,8 @@ func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
 
 			return op.result, gas, nil
 		}
-
-		txOps.pending++
-		TxPendingOps[tp.TxHash] = txOps
 	} else {
-		TxPendingOps[tp.TxHash] = PendingOps{make(map[fhe.Hash]AsyncOp), 0}
+		OpsInTx.Ops[tp.TxHash] = PendingOps{make(map[fhe.Hash]AsyncOp), 0}
 	}
 
 	fmt.Printf("tommm tx hash %+v", tp.TxHash)
@@ -322,12 +327,14 @@ func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
 			result: decryptedValue,
 			err:    err,
 		}
-		TxPendingOps[tp.TxHash].ops[hash] = po
+		OpsInTx.Mu.Lock()
+		OpsInTx.Ops[tp.TxHash].ops[hash] = po
+		OpsInTx.Mu.Unlock()
 	}()
 
-	txOps := TxPendingOps[tp.TxHash]
+	txOps := OpsInTx.Ops[tp.TxHash]
 	txOps.pending++
-	TxPendingOps[tp.TxHash] = txOps
+	OpsInTx.Ops[tp.TxHash] = txOps
 	logger.Debug("Updated pending ops at tx hash", "tx hash", tp.TxHash, "pending", txOps)
 
 	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "input", hex.EncodeToString(input))
