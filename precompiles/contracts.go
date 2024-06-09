@@ -3,19 +3,39 @@ package precompiles
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/fhenixprotocol/fheos/precompiles/types"
-	storage2 "github.com/fhenixprotocol/fheos/storage"
-	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 	"math/big"
 	"os"
 	"strings"
 
+	"github.com/fhenixprotocol/fheos/precompiles/types"
+	storage2 "github.com/fhenixprotocol/fheos/storage"
+	"github.com/fhenixprotocol/warp-drive/fhe-driver"
+
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/log"
 )
 
 var logger log.Logger
 var warpDriveLogger log.Logger
+
+type AsyncOp struct {
+	result *big.Int
+	err    error
+}
+
+type PendingOps struct {
+	// Maps ciphertext_hash -> resolved_result
+	ops     map[fhe.Hash]AsyncOp
+	pending int
+}
+
+func (po PendingOps) IsResolved() bool {
+	return po.pending == len(po.ops)
+}
+
+// Maps tx_hash -> pending_ops
+var TxPendingOps = make(map[common.Hash]PendingOps) // TODO should we make this a struct and add a bool "failed" so we won't run the tx again if one of the decrypts failed?
 
 func init() {
 	InitLogger()
@@ -253,12 +273,10 @@ func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
 	}
 
 	gas := getGasForPrecompile(functionName, uintType)
+	// TODO figure out what to do with gas simulations
 	if tp.GasEstimation {
+		logger.Debug("gas estimation, returning fake")
 		return FakeDecryptionResult(uintType), gas, nil
-	}
-
-	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
 	if len(input) != 32 {
@@ -267,21 +285,67 @@ func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	ct := getCiphertext(storage, fhe.BytesToHash(input), tp.ContractAddress)
+	hash := fhe.BytesToHash(input)
+
+	// Keep track of how many pending async ops there are to make sure later on that everything is resolved
+	if _, ok := TxPendingOps[tp.TxHash]; ok {
+		logger.Debug("tx already has pending ops")
+		// TODO is this a good solution for if a CT hash changes while we compute the async op?
+		// it will just add another pending op and will remain pending
+		// that will probably mean that we'll need to implement a maximum for pending ops to prevent DoS
+
+		// If hash already calculated, just return the result
+		if op, ok := TxPendingOps[tp.TxHash].ops[hash]; ok {
+			logger.Debug("hash already calculated", "hash", hash.Hex(), "result", op)
+			if op.err != nil {
+				logger.Error("failed to decrypt ciphertext", "error", op.err)
+				return nil, 0, vm.ErrExecutionReverted
+			}
+
+			return op.result, gas, nil
+		}
+
+		txOps.pending++
+		TxPendingOps[tp.TxHash] = txOps
+	} else {
+		TxPendingOps[tp.TxHash] = PendingOps{make(map[fhe.Hash]AsyncOp), 0}
+	}
+
+	fmt.Printf("tommm tx hash %+v", tp.TxHash)
+
+	if shouldPrintPrecompileInfo(tp) {
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
+	}
+
+	ct := getCiphertext(storage, hash, tp.ContractAddress)
 	if ct == nil {
 		msg := functionName.String() + " unverified ciphertext handle"
 		logger.Error(msg, " input ", hex.EncodeToString(input))
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	decryptedValue, err := fhe.Decrypt(*ct)
-	if err != nil {
-		logger.Error("failed decrypting ciphertext", "error", err)
-		return nil, 0, vm.ErrExecutionReverted
-	}
+	logger.Debug("sending async decrypt")
+	go func() {
+		decryptedValue, err := fhe.Decrypt(*ct)
+		if err != nil {
+			logger.Error("failed decrypting ciphertext", "error", err)
+		}
+
+		po := AsyncOp{
+			result: decryptedValue,
+			err:    err,
+		}
+		TxPendingOps[tp.TxHash].ops[hash] = po
+	}()
+
+	txOps := TxPendingOps[tp.TxHash]
+	txOps.pending++
+	TxPendingOps[tp.TxHash] = txOps
+	logger.Debug("Updated pending ops at tx hash", "tx hash", tp.TxHash, "pending", txOps)
 
 	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "input", hex.EncodeToString(input))
-	return decryptedValue, gas, nil
+
+	return FakeDecryptionResult(uintType), 0 /* TODO should we charge gas here? */, vm.ErrAsyncOp
 }
 
 func Lte(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
