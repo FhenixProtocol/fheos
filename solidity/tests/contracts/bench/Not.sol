@@ -3,21 +3,21 @@ pragma solidity ^0.8.17;
 
 import {FHE} from "../../../FHE.sol";
 import {
-	ebool, inEbool,
-	euint8, inEuint8,
-	euint16, inEuint16,
-	euint32, inEuint32,
-	euint64, inEuint64,
-	euint128, inEuint128
+    ebool, inEbool,
+    euint8, inEuint8,
+    euint16, inEuint16,
+    euint32, inEuint32,
+    euint64, inEuint64,
+    euint128, inEuint128
 } from "../../../FHE.sol";
 
 contract NotBench {
-	ebool internal aBool;
-	euint8 internal a8;
-	euint16 internal a16;
-	euint32 internal a32;
-	euint64 internal a64;
-	euint128 internal a128;
+    ebool internal aBool;
+    euint8 internal a8;
+    euint16 internal a16;
+    euint32 internal a32;
+    euint64 internal a64;
+    euint128 internal a128;
 
     function loadBool(inEbool calldata _a) public {
         aBool = FHE.asEbool(_a);

@@ -3,19 +3,19 @@ pragma solidity ^0.8.17;
 
 import {FHE} from "../../../FHE.sol";
 import {
-	euint8, inEuint8,
-	euint16, inEuint16,
-	euint32, inEuint32
+    euint8, inEuint8,
+    euint16, inEuint16,
+    euint32, inEuint32
 } from "../../../FHE.sol";
 
 contract RemBench {
-	euint8 internal a8;
-	euint16 internal a16;
-	euint32 internal a32;
+    euint8 internal a8;
+    euint16 internal a16;
+    euint32 internal a32;
 
-	euint8 internal b8;
-	euint16 internal b16;
-	euint32 internal b32;
+    euint8 internal b8;
+    euint16 internal b16;
+    euint32 internal b32;
 
     function load8(inEuint8 calldata _a, inEuint8 calldata _b) public {
         a8 = FHE.asEuint8(_a);
