@@ -64,9 +64,9 @@ To generate solidity code use `cd solgen && pnpm build`. This will generate `FHE
 
 To run a test with a standalone nitro node, use the included `Dockerfile` (or `Dockerfile.debug` for that variant) - this removes the complexity of having to be familiar with the entire base chain build process.
 
-For arm64 builds:
+You might need to specify the localfhenix version, in such case:
 ```bash
-docker build -f Dockerfile --build-arg="ARCH=arm64" -t temp .
+docker buildx build . --build-arg LOCALFHENIX=v2.3-rc.3
 ```
 
 ```bash
