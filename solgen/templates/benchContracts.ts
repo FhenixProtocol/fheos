@@ -194,14 +194,14 @@ export function AsTypeBenchmarkContract(type: string) {
   }
 
   // deal with casting from built-in types
-  let builtInTypes = {"uint256": "Plain256", "bytes memory": "Bytes"};
+  let builtInTypes = {"uint256": "Uint256", "bytes memory": "Bytes"};
   for (const [builtInType, varSuffix] of Object.entries(builtInTypes)) {
     privateVarsA += `\t${builtInType} internal a${varSuffix};\n`;
 
     loads += `\n\tfunction load${varSuffix}(${builtInType} _a) public {
         a${varSuffix} = _a;
     }`;
-    casts += `\n\tfunction benchCast${capitalize(builtInType.split(" ")[0])}To${capitalize(type)}() public view {
+    casts += `\n\tfunction benchCast${varSuffix}To${capitalize(type)}() public view {
         FHE.${toAsType(type)}(a${varSuffix});
     }`;
   }
