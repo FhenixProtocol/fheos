@@ -181,6 +181,9 @@ export function AsTypeBenchmarkContract(type: string) {
   let fromTypeCollection = type === "eaddress" ? eaddressAllowedTypes : EInputType;
 
   for (let fromType of fromTypeCollection) {
+    if (fromType === type) {
+      continue;
+    }
     importTypes += "\n\t" + fromType + ", " + toInType(fromType) + ",";
 
     privateVarsA += `\t${fromType} internal a${toVarSuffix(fromType)};\n`;
@@ -196,7 +199,7 @@ export function AsTypeBenchmarkContract(type: string) {
   // deal with casting from built-in types
   let builtInTypes = {"uint256": "Uint256", "bytes memory": "Bytes"};
   for (const [builtInType, varSuffix] of Object.entries(builtInTypes)) {
-    privateVarsA += `\t${builtInType} internal a${varSuffix};\n`;
+    privateVarsA += `\t${builtInType.split(" ")[0]} internal a${varSuffix};\n`;
 
     loads += `\n\tfunction load${varSuffix}(${builtInType} _a) public {
         a${varSuffix} = _a;

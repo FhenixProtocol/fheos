@@ -7,7 +7,6 @@ import {
 	euint8, inEuint8,
 	euint16, inEuint16,
 	euint32, inEuint32,
-	euint64, inEuint64,
 	euint128, inEuint128,
 	euint256, inEuint256,
 	eaddress, inEaddress
@@ -18,12 +17,11 @@ contract AsEuint64Bench {
 	euint8 internal a8;
 	euint16 internal a16;
 	euint32 internal a32;
-	euint64 internal a64;
 	euint128 internal a128;
 	euint256 internal a256;
 	eaddress internal aAddress;
 	uint256 internal aUint256;
-	bytes memory internal aBytes;
+	bytes internal aBytes;
 
 	function loadBool(inEbool calldata _a) public {
         aBool = FHE.asEbool(_a);
@@ -36,9 +34,6 @@ contract AsEuint64Bench {
     }
 	function load32(inEuint32 calldata _a) public {
         a32 = FHE.asEuint32(_a);
-    }
-	function load64(inEuint64 calldata _a) public {
-        a64 = FHE.asEuint64(_a);
     }
 	function load128(inEuint128 calldata _a) public {
         a128 = FHE.asEuint128(_a);
@@ -67,9 +62,6 @@ contract AsEuint64Bench {
     }
 	function benchCastEuint32ToEuint64() public view {
         FHE.asEuint64(a32);
-    }
-	function benchCastEuint64ToEuint64() public view {
-        FHE.asEuint64(a64);
     }
 	function benchCastEuint128ToEuint64() public view {
         FHE.asEuint64(a128);

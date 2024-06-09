@@ -9,7 +9,7 @@ import {
 contract AsEaddressBench {
 	euint256 internal a256;
 	uint256 internal aUint256;
-	bytes memory internal aBytes;
+	bytes internal aBytes;
 
 	function load256(inEuint256 calldata _a) public {
         a256 = FHE.asEuint256(_a);

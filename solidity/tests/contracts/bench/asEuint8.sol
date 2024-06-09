@@ -4,7 +4,6 @@ pragma solidity ^0.8.17;
 import {FHE} from "../../../FHE.sol";
 import {
 	ebool, inEbool,
-	euint8, inEuint8,
 	euint16, inEuint16,
 	euint32, inEuint32,
 	euint64, inEuint64,
@@ -15,7 +14,6 @@ import {
 
 contract AsEuint8Bench {
 	ebool internal aBool;
-	euint8 internal a8;
 	euint16 internal a16;
 	euint32 internal a32;
 	euint64 internal a64;
@@ -23,13 +21,10 @@ contract AsEuint8Bench {
 	euint256 internal a256;
 	eaddress internal aAddress;
 	uint256 internal aUint256;
-	bytes memory internal aBytes;
+	bytes internal aBytes;
 
 	function loadBool(inEbool calldata _a) public {
         aBool = FHE.asEbool(_a);
-    }
-	function load8(inEuint8 calldata _a) public {
-        a8 = FHE.asEuint8(_a);
     }
 	function load16(inEuint16 calldata _a) public {
         a16 = FHE.asEuint16(_a);
@@ -58,9 +53,6 @@ contract AsEuint8Bench {
 
 	function benchCastEboolToEuint8() public view {
         FHE.asEuint8(aBool);
-    }
-	function benchCastEuint8ToEuint8() public view {
-        FHE.asEuint8(a8);
     }
 	function benchCastEuint16ToEuint8() public view {
         FHE.asEuint8(a16);
