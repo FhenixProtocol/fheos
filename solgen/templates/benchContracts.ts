@@ -50,8 +50,8 @@ export function benchContract1Arg(name: string) {
 
   for (let inputType of EInputType) {
     if (IsOperationAllowed(name, inputType)) {
-      importTypes += "\n\t" + inputType + ", " + toInType(inputType) + ",";
-      privateVarsA += `\t${inputType} internal a${toVarSuffix(inputType)};\n`;
+      importTypes += "\n    " + inputType + ", " + toInType(inputType) + ",";
+      privateVarsA += `    ${inputType} internal a${toVarSuffix(inputType)};\n`;
       funcLoad += `
     function load${toVarSuffix(inputType)}(${toInTypeFunction(inputType)} _a) public {
         a${toVarSuffix(inputType)} = FHE.${toAsType(inputType)}(_a);
@@ -81,9 +81,9 @@ export function benchContract2Arg(name: string) {
 
   for (let inputType of EInputType) {
     if (IsOperationAllowed(name, inputType)) {
-      importTypes += "\n\t" + inputType + ", " + toInType(inputType) + ",";
-      privateVarsA += `\t${inputType} internal a${toVarSuffix(inputType)};\n`;
-      privateVarsB += `\t${inputType} internal b${toVarSuffix(inputType)};\n`;
+      importTypes += "\n    " + inputType + ", " + toInType(inputType) + ",";
+      privateVarsA += `    ${inputType} internal a${toVarSuffix(inputType)};\n`;
+      privateVarsB += `    ${inputType} internal b${toVarSuffix(inputType)};\n`;
       funcLoad += `
     function load${toVarSuffix(inputType)}(${toInTypeFunction(inputType)} _a, ${toInTypeFunction(inputType)} _b) public {
         a${toVarSuffix(inputType)} = FHE.${toAsType(inputType)}(_a);
@@ -107,16 +107,16 @@ export function benchContract2Arg(name: string) {
 
 export function benchContract3Arg(name: string) {
   let importTypes = ``;
-  let privateVarsA = `\tebool internal control;\n\n`;
+  let privateVarsA = `    ebool internal control;\n\n`;
   let privateVarsB = ``;
   let funcLoad = "";
   let funcBench = "";
 
   for (let inputType of EInputType) {
     if (IsOperationAllowed(name, inputType)) {
-      importTypes += "\n\t" + inputType + ", " + toInType(inputType) + ",";
-      privateVarsA += `\t${inputType} internal a${toVarSuffix(inputType)};\n`;
-      privateVarsB += `\t${inputType} internal b${toVarSuffix(inputType)};\n`;
+      importTypes += "\n    " + inputType + ", " + toInType(inputType) + ",";
+      privateVarsA += `    ${inputType} internal a${toVarSuffix(inputType)};\n`;
+      privateVarsB += `    ${inputType} internal b${toVarSuffix(inputType)};\n`;
       funcLoad += `
     function load${toVarSuffix(inputType)}(inEbool calldata _control, ${toInTypeFunction(inputType)} _a, ${toInTypeFunction(inputType)} _b) public {
         control = FHE.asEbool(_control);
@@ -141,14 +141,14 @@ export function benchContract3Arg(name: string) {
 
 export function benchContractReencrypt() {
   let importTypes = ``;
-  let privateVarsA = `\tbytes32 internal pubkey;\n`;
+  let privateVarsA = `    bytes32 internal pubkey;\n`;
   let funcLoad = "";
   let funcBench = "";
 
   for (let inputType of EInputType) {
     if (IsOperationAllowed(SEALING_FUNCTION_NAME, inputType)) {
-      importTypes += "\n\t" + inputType + ", " + toInType(inputType) + ",";
-      privateVarsA += `\t${inputType} internal a${toVarSuffix(inputType)};\n`;
+      importTypes += "\n    " + inputType + ", " + toInType(inputType) + ",";
+      privateVarsA += `    ${inputType} internal a${toVarSuffix(inputType)};\n`;
       funcLoad += `
     function load${toVarSuffix(inputType)}(${toInTypeFunction(inputType)} _a, bytes32 _pubkey) public {
         a${toVarSuffix(inputType)} = FHE.${toAsType(inputType)}(_a);
@@ -184,14 +184,14 @@ export function AsTypeBenchmarkContract(type: string) {
     if (fromType === type) {
       continue;
     }
-    importTypes += "\n\t" + fromType + ", " + toInType(fromType) + ",";
+    importTypes += "\n    " + fromType + ", " + toInType(fromType) + ",";
 
-    privateVarsA += `\t${fromType} internal a${toVarSuffix(fromType)};\n`;
+    privateVarsA += `    ${fromType} internal a${toVarSuffix(fromType)};\n`;
 
-    loads += `\n\tfunction load${toVarSuffix(fromType)}(${toInTypeFunction(fromType)} _a) public {
+    loads += `\n    function load${toVarSuffix(fromType)}(${toInTypeFunction(fromType)} _a) public {
         a${toVarSuffix(fromType)} = FHE.${toAsType(fromType)}(_a);
     }`;
-    casts += `\n\tfunction benchCast${capitalize(fromType)}To${capitalize(type)}() public view {
+    casts += `\n    function benchCast${capitalize(fromType)}To${capitalize(type)}() public view {
         FHE.${toAsType(type)}(a${toVarSuffix(fromType)});
     }`;
   }
@@ -199,12 +199,12 @@ export function AsTypeBenchmarkContract(type: string) {
   // deal with casting from built-in types
   let builtInTypes = {"uint256": "Uint256", "bytes memory": "Bytes"};
   for (const [builtInType, varSuffix] of Object.entries(builtInTypes)) {
-    privateVarsA += `\t${builtInType.split(" ")[0]} internal a${varSuffix};\n`;
+    privateVarsA += `    ${builtInType.split(" ")[0]} internal a${varSuffix};\n`;
 
-    loads += `\n\tfunction load${varSuffix}(${builtInType} _a) public {
+    loads += `\n    function load${varSuffix}(${builtInType} _a) public {
         a${varSuffix} = _a;
     }`;
-    casts += `\n\tfunction benchCast${varSuffix}To${capitalize(type)}() public view {
+    casts += `\n    function benchCast${varSuffix}To${capitalize(type)}() public view {
         FHE.${toAsType(type)}(a${varSuffix});
     }`;
   }
