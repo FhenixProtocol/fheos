@@ -10,6 +10,14 @@ import {
   SolTemplate1Arg,
   SolTemplate2Arg,
   SolTemplate3Arg,
+  genAbiFile,
+  CastBinding,
+  SealFromType,
+  DecryptBinding,
+  IsOperationAllowed,
+} from "./templates/library";
+
+import {
   testContract2Arg,
   testContract1Arg,
   testContract3Arg,
@@ -17,13 +25,8 @@ import {
   testContractReencrypt,
   testContractReq,
   AsTypeTestingContract,
-  genAbiFile,
-  capitalize,
-  CastBinding,
-  SealFromType,
-  DecryptBinding,
-  IsOperationAllowed,
-} from "./templates";
+} from "./templates/testContracts";
+
 import {
   AllTypes,
   BindMathOperators,
@@ -35,7 +38,7 @@ import {
   isComparisonType,
   isBitwiseOp,
   SEALING_FUNCTION_NAME,
-  AllowedOperations,
+  capitalize,
 } from "./common";
 
 interface FunctionMetadata {

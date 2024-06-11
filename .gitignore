@@ -2,7 +2,7 @@
 precompiles/cache/*
 precompiles/types/*
 precompiles/artifacts/*
-solgen/*.js
+solgen/**/*.js
 build/
 solidity/types/*
 
