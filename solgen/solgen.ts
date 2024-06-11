@@ -25,14 +25,12 @@ import {
   testContractReencrypt,
   testContractReq,
   AsTypeTestingContract,
-} from "./templates/testContracts";
-import {
   AsTypeBenchmarkContract,
   benchContract1Arg,
   benchContract2Arg,
   benchContract3Arg,
   benchContractReencrypt,
-} from "./templates/benchContracts";
+} from "./templates/testContracts";
 
 import {
   AllTypes,
