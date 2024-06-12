@@ -6,6 +6,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethdb/memorydb"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
+	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 	"golang.org/x/exp/slices"
 )
 
@@ -73,7 +74,12 @@ func (ms *MultiStore) GetCtRepresentation(h types.Hash, caller common.Address) (
 		return nil, err
 	}
 
-	if !slices.Contains(ct.Owners, caller) {
+	owner, err := ms.isOwner(h, ct, caller)
+	if err != nil {
+		return nil, err
+	}
+
+	if !owner {
 		return nil, fmt.Errorf("contract is not allowed to access the ciphertext (ct: %s, contract: %s)", hex.EncodeToString(h[:]), caller.String())
 	}
 
@@ -87,9 +93,13 @@ func (ms *MultiStore) GetCt(h types.Hash, caller common.Address) (*types.FheEncr
 
 	return ct.Data, nil
 }
-func (ms *MultiStore) isOwner(ct *types.CipherTextRepresentation, owner common.Address) (bool, error) {
+func (ms *MultiStore) isOwner(h types.Hash, ct *types.CipherTextRepresentation, owner common.Address) (bool, error) {
 	if ct == nil {
 		return false, fmt.Errorf("ciphertext not found")
+	}
+	// No ownership for trivially encrypted values
+	if fhe.IsTriviallyEncryptedCtHash(h) {
+		return true, nil
 	}
 
 	return slices.Contains(ct.Owners, owner), nil
@@ -100,7 +110,9 @@ func (ms *MultiStore) AddOwner(h types.Hash, ct *types.CipherTextRepresentation,
 		return fmt.Errorf("ciphertext not found")
 	}
 
-	isOwner, err := ms.isOwner(ct, owner)
+	// isOwner will return true for trivially encrypted values for every contract
+	// The meaning is that we won't add any owner for trivially encrypted value
+	isOwner, err := ms.isOwner(h, ct, owner)
 	if err != nil {
 		return err
 	}
