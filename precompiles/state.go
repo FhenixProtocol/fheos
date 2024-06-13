@@ -121,6 +121,18 @@ func (fs *FheosState) ReferenceCiphertext(hash types.Hash, ct *types.SharedCiphe
 	return fs.incrementRefCountHelper(hash, ct)
 }
 
+func (fs *FheosState) UpdatePersistentReference(hash types.Hash) error {
+	ct, err := fs.Storage.GetCt(hash)
+	if (err == nil) && (ct != nil) {
+		err = fs.ReferenceCiphertext(hash, ct)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func createFheosState(storage storage2.FheosStorage, version uint64) {
 	State = &FheosState{
 		version,

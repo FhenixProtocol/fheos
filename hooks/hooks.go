@@ -24,18 +24,14 @@ type FheOSHooksImpl struct {
 	evm *vm.EVM
 }
 
-func (h FheOSHooksImpl) UpdateCiphertextReferences(epStorage storage2.EphemeralStorage, original common.Hash, newHash types.Hash) (bool, error) {
+func updateCiphertextReferences(epStorage storage2.EphemeralStorage, original common.Hash, newHash types.Hash) (bool, error) {
 	// Don't ref count trivially encrypted values
 	isInMemory := epStorage.HasCt(newHash)
 	// Check whether the value is not a newly created value (i.e. not in memory but is in store)
 	if !isInMemory {
-		ct, err := fheos.State.Storage.GetCt(newHash)
-		if (err == nil) && (ct != nil) {
-			err = fheos.State.ReferenceCiphertext(newHash, ct)
-			if err != nil {
-				log.Error("Failed to reference new ciphertext", "err", err)
-				return isInMemory, err
-			}
+		err := fheos.State.UpdatePersistentReference(newHash)
+		if err != nil {
+			log.Error("Failed to reference new ciphertext", "err", err)
 		}
 	}
 
@@ -53,7 +49,7 @@ func (h FheOSHooksImpl) UpdateCiphertextReferences(epStorage storage2.EphemeralS
 	return isInMemory, nil
 }
 
-func (h FheOSHooksImpl) StoreCiphertextHook(contract common.Address, loc [32]byte, original common.Hash, val [32]byte) error {
+func (h FheOSHooksImpl) StoreCiphertextHook(contract common.Address, loc [32]byte, commited common.Hash, val [32]byte) error {
 	// marks the ciphertext as lts - should be stored in long term storage when/if the tx is successful
 	// option - better to flush all at the end of the tx from memdb, or define a memdb in fheos that is flushed at the end of the tx?
 	storage := storage2.NewEphemeralStorage(h.evm.CiphertextDb)
@@ -64,7 +60,7 @@ func (h FheOSHooksImpl) StoreCiphertextHook(contract common.Address, loc [32]byt
 		return nil
 	}
 
-	isInMemory, err := h.UpdateCiphertextReferences(storage, original, ctHash)
+	isInMemory, err := updateCiphertextReferences(storage, commited, ctHash)
 	if err != nil {
 		return err
 	}
