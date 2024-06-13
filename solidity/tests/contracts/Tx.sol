@@ -26,8 +26,8 @@ contract AddCaller {
         return counter.seal(publicKey);
     }
 
-    function addViaContractCallAsPlain(uint32 value, bytes32 publicKey) public returns (string memory) {
-        counter = addContract.add(FHE.decrypt(counter), value);
+    function subViaContractCallAsPlain(uint32 value, bytes32 publicKey) public returns (string memory) {
+        counter = addContract.sub(FHE.decrypt(counter), value);
         return counter.seal(publicKey);
     }
 
@@ -123,9 +123,11 @@ contract AddCallee {
         return a + b + constForView;
     }
 
-    function add(uint32 a, uint32 b) public pure returns (euint32 output) {
-        // TODO: this overflows on gas estimation, since, as a shortcut, "a" is decrypted to max uint
-        return FHE.asEuint32(a + b);
+    // Note: sub is needed as a workaround when working with decrypted integers on tests.
+    // There's an issue where gas estimation reverts with overflow.
+    // Because, as a shortcut, "a" is decrypted to max_uint.
+    function sub(uint32 a, uint32 b) public pure returns (euint32 output) {
+        return FHE.asEuint32(a - b);
     }
 
     function addDelegatePlain(uint32 value) public {
