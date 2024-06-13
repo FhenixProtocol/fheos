@@ -36,3 +36,15 @@ build:
 .PHONY: clean
 clean:
 	rm -r build/*
+
+.PHONY: clean-gen
+clean-gen:
+	find solidity/tests/contracts -type f \
+	-not -name 'Counter.sol' \
+	-not -name 'Ownership.sol' \
+	-not -name 'Tx.sol' \
+	-not -name 'wERC20.sol' \
+	-not -name 'Utils.sol' \
+	-delete
+	rm solidity/FHE.sol
+	rm solidity/FheOS.sol

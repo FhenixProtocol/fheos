@@ -1,8 +1,6 @@
 import { AddCaller, AddCallee } from "../types/tests/contracts/Tx.sol";
 import { Ownership } from "../types/tests/contracts/Ownership";
 import { createFheInstance, deployContract } from "./utils";
-import { ethers } from "hardhat";
-import exp = require("constants");
 
 describe("Test Transactions Scenarios", () => {
   let contractCaller: AddCaller;
@@ -64,23 +62,28 @@ describe("Test Transactions Scenarios", () => {
     expect(Number(counter)).toEqual(8);
   });
 
-  // TODO: this test fails! It seems that there is some error with:
-  //   a = decypt(encCounter)
-  //   c = a + b      // doing an addition operation with a previously encrypted number seems to revert!
-  it.skip("Add via contract call as Plaintext", async () => {
+  it("Sub via contract call as Plaintext", async () => {
     const { instance, permit } = await createFheInstance(contractAddr);
+
+    // Set the counter to 10. We need it to be positive, so we can subtract from it.
+    // We can't add to it when it's decrypted, because it will overflow on gas estimation (decrypt shortcuts with MAX_UINT).
+    const setReceipt = await contractCaller.addTx(
+      await instance.encrypt_uint32(1337 + 9),
+      permit.publicKey
+    );
+    await setReceipt.wait();
 
     // 1 - static call
     const encCounter =
-      await contractCaller.addViaContractCallAsPlain.staticCall(
+      await contractCaller.subViaContractCallAsPlain.staticCall(
         9,
         permit.publicKey
       );
     const counterStatic = instance.unseal(contractAddr, encCounter);
-    expect(Number(counterStatic)).toEqual(9);
+    expect(Number(counterStatic)).toEqual(1337);
 
     // 2 - real call + query
-    const encCounterReceipt = await contractCaller.addViaContractCallAsPlain(
+    const encCounterReceipt = await contractCaller.subViaContractCallAsPlain(
       9,
       permit.publicKey
     );
@@ -90,7 +93,7 @@ describe("Test Transactions Scenarios", () => {
       permit.publicKey
     );
     const counter = instance.unseal(contractAddr, getCounterResponse);
-    expect(Number(counter)).toEqual(9);
+    expect(Number(counter)).toEqual(1337);
   });
 
   it("Add via contract call - pass pass InEuint32", async () => {
