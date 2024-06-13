@@ -13,7 +13,7 @@ export const EInputType = [
 // FYI: Operations ["sealoutput", "seal", "decrypt", "ne"] are the minimum required for
 // non failing generated code.
 
-const patternAllowedOperationsEbool = [".*"];
+const patternAllowedOperationsEbool = ["ne|eq|and|or|xor|sealoutput|select|seal|decrypt|not"];
 const patternAllowedOperationsEuint8 = [".*"];
 const patternAllowedOperationsEuint16 = [".*"];
 const patternAllowedOperationsEuint32 = [".*"];
@@ -270,3 +270,11 @@ export const isBitwiseOp = (value: string): boolean => {
 export const toPlaintextType = (value: string): PlaintextType => {
   return <PlaintextType>value.slice(1); // removes initial "e" from the type name
 };
+
+export const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+export const shortenType = (type: string) => {
+  if (type === "eaddress") {return "Eaddress";}
+  return type === "ebool" ? "Bool" : "U" + type.slice(5); // get only number at the end
+};
+
