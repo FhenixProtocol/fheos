@@ -1,7 +1,8 @@
 ARG BRANCH=latest
+ARG FHENIX_VERSION=latest
 ARG DOCKER_NAME=ghcr.io/fhenixprotocol/nitro/fhenix-node-builder:$BRANCH
 
-FROM rust:1.74-slim-bullseye as warp-drive-builder
+FROM rust:1.77-slim-bullseye as warp-drive-builder
 
 WORKDIR /workspace
 RUN export DEBIAN_FRONTEND=noninteractive && \
@@ -81,7 +82,8 @@ COPY Makefile fheos/
 
 RUN cd fheos && make build
 
-FROM ghcr.io/fhenixprotocol/localfhenix:v0.1.0-beta5
+#For versions predating 2.3.0 you need to specify localfhenix-arm if you need an arm build 
+FROM ghcr.io/fhenixprotocol/localfhenix:$FHENIX_VERSION
 
 # **************** setup dlv
 
@@ -89,8 +91,23 @@ ENV GOROOT=/usr/local/go
 ENV GOPATH=/go/
 ENV PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
 
-ADD https://go.dev/dl/go1.20.linux-amd64.tar.gz go.linux-amd64.tar.gz
-RUN sudo tar -C /usr/local -xzf go.linux-amd64.tar.gz
+RUN set -eux; \
+    ARCH=$(dpkg --print-architecture); \
+    case "${ARCH}" in \
+        amd64) \
+            GOARCH="amd64"; \
+            ;; \
+        arm64) \
+            GOARCH="arm64"; \
+            ;; \
+        *) \
+            echo "Unsupported architecture: ${ARCH}"; \
+            exit 1; \
+            ;; \
+    esac; \
+    curl -L -o go.linux-${GOARCH}.tar.gz https://go.dev/dl/go1.20.linux-${GOARCH}.tar.gz; \
+    sudo tar -C /usr/local -xzf go.linux-${GOARCH}.tar.gz; \
+    rm go.linux-${GOARCH}.tar.gz
 
 RUN sudo chown user:user /usr/local/go
 
