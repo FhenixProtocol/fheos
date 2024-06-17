@@ -150,7 +150,7 @@ func (h FheOSHooksImpl) iterateHashes(data []byte, dataType string, owner common
 // The function parses the input for ciphertexts and pass ownership for each ciphertext
 func (h FheOSHooksImpl) ContractCall(isSimulation bool, callType int, caller common.Address, addr common.Address, input []byte) {
 	// Input is built as the following:
-	//  first 4 bytes are indicating what is the function the is being called
+	//  first 4 bytes are indicating what is the function that is being called
 	// 	from now on every param is a 32 byte value
 	//  if the param is dynamically sized (string, bytes, etc.) the 32 bytes will only indicate the offset of the actual value in "input"
 	//  when going to offset you will find 32 bytes indicating the length of the value
