@@ -324,7 +324,7 @@ export function SolTemplate2Arg(
   let variableName2 = input2 === "bytes32" ? "publicKey" : "rhs";
 
   let docString = `
-    /// @notice This functions performs the ${name} operation
+    /// @notice This function performs the ${name} operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
     ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
