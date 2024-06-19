@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"math/big"
 	"os"
+	"strconv"
 )
 
 func removeDb() error {
@@ -24,7 +25,19 @@ func removeDb() error {
 	return os.Setenv("FHEOS_DB_PATH", "")
 }
 
-func generateKeys() error {
+func getenvInt(key string, defaultValue int) (int, error) {
+	s := os.Getenv(key)
+	if s == "" {
+		return defaultValue, nil
+	}
+	v, err := strconv.Atoi(s)
+	if err != nil {
+		return 0, err
+	}
+	return v, nil
+}
+
+func generateKeys(securityZones int32) error {
 	if _, err := os.Stat("./keys/"); os.IsNotExist(err) {
 		err := os.Mkdir("./keys/", 0755)
 		if err != nil {
@@ -39,9 +52,11 @@ func generateKeys() error {
 		}
 	}
 
-	err := fhedriver.GenerateFheKeys(0)
-	if err != nil {
-		return fmt.Errorf("error from tfhe GenerateFheKeys: %s", err)
+	for i := int32(0); i < securityZones; i++ {
+		err := fhedriver.GenerateFheKeys(i)
+		if err != nil {
+			return fmt.Errorf("error generating FheKeys for securityZone %d: %s", i, err)
+		}
 	}
 	return nil
 }
@@ -68,7 +83,11 @@ func initFheos() (*precompiles.TxParams, error) {
 		return nil, err
 	}
 
-	err = generateKeys()
+	securityZones, err := getenvInt("FHEOS_SECURITY_ZONES", 1)
+	if err != nil {
+		return nil, err
+	}
+	err = generateKeys(int32(securityZones))
 	if err != nil {
 		return nil, err
 	}
