@@ -84,7 +84,7 @@ async function analyzeGoFile(
         continue;
       }
 
-      // Look for specific functions within high-level function
+      // Look for specific functions within a high-level function
       for (const keyfn of specificFunctions) {
         // skip tfhe.UintType(utype) because it will not indicate the input types
         if (
