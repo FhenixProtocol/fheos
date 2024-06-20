@@ -7,7 +7,7 @@ describe('Test WERC20', () =>  {
     let contractAddr: string;
     const amountToSend = BigInt(1);
 
-    // We don't really need it as test but it is a test since it is async
+    // We don't really need it as a test but it is a test since it is async
     it(`Test Contract Deployment`, async () => {
         const baseContract = await deployContract('WrappingERC20', ["TEST", "TST"]);
         contract = baseContract as WrappingERC20;
