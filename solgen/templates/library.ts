@@ -120,11 +120,11 @@ library Impl {
         }
     }
 
-    function trivialEncrypt(uint256 value, uint8 toType) internal pure returns (uint256 result) {
+    function trivialEncrypt(uint256 value, uint8 toType, int32 securityZone) internal pure returns (uint256 result) {
         bytes memory output;
 
         // Call the trivialEncrypt precompile.
-        output = FheOps(Precompiles.Fheos).trivialEncrypt(Common.toBytes(value), toType);
+        output = FheOps(Precompiles.Fheos).trivialEncrypt(Common.toBytes(value), toType, securityZone);
 
         result = getValue(output);
     }
@@ -224,11 +224,13 @@ const castFromEncrypted = (
 };
 
 const castFromPlaintext = (name: string, toType: string): string => {
-  return `Impl.trivialEncrypt(${name}, Common.${toType.toUpperCase()}_TFHE)`;
+  // todo (eshel): extend AsXX functions to support different security zones
+  return `Impl.trivialEncrypt(${name}, Common.${toType.toUpperCase()}_TFHE, 0)`;
 };
 
 const castFromAddress = (name: string, toType: string): string => {
-  return `Impl.trivialEncrypt(uint256(uint160(${name})), Common.${toType.toUpperCase()}_TFHE)`;
+  // todo (eshel): extend AsXX functions to support different security zones
+  return `Impl.trivialEncrypt(uint256(uint160(${name})), Common.${toType.toUpperCase()}_TFHE, 0)`;
 };
 
 const castFromBytes = (name: string, toType: string): string => {
