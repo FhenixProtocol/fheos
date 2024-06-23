@@ -12,6 +12,7 @@ import (
 
 type IMultiStore interface {
 	types.FheCipherTextStorage
+	GetEphemeral() *EphemeralStorage
 
 	//IsEphemeral() bool
 	//SetEphemeral()
@@ -25,15 +26,14 @@ type MultiStore struct {
 	disk      *FheosStorage
 }
 
+func (ms *MultiStore) GetEphemeral() EphemeralStorage {
+	return ms.ephemeral
+}
+
 // PutCt stores a ciphertext in the ephemeral storage - it does NOT mark it as LTS. The reason is that we want only SSTORE to mark it as LTS, which is
 // called not only by the precompiles, only by the EVM hook from the evm interpreter.
-func (ms *MultiStore) PutCt(h types.Hash, cipher *types.FheEncrypted, owner common.Address) error {
-	owners := []common.Address{owner}
-	ciphertext := &types.CipherTextRepresentation{
-		Data:   cipher,
-		Owners: owners,
-	}
-	err := ms.ephemeral.PutCt(h, ciphertext)
+func (ms *MultiStore) PutCt(h types.Hash, cipher *types.CipherTextRepresentation) error {
+	err := ms.ephemeral.PutCt(h, cipher)
 	return err
 }
 
@@ -41,35 +41,39 @@ func (ms *MultiStore) PutCt(h types.Hash, cipher *types.FheEncrypted, owner comm
 // called not only by the precompiles, only by the EVM hook from the evm interpreter.
 // When a CT with the same hash exists in the disk storage, an owner is added to the list of owners.
 func (ms *MultiStore) AppendCt(h types.Hash, cipher *types.FheEncrypted, owner common.Address) error {
-	ct, _ := ms.getCtHelper(h, true)
+	ct, _ := ms.getCtHelper(h)
+	if cipher.IsTriviallyEncrypted {
+		// Already exists
+		if ct != nil {
+			return nil
+		}
+
+		return ms.PutCt(h, &types.CipherTextRepresentation{Data: cipher, Owners: []common.Address{}, RefCount: 0})
+	}
+
+	// Exists but not trivially encrypted
 	if ct != nil {
 		ct.Owners = append(ct.Owners, owner)
+		ct.RefCount++
 		return ms.ephemeral.PutCt(h, ct)
 	}
 
-	return ms.PutCt(h, cipher, owner)
+	// RefCount is starting at 0, if the value will be stored in the persistent storage it will set to 1
+	return ms.PutCt(h, &types.CipherTextRepresentation{Data: cipher, Owners: []common.Address{owner}, RefCount: 0})
 }
 
-func (ms *MultiStore) getCtHelper(h types.Hash, isOnlyMemory bool) (*types.CipherTextRepresentation, error) {
+func (ms *MultiStore) getCtHelper(h types.Hash) (*types.CipherTextRepresentation, error) {
 	ct, err := ms.ephemeral.GetCt(h)
 
-	if !isOnlyMemory && err != nil && err.Error() == "not found" {
-		var sharedCt *types.SharedCiphertext
-		sharedCt, err = ms.disk.GetCt(h)
-		if err != nil {
-			return nil, err
-		}
-
-		if sharedCt != nil {
-			ct = &sharedCt.Ciphertext
-		}
+	if err != nil && err.Error() == "not found" {
+		return ms.disk.GetCt(h)
 	}
 
 	return ct, err
 }
 
 func (ms *MultiStore) GetCtRepresentation(h types.Hash, caller common.Address) (*types.CipherTextRepresentation, error) {
-	ct, err := ms.getCtHelper(h, false)
+	ct, err := ms.getCtHelper(h)
 	if err != nil {
 		return nil, err
 	}
@@ -103,6 +107,29 @@ func (ms *MultiStore) isOwner(h types.Hash, ct *types.CipherTextRepresentation, 
 	}
 
 	return slices.Contains(ct.Owners, owner), nil
+}
+func (ms *MultiStore) DereferenceCiphertext(hash types.Hash) (bool, error) {
+	ct, _ := ms.getCtHelper(hash)
+	if ct == nil {
+		return false, nil
+	}
+
+	if ct.RefCount <= 1 {
+		return true, ms.ephemeral.MarkForDeletion(hash)
+	}
+
+	ct.RefCount--
+
+	return false, ms.PutCt(hash, ct)
+}
+func (ms *MultiStore) ReferenceCiphertext(hash types.Hash) error {
+	ct, _ := ms.getCtHelper(hash)
+	if ct == nil {
+		return fmt.Errorf("can not reference a ciphertext with hash: %s", hex.EncodeToString(hash[:]))
+	}
+
+	ct.RefCount++
+	return ms.PutCt(hash, ct)
 }
 
 func (ms *MultiStore) AddOwner(h types.Hash, ct *types.CipherTextRepresentation, owner common.Address) error {

@@ -1,7 +1,6 @@
 package precompiles
 
 import (
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"github.com/ethereum/go-ethereum/metrics"
@@ -50,51 +49,10 @@ func (fs *FheosState) GetCiphertext(hash types.Hash) (*types.CipherTextRepresent
 		}(time.Now())
 	}
 
-	sharedCt, err := fs.Storage.GetCt(hash)
-	if sharedCt == nil {
-		return nil, err
-	}
-
-	return &sharedCt.Ciphertext, nil
+	return fs.Storage.GetCt(hash)
 }
 
-func (fs *FheosState) DereferenceCiphertext(hash types.Hash) error {
-	if metrics.Enabled {
-		h := fmt.Sprintf("%s/%s/%s", "fheos", "db", "dereference")
-		defer func(start time.Time) {
-			sampler := func() metrics.Sample {
-				return metrics.NewBoundedHistogramSample()
-			}
-			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
-		}(time.Now())
-	}
-	sharedCt, _ := fs.Storage.GetCt(hash)
-	if sharedCt == nil {
-		return nil
-	}
-
-	sharedCt.RefCount--
-	if sharedCt.RefCount == 0 {
-		logger.Info("Deleted ciphertext", "hash", hex.EncodeToString(hash[:]))
-		return fs.Storage.DeleteCt(hash)
-	}
-
-	logger.Info("Decremented ciphertext ref count", "hash", hex.EncodeToString(hash[:]), "newRefCount", sharedCt.RefCount)
-	return fs.Storage.PutCt(hash, sharedCt)
-}
-
-func (fs *FheosState) incrementRefCountHelper(ctHash types.Hash, sharedCt *types.SharedCiphertext) error {
-	// Skip count for trivially encrypted ciphertexts
-	if fhe.IsTriviallyEncryptedCtHash(ctHash) {
-		return nil
-	}
-
-	sharedCt.RefCount++
-	logger.Info("Incremented ciphertext ref count", "hash", hex.EncodeToString(ctHash[:]), "newRefCount", sharedCt.RefCount)
-	return fs.Storage.PutCt(ctHash, sharedCt)
-}
-
-func (fs *FheosState) SetCiphertext(ctHash types.Hash, ct *types.CipherTextRepresentation) error {
+func (fs *FheosState) SetCiphertext(ct *types.CipherTextRepresentation) error {
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "db", "put")
 		defer func(start time.Time) {
@@ -105,32 +63,9 @@ func (fs *FheosState) SetCiphertext(ctHash types.Hash, ct *types.CipherTextRepre
 		}(time.Now())
 	}
 
-	currentCt, err := fs.Storage.GetCt(ctHash)
-	if err != nil {
-		newCt := &types.SharedCiphertext{
-			Ciphertext: *ct,
-			RefCount:   1,
-		}
-		return fs.Storage.PutCt(ctHash, newCt)
-	}
+	result := fs.Storage.PutCt(types.Hash((*fhe.FheEncrypted)(ct.Data).Hash()), ct)
 
-	return fs.incrementRefCountHelper(ctHash, currentCt)
-}
-
-func (fs *FheosState) ReferenceCiphertext(hash types.Hash, ct *types.SharedCiphertext) error {
-	return fs.incrementRefCountHelper(hash, ct)
-}
-
-func (fs *FheosState) UpdatePersistentReference(hash types.Hash) error {
-	ct, err := fs.Storage.GetCt(hash)
-	if (err == nil) && (ct != nil) {
-		err = fs.ReferenceCiphertext(hash, ct)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return result
 }
 
 func createFheosState(storage storage2.FheosStorage, version uint64) {
