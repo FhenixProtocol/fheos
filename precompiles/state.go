@@ -20,7 +20,8 @@ type FheosState struct {
 }
 
 func (fs *FheosState) GetZero(uintType fhe.EncryptionType) *fhe.FheEncrypted {
-	ct, err := fhe.EncryptPlainText(*big.NewInt(0), uintType)
+	// todo (eshel): allow for other security zones?
+	ct, err := fhe.EncryptPlainText(*big.NewInt(0), uintType, 0)
 	if err != nil {
 		return nil
 	}
@@ -97,14 +98,17 @@ func createFheosState(storage storage2.FheosStorage, version uint64) error {
 	ezero := make([][]byte, 14)
 
 	for i := 0; i < 6; i++ {
-		ezero[i], _, err = TrivialEncrypt(zero, byte(i), &tempTp)
+		// todo (eshel): allow for other security zones?
+		ezero[i], _, err = TrivialEncrypt(zero, byte(i), &tempTp, 0)
 		if err != nil {
 			logger.Error("failed to encrypt 0 for ezero", "toType", i, "err", err)
 			// don't error out - this should be handled dynamically later - otherwise it just requires the backend to do work
 			// that might not be necessary right now, and makes it more annoying for unit tests that might not need to encrypt
 		}
 	}
-	ezero[13], _, err = TrivialEncrypt(zero, byte(13), &tempTp)
+
+	// todo (eshel): allow for other security zones?
+	ezero[13], _, err = TrivialEncrypt(zero, byte(13), &tempTp, 0)
 	if err != nil {
 		logger.Error("failed to encrypt 0 for ezero", "toType", 13, "err", err)
 	}

@@ -114,13 +114,13 @@ func getValue(a []byte) *big.Int {
 	return &value
 }
 
-func encrypt(val uint32, t uint8, tp *precompiles.TxParams) ([]byte, error) {
+func encrypt(val uint32, t uint8, tp *precompiles.TxParams, securityZone int32) ([]byte, error) {
 	bval := new(big.Int).SetUint64(uint64(val))
 
 	valBz := make([]byte, 32)
 	bval.FillBytes(valBz)
 
-	result, _, err := precompiles.TrivialEncrypt(valBz, t, tp)
+	result, _, err := precompiles.TrivialEncrypt(valBz, t, tp, securityZone)
 	return result, err
 }
 
@@ -144,6 +144,7 @@ type operationFunc func(t byte, lhs, rhs []byte, txParams *precompiles.TxParams)
 
 func setupOperationCommand(use, short string, op operationFunc) *cobra.Command {
 	var lhs, rhs uint32
+	var securityZone int32
 	var t uint8
 
 	cmd := &cobra.Command{
@@ -156,12 +157,12 @@ func setupOperationCommand(use, short string, op operationFunc) *cobra.Command {
 				return err
 			}
 
-			elhs, err := encrypt(lhs, t, txParams)
+			elhs, err := encrypt(lhs, t, txParams, securityZone)
 			if err != nil {
 				return err
 			}
 
-			erhs, err := encrypt(rhs, t, txParams)
+			erhs, err := encrypt(rhs, t, txParams, securityZone)
 			if err != nil {
 				return err
 			}
@@ -195,12 +196,12 @@ func setupOperationCommand(use, short string, op operationFunc) *cobra.Command {
 	cmd.Flags().Uint32VarP(&lhs, "lhs", "l", 0, "lhs")
 	cmd.Flags().Uint32VarP(&rhs, "rhs", "r", 0, "rhs")
 	cmd.Flags().Uint8VarP(&t, "utype", "t", 0, "uint type(0-uint8, 1-uint16, 2-uint32)")
+	cmd.Flags().Int32VarP(&securityZone, "security-zone", "zone", 0, "security zone")
 
 	return cmd
 }
 
 func main() {
-
 	var rootCmd = &cobra.Command{Use: "fheos"}
 
 	var initState = &cobra.Command{
