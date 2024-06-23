@@ -196,7 +196,7 @@ func setupOperationCommand(use, short string, op operationFunc) *cobra.Command {
 	cmd.Flags().Uint32VarP(&lhs, "lhs", "l", 0, "lhs")
 	cmd.Flags().Uint32VarP(&rhs, "rhs", "r", 0, "rhs")
 	cmd.Flags().Uint8VarP(&t, "utype", "t", 0, "uint type(0-uint8, 1-uint16, 2-uint32)")
-	cmd.Flags().Int32VarP(&securityZone, "security-zone", "zone", 0, "security zone")
+	cmd.Flags().Int32VarP(&securityZone, "security-zone", "z", 0, "security zone")
 
 	return cmd
 }
