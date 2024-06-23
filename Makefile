@@ -13,6 +13,9 @@ gen:
 compile:
 	cd solidity && pnpm compile
 
+.PHONY: gencompile
+compile: gen compile
+
 .PHONY: lint
 lint:
 	# cd solidity && pnpm solhint FHE.sol FheOS.sol tests/contracts/*.sol tests/contracts/utils/*.sol
