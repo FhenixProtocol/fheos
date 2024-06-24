@@ -661,41 +661,28 @@ func TrivialEncrypt(input []byte, toType byte, tp *TxParams) ([]byte, uint64, er
 	}
 
 	valueToEncrypt := *new(big.Int).SetBytes(input)
-	encryptToType := fhe.EncryptionType(toType)
 
 	var ct *fhe.FheEncrypted
 	var err error
-	// Optimize trivial encrypts of zero since we already have trivially encrypted zeros
-	// Trivial encryption of zero is common because it is done for every uninitialized ciphertext
-	if State.EZero != nil && valueToEncrypt.Cmp(big.NewInt(0)) == 0 {
-		// if EZero isn't initialized just initialize it
-		ct = State.GetZero(encryptToType)
-		if ct == nil {
-			logger.Error("failed to create trivial encrypted value")
-			return nil, 0, vm.ErrExecutionReverted
-		}
+	// Check if value is not overflowing the type
+	maxOfType := fhe.MaxOfType(uintType)
+	if maxOfType == nil {
+		logger.Error("failed to create trivially encrypted value, type is not supported.")
+		return nil, 0, vm.ErrExecutionReverted
+	}
 
-	} else {
-		// Check if value is not overflowing the type
-		maxOfType := fhe.MaxOfType(uintType)
-		if maxOfType == nil {
-			logger.Error("failed to create trivially encrypted value, type is not supported.")
-			return nil, 0, vm.ErrExecutionReverted
-		}
+	// If value is bigger than the maximal value that is supported by the type
+	if valueToEncrypt.Cmp(maxOfType) > 0 {
+		logger.Error("failed to create trivially encrypted value, value is too large for type.")
+		return nil, 0, vm.ErrExecutionReverted
+	}
 
-		// If value is bigger than the maximal value that is supported by the type
-		if valueToEncrypt.Cmp(maxOfType) > 0 {
-			logger.Error("failed to create trivially encrypted value, value is too large for type.")
-			return nil, 0, vm.ErrExecutionReverted
-		}
-
-		// we encrypt this using the computation key not the public key. Also, compact to save space in case this gets saved directly
-		// to storage
-		ct, err = fhe.EncryptPlainText(valueToEncrypt, uintType)
-		if err != nil {
-			logger.Error("failed to create trivial encrypted value")
-			return nil, 0, vm.ErrExecutionReverted
-		}
+	// we encrypt this using the computation key not the public key. Also, compact to save space in case this gets saved directly
+	// to storage
+	ct, err = fhe.EncryptPlainText(valueToEncrypt, uintType)
+	if err != nil {
+		logger.Error("failed to create trivial encrypted value")
+		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := ct.Hash()

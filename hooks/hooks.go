@@ -1,16 +1,18 @@
 package hooks
 
 import (
+	"encoding/hex"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/log"
 	fheos "github.com/fhenixprotocol/fheos/precompiles"
+	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 )
 
 type FheOSHooks interface {
-	StoreCiphertextHook(contract common.Address, loc [32]byte, val [32]byte) error
+	StoreCiphertextHook(contract common.Address, loc [32]byte, original common.Hash, val [32]byte) error
 	StoreGasHook(contract common.Address, loc [32]byte, val [32]byte) (uint64, uint64)
 	LoadCiphertextHook() [32]byte
 	EvmCallStart()
@@ -23,17 +25,71 @@ type FheOSHooksImpl struct {
 	evm *vm.EVM
 }
 
-func (h FheOSHooksImpl) StoreCiphertextHook(contract common.Address, loc [32]byte, val [32]byte) error {
+func (h FheOSHooksImpl) updateCiphertextReferences(original common.Hash, newHash types.Hash) (bool, error) {
+	multiStore := storage2.NewMultiStore(h.evm.CiphertextDb, &fheos.State.Storage)
+
+	if fhe.IsCtHash(newHash) && !fhe.IsTriviallyEncryptedCtHash(newHash) {
+		err := multiStore.ReferenceCiphertext(newHash)
+		// Check whether the value is not a newly created value (i.e. not in memory but is in store)
+		if err != nil {
+			log.Warn("Failed to reference a ciphertext", "err", err)
+		}
+	}
+
+	originalHash := types.Hash(original)
+	if (original != common.Hash{}) && !fhe.IsTriviallyEncryptedCtHash(originalHash) {
+		// if the original hash is not empty, we are updating a value
+		// we need to dereference the old value from the storage
+		wasDeleted, err := multiStore.DereferenceCiphertext(originalHash)
+		if err != nil {
+			log.Error("Failed to dereference old ciphertext", "err", err)
+			return false, err
+		}
+
+		log.Info("Dereferenced old ciphertext", "hash", hex.EncodeToString(originalHash[:]))
+		// We want to mark the previously commited ct for persistence only if it wasn't deleted (RefCount == 0)
+		return !wasDeleted, nil
+	}
+
+	return false, nil
+}
+
+// StoreCiphertextHook The purpose of this hook is to mark the ciphertext as LTS if the tx is successful and update reference counts
+// contract - The address of the contract in which the ciphertext is stored
+// loc - the location (starting from 0) in the storage of the contract
+// commited - The previous value (ct hash) that was present in the said location
+// val - The new value that is being stored
+func (h FheOSHooksImpl) StoreCiphertextHook(contract common.Address, loc [32]byte, commited common.Hash, val [32]byte) error {
 	// marks the ciphertext as lts - should be stored in long term storage when/if the tx is successful
 	// option - better to flush all at the end of the tx from memdb, or define a memdb in fheos that is flushed at the end of the tx?
 	storage := storage2.NewEphemeralStorage(h.evm.CiphertextDb)
 
-	// if this value isn't in our storage - i.e. isn't a ciphertext - we just noop
-	if !fhe.IsCtHash(val) {
+	// Skip for non-ciphertext
+	ctHash := types.Hash(val)
+
+	wasDereferenced, err := h.updateCiphertextReferences(commited, ctHash)
+	if err != nil {
+		return err
+	}
+
+	if wasDereferenced {
+		err = storage.MarkForPersistence(contract, types.Hash(commited))
+		if err != nil {
+			log.Crit("Error marking dereferenced ciphertext as LTS", "err", err)
+			return err
+		}
+	}
+
+	if !fhe.IsCtHash(ctHash) {
 		return nil
 	}
 
-	err := storage.MarkForPersistence(contract, val)
+	// Skip for values who are not in memory as there is nothing to persist
+	if !storage.HasCt(ctHash) {
+		return nil
+	}
+
+	err = storage.MarkForPersistence(contract, val)
 	if err != nil {
 		log.Crit("Error marking ciphertext as LTS", "err", err)
 		return err
@@ -64,6 +120,7 @@ func (h FheOSHooksImpl) EvmCallEnd(evmSuccess bool) {
 	if evmSuccess && h.evm.Commit {
 		storage := storage2.NewEphemeralStorage(h.evm.CiphertextDb)
 		toStore := storage.GetAllToPersist()
+		toDelete := storage.GetAllToDelete()
 
 		for _, contractCiphertext := range toStore {
 			cipherText, err := storage.GetCt(contractCiphertext.CipherTextHash)
@@ -80,6 +137,16 @@ func (h FheOSHooksImpl) EvmCallEnd(evmSuccess bool) {
 			if err != nil {
 				log.Crit("Error storing ciphertext in LTS - state corruption detected", "err", err)
 			}
+		}
+
+		for _, hash := range toDelete {
+			err := fheos.State.Storage.DeleteCt(hash)
+			if err != nil {
+				// Deletion failure, bummer but nothing to be worried about
+				log.Error("Failed to delete ciphertext", "hash", hex.EncodeToString(hash[:]))
+			}
+
+			log.Info("Deleted ciphertext", "hash", hex.EncodeToString(hash[:]))
 		}
 	}
 }
@@ -142,7 +209,7 @@ func (h FheOSHooksImpl) iterateHashes(data []byte, dataType string, owner common
 
 		_ = storage.AddOwner(hash, ct, newOwner)
 
-		log.Info("Contract has been added as an owner to the ciphertext", "contract", newOwner, "ciphertext", hash)
+		log.Info("Contract has been added as an owner to the ciphertext", "contract", newOwner, "ciphertext", hex.EncodeToString(hash[:]))
 	}
 }
 
@@ -156,7 +223,7 @@ func (h FheOSHooksImpl) ContractCall(isSimulation bool, callType int, caller com
 	//  when going to offset you will find 32 bytes indicating the length of the value
 	//  and then the value itself, each value in the array is padded to 32 bytes
 
-	// Skip delegate calls??????????
+	// Skip delegate calls - The owner remains the same
 	if callType == vm.CallTypeDelegateCall {
 		return
 	}

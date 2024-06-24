@@ -13,12 +13,17 @@ type FheosStorage struct {
 	diskStore types.Storage
 }
 
+func (fs *FheosStorage) DeleteCt(h types.Hash) error {
+	return fs.diskStore.DeleteCt(h)
+}
+
 func (fs *FheosStorage) PutCt(h types.Hash, cipher *types.CipherTextRepresentation) error {
 	return fs.diskStore.PutCt(h, cipher)
 }
 
 func (fs *FheosStorage) GetCt(h types.Hash) (*types.CipherTextRepresentation, error) {
-	return fs.diskStore.GetCt(h)
+	a, e := fs.diskStore.GetCt(h)
+	return a, e
 }
 
 func (fs *FheosStorage) PutVersion(v uint64) error {
