@@ -529,7 +529,7 @@ func (con FheOps) {{.Name}}(c ctx, evm mech{{.Inputs}}) ({{.ReturnType}}, error)
 	}
 
 	ret, gas, err := fheos.{{.Name}}({{.InnerInputs}}&tp)
-	
+
 	if err != nil {
 		if metrics.Enabled {
 			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "{{.Name}}", fheos.UtypeToString({{.OperationTypeName}}), "error/fhe_failure")
