@@ -9,8 +9,7 @@ import (
 )
 
 type FheOps struct {
-	Address                addr // 0x80
-	CachedNetworkPublicKey []byte
+	Address addr // 0x80
 }
 
 func (con FheOps) Log(c ctx, evm mech, s string) error {
@@ -37,7 +36,7 @@ func (con FheOps) Add(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	}
 
 	ret, gas, err := fheos.Add(utype, lhsHash, rhsHash, &tp)
-
+	
 	if err != nil {
 		if metrics.Enabled {
 			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Add", fheos.UtypeToString(utype), "error/fhe_failure")
@@ -73,7 +72,7 @@ func (con FheOps) And(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	}
 
 	ret, gas, err := fheos.And(utype, lhsHash, rhsHash, &tp)
-
+	
 	if err != nil {
 		if metrics.Enabled {
 			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "And", fheos.UtypeToString(utype), "error/fhe_failure")
@@ -109,7 +108,7 @@ func (con FheOps) Cast(c ctx, evm mech, utype byte, input []byte, toType byte) (
 	}
 
 	ret, gas, err := fheos.Cast(utype, input, toType, &tp)
-
+	
 	if err != nil {
 		if metrics.Enabled {
 			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Cast", fheos.UtypeToString(utype), "error/fhe_failure")
@@ -145,7 +144,7 @@ func (con FheOps) Decrypt(c ctx, evm mech, utype byte, input []byte) (*big.Int, 
 	}
 
 	ret, gas, err := fheos.Decrypt(utype, input, &tp)
-
+	
 	if err != nil {
 		if metrics.Enabled {
 			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Decrypt", fheos.UtypeToString(utype), "error/fhe_failure")
@@ -181,7 +180,7 @@ func (con FheOps) Div(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	}
 
 	ret, gas, err := fheos.Div(utype, lhsHash, rhsHash, &tp)
-
+	
 	if err != nil {
 		if metrics.Enabled {
 			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Div", fheos.UtypeToString(utype), "error/fhe_failure")
@@ -217,7 +216,7 @@ func (con FheOps) Eq(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 	}
 
 	ret, gas, err := fheos.Eq(utype, lhsHash, rhsHash, &tp)
-
+	
 	if err != nil {
 		if metrics.Enabled {
 			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Eq", fheos.UtypeToString(utype), "error/fhe_failure")
@@ -241,15 +240,9 @@ func (con FheOps) Eq(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 }
 
 func (con FheOps) GetNetworkPublicKey(c ctx, evm mech) ([]byte, error) {
-	if con.CachedNetworkPublicKey == nil || len(con.CachedNetworkPublicKey) == 0 {
-		tp := fheos.TxParamsFromEVM(evm, c.caller)
-		tempNetworkPublicKey, err := fheos.GetNetworkPublicKey(&tp)
-		if err != nil {
-			return nil, err
-		}
-		con.CachedNetworkPublicKey = tempNetworkPublicKey
-	}
-	return con.CachedNetworkPublicKey, nil
+
+	tp := fheos.TxParamsFromEVM(evm, c.caller)
+	return fheos.GetNetworkPublicKey(&tp)
 }
 
 func (con FheOps) Gt(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte) ([]byte, error) {
@@ -265,7 +258,7 @@ func (con FheOps) Gt(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 	}
 
 	ret, gas, err := fheos.Gt(utype, lhsHash, rhsHash, &tp)
-
+	
 	if err != nil {
 		if metrics.Enabled {
 			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Gt", fheos.UtypeToString(utype), "error/fhe_failure")
@@ -301,7 +294,7 @@ func (con FheOps) Gte(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	}
 
 	ret, gas, err := fheos.Gte(utype, lhsHash, rhsHash, &tp)
-
+	
 	if err != nil {
 		if metrics.Enabled {
 			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Gte", fheos.UtypeToString(utype), "error/fhe_failure")
@@ -337,7 +330,7 @@ func (con FheOps) Lt(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 	}
 
 	ret, gas, err := fheos.Lt(utype, lhsHash, rhsHash, &tp)
-
+	
 	if err != nil {
 		if metrics.Enabled {
 			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Lt", fheos.UtypeToString(utype), "error/fhe_failure")
@@ -373,7 +366,7 @@ func (con FheOps) Lte(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	}
 
 	ret, gas, err := fheos.Lte(utype, lhsHash, rhsHash, &tp)
-
+	
 	if err != nil {
 		if metrics.Enabled {
 			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Lte", fheos.UtypeToString(utype), "error/fhe_failure")
@@ -409,7 +402,7 @@ func (con FheOps) Max(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	}
 
 	ret, gas, err := fheos.Max(utype, lhsHash, rhsHash, &tp)
-
+	
 	if err != nil {
 		if metrics.Enabled {
 			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Max", fheos.UtypeToString(utype), "error/fhe_failure")
@@ -445,7 +438,7 @@ func (con FheOps) Min(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	}
 
 	ret, gas, err := fheos.Min(utype, lhsHash, rhsHash, &tp)
-
+	
 	if err != nil {
 		if metrics.Enabled {
 			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Min", fheos.UtypeToString(utype), "error/fhe_failure")
@@ -481,7 +474,7 @@ func (con FheOps) Mul(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	}
 
 	ret, gas, err := fheos.Mul(utype, lhsHash, rhsHash, &tp)
-
+	
 	if err != nil {
 		if metrics.Enabled {
 			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Mul", fheos.UtypeToString(utype), "error/fhe_failure")
@@ -517,7 +510,7 @@ func (con FheOps) Ne(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 	}
 
 	ret, gas, err := fheos.Ne(utype, lhsHash, rhsHash, &tp)
-
+	
 	if err != nil {
 		if metrics.Enabled {
 			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Ne", fheos.UtypeToString(utype), "error/fhe_failure")
@@ -553,7 +546,7 @@ func (con FheOps) Not(c ctx, evm mech, utype byte, value []byte) ([]byte, error)
 	}
 
 	ret, gas, err := fheos.Not(utype, value, &tp)
-
+	
 	if err != nil {
 		if metrics.Enabled {
 			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Not", fheos.UtypeToString(utype), "error/fhe_failure")
@@ -589,7 +582,7 @@ func (con FheOps) Or(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 	}
 
 	ret, gas, err := fheos.Or(utype, lhsHash, rhsHash, &tp)
-
+	
 	if err != nil {
 		if metrics.Enabled {
 			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Or", fheos.UtypeToString(utype), "error/fhe_failure")
@@ -625,7 +618,7 @@ func (con FheOps) Rem(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	}
 
 	ret, gas, err := fheos.Rem(utype, lhsHash, rhsHash, &tp)
-
+	
 	if err != nil {
 		if metrics.Enabled {
 			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Rem", fheos.UtypeToString(utype), "error/fhe_failure")
@@ -661,7 +654,7 @@ func (con FheOps) Req(c ctx, evm mech, utype byte, input []byte) ([]byte, error)
 	}
 
 	ret, gas, err := fheos.Req(utype, input, &tp)
-
+	
 	if err != nil {
 		if metrics.Enabled {
 			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Req", fheos.UtypeToString(utype), "error/fhe_failure")
@@ -697,7 +690,7 @@ func (con FheOps) SealOutput(c ctx, evm mech, utype byte, ctHash []byte, pk []by
 	}
 
 	ret, gas, err := fheos.SealOutput(utype, ctHash, pk, &tp)
-
+	
 	if err != nil {
 		if metrics.Enabled {
 			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "SealOutput", fheos.UtypeToString(utype), "error/fhe_failure")
@@ -733,7 +726,7 @@ func (con FheOps) Select(c ctx, evm mech, utype byte, controlHash []byte, ifTrue
 	}
 
 	ret, gas, err := fheos.Select(utype, controlHash, ifTrueHash, ifFalseHash, &tp)
-
+	
 	if err != nil {
 		if metrics.Enabled {
 			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Select", fheos.UtypeToString(utype), "error/fhe_failure")
@@ -769,7 +762,7 @@ func (con FheOps) Shl(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	}
 
 	ret, gas, err := fheos.Shl(utype, lhsHash, rhsHash, &tp)
-
+	
 	if err != nil {
 		if metrics.Enabled {
 			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Shl", fheos.UtypeToString(utype), "error/fhe_failure")
@@ -805,7 +798,7 @@ func (con FheOps) Shr(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	}
 
 	ret, gas, err := fheos.Shr(utype, lhsHash, rhsHash, &tp)
-
+	
 	if err != nil {
 		if metrics.Enabled {
 			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Shr", fheos.UtypeToString(utype), "error/fhe_failure")
@@ -841,7 +834,7 @@ func (con FheOps) Sub(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	}
 
 	ret, gas, err := fheos.Sub(utype, lhsHash, rhsHash, &tp)
-
+	
 	if err != nil {
 		if metrics.Enabled {
 			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Sub", fheos.UtypeToString(utype), "error/fhe_failure")
@@ -864,7 +857,7 @@ func (con FheOps) Sub(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	return ret, err
 }
 
-func (con FheOps) TrivialEncrypt(c ctx, evm mech, input []byte, toType byte) ([]byte, error) {
+func (con FheOps) TrivialEncrypt(c ctx, evm mech, input []byte, toType byte, securityZone int32) ([]byte, error) {
 	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "TrivialEncrypt", fheos.UtypeToString(toType))
@@ -876,8 +869,8 @@ func (con FheOps) TrivialEncrypt(c ctx, evm mech, input []byte, toType byte) ([]
 		}(time.Now())
 	}
 
-	ret, gas, err := fheos.TrivialEncrypt(input, toType, &tp)
-
+	ret, gas, err := fheos.TrivialEncrypt(input, toType, securityZone, &tp)
+	
 	if err != nil {
 		if metrics.Enabled {
 			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "TrivialEncrypt", fheos.UtypeToString(toType), "error/fhe_failure")
@@ -913,7 +906,7 @@ func (con FheOps) Verify(c ctx, evm mech, utype byte, input []byte) ([]byte, err
 	}
 
 	ret, gas, err := fheos.Verify(utype, input, &tp)
-
+	
 	if err != nil {
 		if metrics.Enabled {
 			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Verify", fheos.UtypeToString(utype), "error/fhe_failure")
@@ -949,7 +942,7 @@ func (con FheOps) Xor(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	}
 
 	ret, gas, err := fheos.Xor(utype, lhsHash, rhsHash, &tp)
-
+	
 	if err != nil {
 		if metrics.Enabled {
 			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Xor", fheos.UtypeToString(utype), "error/fhe_failure")
