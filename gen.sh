@@ -22,10 +22,6 @@ while getopts "d:o:g:n:" opt; do
 done
 
 # Set FHE_OPS_DEST to "nitro-overrides/precompiles" if the nitro override flag is true
-if [ "$NITRO_OVERRIDE" = "true" ]; then
-    FHE_OPS_DEST="nitro-overrides/precompiles"
-fi
-
 # Rest of the script remains the same
 go run gen.go 1
 if [ ! -e precompiles/contracts ]; then
@@ -39,6 +35,10 @@ pnpm build
 rm -r ./contracts/
 cd ../
 go run gen.go 2 $OUTPUT
+
+if [ "$NITRO_OVERRIDE" = "true" ]; then
+    cp FheOps_gen.go "nitro-overrides/precompiles/FheOps.go"
+fi
 
 if [ "${GEN_FHEOPS}" = "true" ]; then
     echo "Generating FheOps.go... in $FHE_OPS_DEST"
