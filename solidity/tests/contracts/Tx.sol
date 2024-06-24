@@ -27,9 +27,9 @@ contract AddCaller {
     }
 
     function addPlainSecurityZone(uint256 lhs, uint256 rhs, int32 securityZone, bytes32 publicKey) public pure returns (string memory) {
-        euint32 lhs_encrypted = FHE.asEuint32(lhs, securityZone);
-        euint32 rhs_encrypted = FHE.asEuint32(rhs, securityZone);
-        euint32 result = lhs_encrypted.add(rhs_encrypted);
+        euint32 lhsEncrypted = FHE.asEuint32(lhs, securityZone);
+        euint32 rhsEncrypted = FHE.asEuint32(rhs, securityZone);
+        euint32 result = lhsEncrypted.add(rhsEncrypted);
         return result.seal(publicKey);
     }
 
