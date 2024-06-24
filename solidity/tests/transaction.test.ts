@@ -251,6 +251,7 @@ describe("Test Transactions Scenarios", () => {
     );
 
     const result = instance.unseal(contractAddr, encRes);
+    // todo (eshel) adjust expectation of failure here
     expect(Number(result)).toEqual(1337);
   });
 
