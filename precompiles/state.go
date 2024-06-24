@@ -99,7 +99,7 @@ func createFheosState(storage storage2.FheosStorage, version uint64) error {
 
 	for i := 0; i < 6; i++ {
 		// todo (eshel): allow for other security zones?
-		ezero[i], _, err = TrivialEncrypt(zero, byte(i), &tempTp, 0)
+		ezero[i], _, err = TrivialEncrypt(zero, byte(i), 0, &tempTp)
 		if err != nil {
 			logger.Error("failed to encrypt 0 for ezero", "toType", i, "err", err)
 			// don't error out - this should be handled dynamically later - otherwise it just requires the backend to do work
@@ -108,7 +108,7 @@ func createFheosState(storage storage2.FheosStorage, version uint64) error {
 	}
 
 	// todo (eshel): allow for other security zones?
-	ezero[13], _, err = TrivialEncrypt(zero, byte(13), &tempTp, 0)
+	ezero[13], _, err = TrivialEncrypt(zero, byte(13), 0, &tempTp)
 	if err != nil {
 		logger.Error("failed to encrypt 0 for ezero", "toType", 13, "err", err)
 	}

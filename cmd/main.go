@@ -114,13 +114,13 @@ func getValue(a []byte) *big.Int {
 	return &value
 }
 
-func encrypt(val uint32, t uint8, tp *precompiles.TxParams, securityZone int32) ([]byte, error) {
+func encrypt(val uint32, t uint8, securityZone int32, tp *precompiles.TxParams) ([]byte, error) {
 	bval := new(big.Int).SetUint64(uint64(val))
 
 	valBz := make([]byte, 32)
 	bval.FillBytes(valBz)
 
-	result, _, err := precompiles.TrivialEncrypt(valBz, t, tp, securityZone)
+	result, _, err := precompiles.TrivialEncrypt(valBz, t, securityZone, tp)
 	return result, err
 }
 
@@ -157,12 +157,12 @@ func setupOperationCommand(use, short string, op operationFunc) *cobra.Command {
 				return err
 			}
 
-			elhs, err := encrypt(lhs, t, txParams, securityZone)
+			elhs, err := encrypt(lhs, t, securityZone, txParams)
 			if err != nil {
 				return err
 			}
 
-			erhs, err := encrypt(rhs, t, txParams, securityZone)
+			erhs, err := encrypt(rhs, t, securityZone, txParams)
 			if err != nil {
 				return err
 			}
