@@ -224,12 +224,10 @@ const castFromEncrypted = (
 };
 
 const castFromPlaintext = (name: string, toType: string, addSecurityZone: boolean = false): string => {
-  // todo (eshel): extend AsXX functions to support different security zones
   return `Impl.trivialEncrypt(${name}, Common.${toType.toUpperCase()}_TFHE, ${addSecurityZone ? "securityZone" : "0"})`;
 };
 
 const castFromAddress = (name: string, toType: string, addSecurityZone: boolean = false): string => {
-  // todo (eshel): extend AsXX functions to support different security zones
   return `Impl.trivialEncrypt(uint256(uint160(${name})), Common.${toType.toUpperCase()}_TFHE, ${addSecurityZone ? "securityZone" : "0"})`;
 };
 
