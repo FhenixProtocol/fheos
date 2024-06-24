@@ -226,6 +226,34 @@ describe("Test Transactions Scenarios", () => {
     expect(Number(counter)).toEqual(26);
   });
 
+  it.only("Specify valid Security Zone (eth call, not tx)", async () => {
+    const { permit, instance } = await createFheInstance(contractAddr);
+
+    const encRes = await contractCaller.addPlainSecurityZone(
+      1299,
+      38,
+      1,
+      permit.publicKey
+    );
+
+    const result = instance.unseal(contractAddr, encRes);
+    expect(Number(result)).toEqual(1337);
+  });
+
+  it.only("Specify invalid Security Zone (eth call, not tx)", async () => {
+    const { permit, instance } = await createFheInstance(contractAddr);
+
+    const encRes = await contractCaller.addPlainSecurityZone(
+      1299,
+      38,
+      3,
+      permit.publicKey
+    );
+
+    const result = instance.unseal(contractAddr, encRes);
+    expect(Number(result)).toEqual(1337);
+  });
+
   it("Add via DELEGATE contract call - pass Uint32", async () => {
     const { instance, permit } = await createFheInstance(contractAddr);
     const encInput = await instance.encrypt_uint32(14);

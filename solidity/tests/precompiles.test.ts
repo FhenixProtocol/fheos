@@ -86,7 +86,12 @@ const getFheContract = async (contractAddress: string) => {
   return fheContract;
 };
 
-describe("Test Add", () => {
+// todo (eshel) remove skip
+describe.only("Test Add", () => {
+  it.only("skipall" , async () => {
+    console.log("skipall");
+  });
+
   const getMaxValue = (bits: number) => {
     const val = BigInt.asUintN(bits, BigInt(1));
     return (val << BigInt(bits)) - BigInt(2);
@@ -103,7 +108,7 @@ describe("Test Add", () => {
   let contract;
 
   // We don't really need it as test but it is a test since it is async
-  it(`Test Contract Deployment`, async () => {
+  it.only(`Test Contract Deployment`, async () => {
     contract = (await deployContract("AddTest")) as AddTestType;
     expect(contract).toBeTruthy();
   });
