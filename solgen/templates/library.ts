@@ -295,6 +295,7 @@ export const AsTypeFunction = (fromType: string, toType: string, addSecurityZone
     if (!addSecurityZone) {
       // recursive call to add the asType override with the security zone
       overrideFuncs += AsTypeFunction(fromType, toType, true);
+    } else {
       docString += `, specifying security zone`;
     }
     castString = castFromAddress("value", toType, addSecurityZone);
@@ -302,6 +303,7 @@ export const AsTypeFunction = (fromType: string, toType: string, addSecurityZone
     if (!addSecurityZone) {
       // recursive call to add the asType override with the security zone
       overrideFuncs += AsTypeFunction(fromType, toType, true);
+    } else {
       docString += `, specifying security zone`;
     }
     castString = castFromPlaintext("value", toType, addSecurityZone);
