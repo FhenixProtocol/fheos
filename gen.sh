@@ -41,6 +41,7 @@ cd ../
 go run gen.go 2 $OUTPUT
 
 if [ "${GEN_FHEOPS}" = "true" ]; then
+    echo "Generating FheOps.go... in $FHE_OPS_DEST"
     cp FheOps_gen.go "$FHE_OPS_DEST"/FheOps.go
 fi
 

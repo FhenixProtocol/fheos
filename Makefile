@@ -9,6 +9,11 @@ gen:
 	./gen.sh
 	cd solgen && pnpm build
 
+.PHONY: gen-fheops
+gen-fheops:
+	./gen.sh -g true -n true
+	cd solgen && pnpm build
+
 .PHONY: compile
 compile:
 	cd solidity && pnpm compile
