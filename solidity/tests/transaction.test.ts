@@ -226,7 +226,7 @@ describe("Test Transactions Scenarios", () => {
     expect(Number(counter)).toEqual(26);
   });
 
-  it.only("Specify valid Security Zone (eth call, not tx)", async () => {
+  it("Specify valid Security Zone (eth call, not tx)", async () => {
     const { permit, instance } = await createFheInstance(contractAddr);
 
     const encRes = await contractCaller.addPlainSecurityZone(
@@ -240,19 +240,21 @@ describe("Test Transactions Scenarios", () => {
     expect(Number(result)).toEqual(1337);
   });
 
-  it.only("Specify invalid Security Zone (eth call, not tx)", async () => {
+  it("Specify invalid Security Zone (eth call, not tx)", async () => {
     const { permit, instance } = await createFheInstance(contractAddr);
 
-    const encRes = await contractCaller.addPlainSecurityZone(
-      1299,
-      38,
-      3,
-      permit.publicKey
-    );
+    try {
+      await contractCaller.addPlainSecurityZone(
+        1299,
+        38,
+        3,
+        permit.publicKey
+      );
 
-    const result = instance.unseal(contractAddr, encRes);
-    // todo (eshel) adjust expectation of failure here
-    expect(Number(result)).toEqual(1337);
+      fail("Should have reverted");
+    } catch (err) {
+      expect(err.message).toContain("execution reverted");
+    }
   });
 
   it("Add via DELEGATE contract call - pass Uint32", async () => {

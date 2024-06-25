@@ -1,14 +1,9 @@
 import { Counter } from "../types/tests/contracts/Counter";
 import { createFheInstance, deployContract } from "./utils";
 
-describe.only("Test Unitialized Variables", () => {
+describe("Test Unitialized Variables", () => {
   let contract: Counter;
   let contractAddr: string;
-
-  // todo (eshel) remove skip
-  it.only("skipall" , async () => {
-    console.log("skipall");
-  });
 
   it("Contract Deployment", async () => {
     contract = (await deployContract("Counter")) as Counter;

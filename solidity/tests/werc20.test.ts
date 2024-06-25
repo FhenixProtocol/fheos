@@ -2,12 +2,7 @@ import {WrappingERC20} from "../types/tests/contracts/wERC20.sol";
 import { createFheInstance, deployContract } from "./utils";
 import { ethers } from 'hardhat';
 
-describe.only('Test WERC20', () =>  {
-    // todo (eshel) remove skip
-    it.only("skipall" , async () => {
-        console.log("skipall");
-    });
-
+describe('Test WERC20', () =>  {
     let contract: WrappingERC20;
     let contractAddr: string;
     const amountToSend = BigInt(1);
