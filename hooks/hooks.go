@@ -26,6 +26,10 @@ type FheOSHooksImpl struct {
 }
 
 func (h FheOSHooksImpl) updateCiphertextReferences(original common.Hash, newHash types.Hash) (bool, error) {
+	if fheos.State == nil {
+		return false, nil
+	}
+
 	multiStore := storage2.NewMultiStore(h.evm.CiphertextDb, &fheos.State.Storage)
 
 	if fhe.IsCtHash(newHash) && !fhe.IsTriviallyEncryptedCtHash(newHash) {
