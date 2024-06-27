@@ -229,12 +229,18 @@ describe("Test Transactions Scenarios", () => {
   it("Specify valid Security Zone (eth call, not tx)", async () => {
     const { permit, instance } = await createFheInstance(contractAddr);
 
-    const encRes = await contractCaller.addPlainSecurityZone(
-      1299,
-      38,
-      1,
-      permit.publicKey
-    );
+    let encRes;
+    try {
+      encRes = await contractCaller.addPlainSecurityZone(
+        1299,
+        38,
+        1,
+        permit.publicKey
+      );
+    } catch (e) {
+      console.error(`failed operation on securityzone 1: ${e}`);
+      fail("Should not have reverted");
+    }
 
     const result = instance.unseal(contractAddr, encRes);
     expect(Number(result)).toEqual(1337);
