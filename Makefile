@@ -19,7 +19,7 @@ compile:
 	cd solidity && pnpm compile
 
 .PHONY: gencompile
-compile: gen compile
+gencompile: gen compile
 
 .PHONY: lint
 lint:
