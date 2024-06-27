@@ -172,7 +172,7 @@ describe("Test SealOutput", () => {
         encryptedOutput
       );
       if (test.includes("ebool")) {
-        expect(decryptedOutput).toBe(BigInt(1));
+        expect(decryptedOutput).toBe(BigInt(Math.min(1, plaintextInput)));
       } else {
         expect(decryptedOutput).toBe(BigInt(plaintextInput));
       }
