@@ -1,6 +1,4 @@
-import { ethers } from "hardhat";
-import { BaseContract } from "ethers";
-import { createFheInstance, fromHexString } from "./utils";
+import {createFheInstance, deployContract, fromHexString} from "./utils";
 import {
   AddTestType,
   LteTestType,
@@ -32,54 +30,6 @@ import {
   AsEuint128TestType,
   AsEuint256TestType, AsEaddressTestType,
 } from "./abis";
-
-const deployContractFromSigner = async (
-  con: any,
-  signer: any,
-  nonce?: number
-) => {
-  return await con.deploy({
-    from: signer,
-    args: [],
-    log: true,
-    skipIfAlreadyDeployed: false,
-    nonce,
-  });
-};
-
-const syncNonce = async (con: any, signer: any, stateNonce: number) => {
-  console.log(`Syncing nonce to ${stateNonce}`);
-  try {
-    await deployContractFromSigner(con, signer, stateNonce);
-  } catch (e) {
-    console.log("Fixed nonce issue");
-  }
-
-  return await deployContractFromSigner(con, signer);
-};
-
-const deployContract = async (contractName: string) => {
-  const [signer] = await ethers.getSigners();
-  const con = await ethers.getContractFactory(contractName);
-  let deployedContract: BaseContract;
-  try {
-    deployedContract = await deployContractFromSigner(con, signer);
-  } catch (e) {
-    if (`${e}`.includes("nonce too")) {
-      // find last occurence of ": " in e and get the number that comes after
-      const match = `${e}`.match(/state: (\d+)/);
-      const stateNonce = match ? parseInt(match[1], 10) : null;
-      if (stateNonce === null) {
-        throw new Error("Could not find nonce in error");
-      }
-
-      deployedContract = await syncNonce(con, signer, stateNonce);
-    }
-  }
-
-  const contract = deployedContract.connect(signer);
-  return contract;
-};
 
 const getFheContract = async (contractAddress: string) => {
   const fheContract = await createFheInstance(contractAddress);
@@ -651,13 +601,15 @@ describe("Test Req", () => {
         try {
           await contract.req(test.function, BigInt(testCase.a));
         } catch (e) {
-          console.log(e);
           hadEvaluationFailure = true;
           err = `${e}`;
         }
         expect(hadEvaluationFailure).toBe(testCase.shouldCrash);
         if (hadEvaluationFailure) {
           expect(err.includes("execution reverted")).toBe(true);
+          if (!testCase.shouldCrash) {
+            console.log(`crashed in req even though it shouldn't have: ${err}`);
+          }
         }
       });
     }
