@@ -1,6 +1,7 @@
 import { AddCaller, AddCallee } from "../types/tests/contracts/Tx.sol";
 import { Ownership } from "../types/tests/contracts/Ownership";
 import { createFheInstance, deployContract } from "./utils";
+import { fail } from "assert";
 
 describe("Test Transactions Scenarios", () => {
   let contractCaller: AddCaller;
