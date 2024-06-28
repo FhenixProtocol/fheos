@@ -80,8 +80,11 @@ func (p *EthDbWrapper) PutVersion(v uint64) error {
 	if err != nil {
 		return err
 	}
-
 	return p.db.Put(key, buf.Bytes())
+}
+
+func (p *EthDbWrapper) DeleteCt(h types.Hash) error {
+	return p.db.Delete(h[:])
 }
 
 func (p *EthDbWrapper) PutCt(h types.Hash, cipher *types.CipherTextRepresentation) error {

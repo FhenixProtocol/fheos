@@ -15,8 +15,9 @@ func IsValidType(t fhe.EncryptionType) bool {
 }
 
 type CipherTextRepresentation struct {
-	Data   *FheEncrypted
-	Owners []common.Address
+	Data     *FheEncrypted
+	Owners   []common.Address
+	RefCount uint64
 }
 
 type Storage interface {
@@ -33,6 +34,8 @@ type FheCipherTextStorage interface {
 	GetCt(h Hash) (*CipherTextRepresentation, error)
 
 	HasCt(h Hash) bool
+
+	DeleteCt(h Hash) error
 }
 
 type PrecompileName int

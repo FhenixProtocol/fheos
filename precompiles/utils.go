@@ -46,7 +46,8 @@ type Precompile struct {
 func getCiphertext(state *storage.MultiStore, ciphertextHash fhe.Hash, caller common.Address) *fhe.FheEncrypted {
 	ct, err := state.GetCt(types.Hash(ciphertextHash), caller)
 	if err != nil {
-		logger.Error("reading ciphertext from State resulted with error", "error", err.Error())
+
+		logger.Error("reading ciphertext from State resulted with error", "hash", ciphertextHash.Hex(), "error", err.Error())
 		return nil
 	}
 

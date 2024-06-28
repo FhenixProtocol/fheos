@@ -341,7 +341,9 @@ describe("Test CT Ownership", () => {
   it("Broken chain", async () => {
     const caller = contracts[2];
     const callee = contracts[3];
-    const tx = await caller.setPlain(100);
+    const { instance, permit } = await createFheInstance(contractAddrs[2]);
+    const encInput = await instance.encrypt_uint32(100);
+    const tx = await caller.setEnc(encInput);
     await tx.wait();
     const response = await caller.getEnc();
     let failed = false;
