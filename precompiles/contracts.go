@@ -1392,16 +1392,16 @@ func Not(utype byte, value []byte, tp *TxParams) ([]byte, uint64, error) {
 	return resultHash[:], gas, nil
 }
 
-func GetNetworkPublicKey(tp *TxParams) ([]byte, error) {
+func GetNetworkPublicKey(tp *TxParams, securityZone int32) ([]byte, error) {
 	functionName := types.GetNetworkKey
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
-	pk, err := fhe.PublicKey(0)
+	pk, err := fhe.PublicKey(securityZone)
 	if err != nil {
-		logger.Error("could not get public key", "err", err)
+		logger.Error("could not get public key", "err", err, "securityZone", securityZone)
 		return nil, vm.ErrExecutionReverted
 	}
 
