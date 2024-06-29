@@ -5,4 +5,4 @@ precompiles/artifacts/*
 solgen/**/*.js
 build/
 solidity/types/*
-
+fheosdb/

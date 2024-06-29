@@ -125,11 +125,11 @@ library Impl {
         }
     }
 
-    function trivialEncrypt(uint256 value, uint8 toType) internal pure returns (uint256 result) {
+    function trivialEncrypt(uint256 value, uint8 toType, int32 securityZone) internal pure returns (uint256 result) {
         bytes memory output;
 
         // Call the trivialEncrypt precompile.
-        output = FheOps(Precompiles.Fheos).trivialEncrypt(Common.toBytes(value), toType);
+        output = FheOps(Precompiles.Fheos).trivialEncrypt(Common.toBytes(value), toType, securityZone);
 
         result = getValue(output);
     }
@@ -2776,35 +2776,67 @@ library FHE {
     }
     /// @notice Converts a uint256 to an ebool
     function asEbool(uint256 value) internal pure returns (ebool) {
-        return ebool.wrap(Impl.trivialEncrypt(value, Common.EBOOL_TFHE));
+        return ebool.wrap(Impl.trivialEncrypt(value, Common.EBOOL_TFHE, 0));
+    }
+    /// @notice Converts a uint256 to an ebool, specifying security zone
+    function asEbool(uint256 value, int32 securityZone) internal pure returns (ebool) {
+        return ebool.wrap(Impl.trivialEncrypt(value, Common.EBOOL_TFHE, securityZone));
     }
     /// @notice Converts a uint256 to an euint8
     function asEuint8(uint256 value) internal pure returns (euint8) {
-        return euint8.wrap(Impl.trivialEncrypt(value, Common.EUINT8_TFHE));
+        return euint8.wrap(Impl.trivialEncrypt(value, Common.EUINT8_TFHE, 0));
+    }
+    /// @notice Converts a uint256 to an euint8, specifying security zone
+    function asEuint8(uint256 value, int32 securityZone) internal pure returns (euint8) {
+        return euint8.wrap(Impl.trivialEncrypt(value, Common.EUINT8_TFHE, securityZone));
     }
     /// @notice Converts a uint256 to an euint16
     function asEuint16(uint256 value) internal pure returns (euint16) {
-        return euint16.wrap(Impl.trivialEncrypt(value, Common.EUINT16_TFHE));
+        return euint16.wrap(Impl.trivialEncrypt(value, Common.EUINT16_TFHE, 0));
+    }
+    /// @notice Converts a uint256 to an euint16, specifying security zone
+    function asEuint16(uint256 value, int32 securityZone) internal pure returns (euint16) {
+        return euint16.wrap(Impl.trivialEncrypt(value, Common.EUINT16_TFHE, securityZone));
     }
     /// @notice Converts a uint256 to an euint32
     function asEuint32(uint256 value) internal pure returns (euint32) {
-        return euint32.wrap(Impl.trivialEncrypt(value, Common.EUINT32_TFHE));
+        return euint32.wrap(Impl.trivialEncrypt(value, Common.EUINT32_TFHE, 0));
+    }
+    /// @notice Converts a uint256 to an euint32, specifying security zone
+    function asEuint32(uint256 value, int32 securityZone) internal pure returns (euint32) {
+        return euint32.wrap(Impl.trivialEncrypt(value, Common.EUINT32_TFHE, securityZone));
     }
     /// @notice Converts a uint256 to an euint64
     function asEuint64(uint256 value) internal pure returns (euint64) {
-        return euint64.wrap(Impl.trivialEncrypt(value, Common.EUINT64_TFHE));
+        return euint64.wrap(Impl.trivialEncrypt(value, Common.EUINT64_TFHE, 0));
+    }
+    /// @notice Converts a uint256 to an euint64, specifying security zone
+    function asEuint64(uint256 value, int32 securityZone) internal pure returns (euint64) {
+        return euint64.wrap(Impl.trivialEncrypt(value, Common.EUINT64_TFHE, securityZone));
     }
     /// @notice Converts a uint256 to an euint128
     function asEuint128(uint256 value) internal pure returns (euint128) {
-        return euint128.wrap(Impl.trivialEncrypt(value, Common.EUINT128_TFHE));
+        return euint128.wrap(Impl.trivialEncrypt(value, Common.EUINT128_TFHE, 0));
+    }
+    /// @notice Converts a uint256 to an euint128, specifying security zone
+    function asEuint128(uint256 value, int32 securityZone) internal pure returns (euint128) {
+        return euint128.wrap(Impl.trivialEncrypt(value, Common.EUINT128_TFHE, securityZone));
     }
     /// @notice Converts a uint256 to an euint256
     function asEuint256(uint256 value) internal pure returns (euint256) {
-        return euint256.wrap(Impl.trivialEncrypt(value, Common.EUINT256_TFHE));
+        return euint256.wrap(Impl.trivialEncrypt(value, Common.EUINT256_TFHE, 0));
+    }
+    /// @notice Converts a uint256 to an euint256, specifying security zone
+    function asEuint256(uint256 value, int32 securityZone) internal pure returns (euint256) {
+        return euint256.wrap(Impl.trivialEncrypt(value, Common.EUINT256_TFHE, securityZone));
     }
     /// @notice Converts a uint256 to an eaddress
     function asEaddress(uint256 value) internal pure returns (eaddress) {
-        return eaddress.wrap(Impl.trivialEncrypt(value, Common.EADDRESS_TFHE));
+        return eaddress.wrap(Impl.trivialEncrypt(value, Common.EADDRESS_TFHE, 0));
+    }
+    /// @notice Converts a uint256 to an eaddress, specifying security zone
+    function asEaddress(uint256 value, int32 securityZone) internal pure returns (eaddress) {
+        return eaddress.wrap(Impl.trivialEncrypt(value, Common.EADDRESS_TFHE, securityZone));
     }
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an ebool
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
@@ -2857,7 +2889,12 @@ library FHE {
     /// @notice Converts a address to an eaddress
     /// Allows for a better user experience when working with eaddresses
     function asEaddress(address value) internal pure returns (eaddress) {
-        return eaddress.wrap(Impl.trivialEncrypt(uint256(uint160(value)), Common.EADDRESS_TFHE));
+        return eaddress.wrap(Impl.trivialEncrypt(uint256(uint160(value)), Common.EADDRESS_TFHE, 0));
+    }
+    /// @notice Converts a address to an eaddress
+    /// Allows for a better user experience when working with eaddresses, specifying security zone
+    function asEaddress(address value, int32 securityZone) internal pure returns (eaddress) {
+        return eaddress.wrap(Impl.trivialEncrypt(uint256(uint160(value)), Common.EADDRESS_TFHE, securityZone));
     }
     /// @notice Converts a plaintext boolean value to a ciphertext ebool
     /// @dev Privacy: The input value is public, therefore the ciphertext should be considered public and should be used

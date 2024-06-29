@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"math/big"
 	"os"
+	"strconv"
 )
 
 func removeDb() error {
@@ -24,7 +25,19 @@ func removeDb() error {
 	return os.Setenv("FHEOS_DB_PATH", "")
 }
 
-func generateKeys() error {
+func getenvInt(key string, defaultValue int) (int, error) {
+	s := os.Getenv(key)
+	if s == "" {
+		return defaultValue, nil
+	}
+	v, err := strconv.Atoi(s)
+	if err != nil {
+		return 0, err
+	}
+	return v, nil
+}
+
+func generateKeys(securityZones int32) error {
 	if _, err := os.Stat("./keys/"); os.IsNotExist(err) {
 		err := os.Mkdir("./keys/", 0755)
 		if err != nil {
@@ -39,9 +52,11 @@ func generateKeys() error {
 		}
 	}
 
-	err := fhedriver.GenerateFheKeys(0)
-	if err != nil {
-		return fmt.Errorf("error from tfhe GenerateFheKeys: %s", err)
+	for i := int32(0); i < securityZones; i++ {
+		err := fhedriver.GenerateFheKeys(i)
+		if err != nil {
+			return fmt.Errorf("error generating FheKeys for securityZone %d: %s", i, err)
+		}
 	}
 	return nil
 }
@@ -68,7 +83,11 @@ func initFheos() (*precompiles.TxParams, error) {
 		return nil, err
 	}
 
-	err = generateKeys()
+	securityZones, err := getenvInt("FHEOS_SECURITY_ZONES", 1)
+	if err != nil {
+		return nil, err
+	}
+	err = generateKeys(int32(securityZones))
 	if err != nil {
 		return nil, err
 	}
@@ -95,13 +114,13 @@ func getValue(a []byte) *big.Int {
 	return &value
 }
 
-func encrypt(val uint32, t uint8, tp *precompiles.TxParams) ([]byte, error) {
+func encrypt(val uint32, t uint8, securityZone int32, tp *precompiles.TxParams) ([]byte, error) {
 	bval := new(big.Int).SetUint64(uint64(val))
 
 	valBz := make([]byte, 32)
 	bval.FillBytes(valBz)
 
-	result, _, err := precompiles.TrivialEncrypt(valBz, t, tp)
+	result, _, err := precompiles.TrivialEncrypt(valBz, t, securityZone, tp)
 	return result, err
 }
 
@@ -125,6 +144,7 @@ type operationFunc func(t byte, lhs, rhs []byte, txParams *precompiles.TxParams)
 
 func setupOperationCommand(use, short string, op operationFunc) *cobra.Command {
 	var lhs, rhs uint32
+	var securityZone int32
 	var t uint8
 
 	cmd := &cobra.Command{
@@ -137,12 +157,12 @@ func setupOperationCommand(use, short string, op operationFunc) *cobra.Command {
 				return err
 			}
 
-			elhs, err := encrypt(lhs, t, txParams)
+			elhs, err := encrypt(lhs, t, securityZone, txParams)
 			if err != nil {
 				return err
 			}
 
-			erhs, err := encrypt(rhs, t, txParams)
+			erhs, err := encrypt(rhs, t, securityZone, txParams)
 			if err != nil {
 				return err
 			}
@@ -176,12 +196,12 @@ func setupOperationCommand(use, short string, op operationFunc) *cobra.Command {
 	cmd.Flags().Uint32VarP(&lhs, "lhs", "l", 0, "lhs")
 	cmd.Flags().Uint32VarP(&rhs, "rhs", "r", 0, "rhs")
 	cmd.Flags().Uint8VarP(&t, "utype", "t", 0, "uint type(0-uint8, 1-uint16, 2-uint32)")
+	cmd.Flags().Int32VarP(&securityZone, "security-zone", "z", 0, "security zone")
 
 	return cmd
 }
 
 func main() {
-
 	var rootCmd = &cobra.Command{Use: "fheos"}
 
 	var initState = &cobra.Command{

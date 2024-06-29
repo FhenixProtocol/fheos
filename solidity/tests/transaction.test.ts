@@ -1,6 +1,7 @@
 import { AddCaller, AddCallee } from "../types/tests/contracts/Tx.sol";
 import { Ownership } from "../types/tests/contracts/Ownership";
 import { createFheInstance, deployContract } from "./utils";
+import { fail } from "assert";
 
 describe("Test Transactions Scenarios", () => {
   let contractCaller: AddCaller;
@@ -224,6 +225,43 @@ describe("Test Transactions Scenarios", () => {
     );
     const counter = instance.unseal(contractAddr, getCounterResponse);
     expect(Number(counter)).toEqual(26);
+  });
+
+  it("Specify valid Security Zone (eth call, not tx)", async () => {
+    const { permit, instance } = await createFheInstance(contractAddr);
+
+    let encRes;
+    try {
+      encRes = await contractCaller.addPlainSecurityZone(
+        1299,
+        38,
+        1,
+        permit.publicKey
+      );
+    } catch (e) {
+      console.error(`failed operation on securityzone 1: ${e}`);
+      fail("Should not have reverted");
+    }
+
+    const result = instance.unseal(contractAddr, encRes);
+    expect(Number(result)).toEqual(1337);
+  });
+
+  it("Specify invalid Security Zone (eth call, not tx)", async () => {
+    const { permit, instance } = await createFheInstance(contractAddr);
+
+    try {
+      await contractCaller.addPlainSecurityZone(
+        1299,
+        38,
+        3,
+        permit.publicKey
+      );
+
+      fail("Should have reverted");
+    } catch (err) {
+      expect(err.message).toContain("execution reverted");
+    }
   });
 
   it("Add via DELEGATE contract call - pass Uint32", async () => {
