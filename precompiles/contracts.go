@@ -1392,7 +1392,7 @@ func Not(utype byte, value []byte, tp *TxParams) ([]byte, uint64, error) {
 	return resultHash[:], gas, nil
 }
 
-func GetNetworkPublicKey(tp *TxParams, securityZone int32) ([]byte, error) {
+func GetNetworkPublicKey(securityZone int32, tp *TxParams) ([]byte, error) {
 	functionName := types.GetNetworkKey
 
 	if shouldPrintPrecompileInfo(tp) {
