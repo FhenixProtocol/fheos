@@ -78,8 +78,8 @@ devDependencies:
     specifier: ^6.9.0
     version: 6.9.1
   fhenixjs:
-    specifier: github:fhenixprotocol/fhenix.js#security-zones
-    version: github.com/fhenixprotocol/fhenix.js/716c408b67a0a1ada8e0286b033f752a2b00d01a
+    specifier: github:fhenixprotocol/fhenix.js#security-zones-dep
+    version: github.com/fhenixprotocol/fhenix.js/03f4f22d891b67e3cab9866a9af98e2b8e06d64e
   fs-extra:
     specifier: ^10.1.0
     version: 10.1.0
@@ -6876,8 +6876,8 @@ packages:
       ethers: 5.7.2
     dev: true
 
-  github.com/fhenixprotocol/fhenix.js/716c408b67a0a1ada8e0286b033f752a2b00d01a:
-    resolution: {tarball: https://codeload.github.com/fhenixprotocol/fhenix.js/tar.gz/716c408b67a0a1ada8e0286b033f752a2b00d01a}
+  github.com/fhenixprotocol/fhenix.js/03f4f22d891b67e3cab9866a9af98e2b8e06d64e:
+    resolution: {tarball: https://codeload.github.com/fhenixprotocol/fhenix.js/tar.gz/03f4f22d891b67e3cab9866a9af98e2b8e06d64e}
     name: fhenixjs
     version: 0.2.1
     dependencies:
