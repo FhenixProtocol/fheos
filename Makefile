@@ -37,6 +37,11 @@ test: check_network_is_running gen compile
 	cd solidity && pnpm install
 	cd solidity && pnpm test
 
+.PHONY: test-precomp
+test-precomp: check_network_is_running
+	cp solidity/.env.example solidity/.env
+	cd solidity && pnpm test -- precompiles.test.ts
+
 .PHONY: build
 build:
 	go build -o build/main ./cmd/

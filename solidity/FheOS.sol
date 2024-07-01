@@ -35,5 +35,5 @@ interface FheOps {
     function shl(uint8 utype, bytes memory lhsHash, bytes memory rhsHash) external pure returns (bytes memory);
     function shr(uint8 utype, bytes memory lhsHash, bytes memory rhsHash) external pure returns (bytes memory);
     function not(uint8 utype, bytes memory value) external pure returns (bytes memory);
-    function getNetworkPublicKey() external pure returns (bytes memory);
+    function getNetworkPublicKey(int32 securityZone) external pure returns (bytes memory);
 }
