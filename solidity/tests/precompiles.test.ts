@@ -1646,6 +1646,24 @@ describe("Test AsEbool", () => {
       expect(decryptedResult).toBe(testCase.output);
     }
   });
+
+  it(`From pre encrypted - Security Zone 1`, async () => {
+    for (const testCase of cases) {
+      // skip for 0 as currently encrypting 0 is not supported
+      if (testCase.input === BigInt(0)) {
+        continue;
+      }
+
+      const encInput = await fheContract.instance.encrypt_bool(
+        !!Number(testCase.input),
+        1 // non-default security zone
+      );
+      let decryptedResult = await contract.castFromPreEncryptedToEbool(
+        encInput.data
+      );
+      expect(decryptedResult).toBe(testCase.output);
+    }
+  });
 });
 
 describe("Test AsEuint8", () => {
@@ -1733,6 +1751,14 @@ describe("Test AsEuint8", () => {
 
   it(`From pre encrypted`, async () => {
     const encInput = await fheContract.instance.encrypt_uint8(Number(value));
+    let decryptedResult = await contract.castFromPreEncryptedToEuint8(
+      encInput.data
+    );
+    expect(decryptedResult).toBe(value);
+  });
+
+  it(`From pre encrypted - Security Zone 1`, async () => {
+    const encInput = await fheContract.instance.encrypt_uint8(Number(value), 1);
     let decryptedResult = await contract.castFromPreEncryptedToEuint8(
       encInput.data
     );
@@ -1831,6 +1857,14 @@ describe("Test AsEuint16", () => {
     );
     expect(decryptedResult).toBe(value);
   });
+
+  it(`From pre encrypted - Security Zone 1`, async () => {
+    const encInput = await fheContract.instance.encrypt_uint16(Number(value), 1);
+    let decryptedResult = await contract.castFromPreEncryptedToEuint16(
+      encInput.data
+    );
+    expect(decryptedResult).toBe(value);
+  });
 });
 
 describe("Test AsEuint32", () => {
@@ -1919,6 +1953,14 @@ describe("Test AsEuint32", () => {
 
   it(`From pre encrypted`, async () => {
     const encInput = await fheContract.instance.encrypt_uint32(Number(value));
+    let decryptedResult = await contract.castFromPreEncryptedToEuint32(
+      encInput.data
+    );
+    expect(decryptedResult).toBe(value);
+  });
+
+  it(`From pre encrypted - Security Zone 1`, async () => {
+    const encInput = await fheContract.instance.encrypt_uint32(Number(value), 1);
     let decryptedResult = await contract.castFromPreEncryptedToEuint32(
       encInput.data
     );
@@ -2017,6 +2059,14 @@ describe("Test AsEuint64", () => {
     );
     expect(decryptedResult).toBe(value);
   });
+
+  it(`From pre encrypted - Security Zone 1`, async () => {
+    const encInput = await fheContract.instance.encrypt_uint64(value, 1);
+    let decryptedResult = await contract.castFromPreEncryptedToEuint64(
+      encInput.data
+    );
+    expect(decryptedResult).toBe(value);
+  });
 });
 
 describe("Test AsEuint128", () => {
@@ -2104,6 +2154,14 @@ describe("Test AsEuint128", () => {
 
   it(`From pre encrypted`, async () => {
     const encInput = await fheContract.instance.encrypt_uint128(value);
+    let decryptedResult = await contract.castFromPreEncryptedToEuint128(
+      encInput.data
+    );
+    expect(decryptedResult).toBe(value);
+  });
+
+  it(`From pre encrypted - Security Zone 1`, async () => {
+    const encInput = await fheContract.instance.encrypt_uint128(value, 1);
     let decryptedResult = await contract.castFromPreEncryptedToEuint128(
       encInput.data
     );
@@ -2212,7 +2270,16 @@ describe("Test AsEuint256", () => {
     );
     expect(decryptedResult).toBe(value);
   });
+
+  it(`From pre encrypted - Security Zone 1`, async () => {
+    const encInput = await fheContract.instance.encrypt_uint256(value, 1); // Adjust encryption method if necessary
+    let decryptedResult = await contract.castFromPreEncryptedToEuint256(
+      encInput.data
+    );
+    expect(decryptedResult).toBe(value);
+  });
 });
+
 describe("Test AsEaddress", () => {
   let contract;
   let fheContract;
@@ -2262,9 +2329,18 @@ describe("Test AsEaddress", () => {
   });
 
   it(`From pre encrypted`, async () => {
-    const encInput = await fheContract.instance.encrypt_uint256(value); // Adjust encryption method if necessary
+    const encInput = await fheContract.instance.encrypt_address(value); // Adjust encryption method if necessary
     let decryptedResult = await contract.castFromPreEncryptedToEaddress(
         encInput.data
+    );
+    let decimal = BigInt(decryptedResult);
+    expect(decimal).toBe(value);
+  });
+
+  it(`From pre encrypted - Security Zone 1`, async () => {
+    const encInput = await fheContract.instance.encrypt_address(value, 1); // Adjust encryption method if necessary
+    let decryptedResult = await contract.castFromPreEncryptedToEaddress(
+      encInput.data
     );
     let decimal = BigInt(decryptedResult);
     expect(decimal).toBe(value);
