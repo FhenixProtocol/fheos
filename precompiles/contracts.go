@@ -633,7 +633,7 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams) ([]byte, uint64, 
 // TrivialEncrypt takes a plaintext number and encrypts it to a _compact_ ciphertext
 // using the server/computation key - obviously this doesn't hide any information as the
 // number was known plaintext
-func TrivialEncrypt(input []byte, toType byte, tp *TxParams) ([]byte, uint64, error) {
+func TrivialEncrypt(input []byte, toType byte, securityZone int32, tp *TxParams) ([]byte, uint64, error) {
 	functionName := types.TrivialEncrypt
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
@@ -679,7 +679,7 @@ func TrivialEncrypt(input []byte, toType byte, tp *TxParams) ([]byte, uint64, er
 
 	// we encrypt this using the computation key not the public key. Also, compact to save space in case this gets saved directly
 	// to storage
-	ct, err = fhe.EncryptPlainText(valueToEncrypt, uintType)
+	ct, err = fhe.EncryptPlainText(valueToEncrypt, uintType, securityZone)
 	if err != nil {
 		logger.Error("failed to create trivial encrypted value")
 		return nil, 0, vm.ErrExecutionReverted
@@ -1392,16 +1392,16 @@ func Not(utype byte, value []byte, tp *TxParams) ([]byte, uint64, error) {
 	return resultHash[:], gas, nil
 }
 
-func GetNetworkPublicKey(tp *TxParams) ([]byte, error) {
+func GetNetworkPublicKey(securityZone int32, tp *TxParams) ([]byte, error) {
 	functionName := types.GetNetworkKey
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
-	pk, err := fhe.PublicKey(0)
+	pk, err := fhe.PublicKey(securityZone)
 	if err != nil {
-		logger.Error("could not get public key", "err", err)
+		logger.Error("could not get public key", "err", err, "securityZone", securityZone)
 		return nil, vm.ErrExecutionReverted
 	}
 

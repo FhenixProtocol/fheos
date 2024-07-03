@@ -244,7 +244,6 @@ interface FheOps {
 	if err := scanner.Err(); err != nil {
 		fmt.Println("Error reading file:", err)
 	}
-
 }
 
 func Gen(parent string, output string) {
@@ -527,10 +526,10 @@ func (con FheOps) {{.Name}}(c ctx, evm mech{{.Inputs}}) ({{.ReturnType}}, error)
 			}
 			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
 		}(time.Now())
-	}	
+	}
 
 	ret, gas, err := fheos.{{.Name}}({{.InnerInputs}}&tp)
-	
+
 	if err != nil {
 		if metrics.Enabled {
 			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "{{.Name}}", fheos.UtypeToString({{.OperationTypeName}}), "error/fhe_failure")
@@ -542,10 +541,10 @@ func (con FheOps) {{.Name}}(c ctx, evm mech{{.Inputs}}) ({{.ReturnType}}, error)
 	err = c.Burn(gas)
 
 	if metrics.Enabled {
-	        metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "{{.Name}}", fheos.UtypeToString({{.OperationTypeName}}), "success/total")
-	        if err != nil {
-				metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "{{.Name}}", fheos.UtypeToString({{.OperationTypeName}}), "error/fhe_gas_failure")
-	        } 
+		metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "{{.Name}}", fheos.UtypeToString({{.OperationTypeName}}), "success/total")
+		if err != nil {
+			metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "{{.Name}}", fheos.UtypeToString({{.OperationTypeName}}), "error/fhe_gas_failure")
+		}
 
 		metrics.GetOrRegisterCounter(metricPath, nil).Inc(1)
 	}

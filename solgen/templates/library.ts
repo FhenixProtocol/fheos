@@ -120,11 +120,11 @@ library Impl {
         }
     }
 
-    function trivialEncrypt(uint256 value, uint8 toType) internal pure returns (uint256 result) {
+    function trivialEncrypt(uint256 value, uint8 toType, int32 securityZone) internal pure returns (uint256 result) {
         bytes memory output;
 
         // Call the trivialEncrypt precompile.
-        output = FheOps(Precompiles.Fheos).trivialEncrypt(Common.toBytes(value), toType);
+        output = FheOps(Precompiles.Fheos).trivialEncrypt(Common.toBytes(value), toType, securityZone);
 
         result = getValue(output);
     }
@@ -223,12 +223,12 @@ const castFromEncrypted = (
   }, ${fromType}.unwrap(${name}), Common.${toType.toUpperCase()}_TFHE)`;
 };
 
-const castFromPlaintext = (name: string, toType: string): string => {
-  return `Impl.trivialEncrypt(${name}, Common.${toType.toUpperCase()}_TFHE)`;
+const castFromPlaintext = (name: string, toType: string, addSecurityZone: boolean = false): string => {
+  return `Impl.trivialEncrypt(${name}, Common.${toType.toUpperCase()}_TFHE, ${addSecurityZone ? "securityZone" : "0"})`;
 };
 
-const castFromAddress = (name: string, toType: string): string => {
-  return `Impl.trivialEncrypt(uint256(uint160(${name})), Common.${toType.toUpperCase()}_TFHE)`;
+const castFromAddress = (name: string, toType: string, addSecurityZone: boolean = false): string => {
+  return `Impl.trivialEncrypt(uint256(uint160(${name})), Common.${toType.toUpperCase()}_TFHE, ${addSecurityZone ? "securityZone" : "0"})`;
 };
 
 const castFromBytes = (name: string, toType: string): string => {
@@ -247,8 +247,9 @@ const castToEbool = (name: string, fromType: string): string => {
     }`;
 };
 
-export const AsTypeFunction = (fromType: string, toType: string) => {
+export const AsTypeFunction = (fromType: string, toType: string, addSecurityZone: boolean = false) => {
   let castString = castFromEncrypted(fromType, toType, "value");
+  let overrideFuncs = '';
 
   let docString = `
     /// @notice Converts a ${fromType} to an ${toType}`;
@@ -289,21 +290,35 @@ export const AsTypeFunction = (fromType: string, toType: string) => {
   } else if (fromType == "address" && toType == "eaddress") {
     docString += `
     /// Allows for a better user experience when working with eaddresses`;
-    castString = castFromAddress("value", toType);
+    if (!addSecurityZone) {
+      // recursive call to add the asType override with the security zone
+      overrideFuncs += AsTypeFunction(fromType, toType, true);
+    } else {
+      docString += `, specifying security zone`;
+    }
+    castString = castFromAddress("value", toType, addSecurityZone);
   } else if (EPlaintextType.includes(fromType)) {
-    castString = castFromPlaintext("value", toType);
+    if (!addSecurityZone) {
+      // recursive call to add the asType override with the security zone
+      overrideFuncs += AsTypeFunction(fromType, toType, true);
+    } else {
+      docString += `, specifying security zone`;
+    }
+    castString = castFromPlaintext("value", toType, addSecurityZone);
   } else if (toType === "ebool") {
     return castToEbool("value", fromType);
   } else if (!EInputType.includes(fromType)) {
     throw new Error(`Unsupported type for casting: ${fromType}`);
   }
 
-  return `${docString}
+  let func = `${docString}
     function as${capitalize(
       toType
-    )}(${fromType} value) internal pure returns (${toType}) {
+    )}(${fromType} value${addSecurityZone ? ", int32 securityZone" : ""}) internal pure returns (${toType}) {
         return ${toType}.wrap(${castString});
     }`;
+
+  return func + overrideFuncs;
 };
 
 const unwrapType = (typeName: EUintType, inputName: string): string =>
@@ -324,7 +339,7 @@ export function SolTemplate2Arg(
   let variableName2 = input2 === "bytes32" ? "publicKey" : "rhs";
 
   let docString = `
-    /// @notice This functions performs the ${name} operation
+    /// @notice This function performs the ${name} operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
     ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
