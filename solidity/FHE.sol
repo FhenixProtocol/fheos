@@ -111,11 +111,11 @@ library Impl {
         return reencrypted;
     }
 
-    function verify(bytes memory _ciphertextBytes, uint8 _toType) internal pure returns (uint256 result) {
+    function verify(bytes memory _ciphertextBytes, uint8 _toType, int32 securityZone) internal pure returns (uint256 result) {
         bytes memory output;
 
         // Call the verify precompile.
-        output = FheOps(Precompiles.Fheos).verify(_toType, _ciphertextBytes);
+        output = FheOps(Precompiles.Fheos).verify(_toType, _ciphertextBytes, securityZone);
         result = getValue(output);
     }
 
