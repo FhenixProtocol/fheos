@@ -195,11 +195,11 @@ export function AsTypeBenchmarkContract(type: string) {
     }`;
   }
 
-  // deal with casting from built-in types
-  let builtInTypes = {};
-  builtInTypes["uint256"] = "Uint256";
-  builtInTypes[toInTypeParam(type)] = "PreEncrypted";
-  for (const [builtInType, varSuffix] of Object.entries(builtInTypes)) {
+  // deal with casting from plaintext and pre-encrypted types
+  let extraTypes: {[key:string]: string} = {};
+  extraTypes["uint256"] = "Uint256";
+  extraTypes[toInTypeParam(type)] = "PreEncrypted";
+  for (const [builtInType, varSuffix] of Object.entries(extraTypes)) {
     privateVarsA += `    ${builtInType.split(" ")[0]} internal a${varSuffix};\n`;
 
     loads += `\n    function load${varSuffix}(${builtInType} _a) public {
