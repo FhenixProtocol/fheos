@@ -2,18 +2,18 @@
 
 pragma solidity >=0.8.19 <0.9.0;
 
-import { FHE, euint8 } from "../../FHE.sol";
+import { FHE, euint8, inEuint8 } from "../../FHE.sol";
 
 contract Counter {
   euint8 private counter;
   mapping(uint256 => euint8) private counterMapping;
 
-  function add(bytes calldata encryptedValue) public {
+  function add(inEuint8 calldata encryptedValue) public {
     euint8 value = FHE.asEuint8(encryptedValue);
     counter = FHE.add(counter, value);
   }
 
-  function addMapping(uint8 idx, bytes calldata encryptedValue) public {
+  function addMapping(uint8 idx, inEuint8 calldata encryptedValue) public {
     euint8 value = FHE.asEuint8(encryptedValue);
     counterMapping[idx] = FHE.add(counterMapping[idx], value);
   }
