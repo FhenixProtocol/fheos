@@ -31,6 +31,7 @@ ${EInputType.map((type) => {
 ${EInputType.map((type) => {
   return `struct in${capitalize(type)} {
     bytes data;
+    int32 securityZone;
 }`;
 }).join("\n")}
 
@@ -232,11 +233,11 @@ const castFromAddress = (name: string, toType: string, addSecurityZone: boolean 
 };
 
 const castFromBytes = (name: string, toType: string): string => {
-  return `Impl.verify(${name}, Common.${toType.toUpperCase()}_TFHE)`;
+  return `Impl.verify(${name}, Common.${toType.toUpperCase()}_TFHE, securityZone)`;
 };
 
 const castFromInputType = (name: string, toType: string): string => {
-  return `FHE.as${capitalize(toType)}(${name}.data)`;
+  return `FHE.as${capitalize(toType)}(${name}.data, ${name}.securityZone)`;
 };
 
 const castToEbool = (name: string, fromType: string): string => {
@@ -286,6 +287,7 @@ export const AsTypeFunction = (fromType: string, toType: string, addSecurityZone
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an ${toType}
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input`;
+    addSecurityZone = true;
     castString = castFromBytes("value", toType);
   } else if (fromType == "address" && toType == "eaddress") {
     docString += `
