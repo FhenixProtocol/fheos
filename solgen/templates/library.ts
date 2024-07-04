@@ -269,7 +269,7 @@ export const AsTypeFunction = (fromType: string, toType: string, addSecurityZone
 
         return asEbool(sVal);
     }`;
-  } else if (fromType.startsWith("in")) {
+  } else if (fromType.startsWith("inE")) {
     docString = `
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an ${toType}
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
@@ -445,7 +445,15 @@ export const IsOperationAllowed = (
 };
 
 export function genAbiFile(abi: string) {
-  return `import { BaseContract } from 'ethers';\n${abi}\n\n`;
+  return `
+import { BaseContract } from 'ethers';
+
+export interface EncryptedNumber {
+  data: Uint8Array;
+  securityZone: number;
+}
+${abi}
+`;
 }
 
 export function SolTemplate1Arg(
