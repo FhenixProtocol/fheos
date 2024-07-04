@@ -196,7 +196,9 @@ export function AsTypeBenchmarkContract(type: string) {
   }
 
   // deal with casting from built-in types
-  let builtInTypes = {"uint256": "Uint256", "bytes memory": "Bytes"};
+  let builtInTypes = {};
+  builtInTypes["uint256"] = "Uint256";
+  builtInTypes[toInTypeParam(type)] = "PreEncrypted";
   for (const [builtInType, varSuffix] of Object.entries(builtInTypes)) {
     privateVarsA += `    ${builtInType.split(" ")[0]} internal a${varSuffix};\n`;
 
@@ -207,6 +209,8 @@ export function AsTypeBenchmarkContract(type: string) {
         FHE.${toAsType(type)}(a${varSuffix});
     }`;
   }
+
+  importTypes += "\n    " + toInType(type) + ",";
 
   const body = privateVarsA + loads + "\n" + casts;
   importTypes = importTypes.slice(0, -1); // remove last comma
