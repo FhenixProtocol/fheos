@@ -78,8 +78,8 @@ devDependencies:
     specifier: ^6.9.0
     version: 6.9.1
   fhenixjs:
-    specifier: github:fhenixprotocol/fhenix.js#security-zones
-    version: github.com/fhenixprotocol/fhenix.js/716c408b67a0a1ada8e0286b033f752a2b00d01a
+    specifier: github:fhenixprotocol/fhenix.js#security-zones-field
+    version: github.com/fhenixprotocol/fhenix.js/9d52dc39384f3850ba7f1ebbbc96cb635e176f13
   fs-extra:
     specifier: ^10.1.0
     version: 10.1.0
@@ -6876,17 +6876,13 @@ packages:
       ethers: 5.7.2
     dev: true
 
-  github.com/fhenixprotocol/fhenix.js/716c408b67a0a1ada8e0286b033f752a2b00d01a:
-    resolution: {tarball: https://codeload.github.com/fhenixprotocol/fhenix.js/tar.gz/716c408b67a0a1ada8e0286b033f752a2b00d01a}
+  github.com/fhenixprotocol/fhenix.js/9d52dc39384f3850ba7f1ebbbc96cb635e176f13:
+    resolution: {tarball: https://codeload.github.com/fhenixprotocol/fhenix.js/tar.gz/9d52dc39384f3850ba7f1ebbbc96cb635e176f13}
     name: fhenixjs
     version: 0.2.1
     dependencies:
-      ethers: 6.9.1
       node-tfhe: 0.6.4
       tfhe: 0.6.4
       tweetnacl: 1.0.3
       tweetnacl-util: 0.15.1
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
     dev: true
