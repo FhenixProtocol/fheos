@@ -366,12 +366,12 @@ func (_FheOps *FheOpsCallerSession) Eq(utype uint8, lhsHash []byte, rhsHash []by
 	return _FheOps.Contract.Eq(&_FheOps.CallOpts, utype, lhsHash, rhsHash)
 }
 
-// GetNetworkPublicKey is a free data retrieval call binding the contract method 0x44e21dd2.
+// GetNetworkPublicKey is a free data retrieval call binding the contract method 0x1b1b484e.
 //
-// Solidity: function getNetworkPublicKey() pure returns(bytes)
-func (_FheOps *FheOpsCaller) GetNetworkPublicKey(opts *bind.CallOpts) ([]byte, error) {
+// Solidity: function getNetworkPublicKey(int32 securityZone) pure returns(bytes)
+func (_FheOps *FheOpsCaller) GetNetworkPublicKey(opts *bind.CallOpts, securityZone int32) ([]byte, error) {
 	var out []interface{}
-	err := _FheOps.contract.Call(opts, &out, "getNetworkPublicKey")
+	err := _FheOps.contract.Call(opts, &out, "getNetworkPublicKey", securityZone)
 
 	if err != nil {
 		return *new([]byte), err
@@ -383,18 +383,18 @@ func (_FheOps *FheOpsCaller) GetNetworkPublicKey(opts *bind.CallOpts) ([]byte, e
 
 }
 
-// GetNetworkPublicKey is a free data retrieval call binding the contract method 0x44e21dd2.
+// GetNetworkPublicKey is a free data retrieval call binding the contract method 0x1b1b484e.
 //
-// Solidity: function getNetworkPublicKey() pure returns(bytes)
-func (_FheOps *FheOpsSession) GetNetworkPublicKey() ([]byte, error) {
-	return _FheOps.Contract.GetNetworkPublicKey(&_FheOps.CallOpts)
+// Solidity: function getNetworkPublicKey(int32 securityZone) pure returns(bytes)
+func (_FheOps *FheOpsSession) GetNetworkPublicKey(securityZone int32) ([]byte, error) {
+	return _FheOps.Contract.GetNetworkPublicKey(&_FheOps.CallOpts, securityZone)
 }
 
-// GetNetworkPublicKey is a free data retrieval call binding the contract method 0x44e21dd2.
+// GetNetworkPublicKey is a free data retrieval call binding the contract method 0x1b1b484e.
 //
-// Solidity: function getNetworkPublicKey() pure returns(bytes)
-func (_FheOps *FheOpsCallerSession) GetNetworkPublicKey() ([]byte, error) {
-	return _FheOps.Contract.GetNetworkPublicKey(&_FheOps.CallOpts)
+// Solidity: function getNetworkPublicKey(int32 securityZone) pure returns(bytes)
+func (_FheOps *FheOpsCallerSession) GetNetworkPublicKey(securityZone int32) ([]byte, error) {
+	return _FheOps.Contract.GetNetworkPublicKey(&_FheOps.CallOpts, securityZone)
 }
 
 // Gt is a free data retrieval call binding the contract method 0x874b1c10.
@@ -953,12 +953,12 @@ func (_FheOps *FheOpsCallerSession) Sub(utype uint8, lhsHash []byte, rhsHash []b
 	return _FheOps.Contract.Sub(&_FheOps.CallOpts, utype, lhsHash, rhsHash)
 }
 
-// TrivialEncrypt is a free data retrieval call binding the contract method 0x19e1c5c4.
+// TrivialEncrypt is a free data retrieval call binding the contract method 0xba19ac28.
 //
-// Solidity: function trivialEncrypt(bytes input, uint8 toType) pure returns(bytes)
-func (_FheOps *FheOpsCaller) TrivialEncrypt(opts *bind.CallOpts, input []byte, toType uint8) ([]byte, error) {
+// Solidity: function trivialEncrypt(bytes input, uint8 toType, int32 securityZone) pure returns(bytes)
+func (_FheOps *FheOpsCaller) TrivialEncrypt(opts *bind.CallOpts, input []byte, toType uint8, securityZone int32) ([]byte, error) {
 	var out []interface{}
-	err := _FheOps.contract.Call(opts, &out, "trivialEncrypt", input, toType)
+	err := _FheOps.contract.Call(opts, &out, "trivialEncrypt", input, toType, securityZone)
 
 	if err != nil {
 		return *new([]byte), err
@@ -970,26 +970,26 @@ func (_FheOps *FheOpsCaller) TrivialEncrypt(opts *bind.CallOpts, input []byte, t
 
 }
 
-// TrivialEncrypt is a free data retrieval call binding the contract method 0x19e1c5c4.
+// TrivialEncrypt is a free data retrieval call binding the contract method 0xba19ac28.
 //
-// Solidity: function trivialEncrypt(bytes input, uint8 toType) pure returns(bytes)
-func (_FheOps *FheOpsSession) TrivialEncrypt(input []byte, toType uint8) ([]byte, error) {
-	return _FheOps.Contract.TrivialEncrypt(&_FheOps.CallOpts, input, toType)
+// Solidity: function trivialEncrypt(bytes input, uint8 toType, int32 securityZone) pure returns(bytes)
+func (_FheOps *FheOpsSession) TrivialEncrypt(input []byte, toType uint8, securityZone int32) ([]byte, error) {
+	return _FheOps.Contract.TrivialEncrypt(&_FheOps.CallOpts, input, toType, securityZone)
 }
 
-// TrivialEncrypt is a free data retrieval call binding the contract method 0x19e1c5c4.
+// TrivialEncrypt is a free data retrieval call binding the contract method 0xba19ac28.
 //
-// Solidity: function trivialEncrypt(bytes input, uint8 toType) pure returns(bytes)
-func (_FheOps *FheOpsCallerSession) TrivialEncrypt(input []byte, toType uint8) ([]byte, error) {
-	return _FheOps.Contract.TrivialEncrypt(&_FheOps.CallOpts, input, toType)
+// Solidity: function trivialEncrypt(bytes input, uint8 toType, int32 securityZone) pure returns(bytes)
+func (_FheOps *FheOpsCallerSession) TrivialEncrypt(input []byte, toType uint8, securityZone int32) ([]byte, error) {
+	return _FheOps.Contract.TrivialEncrypt(&_FheOps.CallOpts, input, toType, securityZone)
 }
 
-// Verify is a free data retrieval call binding the contract method 0x5fa55ca7.
+// Verify is a free data retrieval call binding the contract method 0x21b50ba3.
 //
-// Solidity: function verify(uint8 utype, bytes input) pure returns(bytes)
-func (_FheOps *FheOpsCaller) Verify(opts *bind.CallOpts, utype uint8, input []byte) ([]byte, error) {
+// Solidity: function verify(uint8 utype, bytes input, int32 securityZone) pure returns(bytes)
+func (_FheOps *FheOpsCaller) Verify(opts *bind.CallOpts, utype uint8, input []byte, securityZone int32) ([]byte, error) {
 	var out []interface{}
-	err := _FheOps.contract.Call(opts, &out, "verify", utype, input)
+	err := _FheOps.contract.Call(opts, &out, "verify", utype, input, securityZone)
 
 	if err != nil {
 		return *new([]byte), err
@@ -1001,18 +1001,18 @@ func (_FheOps *FheOpsCaller) Verify(opts *bind.CallOpts, utype uint8, input []by
 
 }
 
-// Verify is a free data retrieval call binding the contract method 0x5fa55ca7.
+// Verify is a free data retrieval call binding the contract method 0x21b50ba3.
 //
-// Solidity: function verify(uint8 utype, bytes input) pure returns(bytes)
-func (_FheOps *FheOpsSession) Verify(utype uint8, input []byte) ([]byte, error) {
-	return _FheOps.Contract.Verify(&_FheOps.CallOpts, utype, input)
+// Solidity: function verify(uint8 utype, bytes input, int32 securityZone) pure returns(bytes)
+func (_FheOps *FheOpsSession) Verify(utype uint8, input []byte, securityZone int32) ([]byte, error) {
+	return _FheOps.Contract.Verify(&_FheOps.CallOpts, utype, input, securityZone)
 }
 
-// Verify is a free data retrieval call binding the contract method 0x5fa55ca7.
+// Verify is a free data retrieval call binding the contract method 0x21b50ba3.
 //
-// Solidity: function verify(uint8 utype, bytes input) pure returns(bytes)
-func (_FheOps *FheOpsCallerSession) Verify(utype uint8, input []byte) ([]byte, error) {
-	return _FheOps.Contract.Verify(&_FheOps.CallOpts, utype, input)
+// Solidity: function verify(uint8 utype, bytes input, int32 securityZone) pure returns(bytes)
+func (_FheOps *FheOpsCallerSession) Verify(utype uint8, input []byte, securityZone int32) ([]byte, error) {
+	return _FheOps.Contract.Verify(&_FheOps.CallOpts, utype, input, securityZone)
 }
 
 // Xor is a free data retrieval call binding the contract method 0x5e639f19.
@@ -1049,7 +1049,7 @@ func (_FheOps *FheOpsCallerSession) Xor(utype uint8, lhsHash []byte, rhsHash []b
 // PrecompilesMetaData contains all meta data concerning the Precompiles contract.
 var PrecompilesMetaData = &bind.MetaData{
 	ABI: "[{\"inputs\":[],\"name\":\"Fheos\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
-	Bin: "0x60e3610052600b82828239805160001a607314610045577f4e487b7100000000000000000000000000000000000000000000000000000000600052600060045260246000fd5b30600052607381538281f3fe730000000000000000000000000000000000000000301460806040526004361060335760003560e01c806313d8d464146038575b600080fd5b603e6052565b604051604991906094565b60405180910390f35b608081565b600073ffffffffffffffffffffffffffffffffffffffff82169050919050565b60006080826057565b9050919050565b608e816077565b82525050565b600060208201905060a760008301846087565b9291505056fea2646970667358221220bd6912a57e1c0144f6338aab2df9f00ce1990b41aa80387ed44cee41f192de9564736f6c63430008130033",
+	Bin: "0x60e3610052600b82828239805160001a607314610045577f4e487b7100000000000000000000000000000000000000000000000000000000600052600060045260246000fd5b30600052607381538281f3fe730000000000000000000000000000000000000000301460806040526004361060335760003560e01c806313d8d464146038575b600080fd5b603e6052565b604051604991906094565b60405180910390f35b608081565b600073ffffffffffffffffffffffffffffffffffffffff82169050919050565b60006080826057565b9050919050565b608e816077565b82525050565b600060208201905060a760008301846087565b9291505056fea264697066735822122036bc729e8e385b5586622ade040314c1eda9561e06e83854e8f5c7ff764e934464736f6c63430008130033",
 }
 
 // PrecompilesABI is the input ABI used to generate the binding from.
