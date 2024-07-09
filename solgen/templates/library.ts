@@ -31,6 +31,7 @@ ${EInputType.map((type) => {
 ${EInputType.map((type) => {
   return `struct in${capitalize(type)} {
     bytes data;
+    int32 securityZone;
 }`;
 }).join("\n")}
 
@@ -98,11 +99,11 @@ library Impl {
         return reencrypted;
     }
 
-    function verify(bytes memory _ciphertextBytes, uint8 _toType) internal pure returns (uint256 result) {
+    function verify(bytes memory _ciphertextBytes, uint8 _toType, int32 securityZone) internal pure returns (uint256 result) {
         bytes memory output;
 
         // Call the verify precompile.
-        output = FheOps(Precompiles.Fheos).verify(_toType, _ciphertextBytes);
+        output = FheOps(Precompiles.Fheos).verify(_toType, _ciphertextBytes, securityZone);
         result = getValue(output);
     }
 
@@ -232,11 +233,11 @@ const castFromAddress = (name: string, toType: string, addSecurityZone: boolean 
 };
 
 const castFromBytes = (name: string, toType: string): string => {
-  return `Impl.verify(${name}, Common.${toType.toUpperCase()}_TFHE)`;
+  return `Impl.verify(${name}, Common.${toType.toUpperCase()}_TFHE, securityZone)`;
 };
 
 const castFromInputType = (name: string, toType: string): string => {
-  return `FHE.as${capitalize(toType)}(${name}.data)`;
+  return `FHE.as${capitalize(toType)}(${name}.data, ${name}.securityZone)`;
 };
 
 const castToEbool = (name: string, fromType: string): string => {
@@ -268,7 +269,7 @@ export const AsTypeFunction = (fromType: string, toType: string, addSecurityZone
 
         return asEbool(sVal);
     }`;
-  } else if (fromType.startsWith("in")) {
+  } else if (fromType.startsWith("inE")) {
     docString = `
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an ${toType}
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
@@ -286,6 +287,7 @@ export const AsTypeFunction = (fromType: string, toType: string, addSecurityZone
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an ${toType}
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input`;
+    addSecurityZone = true;
     castString = castFromBytes("value", toType);
   } else if (fromType == "address" && toType == "eaddress") {
     docString += `
@@ -443,7 +445,15 @@ export const IsOperationAllowed = (
 };
 
 export function genAbiFile(abi: string) {
-  return `import { BaseContract } from 'ethers';\n${abi}\n\n`;
+  return `
+import { BaseContract } from 'ethers';
+
+export interface EncryptedNumber {
+  data: Uint8Array;
+  securityZone: number;
+}
+${abi}
+`;
 }
 
 export function SolTemplate1Arg(

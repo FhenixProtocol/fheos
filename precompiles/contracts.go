@@ -155,7 +155,7 @@ func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 // Verify takes inputs from the user and runs them through verification. Note that we will always get ciphertexts that
 // are public-key encrypted and compressed. Anything else will fail
-func Verify(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
+func Verify(utype byte, input []byte, securityZone int32, tp *TxParams) ([]byte, uint64, error) {
 	functionName := types.Verify
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
@@ -175,7 +175,14 @@ func Verify(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
-	ct := fhe.NewFheEncryptedFromBytes(input, uintType, true, false /* TODO: not sure + shouldn't be hardcoded */)
+	ct := fhe.NewFheEncryptedFromBytes(
+		input,
+		uintType,
+		true,
+		false, // TODO: not sure + shouldn't be hardcoded
+		securityZone,
+	)
+
 	err := ct.Verify()
 	if err != nil {
 		logger.Info(fmt.Sprintf("failed to verify ciphertext %s for type %d - was input corrupted?", ct.Hash().Hex(), uintType))

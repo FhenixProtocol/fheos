@@ -23,7 +23,7 @@ describe("Test Unitialized Variables", () => {
     const { instance, permit } = await createFheInstance(contractAddr);
 
     const encAmount = await instance.encrypt_uint8(33);
-    await contract.add(encAmount.data);
+    await contract.add(encAmount);
 
     const encCounter = await contract.getCounter(permit.publicKey);
     const counter = await instance.unseal(contractAddr, encCounter);
@@ -50,7 +50,7 @@ describe("Test Unitialized Variables", () => {
     const { instance, permit } = await createFheInstance(contractAddr);
 
     const encAmount = await instance.encrypt_uint8(34);
-    await contract.addMapping(BigInt(0), encAmount.data);
+    await contract.addMapping(BigInt(0), encAmount);
 
     const encCounter = await contract.getCounterMapping(
       BigInt(0),

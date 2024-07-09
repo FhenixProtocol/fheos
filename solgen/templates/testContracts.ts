@@ -5,7 +5,7 @@ import {
   LOCAL_SEAL_FUNCTION_NAME,
   AllowedOperations,
   capitalize,
-  shortenType,
+  shortenType, toInType, toInTypeParam,
 } from "../common";
 
 function TypeCastTestingFunction(
@@ -17,8 +17,7 @@ function TypeCastTestingFunction(
   let to = capitalize(toType);
   const retType = to.slice(1);
   let testType = fromTypeEncrypted ? fromTypeEncrypted : fromType;
-  testType =
-    testType === "bytes memory" ? "PreEncrypted" : capitalize(testType);
+  testType = testType.startsWith("inE") ? "PreEncrypted" : capitalize(testType);
   testType = testType === "Uint256" ? "Plaintext" : testType;
   const encryptedVal = fromTypeEncrypted
     ? `FHE.as${capitalize(fromTypeEncrypted)}(val)`
@@ -54,17 +53,19 @@ export function AsTypeTestingContract(type: string) {
   let abi = `export interface As${capitalize(
     type
   )}TestType extends BaseContract {\n`;
+
   // Although casts from eaddress to types with < 256 bits are possible, we don't want to test them.
-  let eaddressAllowedTypes = ["euint256", "uint256", "bytes memory"];
-  let fromTypeCollection = type === "eaddress" ? eaddressAllowedTypes : EInputType.concat("uint256", "bytes memory");
+  let eaddressAllowedTypes = ["euint256", "uint256"];
+  let fromTypeCollection = type === "eaddress" ? eaddressAllowedTypes : EInputType.concat("uint256");
+  fromTypeCollection = fromTypeCollection.concat(toInTypeParam(type));
 
   for (const fromType of fromTypeCollection) {
     if (type === fromType || (fromType === "eaddress" && !eaddressAllowedTypes.includes(type))) {
       continue;
     }
 
-    const fromTypeTs = fromType === "bytes memory" ? "Uint8Array" : `bigint`;
-    const fromTypeSol = fromType === "bytes memory" ? fromType : `uint256`;
+    const fromTypeTs = fromType.startsWith("inE") ? "EncryptedNumber" : `bigint`;
+    const fromTypeSol = fromType.startsWith("inE") ? fromType : `uint256`;
     const fromTypeEncrypted = EInputType.includes(fromType)
       ? fromType
       : undefined;
@@ -81,7 +82,7 @@ export function AsTypeTestingContract(type: string) {
   funcs = funcs.slice(1);
   abi += `}\n`;
 
-  return [generateTestContract(`As${capitalize(type)}`, funcs), abi];
+  return [generateTestContract(`As${capitalize(type)}`, funcs, [toInType(type)]), abi];
 }
 
 export function testContract2ArgBoolRes(name: string, isBoolean: boolean) {
@@ -313,10 +314,10 @@ export function testContract1Arg(name: string) {
 export function generateTestContract(
   name: string,
   testFunc: string,
-  importTypes: boolean = false
+  importTypes: Array<string> = []
 ) {
-  const importStatement = importTypes
-    ? `\nimport {ebool, euint8} from "../../FHE.sol";`
+  const importStatement = importTypes.length > 0
+    ? `\nimport {${importTypes.join(", ")}} from "../../FHE.sol";`
     : "";
   return `// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
@@ -395,7 +396,7 @@ export function testContractReencrypt() {
   const abi = `export interface SealoutputTestType extends BaseContract {
     ${SEALING_FUNCTION_NAME}: (test: string, a: bigint, pubkey: Uint8Array) => Promise<string>;
 }\n`;
-  return [generateTestContract(SEALING_FUNCTION_NAME, func, true), abi];
+  return [generateTestContract(SEALING_FUNCTION_NAME, func, ["ebool", "euint8"]), abi];
 }
 
 export function testContract3Arg(name: string) {
@@ -434,7 +435,7 @@ export function testContract3Arg(name: string) {
   )}TestType extends BaseContract {
     ${name}: (test: string, c: boolean, a: bigint, b: bigint) => Promise<bigint>;
 }\n`;
-  return [generateTestContract(name, func, true), abi];
+  return [generateTestContract(name, func, ["ebool"]), abi];
 }
 
 export const IsOperationAllowed = (
