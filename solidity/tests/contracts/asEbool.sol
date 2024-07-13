@@ -2,6 +2,7 @@
 pragma solidity ^0.8.17;
 
 import {FHE} from "../../FHE.sol";
+import {inEbool} from "../../FHE.sol";
 import {Utils} from "./utils/Utils.sol";
 
 error TestNotFound(string test);
@@ -68,7 +69,7 @@ contract AsEboolTest {
         return FHE.decrypt(FHE.asEbool(val));
     }
 
-    function castFromPreEncryptedToEbool(bytes memory val) public pure returns (bool) {
+    function castFromPreEncryptedToEbool(inEbool calldata val) public pure returns (bool) {
         return FHE.decrypt(FHE.asEbool(val));
     }
 }

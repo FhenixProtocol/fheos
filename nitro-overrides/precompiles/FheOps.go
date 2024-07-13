@@ -893,7 +893,7 @@ func (con FheOps) TrivialEncrypt(c ctx, evm mech, input []byte, toType byte, sec
 	return ret, err
 }
 
-func (con FheOps) Verify(c ctx, evm mech, utype byte, input []byte) ([]byte, error) {
+func (con FheOps) Verify(c ctx, evm mech, utype byte, input []byte, securityZone int32) ([]byte, error) {
 	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "Verify", fheos.UtypeToString(utype))
@@ -905,7 +905,7 @@ func (con FheOps) Verify(c ctx, evm mech, utype byte, input []byte) ([]byte, err
 		}(time.Now())
 	}
 
-	ret, gas, err := fheos.Verify(utype, input, &tp)
+	ret, gas, err := fheos.Verify(utype, input, securityZone, &tp)
 
 	if err != nil {
 		if metrics.Enabled {

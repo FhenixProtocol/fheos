@@ -78,8 +78,8 @@ devDependencies:
     specifier: ^6.9.0
     version: 6.9.1
   fhenixjs:
-    specifier: github:fhenixprotocol/fhenix.js#security-zones-dep
-    version: github.com/fhenixprotocol/fhenix.js/03f4f22d891b67e3cab9866a9af98e2b8e06d64e
+    specifier: github:fhenixprotocol/fhenix.js#merge-prs
+    version: github.com/fhenixprotocol/fhenix.js/4e6156d3877cf91560486bbdb24f62317c491a5c
   fs-extra:
     specifier: ^10.1.0
     version: 10.1.0
@@ -5350,10 +5350,6 @@ packages:
     resolution: {integrity: sha512-y10wOWt8yZpqXmOgRo77WaHEmhYQYGNA6y421PKsKYWEK8aW+cqAphborZDhqfyKrbZEN92CN1X2KbafY2s7Yw==}
     dev: true
 
-  /node-tfhe@0.6.4:
-    resolution: {integrity: sha512-V/SJjc5GPKIB/KcNGEFSDDQelIKvFIFiCgefeDARgxOnN69fyB+omV4e4j3tMDEz6aN7xRd/NqqQ0im17emXeA==}
-    dev: true
-
   /nofilter@3.1.0:
     resolution: {integrity: sha512-l2NNj07e9afPnhAhvgVrCD/oy2Ai1yfLpuo3EpiO1jFTsB4sFz6oIfAfSZyQzVpkZQ9xS8ZS5g1jCBgq4Hwo0g==}
     engines: {node: '>=12.19'}
@@ -6349,10 +6345,6 @@ packages:
     resolution: {integrity: sha512-N+8UisAXDGk8PFXP4HAzVR9nbfmVJ3zYLAWiTIoqC5v5isinhr+r5uaO8+7r3BMfuNIufIsA7RdpVgacC2cSpw==}
     dev: true
 
-  /tfhe@0.6.4:
-    resolution: {integrity: sha512-80fP2iJJQXrlhyC81u6/aUWMMMDoOXmlY5uqKka2CEd222xM96+z9+FTZc0MjlrR3U+NHja1WOte+A3nlvZkKw==}
-    dev: true
-
   /then-request@6.0.2:
     resolution: {integrity: sha512-3ZBiG7JvP3wbDzA9iNY5zJQcHL4jn/0BWtXIkagfz7QgOL/LqjCEOBQuJNZfu0XYnv5JhKh+cDxCPM4ILrqruA==}
     engines: {node: '>=6.0.0'}
@@ -6876,17 +6868,13 @@ packages:
       ethers: 5.7.2
     dev: true
 
-  github.com/fhenixprotocol/fhenix.js/03f4f22d891b67e3cab9866a9af98e2b8e06d64e:
-    resolution: {tarball: https://codeload.github.com/fhenixprotocol/fhenix.js/tar.gz/03f4f22d891b67e3cab9866a9af98e2b8e06d64e}
+  github.com/fhenixprotocol/fhenix.js/4e6156d3877cf91560486bbdb24f62317c491a5c:
+    resolution: {tarball: https://codeload.github.com/fhenixprotocol/fhenix.js/tar.gz/4e6156d3877cf91560486bbdb24f62317c491a5c}
     name: fhenixjs
-    version: 0.2.1
+    version: 0.3.0-alpha.2
+    engines: {node: '>=20.0.0'}
     dependencies:
-      ethers: 6.9.1
-      node-tfhe: 0.6.4
-      tfhe: 0.6.4
+      '@types/node': 18.19.4
       tweetnacl: 1.0.3
       tweetnacl-util: 0.15.1
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
     dev: true

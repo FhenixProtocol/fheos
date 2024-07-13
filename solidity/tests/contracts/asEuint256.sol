@@ -2,6 +2,7 @@
 pragma solidity ^0.8.17;
 
 import {FHE} from "../../FHE.sol";
+import {inEuint256} from "../../FHE.sol";
 import {Utils} from "./utils/Utils.sol";
 
 error TestNotFound(string test);
@@ -77,7 +78,7 @@ contract AsEuint256Test {
         return FHE.decrypt(FHE.asEuint256(val));
     }
 
-    function castFromPreEncryptedToEuint256(bytes memory val) public pure returns (uint256) {
+    function castFromPreEncryptedToEuint256(inEuint256 calldata val) public pure returns (uint256) {
         return FHE.decrypt(FHE.asEuint256(val));
     }
 }

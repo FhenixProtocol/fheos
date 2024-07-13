@@ -16,27 +16,35 @@ type eaddress is uint256;
 
 struct inEbool {
     bytes data;
+    int32 securityZone;
 }
 struct inEuint8 {
     bytes data;
+    int32 securityZone;
 }
 struct inEuint16 {
     bytes data;
+    int32 securityZone;
 }
 struct inEuint32 {
     bytes data;
+    int32 securityZone;
 }
 struct inEuint64 {
     bytes data;
+    int32 securityZone;
 }
 struct inEuint128 {
     bytes data;
+    int32 securityZone;
 }
 struct inEuint256 {
     bytes data;
+    int32 securityZone;
 }
 struct inEaddress {
     bytes data;
+    int32 securityZone;
 }
 
 struct SealedArray {
@@ -103,11 +111,11 @@ library Impl {
         return reencrypted;
     }
 
-    function verify(bytes memory _ciphertextBytes, uint8 _toType) internal pure returns (uint256 result) {
+    function verify(bytes memory _ciphertextBytes, uint8 _toType, int32 securityZone) internal pure returns (uint256 result) {
         bytes memory output;
 
         // Call the verify precompile.
-        output = FheOps(Precompiles.Fheos).verify(_toType, _ciphertextBytes);
+        output = FheOps(Precompiles.Fheos).verify(_toType, _ciphertextBytes, securityZone);
         result = getValue(output);
     }
 
@@ -2499,7 +2507,7 @@ library FHE {
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
     function asEbool(inEbool memory value) internal pure returns (ebool) {
-        return FHE.asEbool(value.data);
+        return FHE.asEbool(value.data, value.securityZone);
     }
     /// @notice Converts a ebool to an euint8
     function asEuint8(ebool value) internal pure returns (euint8) {
@@ -2538,7 +2546,7 @@ library FHE {
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
     function asEuint8(inEuint8 memory value) internal pure returns (euint8) {
-        return FHE.asEuint8(value.data);
+        return FHE.asEuint8(value.data, value.securityZone);
     }
     /// @notice Converts a euint8 to an euint16
     function asEuint16(euint8 value) internal pure returns (euint16) {
@@ -2577,7 +2585,7 @@ library FHE {
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
     function asEuint16(inEuint16 memory value) internal pure returns (euint16) {
-        return FHE.asEuint16(value.data);
+        return FHE.asEuint16(value.data, value.securityZone);
     }
     /// @notice Converts a euint16 to an euint32
     function asEuint32(euint16 value) internal pure returns (euint32) {
@@ -2616,7 +2624,7 @@ library FHE {
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
     function asEuint32(inEuint32 memory value) internal pure returns (euint32) {
-        return FHE.asEuint32(value.data);
+        return FHE.asEuint32(value.data, value.securityZone);
     }
     /// @notice Converts a euint32 to an euint64
     function asEuint64(euint32 value) internal pure returns (euint64) {
@@ -2655,7 +2663,7 @@ library FHE {
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
     function asEuint64(inEuint64 memory value) internal pure returns (euint64) {
-        return FHE.asEuint64(value.data);
+        return FHE.asEuint64(value.data, value.securityZone);
     }
     /// @notice Converts a euint64 to an euint128
     function asEuint128(euint64 value) internal pure returns (euint128) {
@@ -2694,7 +2702,7 @@ library FHE {
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
     function asEuint128(inEuint128 memory value) internal pure returns (euint128) {
-        return FHE.asEuint128(value.data);
+        return FHE.asEuint128(value.data, value.securityZone);
     }
     /// @notice Converts a euint128 to an euint256
     function asEuint256(euint128 value) internal pure returns (euint256) {
@@ -2733,7 +2741,7 @@ library FHE {
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
     function asEuint256(inEuint256 memory value) internal pure returns (euint256) {
-        return FHE.asEuint256(value.data);
+        return FHE.asEuint256(value.data, value.securityZone);
     }
     /// @notice Converts a euint256 to an eaddress
     function asEaddress(euint256 value) internal pure returns (eaddress) {
@@ -2772,7 +2780,7 @@ library FHE {
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
     function asEaddress(inEaddress memory value) internal pure returns (eaddress) {
-        return FHE.asEaddress(value.data);
+        return FHE.asEaddress(value.data, value.securityZone);
     }
     /// @notice Converts a uint256 to an ebool
     function asEbool(uint256 value) internal pure returns (ebool) {
@@ -2841,50 +2849,50 @@ library FHE {
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an ebool
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
-    function asEbool(bytes memory value) internal pure returns (ebool) {
-        return ebool.wrap(Impl.verify(value, Common.EBOOL_TFHE));
+    function asEbool(bytes memory value, int32 securityZone) internal pure returns (ebool) {
+        return ebool.wrap(Impl.verify(value, Common.EBOOL_TFHE, securityZone));
     }
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an euint8
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
-    function asEuint8(bytes memory value) internal pure returns (euint8) {
-        return euint8.wrap(Impl.verify(value, Common.EUINT8_TFHE));
+    function asEuint8(bytes memory value, int32 securityZone) internal pure returns (euint8) {
+        return euint8.wrap(Impl.verify(value, Common.EUINT8_TFHE, securityZone));
     }
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an euint16
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
-    function asEuint16(bytes memory value) internal pure returns (euint16) {
-        return euint16.wrap(Impl.verify(value, Common.EUINT16_TFHE));
+    function asEuint16(bytes memory value, int32 securityZone) internal pure returns (euint16) {
+        return euint16.wrap(Impl.verify(value, Common.EUINT16_TFHE, securityZone));
     }
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an euint32
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
-    function asEuint32(bytes memory value) internal pure returns (euint32) {
-        return euint32.wrap(Impl.verify(value, Common.EUINT32_TFHE));
+    function asEuint32(bytes memory value, int32 securityZone) internal pure returns (euint32) {
+        return euint32.wrap(Impl.verify(value, Common.EUINT32_TFHE, securityZone));
     }
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an euint64
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
-    function asEuint64(bytes memory value) internal pure returns (euint64) {
-        return euint64.wrap(Impl.verify(value, Common.EUINT64_TFHE));
+    function asEuint64(bytes memory value, int32 securityZone) internal pure returns (euint64) {
+        return euint64.wrap(Impl.verify(value, Common.EUINT64_TFHE, securityZone));
     }
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an euint128
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
-    function asEuint128(bytes memory value) internal pure returns (euint128) {
-        return euint128.wrap(Impl.verify(value, Common.EUINT128_TFHE));
+    function asEuint128(bytes memory value, int32 securityZone) internal pure returns (euint128) {
+        return euint128.wrap(Impl.verify(value, Common.EUINT128_TFHE, securityZone));
     }
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an euint256
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
-    function asEuint256(bytes memory value) internal pure returns (euint256) {
-        return euint256.wrap(Impl.verify(value, Common.EUINT256_TFHE));
+    function asEuint256(bytes memory value, int32 securityZone) internal pure returns (euint256) {
+        return euint256.wrap(Impl.verify(value, Common.EUINT256_TFHE, securityZone));
     }
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an eaddress
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
-    function asEaddress(bytes memory value) internal pure returns (eaddress) {
-        return eaddress.wrap(Impl.verify(value, Common.EADDRESS_TFHE));
+    function asEaddress(bytes memory value, int32 securityZone) internal pure returns (eaddress) {
+        return eaddress.wrap(Impl.verify(value, Common.EADDRESS_TFHE, securityZone));
     }
     /// @notice Converts a address to an eaddress
     /// Allows for a better user experience when working with eaddresses
