@@ -4,8 +4,11 @@ import {
   SEAL_RETURN_TYPE,
   LOCAL_SEAL_FUNCTION_NAME,
   AllowedOperations,
+  AllowedTypesOnCastToEaddress,
   capitalize,
-  shortenType, toInType, toInTypeParam,
+  shortenType,
+  toInType,
+  toInTypeParam,
 } from "../common";
 
 function TypeCastTestingFunction(
@@ -54,13 +57,11 @@ export function AsTypeTestingContract(type: string) {
     type
   )}TestType extends BaseContract {\n`;
 
-  // Although casts from eaddress to types with < 256 bits are possible, we don't want to test them.
-  let eaddressAllowedTypes = ["euint256", "uint256"];
-  let fromTypeCollection = type === "eaddress" ? eaddressAllowedTypes : EInputType.concat("uint256");
+  let fromTypeCollection = type === "eaddress" ? AllowedTypesOnCastToEaddress : EInputType.concat("uint256");
   fromTypeCollection = fromTypeCollection.concat(toInTypeParam(type));
 
   for (const fromType of fromTypeCollection) {
-    if (type === fromType || (fromType === "eaddress" && !eaddressAllowedTypes.includes(type))) {
+    if (type === fromType || (fromType === "eaddress" && !AllowedTypesOnCastToEaddress.includes(type))) {
       continue;
     }
 

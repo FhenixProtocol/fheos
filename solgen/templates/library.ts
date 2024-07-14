@@ -11,6 +11,7 @@ import {
   LOCAL_SEAL_FUNCTION_NAME,
   LOCAL_DECRYPT_FUNCTION_NAME,
   AllowedOperations,
+  AllowedTypesOnCastToEaddress,
   toPlaintextType,
   capitalize,
   shortenType,
@@ -251,6 +252,11 @@ const castToEbool = (name: string, fromType: string): string => {
 };
 
 export const AsTypeFunction = (fromType: string, toType: string, addSecurityZone: boolean = false) => {
+  if (toType === "eaddress" && !AllowedTypesOnCastToEaddress.includes(fromType) ) {
+    console.log("skipping: ", fromType, "to", toType);
+    return ""; // skip unsupported cast
+  }
+
   let castString = castFromEncrypted(fromType, toType, "value");
   let overrideFuncs = '';
 
@@ -665,6 +671,11 @@ export const OperatorBinding = (
 };
 
 export const CastBinding = (thisType: string, targetType: string) => {
+  if (targetType === "eaddress" && !AllowedTypesOnCastToEaddress.includes(thisType) ) {
+    console.log("binding - skipping: ", thisType, "to", targetType);
+    return ""; // skip unsupported cast
+  }
+
   return `
     function to${shortenType(
       targetType
