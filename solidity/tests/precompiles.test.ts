@@ -1451,79 +1451,56 @@ describe("Test Not", () => {
   let contract;
 
   // We don't really need it as test but it is a test since it is async
-  it(`Test Contract Deployment`, async () => {
+  it.only(`Test Contract Deployment`, async () => {
     contract = (await deployContract("NotTest")) as NotTestType;
     expect(contract).toBeTruthy();
   });
 
   const testCases = [
     {
+      function: "not(ebool)",
+      bits: 1,
+    },
+    {
       function: "not(euint8)",
-      cases: [
-        {
-          bits: 8,
-          name: "",
-        },
-      ],
+      bits: 8,
     },
     {
       function: "not(euint16)",
-      cases: [
-        {
-          bits: 16,
-          name: "",
-        },
-      ],
+      bits: 16,
     },
     {
       function: "not(euint32)",
-      cases: [
-        {
-          bits: 32,
-          name: "",
-        },
-      ],
-    },
-    {
-      function: "not(ebool)",
-      cases: [
-        { bits: 1, name: " !true" },
-        { bits: 1, name: " !false" },
-      ],
+      bits: 32,
     },
     {
       function: "not(euint64)",
-      cases: [
-        {
-          bits: 64,
-          name: "",
-        },
-      ],
+      bits: 64,
     },
     {
       function: "not(euint128)",
-      cases: [
-        {
-          bits: 128,
-          name: "",
-        },
-      ],
+      bits: 128,
     },
   ];
 
   for (const test of testCases) {
-    for (const testCase of test.cases) {
-      it(`Test ${test.function}${testCase.name}`, async () => {
-        let val = BigInt(1);
-        let expectedResult = BigInt(0);
-        if (testCase.bits !== 1) {
-          val = BigInt.asUintN(testCase.bits, BigInt(1));
-          expectedResult = (val << BigInt(testCase.bits)) - BigInt(2);
-        }
+    for (const securityZone of [0, 1]) {
+      for (const input of [true, false]) {
+        it.only(`Test ${test.function} !${input} - security zone ${securityZone}`, async () => {
+          let val = BigInt(+input);
+          let expectedResult = BigInt(+(!input));
+          console.log("input", val, "expectedResult", expectedResult);
+          if (test.bits !== 1) {
+            val = BigInt.asUintN(test.bits, BigInt(+input));
+            expectedResult = (1n << BigInt(test.bits)) - BigInt(1 + (+input));
+          }
 
-        const decryptedResult = await contract.not(test.function, BigInt(val));
-        expect(decryptedResult).toBe(expectedResult);
-      });
+          const decryptedResult = await contract.not(test.function, val, securityZone);
+
+          console.log("output", decryptedResult, "expectedResult", expectedResult);
+          expect(decryptedResult).toBe(expectedResult);
+        });
+      }
     }
   }
 });
