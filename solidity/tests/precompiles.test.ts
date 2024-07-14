@@ -599,10 +599,12 @@ describe("Test Req", () => {
         let hadEvaluationFailure = false;
         let err = "";
         try {
-          await contract.req(test.function, BigInt(testCase.a));
+          let tx = await contract.req(test.function, BigInt(testCase.a));
+          let result = await tx.wait();
         } catch (e) {
           hadEvaluationFailure = true;
           err = `${e}`;
+          console.log(`err: ${err}`)
         }
         expect(hadEvaluationFailure).toBe(testCase.shouldCrash);
         if (hadEvaluationFailure) {

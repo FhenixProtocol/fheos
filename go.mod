@@ -6,9 +6,7 @@ require (
 	github.com/cockroachdb/pebble v0.0.0-20230928194634-aa077af62593 // indirect
 	github.com/ethereum/go-ethereum v1.13.3
 	github.com/fhenixprotocol/warp-drive/fhe-driver v0.0.0
-	// needs to match the one in go-ethereum because fuck you that's why
-	//github.com/cockroachdb/pebble v1.1.0
-	github.com/sirupsen/logrus v1.9.3 // indirect
+	github.com/sirupsen/logrus v1.9.4-0.20230606125235-dd1b4c2e81af // indirect
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
 )

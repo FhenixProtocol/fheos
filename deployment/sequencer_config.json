@@ -2,11 +2,6 @@
   "parent-chain": {
     "connection": {
       "url": "ws://geth:8546"
-    },
-    "wallet": {
-      "account": "",
-      "password": "passphrase",
-      "pathname": "/home/user/l1keystore"
     }
   },
   "chain": {
