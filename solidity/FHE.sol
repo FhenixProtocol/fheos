@@ -2533,10 +2533,6 @@ library FHE {
     function asEuint256(ebool value) internal pure returns (euint256) {
         return euint256.wrap(Impl.cast(Common.EBOOL_TFHE, ebool.unwrap(value), Common.EUINT256_TFHE));
     }
-    /// @notice Converts a ebool to an eaddress
-    function asEaddress(ebool value) internal pure returns (eaddress) {
-        return eaddress.wrap(Impl.cast(Common.EBOOL_TFHE, ebool.unwrap(value), Common.EADDRESS_TFHE));
-    }
     
     /// @notice Converts a euint8 to an ebool
     function asEbool(euint8 value) internal pure returns (ebool) {
@@ -2567,10 +2563,6 @@ library FHE {
     /// @notice Converts a euint8 to an euint256
     function asEuint256(euint8 value) internal pure returns (euint256) {
         return euint256.wrap(Impl.cast(Common.EUINT8_TFHE, euint8.unwrap(value), Common.EUINT256_TFHE));
-    }
-    /// @notice Converts a euint8 to an eaddress
-    function asEaddress(euint8 value) internal pure returns (eaddress) {
-        return eaddress.wrap(Impl.cast(Common.EUINT8_TFHE, euint8.unwrap(value), Common.EADDRESS_TFHE));
     }
     
     /// @notice Converts a euint16 to an ebool
@@ -2603,10 +2595,6 @@ library FHE {
     function asEuint256(euint16 value) internal pure returns (euint256) {
         return euint256.wrap(Impl.cast(Common.EUINT16_TFHE, euint16.unwrap(value), Common.EUINT256_TFHE));
     }
-    /// @notice Converts a euint16 to an eaddress
-    function asEaddress(euint16 value) internal pure returns (eaddress) {
-        return eaddress.wrap(Impl.cast(Common.EUINT16_TFHE, euint16.unwrap(value), Common.EADDRESS_TFHE));
-    }
     
     /// @notice Converts a euint32 to an ebool
     function asEbool(euint32 value) internal pure returns (ebool) {
@@ -2637,10 +2625,6 @@ library FHE {
     /// @notice Converts a euint32 to an euint256
     function asEuint256(euint32 value) internal pure returns (euint256) {
         return euint256.wrap(Impl.cast(Common.EUINT32_TFHE, euint32.unwrap(value), Common.EUINT256_TFHE));
-    }
-    /// @notice Converts a euint32 to an eaddress
-    function asEaddress(euint32 value) internal pure returns (eaddress) {
-        return eaddress.wrap(Impl.cast(Common.EUINT32_TFHE, euint32.unwrap(value), Common.EADDRESS_TFHE));
     }
     
     /// @notice Converts a euint64 to an ebool
@@ -2673,10 +2657,6 @@ library FHE {
     function asEuint256(euint64 value) internal pure returns (euint256) {
         return euint256.wrap(Impl.cast(Common.EUINT64_TFHE, euint64.unwrap(value), Common.EUINT256_TFHE));
     }
-    /// @notice Converts a euint64 to an eaddress
-    function asEaddress(euint64 value) internal pure returns (eaddress) {
-        return eaddress.wrap(Impl.cast(Common.EUINT64_TFHE, euint64.unwrap(value), Common.EADDRESS_TFHE));
-    }
     
     /// @notice Converts a euint128 to an ebool
     function asEbool(euint128 value) internal pure returns (ebool) {
@@ -2707,10 +2687,6 @@ library FHE {
     /// @notice Converts a euint128 to an euint256
     function asEuint256(euint128 value) internal pure returns (euint256) {
         return euint256.wrap(Impl.cast(Common.EUINT128_TFHE, euint128.unwrap(value), Common.EUINT256_TFHE));
-    }
-    /// @notice Converts a euint128 to an eaddress
-    function asEaddress(euint128 value) internal pure returns (eaddress) {
-        return eaddress.wrap(Impl.cast(Common.EUINT128_TFHE, euint128.unwrap(value), Common.EADDRESS_TFHE));
     }
     
     /// @notice Converts a euint256 to an ebool
@@ -3236,9 +3212,6 @@ library BindingsEbool {
     function toU256(ebool value) internal pure returns (euint256) {
         return FHE.asEuint256(value);
     }
-    function toEaddress(ebool value) internal pure returns (eaddress) {
-        return FHE.asEaddress(value);
-    }
     function seal(ebool value, bytes32 publicKey) internal pure returns (string memory) {
         return FHE.sealoutput(value, publicKey);
     }
@@ -3410,9 +3383,6 @@ library BindingsEuint8 {
     }
     function toU256(euint8 value) internal pure returns (euint256) {
         return FHE.asEuint256(value);
-    }
-    function toEaddress(euint8 value) internal pure returns (eaddress) {
-        return FHE.asEaddress(value);
     }
     function seal(euint8 value, bytes32 publicKey) internal pure returns (string memory) {
         return FHE.sealoutput(value, publicKey);
@@ -3586,9 +3556,6 @@ library BindingsEuint16 {
     function toU256(euint16 value) internal pure returns (euint256) {
         return FHE.asEuint256(value);
     }
-    function toEaddress(euint16 value) internal pure returns (eaddress) {
-        return FHE.asEaddress(value);
-    }
     function seal(euint16 value, bytes32 publicKey) internal pure returns (string memory) {
         return FHE.sealoutput(value, publicKey);
     }
@@ -3761,9 +3728,6 @@ library BindingsEuint32 {
     function toU256(euint32 value) internal pure returns (euint256) {
         return FHE.asEuint256(value);
     }
-    function toEaddress(euint32 value) internal pure returns (eaddress) {
-        return FHE.asEaddress(value);
-    }
     function seal(euint32 value, bytes32 publicKey) internal pure returns (string memory) {
         return FHE.sealoutput(value, publicKey);
     }
@@ -3920,9 +3884,6 @@ library BindingsEuint64 {
     function toU256(euint64 value) internal pure returns (euint256) {
         return FHE.asEuint256(value);
     }
-    function toEaddress(euint64 value) internal pure returns (eaddress) {
-        return FHE.asEaddress(value);
-    }
     function seal(euint64 value, bytes32 publicKey) internal pure returns (string memory) {
         return FHE.sealoutput(value, publicKey);
     }
@@ -4070,9 +4031,6 @@ library BindingsEuint128 {
     }
     function toU256(euint128 value) internal pure returns (euint256) {
         return FHE.asEuint256(value);
-    }
-    function toEaddress(euint128 value) internal pure returns (eaddress) {
-        return FHE.asEaddress(value);
     }
     function seal(euint128 value, bytes32 publicKey) internal pure returns (string memory) {
         return FHE.sealoutput(value, publicKey);
