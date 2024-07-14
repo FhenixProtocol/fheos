@@ -1489,7 +1489,6 @@ describe("Test Not", () => {
         it.only(`Test ${test.function} !${input} - security zone ${securityZone}`, async () => {
           let val = BigInt(+input);
           let expectedResult = BigInt(+(!input));
-          console.log("input", val, "expectedResult", expectedResult);
           if (test.bits !== 1) {
             val = BigInt.asUintN(test.bits, BigInt(+input));
             expectedResult = (1n << BigInt(test.bits)) - BigInt(1 + (+input));
@@ -1497,7 +1496,6 @@ describe("Test Not", () => {
 
           const decryptedResult = await contract.not(test.function, val, securityZone);
 
-          console.log("output", decryptedResult, "expectedResult", expectedResult);
           expect(decryptedResult).toBe(expectedResult);
         });
       }
