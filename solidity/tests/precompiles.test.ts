@@ -2285,7 +2285,7 @@ describe("Test AsEuint256", () => {
   });
 });
 
-describe("Test AsEaddress", () => {
+describe.only("Test AsEaddress", () => {
   let contract;
   let fheContract;
 
@@ -2330,6 +2330,12 @@ describe("Test AsEaddress", () => {
     let decryptedResult = await contract.castFromPlaintextToEaddress(bigNumber);
     let decimal = BigInt(decryptedResult);
     expect(decimal).toBe(bigNumber);
+  });
+
+  it(`From plaintext address`, async () => {
+    let decryptedResult = await contract.castFromPlaintextAddressToEaddress("0x4fB7FF4e004FcADbff708d8d873592B2044d5E8f");
+    let decimal = BigInt(decryptedResult);
+    expect(decimal).toBe(value);
   });
 
   it(`From pre encrypted`, async () => {
