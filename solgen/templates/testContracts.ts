@@ -265,27 +265,27 @@ export function testContract1Arg(name: string) {
     name,
     EInputType.indexOf("euint256")
   );
-  let func = `function ${name}(string calldata test, uint256 a) public pure returns (uint256 output) {
+  let func = `function ${name}(string calldata test, uint256 a, int32 securityZone) public pure returns (uint256 output) {
         if (Utils.cmp(test, "${name}(euint8)")) {
-            return FHE.decrypt(FHE.${name}(FHE.asEuint8(a)));
+            return FHE.decrypt(FHE.${name}(FHE.asEuint8(a, securityZone)));
         } else if (Utils.cmp(test, "${name}(euint16)")) {
-            return FHE.decrypt(FHE.${name}(FHE.asEuint16(a)));
+            return FHE.decrypt(FHE.${name}(FHE.asEuint16(a, securityZone)));
         } else if (Utils.cmp(test, "${name}(euint32)")) {
-            return FHE.decrypt(FHE.${name}(FHE.asEuint32(a)));
+            return FHE.decrypt(FHE.${name}(FHE.asEuint32(a, securityZone)));
         }`;
   if (isEuint64Allowed) {
     func += ` else if (Utils.cmp(test, "${name}(euint64)")) {
-            return FHE.decrypt(FHE.${name}(FHE.asEuint64(a)));
+            return FHE.decrypt(FHE.${name}(FHE.asEuint64(a, securityZone)));
         }`;
   }
   if (isEuint128Allowed) {
     func += ` else if (Utils.cmp(test, "${name}(euint128)")) {
-            return FHE.decrypt(FHE.${name}(FHE.asEuint128(a)));
+            return FHE.decrypt(FHE.${name}(FHE.asEuint128(a, securityZone)));
         }`;
   }
   if (isEuint256Allowed) {
     func += ` else if (Utils.cmp(test, "${name}(euint256)")) {
-            return FHE.decrypt(FHE.${name}(FHE.asEuint256(a)));
+            return FHE.decrypt(FHE.${name}(FHE.asEuint256(a, securityZone)));
         }`;
   }
   func += ` else if (Utils.cmp(test, "${name}(ebool)")) {
@@ -294,7 +294,7 @@ export function testContract1Arg(name: string) {
                 aBool = false;
             }
 
-            if (FHE.decrypt(FHE.${name}(FHE.asEbool(aBool)))) {
+            if (FHE.decrypt(FHE.${name}(FHE.asEbool(aBool, securityZone)))) {
                 return 1;
             }
 

@@ -241,6 +241,8 @@ const castFromInputType = (name: string, toType: string): string => {
 };
 
 const castToEbool = (name: string, fromType: string): string => {
+  // todo (eshel): this should not work for non-default security zones because the second operand of the 'ne' is always from security zone 0.
+  // check if the precompiles support the EBOOL_TFHE constant as with the other casts
   return `
     \n    /// @notice Converts a ${fromType} to an ebool
     function asEbool(${fromType} value) internal pure returns (ebool) {
@@ -258,16 +260,24 @@ export const AsTypeFunction = (fromType: string, toType: string, addSecurityZone
   if (fromType === "bool" && toType === "ebool") {
     return `
     /// @notice Converts a plaintext boolean value to a ciphertext ebool
-    /// @dev Privacy: The input value is public, therefore the ciphertext should be considered public and should be used
-    ///only for mathematical operations, not to represent data that should be private
+    /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
     /// @return A ciphertext representation of the input 
     function asEbool(bool value) internal pure returns (ebool) {
         uint256 sVal = 0;
         if (value) {
             sVal = 1;
         }
-
         return asEbool(sVal);
+    }
+    /// @notice Converts a plaintext boolean value to a ciphertext ebool, specifying security zone
+    /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
+    /// @return A ciphertext representation of the input 
+    function asEbool(bool value, int32 securityZone) internal pure returns (ebool) {
+      uint256 sVal = 0;
+      if (value) {
+        sVal = 1;
+      }
+      return asEbool(sVal, securityZone);
     }`;
   } else if (fromType.startsWith("inE")) {
     docString = `
