@@ -228,7 +228,7 @@ const castFromPlaintext = (name: string, toType: string, addSecurityZone: boolea
   return `Impl.trivialEncrypt(${name}, Common.${toType.toUpperCase()}_TFHE, ${addSecurityZone ? "securityZone" : "0"})`;
 };
 
-const castFromAddress = (name: string, toType: string, addSecurityZone: boolean = false): string => {
+const castFromPlaintextAddress = (name: string, toType: string, addSecurityZone: boolean = false): string => {
   return `Impl.trivialEncrypt(uint256(uint160(${name})), Common.${toType.toUpperCase()}_TFHE, ${addSecurityZone ? "securityZone" : "0"})`;
 };
 
@@ -261,7 +261,7 @@ export const AsTypeFunction = (fromType: string, toType: string, addSecurityZone
     return `
     /// @notice Converts a plaintext boolean value to a ciphertext ebool
     /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
-    /// @return A ciphertext representation of the input 
+    /// @return A ciphertext representation of the input
     function asEbool(bool value) internal pure returns (ebool) {
         uint256 sVal = 0;
         if (value) {
@@ -271,7 +271,7 @@ export const AsTypeFunction = (fromType: string, toType: string, addSecurityZone
     }
     /// @notice Converts a plaintext boolean value to a ciphertext ebool, specifying security zone
     /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
-    /// @return A ciphertext representation of the input 
+    /// @return A ciphertext representation of the input
     function asEbool(bool value, int32 securityZone) internal pure returns (ebool) {
       uint256 sVal = 0;
       if (value) {
@@ -310,10 +310,10 @@ export const AsTypeFunction = (fromType: string, toType: string, addSecurityZone
     docString += `
     /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation`;
 
-    if (toType == "eaddress") {
+    if (fromType === "address" && toType == "eaddress") {
       docString += `
     /// Allows for a better user experience when working with eaddresses`;
-      castString = castFromAddress("value", toType, addSecurityZone);
+      castString = castFromPlaintextAddress("value", toType, addSecurityZone);
     } else {
       castString = castFromPlaintext("value", toType, addSecurityZone);
     }
