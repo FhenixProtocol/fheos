@@ -300,15 +300,16 @@ export const AsTypeFunction = (fromType: string, toType: string, addSecurityZone
     addSecurityZone = true;
     castString = castFromBytes("value", toType);
   } else if (EPlaintextType.includes(fromType)) {
-    docString += `
-    /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation`;
-
     if (!addSecurityZone) {
       // recursive call to add the asType override with the security zone
       overrideFuncs += AsTypeFunction(fromType, toType, true);
     } else {
       docString += `, specifying security zone`;
     }
+
+    docString += `
+    /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation`;
+
     if (toType == "eaddress") {
       docString += `
     /// Allows for a better user experience when working with eaddresses`;
