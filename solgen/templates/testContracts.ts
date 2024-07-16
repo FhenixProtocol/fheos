@@ -4,8 +4,11 @@ import {
   SEAL_RETURN_TYPE,
   LOCAL_SEAL_FUNCTION_NAME,
   AllowedOperations,
+  AllowedTypesOnCastToEaddress,
   capitalize,
-  shortenType, toInType, toInTypeParam,
+  shortenType,
+  toInType,
+  toInTypeParam,
 } from "../common";
 
 function TypeCastTestingFunction(
@@ -16,9 +19,13 @@ function TypeCastTestingFunction(
 ) {
   let to = capitalize(toType);
   const retType = to.slice(1);
+
   let testType = fromTypeEncrypted ? fromTypeEncrypted : fromType;
-  testType = testType.startsWith("inE") ? "PreEncrypted" : capitalize(testType);
-  testType = testType === "Uint256" ? "Plaintext" : testType;
+  testType = testType === "uint256" ? "Plaintext" : testType;
+  testType = testType === "address" ? "PlaintextAddress" : testType;
+  testType = testType.startsWith("inE") ? "PreEncrypted" : testType;
+  testType = capitalize(testType)
+
   const encryptedVal = fromTypeEncrypted
     ? `FHE.as${capitalize(fromTypeEncrypted)}(val)`
     : "val";
@@ -28,7 +35,7 @@ function TypeCastTestingFunction(
   let abi: string;
   let func = "\n\n    ";
 
-  if (testType === "PreEncrypted" || testType === "Plaintext") {
+  if (testType === "PreEncrypted" || testType === "Plaintext" || testType === "PlaintextAddress") {
     func += `function castFrom${testType}To${to}(${fromType} val) public pure returns (${retType}) {
         return FHE.decrypt(FHE.as${to}(${encryptedVal}));
     }`;
@@ -54,18 +61,21 @@ export function AsTypeTestingContract(type: string) {
     type
   )}TestType extends BaseContract {\n`;
 
-  // Although casts from eaddress to types with < 256 bits are possible, we don't want to test them.
-  let eaddressAllowedTypes = ["euint256", "uint256"];
-  let fromTypeCollection = type === "eaddress" ? eaddressAllowedTypes : EInputType.concat("uint256");
+  let typesToEaddres = AllowedTypesOnCastToEaddress
+    .filter(t => t !== "inEaddress")    // added explicitly later
+    .filter(t => t !== "bytes memory"); // tested indirectly via "inEaddress"
+  let fromTypeCollection = type === "eaddress" ? typesToEaddres : EInputType.concat("uint256");
+
+  // add inE(type) calldata
   fromTypeCollection = fromTypeCollection.concat(toInTypeParam(type));
 
   for (const fromType of fromTypeCollection) {
-    if (type === fromType || (fromType === "eaddress" && !eaddressAllowedTypes.includes(type))) {
+    if (type === fromType || (fromType === "eaddress" && !AllowedTypesOnCastToEaddress.includes(type))) {
       continue;
     }
 
     const fromTypeTs = fromType.startsWith("inE") ? "EncryptedNumber" : `bigint`;
-    const fromTypeSol = fromType.startsWith("inE") ? fromType : `uint256`;
+    const fromTypeSol = fromType.startsWith("e") ? `uint256` : fromType;
     const fromTypeEncrypted = EInputType.includes(fromType)
       ? fromType
       : undefined;
@@ -265,27 +275,27 @@ export function testContract1Arg(name: string) {
     name,
     EInputType.indexOf("euint256")
   );
-  let func = `function ${name}(string calldata test, uint256 a) public pure returns (uint256 output) {
+  let func = `function ${name}(string calldata test, uint256 a, int32 securityZone) public pure returns (uint256 output) {
         if (Utils.cmp(test, "${name}(euint8)")) {
-            return FHE.decrypt(FHE.${name}(FHE.asEuint8(a)));
+            return FHE.decrypt(FHE.${name}(FHE.asEuint8(a, securityZone)));
         } else if (Utils.cmp(test, "${name}(euint16)")) {
-            return FHE.decrypt(FHE.${name}(FHE.asEuint16(a)));
+            return FHE.decrypt(FHE.${name}(FHE.asEuint16(a, securityZone)));
         } else if (Utils.cmp(test, "${name}(euint32)")) {
-            return FHE.decrypt(FHE.${name}(FHE.asEuint32(a)));
+            return FHE.decrypt(FHE.${name}(FHE.asEuint32(a, securityZone)));
         }`;
   if (isEuint64Allowed) {
     func += ` else if (Utils.cmp(test, "${name}(euint64)")) {
-            return FHE.decrypt(FHE.${name}(FHE.asEuint64(a)));
+            return FHE.decrypt(FHE.${name}(FHE.asEuint64(a, securityZone)));
         }`;
   }
   if (isEuint128Allowed) {
     func += ` else if (Utils.cmp(test, "${name}(euint128)")) {
-            return FHE.decrypt(FHE.${name}(FHE.asEuint128(a)));
+            return FHE.decrypt(FHE.${name}(FHE.asEuint128(a, securityZone)));
         }`;
   }
   if (isEuint256Allowed) {
     func += ` else if (Utils.cmp(test, "${name}(euint256)")) {
-            return FHE.decrypt(FHE.${name}(FHE.asEuint256(a)));
+            return FHE.decrypt(FHE.${name}(FHE.asEuint256(a, securityZone)));
         }`;
   }
   func += ` else if (Utils.cmp(test, "${name}(ebool)")) {
@@ -294,7 +304,7 @@ export function testContract1Arg(name: string) {
                 aBool = false;
             }
 
-            if (FHE.decrypt(FHE.${name}(FHE.asEbool(aBool)))) {
+            if (FHE.decrypt(FHE.${name}(FHE.asEbool(aBool, securityZone)))) {
                 return 1;
             }
 
