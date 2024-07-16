@@ -1451,7 +1451,7 @@ describe("Test Not", () => {
   let contract;
 
   // We don't really need it as test but it is a test since it is async
-  it.only(`Test Contract Deployment`, async () => {
+  it(`Test Contract Deployment`, async () => {
     contract = (await deployContract("NotTest")) as NotTestType;
     expect(contract).toBeTruthy();
   });
@@ -1486,7 +1486,7 @@ describe("Test Not", () => {
   for (const test of testCases) {
     for (const securityZone of [0, 1]) {
       for (const input of [true, false]) {
-        it.only(`Test ${test.function} !${input} - security zone ${securityZone}`, async () => {
+        it(`Test ${test.function} !${input} - security zone ${securityZone}`, async () => {
           let val = BigInt(+input);
           let expectedResult = BigInt(+(!input));
           if (test.bits !== 1) {
