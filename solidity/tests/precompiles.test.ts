@@ -2285,7 +2285,7 @@ describe("Test AsEuint256", () => {
   });
 });
 
-describe.only("Test AsEaddress", () => {
+describe("Test AsEaddress", () => {
   let contract;
   let fheContract;
 
