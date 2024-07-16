@@ -1,15 +1,22 @@
 package hooks
 
 import (
+	"bytes"
+	"encoding/hex"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/log"
 	fheos "github.com/fhenixprotocol/fheos/precompiles"
+	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
+	"time"
 )
 
 type FheOSHooks interface {
+	ReplaceLeetBoob(contract common.Address, loc [32]byte, val [32]byte) [32]byte
+	CheckAndRemoveLeetBoobs()
+	StoreLeetBoob(val [32]byte)
 	StoreCiphertextHook(contract common.Address, loc [32]byte, val [32]byte) error
 	StoreGasHook(contract common.Address, loc [32]byte, val [32]byte) (uint64, uint64)
 	LoadCiphertextHook() [32]byte
@@ -19,26 +26,105 @@ type FheOSHooks interface {
 	ContractCallReturn(isSimulation bool, callType int, caller common.Address, addr common.Address, output []byte)
 }
 
-type FheOSHooksImpl struct {
-	evm *vm.EVM
+type List struct {
+	container [][]byte
 }
 
+// Append adds an item to the end of the list.
+func (l *List) Append(item []byte) {
+	l.container = append(l.container, item)
+}
+
+// Remove deletes the first occurrence of an item from the list.
+func (l *List) Remove(item []byte) {
+	for i, v := range l.container {
+		if bytes.Equal(v, item) {
+			l.container = append(l.container[:i], l.container[i+1:]...)
+			break
+		}
+	}
+}
+
+// Contains checks if the item exists in the list.
+func (l *List) Contains(item []byte) bool {
+	for _, v := range l.container {
+		if bytes.Equal(v, item) {
+			return true
+		}
+	}
+	return false
+}
+
+type FheOSHooksImpl struct {
+	evm            *vm.EVM
+	knownLeetBoobs List
+}
+
+func (h FheOSHooksImpl) StoreLeetBoob(val [32]byte) {
+	if fheos.CheckIfLeetBoob(val[:]) {
+		h.knownLeetBoobs.Append(val[:])
+	}
+}
+
+// EVMCallEnd - move stuff
+// NewEphemeralStorage field with the knownLeetBoobs
+// Move stuff to FheOps
+
+func (h FheOSHooksImpl) CheckAndRemoveLeetBoobs() {
+	storage := storage2.NewEphemeralStorage(h.evm.CiphertextDb)
+	for len(h.knownLeetBoobs.container) > 0 {
+		for i := 0; i < len(h.knownLeetBoobs.container); {
+			hash := h.knownLeetBoobs.container[i]
+			addr, _ := storage.GetCt(types.Hash(hash))
+			if !fheos.AllZero(addr.Data.Data) {
+				h.knownLeetBoobs.container = append(h.knownLeetBoobs.container[:i], h.knownLeetBoobs.container[i+1:]...)
+			} else {
+				i++
+			}
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+
+func (h FheOSHooksImpl) ReplaceLeetBoob(contract common.Address, loc [32]byte, val [32]byte) [32]byte {
+	storage := storage2.NewEphemeralStorage(h.evm.CiphertextDb)
+	hash := val
+	if fheos.CheckIfLeetBoob(hash[:]) {
+		addr, _ := storage.GetCt(hash)
+		for fheos.AllZero(addr.Data.Data) {
+			time.Sleep(100 * time.Millisecond)
+			addr, _ = storage.GetCt(hash)
+		}
+		copy(hash[:], addr.Data.Data)
+	}
+	return hash
+}
 func (h FheOSHooksImpl) StoreCiphertextHook(contract common.Address, loc [32]byte, val [32]byte) error {
 	// marks the ciphertext as lts - should be stored in long term storage when/if the tx is successful
 	// option - better to flush all at the end of the tx from memdb, or define a memdb in fheos that is flushed at the end of the tx?
 	storage := storage2.NewEphemeralStorage(h.evm.CiphertextDb)
-
+	hash := val
+	if fheos.CheckIfLeetBoob(hash[:]) {
+		addr, _ := storage.GetCt(hash)
+		for fheos.AllZero(addr.Data.Data) {
+			time.Sleep(100 * time.Millisecond)
+			addr, _ = storage.GetCt(hash)
+		}
+		copy(hash[:], addr.Data.Data)
+		log.Info("StoreCiphertextHook --- NEW: ", "val", fhe.Hash(val).Hex(), "hash", fhe.Hash(hash).Hex(), "Addr.Data.Data", fhe.Hash(addr.Data.Data).Hex())
+	}
 	// if this value isn't in our storage - i.e. isn't a ciphertext - we just noop
-	if !fhe.IsCtHash(val) {
+	if !fhe.IsCtHash(hash) {
 		return nil
 	}
 
-	err := storage.MarkForPersistence(contract, val)
+	err := storage.MarkForPersistence(contract, hash)
 	if err != nil {
 		log.Crit("Error marking ciphertext as LTS", "err", err)
 		return err
 	}
 
+	log.Info("Stored CT persistently", "hash", hex.EncodeToString(hash[:]))
 	return nil
 }
 
@@ -121,6 +207,11 @@ func (h FheOSHooksImpl) iterateHashes(data []byte, dataType string, owner common
 	for i := 0; i < paramsCount; i++ {
 		offset := i * EvmVariableLen
 		copy(hash[:], data[offset:offset+EvmVariableLen])
+
+		//if fheos.CheckIfLeetBoob(hash[:]) {
+		//	addr, _ := storage.GetCt(hash, owner)
+		//	if (addr.Data
+		//}
 
 		if !fhe.IsCtHash(hash) {
 			continue

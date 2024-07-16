@@ -1,11 +1,13 @@
 package precompiles
 
 import (
+	"crypto/rand"
 	"encoding/hex"
 	"fmt"
 	"math/big"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
@@ -115,8 +117,17 @@ func Log(s string, tp *TxParams) (uint64, error) {
 }
 
 func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
+
 	functionName := types.Add
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
+	//)(ITZIK)(
+	//In the PoC I just take random bytes and that's it.
+	randomBytes := make([]byte, 32)
+	_, _ = rand.Read(randomBytes)
+	zeros := make([]byte, 32)
+	test := CreateFakeFheEncrypted(zeros[:])
+	tempValueKeyResult := types.Hash(CalcTempValueHash(randomBytes[:]))
+	_ = storeTempValue(storage, tempValueKeyResult, test, tp.ContractAddress)
 
 	uintType := fhe.EncryptionType(utype)
 	if !types.IsValidType(uintType) {
@@ -129,41 +140,76 @@ func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		randomHash := State.GetRandomForGasEstimation()
 		return randomHash[:], gas, nil
 	}
+	//)(ITZIK)(
+	//I do pass storage here, but it's not needed, I think I just wanted to check if there is any difference
+	go func(storage *storage2.MultiStore) {
+		//)(ITZIK)(
+		/*
+			I either have a lhs/rhs that is in the form of 1337b00b[...] or deedbeaf[..]
+			I need to check in loop (hack) if this lhs/rhs is in the form of 1337b00b and if yes check if the value is 0 or a hash
+			then replace the values
+		*/
+		var lhsAddress *fhe.FheEncrypted
+		var rhsAddress *fhe.FheEncrypted
 
-	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function: " + functionName.String())
-	}
+		lhsAddress = getCiphertext(storage, fhe.Hash(lhsHash), tp.ContractAddress)
+		rhsAddress = getCiphertext(storage, fhe.Hash(rhsHash), tp.ContractAddress)
 
-	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
-	if err != nil {
-		logger.Error(functionName.String()+": inputs not verified", "err", err)
-		return nil, 0, vm.ErrExecutionReverted
-	}
+		log.Info("CHECKS: ", "lhsHash", fhe.Hash(lhsHash).Hex(), "rhsHash", fhe.Hash(rhsHash).Hex())
+		log.Info("CHECKS: ", "lhsAddress", fhe.Hash(lhsAddress.Data).Hex(), "rhsAddress", fhe.Hash(rhsAddress.Data).Hex())
+		//for now like this but needs a refactor
+		for (CheckIfLeetBoob(lhsHash) && AllZero(lhsAddress.Data)) || (CheckIfLeetBoob(rhsHash) && AllZero(rhsAddress.Data)) {
+			time.Sleep(100 * time.Millisecond) //might not be needed
+			//not needed? - for now leave like this
+			lhsAddress = getCiphertext(storage, fhe.Hash(lhsHash), tp.ContractAddress)
+			rhsAddress = getCiphertext(storage, fhe.Hash(rhsHash), tp.ContractAddress)
+		}
+		var lhsData []byte = lhsHash
+		var rhsData []byte = rhsHash
+		if CheckIfLeetBoob(lhsHash) {
+			lhsData = lhsAddress.Data
+		}
+		if CheckIfLeetBoob(lhsHash) {
+			rhsData = rhsAddress.Data
+		}
+		lhs, rhs, err := get2VerifiedOperands(storage, lhsData, rhsData, tp.ContractAddress)
 
-	if lhs.UintType != rhs.UintType || (lhs.UintType != uintType) {
-		msg := functionName.String() + " operand type mismatch"
-		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
-		return nil, 0, vm.ErrExecutionReverted
-	}
+		if err != nil {
+			logger.Error("Addresses: ", "lhs: ", fhe.Hash(lhsAddress.Data).Hex(), "rhs: ", fhe.Hash(rhsAddress.Data).Hex())
+			logger.Error(functionName.String()+": inputs not verified", "err", err)
+			//return nil, 0, vm.ErrExecutionReverted
+		}
 
-	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
+		if lhs.UintType != rhs.UintType || (lhs.UintType != uintType) {
+			msg := functionName.String() + " operand type mismatch"
+			logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
+			//return nil, 0, vm.ErrExecutionReverted
+		}
 
-	result, err := lhs.Add(rhs)
-	if err != nil {
-		logger.Error(functionName.String()+" failed", "err", err)
-		return nil, 0, vm.ErrExecutionReverted
-	}
+		// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 
-	err = storeCipherText(storage, result, tp.ContractAddress)
-	if err != nil {
-		logger.Error(functionName.String()+" failed", "err", err)
-		return nil, 0, vm.ErrExecutionReverted
-	}
+		result, _ := lhs.Add(rhs)
 
-	resultHash := result.Hash()
+		if err != nil {
+			logger.Error(functionName.String()+" failed", "err", err)
+			//return nil, 0, vm.ErrExecutionReverted
+		}
 
-	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
-	return resultHash[:], gas, nil
+		err = storeCipherText(storage, result, tp.ContractAddress)
+		if err != nil {
+			logger.Error(functionName.String()+" failed", "err", err)
+			//return nil, 0, vm.ErrExecutionReverted
+		}
+		resultHash := result.Hash()
+		//)(ITZIK)(
+		_ = storeTempValue(storage, tempValueKeyResult, CreateFakeFheEncrypted(resultHash[:]), tp.ContractAddress)
+
+		logger.Info("Tree: ", "func_name", functionName.String(), "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
+
+		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
+		//return resultHash[:], gas, nil
+	}(storage)
+	return tempValueKeyResult[:], gas, nil
 }
 
 // Verify takes inputs from the user and runs them through verification. Note that we will always get ciphertexts that
@@ -249,7 +295,7 @@ func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) (string, uin
 		logger.Error(functionName.String()+" failed to encrypt to user key", "err", err)
 		return "", 0, vm.ErrExecutionReverted
 	}
-
+	logger.Info("Tree: ", "func_name", functionName.String())
 	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "ciphertext-hash ", hex.EncodeToString(ctHash), "public-key", hex.EncodeToString(pk))
 
 	return string(reencryptedValue), gas, nil
@@ -338,7 +384,7 @@ func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
 	logger.Debug("Updated pending ops at tx hash", "tx hash", tp.TxHash, "pending", txOps)
 
 	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "input", hex.EncodeToString(input))
-
+	logger.Info("Tree: ", "func_name", functionName.String())
 	return FakeDecryptionResult(uintType), 0 /* TODO should we charge gas here? */, vm.ErrAsyncOp
 }
 
@@ -386,7 +432,7 @@ func Lte(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-
+	logger.Info("Tree: ", "func_name", functionName.String())
 	resultHash := result.Hash()
 	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
 	return resultHash[:], gas, nil
@@ -435,7 +481,7 @@ func Sub(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-
+	logger.Info("Tree: ", "func_name", functionName.String())
 	resultHash := result.Hash()
 	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
 	return resultHash[:], gas, nil
@@ -486,7 +532,7 @@ func Mul(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	ctHash := result.Hash()
-
+	logger.Info("Tree: ", "func_name", functionName.String(), "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
 
@@ -534,7 +580,7 @@ func Lt(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-
+	logger.Info("Tree: ", "func_name", functionName.String())
 	resultHash := result.Hash()
 	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
 	return resultHash[:], gas, nil
@@ -583,7 +629,7 @@ func Select(utype byte, controlHash []byte, ifTrueHash []byte, ifFalseHash []byt
 		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-
+	logger.Info("Tree: ", "func_name", functionName.String())
 	resultHash := result.Hash()
 	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "control", control.Hash().Hex(), "ifTrue", ifTrue.Hash().Hex(), "ifFalse", ifTrue.Hash().Hex(), "result", resultHash.Hex())
 	return resultHash[:], gas, nil
@@ -630,7 +676,7 @@ func Req(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 		logger.Error(msg)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-
+	logger.Info("Tree: ", "func_name", functionName.String())
 	return nil, gas, nil
 }
 
@@ -684,7 +730,7 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams) ([]byte, uint64, 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "ctHash", resHash.Hex())
 	}
-
+	logger.Info("Tree: ", "func_name", functionName.String())
 	return resHash[:], gas, nil
 }
 
@@ -762,7 +808,7 @@ func TrivialEncrypt(input []byte, toType byte, tp *TxParams) ([]byte, uint64, er
 		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-
+	logger.Info("Tree: ", "func_name", functionName.String(), "value_to_encrypt: ", valueToEncrypt)
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "ctHash", ctHash.Hex(), "valueToEncrypt", valueToEncrypt.Uint64())
 	}
@@ -814,7 +860,7 @@ func Div(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	ctHash := result.Hash()
-
+	logger.Info("Tree: ", "func_name", functionName.String())
 	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
@@ -865,7 +911,7 @@ func Gt(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 	}
 
 	ctHash := result.Hash()
-
+	logger.Info("Tree: ", "func_name", functionName.String())
 	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
@@ -915,7 +961,7 @@ func Gte(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	ctHash := result.Hash()
-
+	logger.Info("Tree: ", "func_name", functionName.String())
 	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
@@ -964,7 +1010,7 @@ func Rem(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	ctHash := result.Hash()
-
+	logger.Info("Tree: ", "func_name", functionName.String())
 	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
@@ -1015,7 +1061,7 @@ func And(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	ctHash := result.Hash()
-
+	logger.Info("Tree: ", "func_name", functionName.String())
 	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
@@ -1066,7 +1112,7 @@ func Or(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 	}
 
 	ctHash := result.Hash()
-
+	logger.Info("Tree: ", "func_name", functionName.String())
 	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
@@ -1116,7 +1162,7 @@ func Xor(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	ctHash := result.Hash()
-
+	logger.Info("Tree: ", "func_name", functionName.String())
 	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
@@ -1167,7 +1213,7 @@ func Eq(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 	}
 
 	ctHash := result.Hash()
-
+	logger.Info("Tree: ", "func_name", functionName.String())
 	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
@@ -1218,7 +1264,7 @@ func Ne(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 	}
 
 	ctHash := result.Hash()
-
+	logger.Info("Tree: ", "func_name", functionName.String())
 	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
@@ -1267,7 +1313,7 @@ func Min(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	ctHash := result.Hash()
-
+	logger.Info("Tree: ", "func_name", functionName.String())
 	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
@@ -1316,7 +1362,7 @@ func Max(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	ctHash := result.Hash()
-
+	logger.Info("Tree: ", "func_name", functionName.String())
 	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
@@ -1365,7 +1411,7 @@ func Shl(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	ctHash := result.Hash()
-
+	logger.Info("Tree: ", "func_name", functionName.String())
 	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
@@ -1414,7 +1460,7 @@ func Shr(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	}
 
 	ctHash := result.Hash()
-
+	logger.Info("Tree: ", "func_name", functionName.String())
 	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
 	return ctHash[:], gas, nil
 }
@@ -1457,7 +1503,7 @@ func Not(utype byte, value []byte, tp *TxParams) ([]byte, uint64, error) {
 		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-
+	logger.Info("Tree: ", "func_name", functionName.String())
 	resultHash := result.Hash()
 	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "input", ct.Hash().Hex(), "result", resultHash.Hex())
 	return resultHash[:], gas, nil
@@ -1475,6 +1521,6 @@ func GetNetworkPublicKey(tp *TxParams) ([]byte, error) {
 		logger.Error("could not get public key", "err", err)
 		return nil, vm.ErrExecutionReverted
 	}
-
+	logger.Info("Tree: ", "func_name", functionName.String())
 	return pk, nil
 }

@@ -1,6 +1,7 @@
 package precompiles
 
 import (
+	"bytes"
 	"errors"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -9,6 +10,8 @@ import (
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	"github.com/fhenixprotocol/fheos/storage"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
+	"golang.org/x/crypto/sha3"
+	"hash"
 	"math"
 	"math/big"
 )
@@ -44,6 +47,42 @@ func TxParamsFromEVM(evm *vm.EVM, callerContract common.Address) TxParams {
 type Precompile struct {
 	Metadata *bind.MetaData
 	Address  common.Address
+}
+
+// Keccak256 calculates and returns the Keccak256 hash of the input data.
+func Keccak256(data ...[]byte) []byte {
+	d := NewKeccakState()
+	for _, datum := range data {
+		d.Write(datum)
+	}
+	return d.Sum(nil)
+}
+
+// )(ITZIK)(
+var tempValueHashMagicBytes = [...]byte{0x13, 0x37, 0xb0, 0x0b}
+
+func NewKeccakState() hash.Hash {
+	return sha3.NewLegacyKeccak256()
+}
+func CalcTempValueHash(randomBytes []byte) []byte {
+	_hash := Keccak256(randomBytes[:])
+	copy(_hash[:4], tempValueHashMagicBytes[:])
+
+	return _hash
+}
+func CheckIfLeetBoob(hashToCheck []byte) bool {
+	return bytes.Equal(hashToCheck[:4], tempValueHashMagicBytes[:])
+}
+
+func CreateFakeFheEncrypted(bytes []byte) *fhe.FheEncrypted {
+	//bytes := [...]byte{0x05}
+	var result fhe.FheEncrypted
+	if bytes == nil {
+		result = fhe.NewFheEncryptedFromBytes(nil, 5, false, false)
+		return &result
+	}
+	result = fhe.NewFheEncryptedFromBytes(bytes[:], 5, false, false)
+	return &result
 }
 
 func getCiphertext(state *storage.MultiStore, ciphertextHash fhe.Hash, caller common.Address) *fhe.FheEncrypted {
@@ -93,6 +132,26 @@ func get3VerifiedOperands(storage *storage.MultiStore, controlHash []byte, ifTru
 	return
 }
 
+// )(ITZIK)(
+func AllZero(s []byte) bool {
+	for _, v := range s {
+		if v != 0 {
+			return false
+		}
+	}
+	return true
+}
+
+// )(ITZIK)(
+func storeTempValue(storage *storage.MultiStore, key types.Hash, ct *fhe.FheEncrypted, owner common.Address) error {
+	err := storage.HackAppendCt(key, (*types.FheEncrypted)(ct), owner)
+	if err != nil {
+		logger.Error("failed importing ciphertext to state: ", err)
+		return err
+	}
+
+	return nil
+}
 func storeCipherText(storage *storage.MultiStore, ct *fhe.FheEncrypted, owner common.Address) error {
 	err := storage.AppendCt(types.Hash(ct.Hash()), (*types.FheEncrypted)(ct), owner)
 	if err != nil {

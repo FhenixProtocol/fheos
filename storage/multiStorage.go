@@ -48,6 +48,11 @@ func (ms *MultiStore) AppendCt(h types.Hash, cipher *types.FheEncrypted, owner c
 	return ms.PutCt(h, cipher, owner)
 }
 
+// )(ITZIK)(
+func (ms *MultiStore) HackAppendCt(h types.Hash, cipher *types.FheEncrypted, owner common.Address) error {
+	return ms.PutCt(h, cipher, owner)
+}
+
 func (ms *MultiStore) getCtHelper(h types.Hash) (*types.CipherTextRepresentation, error) {
 	ct, err := ms.ephemeral.GetCt(h)
 
