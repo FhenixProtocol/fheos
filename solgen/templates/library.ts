@@ -11,6 +11,7 @@ import {
   LOCAL_SEAL_FUNCTION_NAME,
   LOCAL_DECRYPT_FUNCTION_NAME,
   AllowedOperations,
+  AllowedTypesOnCastToEaddress,
   toPlaintextType,
   capitalize,
   shortenType,
@@ -228,7 +229,7 @@ const castFromPlaintext = (name: string, toType: string, addSecurityZone: boolea
   return `Impl.trivialEncrypt(${name}, Common.${toType.toUpperCase()}_TFHE, ${addSecurityZone ? "securityZone" : "0"})`;
 };
 
-const castFromAddress = (name: string, toType: string, addSecurityZone: boolean = false): string => {
+const castFromPlaintextAddress = (name: string, toType: string, addSecurityZone: boolean = false): string => {
   return `Impl.trivialEncrypt(uint256(uint160(${name})), Common.${toType.toUpperCase()}_TFHE, ${addSecurityZone ? "securityZone" : "0"})`;
 };
 
@@ -241,6 +242,8 @@ const castFromInputType = (name: string, toType: string): string => {
 };
 
 const castToEbool = (name: string, fromType: string): string => {
+  // todo (eshel): this should not work for non-default security zones because the second operand of the 'ne' is always from security zone 0.
+  // check if the precompiles support the EBOOL_TFHE constant as with the other casts
   return `
     \n    /// @notice Converts a ${fromType} to an ebool
     function asEbool(${fromType} value) internal pure returns (ebool) {
@@ -249,6 +252,10 @@ const castToEbool = (name: string, fromType: string): string => {
 };
 
 export const AsTypeFunction = (fromType: string, toType: string, addSecurityZone: boolean = false) => {
+  if (toType === "eaddress" && !AllowedTypesOnCastToEaddress.includes(fromType) ) {
+    return ""; // skip unsupported cast
+  }
+
   let castString = castFromEncrypted(fromType, toType, "value");
   let overrideFuncs = '';
 
@@ -258,16 +265,24 @@ export const AsTypeFunction = (fromType: string, toType: string, addSecurityZone
   if (fromType === "bool" && toType === "ebool") {
     return `
     /// @notice Converts a plaintext boolean value to a ciphertext ebool
-    /// @dev Privacy: The input value is public, therefore the ciphertext should be considered public and should be used
-    ///only for mathematical operations, not to represent data that should be private
-    /// @return A ciphertext representation of the input 
+    /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
+    /// @return A ciphertext representation of the input
     function asEbool(bool value) internal pure returns (ebool) {
         uint256 sVal = 0;
         if (value) {
             sVal = 1;
         }
-
         return asEbool(sVal);
+    }
+    /// @notice Converts a plaintext boolean value to a ciphertext ebool, specifying security zone
+    /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
+    /// @return A ciphertext representation of the input
+    function asEbool(bool value, int32 securityZone) internal pure returns (ebool) {
+      uint256 sVal = 0;
+      if (value) {
+        sVal = 1;
+      }
+      return asEbool(sVal, securityZone);
     }`;
   } else if (fromType.startsWith("inE")) {
     docString = `
@@ -289,16 +304,6 @@ export const AsTypeFunction = (fromType: string, toType: string, addSecurityZone
     /// @return a ciphertext representation of the input`;
     addSecurityZone = true;
     castString = castFromBytes("value", toType);
-  } else if (fromType == "address" && toType == "eaddress") {
-    docString += `
-    /// Allows for a better user experience when working with eaddresses`;
-    if (!addSecurityZone) {
-      // recursive call to add the asType override with the security zone
-      overrideFuncs += AsTypeFunction(fromType, toType, true);
-    } else {
-      docString += `, specifying security zone`;
-    }
-    castString = castFromAddress("value", toType, addSecurityZone);
   } else if (EPlaintextType.includes(fromType)) {
     if (!addSecurityZone) {
       // recursive call to add the asType override with the security zone
@@ -306,7 +311,17 @@ export const AsTypeFunction = (fromType: string, toType: string, addSecurityZone
     } else {
       docString += `, specifying security zone`;
     }
-    castString = castFromPlaintext("value", toType, addSecurityZone);
+
+    docString += `
+    /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation`;
+
+    if (fromType === "address" && toType == "eaddress") {
+      docString += `
+    /// Allows for a better user experience when working with eaddresses`;
+      castString = castFromPlaintextAddress("value", toType, addSecurityZone);
+    } else {
+      castString = castFromPlaintext("value", toType, addSecurityZone);
+    }
   } else if (toType === "ebool") {
     return castToEbool("value", fromType);
   } else if (!EInputType.includes(fromType)) {
@@ -655,6 +670,10 @@ export const OperatorBinding = (
 };
 
 export const CastBinding = (thisType: string, targetType: string) => {
+  if (targetType === "eaddress" && !AllowedTypesOnCastToEaddress.includes(thisType) ) {
+    return ""; // skip unsupported cast
+  }
+
   return `
     function to${shortenType(
       targetType

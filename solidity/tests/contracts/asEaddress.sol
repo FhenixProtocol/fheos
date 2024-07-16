@@ -24,6 +24,10 @@ contract AsEaddressTest {
         return FHE.decrypt(FHE.asEaddress(val));
     }
 
+    function castFromPlaintextAddressToEaddress(address val) public pure returns (address) {
+        return FHE.decrypt(FHE.asEaddress(val));
+    }
+
     function castFromPreEncryptedToEaddress(inEaddress calldata val) public pure returns (address) {
         return FHE.decrypt(FHE.asEaddress(val));
     }
