@@ -1,6 +1,6 @@
 [submodule "go-ethereum"]
 	path = go-ethereum
-	branch = merge-3.0.3-v2
+	branch = main
 	url = git@github.com:FhenixProtocol/go-ethereum.git
 [submodule "warp-drive"]
 	path = warp-drive
