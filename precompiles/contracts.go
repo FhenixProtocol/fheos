@@ -698,7 +698,7 @@ func TrivialEncrypt(input []byte, toType byte, securityZone int32, tp *TxParams)
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "ctHash", ctHash.Hex(), "valueToEncrypt", valueToEncrypt.Uint64())
+		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "ctHash", ctHash.Hex(), "valueToEncrypt", valueToEncrypt.Uint64(), "securityZone", ct.SecurityZone)
 	}
 	return ctHash[:], gas, nil
 }

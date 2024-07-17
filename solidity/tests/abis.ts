@@ -145,6 +145,7 @@ export interface AsEuint256TestType extends BaseContract {
 export interface AsEaddressTestType extends BaseContract {
     castFromEuint256ToEaddress: (val: bigint, test: string) => Promise<bigint>;
     castFromPlaintextToEaddress: (val: bigint) => Promise<bigint>;
+    castFromPlaintextAddressToEaddress: (val: bigint) => Promise<bigint>;
     castFromPreEncryptedToEaddress: (val: EncryptedNumber) => Promise<bigint>;
 }
 

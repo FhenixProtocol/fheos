@@ -6,7 +6,7 @@ import {
   toInType,
   toInTypeParam,
   toVarSuffix,
-  toAsType,
+  toAsType, AllowedTypesOnCastToEaddress,
 } from "../common";
 
 const IsOperationAllowed = (
@@ -175,9 +175,8 @@ export function AsTypeBenchmarkContract(type: string) {
   let loads = "";
   let casts = "";
 
-  // Although casts from eaddress to types with < 256 bits are possible, we don't want to bench them.
-  let eaddressAllowedTypes = ["euint256"];
-  let fromTypeCollection = type === "eaddress" ? eaddressAllowedTypes : EInputType;
+  const eaddressTypes = AllowedTypesOnCastToEaddress.filter(t => t.startsWith("e")); // filter out built-in-types which we deal with explicitly
+  let fromTypeCollection = type === "eaddress" ? eaddressTypes : EInputType;
 
   for (let fromType of fromTypeCollection) {
     if (fromType === type) {
