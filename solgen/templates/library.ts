@@ -482,17 +482,6 @@ export function SolTemplate1Arg(
     /// @param input1 the input ciphertext
     `;
 
-  if (name === "not" && input1 === "ebool") {
-    return `\n
-    /// @notice Performs the "not" for the ebool type
-    /// @dev Implemented by a workaround due to ebool being a euint8 type behind the scenes, therefore xor is needed to assure that not(true) = false and vise-versa
-    /// @param value input ebool ciphertext
-    /// @return Result of the not operation on \`value\` 
-    function not(ebool value) internal pure returns (ebool) {
-        return xor(value, asEbool(true));
-    }`;
-  }
-
   let returnStr = returnType === "none" ? `` : `returns (${returnType})`;
 
   let funcBody = docString;

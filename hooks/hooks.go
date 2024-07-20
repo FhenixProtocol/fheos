@@ -211,7 +211,11 @@ func (h FheOSHooksImpl) iterateHashes(data []byte, dataType string, owner common
 			continue
 		}
 
-		_ = storage.AddOwner(hash, ct, newOwner)
+		err := storage.AddOwner(hash, ct, newOwner)
+		if err != nil {
+			log.Error("Failed to add owner to ciphertext", "hash", hex.EncodeToString(hash[:]), "owner", newOwner.Hex(), "err", err)
+			continue
+		}
 
 		log.Info("Contract has been added as an owner to the ciphertext", "contract", newOwner, "ciphertext", hex.EncodeToString(hash[:]))
 	}

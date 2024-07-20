@@ -123,9 +123,9 @@ func (ms *MultiStore) DereferenceCiphertext(hash types.Hash) (bool, error) {
 	return false, ms.PutCt(hash, ct)
 }
 func (ms *MultiStore) ReferenceCiphertext(hash types.Hash) error {
-	ct, _ := ms.getCtHelper(hash)
+	ct, err := ms.getCtHelper(hash)
 	if ct == nil {
-		return fmt.Errorf("can not reference a ciphertext with hash: %s", hex.EncodeToString(hash[:]))
+		return fmt.Errorf("can not reference a ciphertext with hash: %s, err: %s", hex.EncodeToString(hash[:]), err)
 	}
 
 	ct.RefCount++
