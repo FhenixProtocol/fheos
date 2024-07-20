@@ -28,14 +28,12 @@ func InitLogger() {
 }
 
 func InitFheConfig(fheConfig *fhe.Config) error {
-	logFormat := log.TerminalFormat(true)
-	glogger := log.NewGlogHandler(log.StreamHandler(os.Stderr, logFormat))
-	glogger.Verbosity(log.Lvl(fheConfig.LogLevel))
+	// Itzik: I'm not sure if this is the right way to initialize the logger
+	handler := log.NewTerminalHandlerWithLevel(os.Stderr, log.FromLegacyLevel(fheConfig.LogLevel), true)
+	glogger := log.NewGlogHandler(handler)
 
-	logger.SetHandler(glogger)
-	warpDriveLogger.SetHandler(glogger)
-
-	fhe.SetLogger(warpDriveLogger)
+	logger = log.NewLogger(glogger)
+	fhe.SetLogger(log.NewLogger(glogger))
 
 	err := fhe.Init(fheConfig)
 
@@ -562,14 +560,14 @@ func Req(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 	if len(input) != 32 {
 		msg := functionName.String() + " input len must be 32 bytes"
 		logger.Error(msg, " input ", hex.EncodeToString(input), " len ", len(input))
-		return nil, 0, vm.ErrExecutionReverted
+		return nil, gas, vm.ErrExecutionReverted
 	}
 
 	ct := getCiphertext(storage, fhe.BytesToHash(input), tp.ContractAddress)
 	if ct == nil {
 		msg := functionName.String() + " unverified handle"
 		logger.Error(msg, " input ", hex.EncodeToString(input))
-		return nil, 0, vm.ErrExecutionReverted
+		return nil, gas, vm.ErrExecutionReverted
 	}
 
 	ev := evaluateRequire(ct)
@@ -577,7 +575,7 @@ func Req(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 	if !ev {
 		msg := functionName.String() + " condition not met"
 		logger.Error(msg)
-		return nil, 0, vm.ErrExecutionReverted
+		return nil, gas, vm.ErrExecutionReverted
 	}
 
 	return nil, gas, nil

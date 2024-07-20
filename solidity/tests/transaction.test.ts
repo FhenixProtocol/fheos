@@ -349,6 +349,7 @@ describe("Test CT Ownership", () => {
     let failed = false;
     try {
       const resp = await callee.set(response);
+      let result = await resp.wait();
     } catch (err) {
       failed = true;
     }

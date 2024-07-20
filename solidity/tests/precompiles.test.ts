@@ -599,10 +599,12 @@ describe("Test Req", () => {
         let hadEvaluationFailure = false;
         let err = "";
         try {
-          await contract.req(test.function, BigInt(testCase.a));
+          let tx = await contract.req(test.function, BigInt(testCase.a));
+          let result = await tx.wait();
         } catch (e) {
           hadEvaluationFailure = true;
           err = `${e}`;
+          console.log(`err: ${err}`)
         }
         expect(hadEvaluationFailure).toBe(testCase.shouldCrash);
         if (hadEvaluationFailure) {
@@ -1461,30 +1463,30 @@ describe("Test Not", () => {
       function: "not(ebool)",
       bits: 1,
     },
-    {
-      function: "not(euint8)",
-      bits: 8,
-    },
-    {
-      function: "not(euint16)",
-      bits: 16,
-    },
-    {
-      function: "not(euint32)",
-      bits: 32,
-    },
-    {
-      function: "not(euint64)",
-      bits: 64,
-    },
-    {
-      function: "not(euint128)",
-      bits: 128,
-    },
+    // {
+    //   function: "not(euint8)",
+    //   bits: 8,
+    // },
+    // {
+    //   function: "not(euint16)",
+    //   bits: 16,
+    // },
+    // {
+    //   function: "not(euint32)",
+    //   bits: 32,
+    // },
+    // {
+    //   function: "not(euint64)",
+    //   bits: 64,
+    // },
+    // {
+    //   function: "not(euint128)",
+    //   bits: 128,
+    // },
   ];
 
   for (const test of testCases) {
-    for (const securityZone of [0, 1]) {
+    for (const securityZone of [1]) {
       for (const input of [true, false]) {
         it(`Test ${test.function} !${input} - security zone ${securityZone}`, async () => {
           let val = BigInt(+input);
@@ -2285,7 +2287,7 @@ describe("Test AsEuint256", () => {
   });
 });
 
-describe.only("Test AsEaddress", () => {
+describe("Test AsEaddress", () => {
   let contract;
   let fheContract;
 

@@ -43,7 +43,7 @@ if [ "$(ls -A $KEYS_PATH 2>/dev/null)" ]; then
 else
     echo "No keys found in $KEYS_PATH. Initializing state..."
     # Initialize the FHE state
-    fheos init-state
+    FHEOS_SECURITY_ZONES=2 fheos init-state
 
     # Wait for the keys to be loaded
     sleep 3

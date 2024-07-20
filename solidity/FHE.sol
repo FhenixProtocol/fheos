@@ -2428,13 +2428,18 @@ library FHE {
         uint256 result = mathHelper(Common.EUINT128_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shr);
         return euint128.wrap(result);
     }
-
-    /// @notice Performs the "not" for the ebool type
-    /// @dev Implemented by a workaround due to ebool being a euint8 type behind the scenes, therefore xor is needed to assure that not(true) = false and vise-versa
-    /// @param value input ebool ciphertext
-    /// @return Result of the not operation on `value` 
-    function not(ebool value) internal pure returns (ebool) {
-        return xor(value, asEbool(true));
+    /// @notice Performs the not operation on a ciphertext
+    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @param input1 the input ciphertext
+    function not(ebool input1) internal pure returns (ebool) {
+        if (!isInitialized(input1)) {
+            input1 = asEbool(0);
+        }
+        uint256 unwrappedInput1 = ebool.unwrap(input1);
+        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
+        bytes memory b = FheOps(Precompiles.Fheos).not(Common.EBOOL_TFHE, inputAsBytes);
+        uint256 result = Impl.getValue(b);
+        return ebool.wrap(result);
     }
     /// @notice Performs the not operation on a ciphertext
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
