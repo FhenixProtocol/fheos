@@ -36,6 +36,7 @@ func (con FheOps) Add(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	}
 
 	ret, gas, err := fheos.Add(utype, lhsHash, rhsHash, &tp)
+	evm.FheosHooks.StorePlaceholderValue(ret)
 
 	if err != nil {
 		if metrics.Enabled {
@@ -474,6 +475,7 @@ func (con FheOps) Mul(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	}
 
 	ret, gas, err := fheos.Mul(utype, lhsHash, rhsHash, &tp)
+	evm.FheosHooks.StorePlaceholderValue(ret)
 
 	if err != nil {
 		if metrics.Enabled {

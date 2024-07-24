@@ -21,6 +21,35 @@ func init() {
 	InitLogger()
 }
 
+func blockUntilBinaryOperandsAvailable(storage *storage2.MultiStore, lhsHash, rhsHash []byte, tp *TxParams) ([]byte, []byte) {
+	var lhsAddress *fhe.FheEncrypted
+	var rhsAddress *fhe.FheEncrypted
+
+	lhsAddress = getCiphertext(storage, fhe.Hash(lhsHash), tp.ContractAddress)
+	rhsAddress = getCiphertext(storage, fhe.Hash(rhsHash), tp.ContractAddress)
+
+	var lhsCheck, rhsCheck [32]byte
+	copy(lhsCheck[:], lhsAddress.Data)
+	copy(rhsCheck[:], rhsAddress.Data)
+	//for now like this but needs a refactor
+	for (fhe.IsPlaceholderValue(lhsHash) && !fhe.IsCtHash(lhsCheck)) || (fhe.IsPlaceholderValue(rhsHash) && !fhe.IsCtHash(rhsCheck)) {
+		lhsAddress = getCiphertext(storage, fhe.Hash(lhsHash), tp.ContractAddress)
+		rhsAddress = getCiphertext(storage, fhe.Hash(rhsHash), tp.ContractAddress)
+		copy(lhsCheck[:], lhsAddress.Data)
+		copy(rhsCheck[:], rhsAddress.Data)
+	}
+	var lhsData []byte = lhsHash
+	var rhsData []byte = rhsHash
+
+	if fhe.IsPlaceholderValue(lhsHash) {
+		copy(lhsData, lhsCheck[:])
+	}
+	if fhe.IsPlaceholderValue(rhsHash) {
+		copy(rhsData, rhsCheck[:])
+	}
+	return lhsData, rhsData
+}
+
 func InitLogger() {
 	logger = log.Root().New("module", "fheos")
 	warpDriveLogger = log.Root().New("module", "warp-drive")
@@ -103,6 +132,10 @@ func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	functionName := types.Add
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 
+	placeholderValue := fhe.CreateFheEncryptedWithData(make([]byte, 32)[:], fhe.EncryptionType(utype))
+	placeholderKey := fhe.CalcBinaryPlaceholderValueHash(lhsHash, rhsHash)
+	err := storePlaceholderValue(storage, types.Hash(placeholderKey), placeholderValue, tp.ContractAddress)
+
 	uintType := fhe.EncryptionType(utype)
 	if !types.IsValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
@@ -119,36 +152,50 @@ func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
-	if err != nil {
-		logger.Error(functionName.String()+": inputs not verified", "err", err)
-		return nil, 0, vm.ErrExecutionReverted
-	}
+	lhsHashCopy := CopySlice(lhsHash)
+	rhsHashCopy := CopySlice(rhsHash)
 
-	if lhs.UintType != rhs.UintType || (lhs.UintType != uintType) {
-		msg := functionName.String() + " operand type mismatch"
-		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
-		return nil, 0, vm.ErrExecutionReverted
-	}
+	go func(lhsHash, rhsHash []byte) {
 
-	// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
+		lhsData, rhsData := blockUntilBinaryOperandsAvailable(storage, lhsHash, rhsHash, tp)
 
-	result, err := lhs.Add(rhs)
-	if err != nil {
-		logger.Error(functionName.String()+" failed", "err", err)
-		return nil, 0, vm.ErrExecutionReverted
-	}
+		lhs, rhs, err := get2VerifiedOperands(storage, lhsData, rhsData, tp.ContractAddress)
+		if err != nil {
+			logger.Error(functionName.String()+": inputs not verified", "err", err)
+			//return nil, 0, vm.ErrExecutionReverted
+		}
+		// for now as a hotfix so that benchmarking can be done, needs to be figured out later
+		// Issue is that leetboobs are stored as uint256 so async ops would fail for anything that isn't
+		// uint256
 
-	err = storeCipherText(storage, result, tp.ContractAddress)
-	if err != nil {
-		logger.Error(functionName.String()+" failed", "err", err)
-		return nil, 0, vm.ErrExecutionReverted
-	}
+		if lhs.UintType != rhs.UintType || (lhs.UintType != uintType) {
+			msg := functionName.String() + " operand type mismatch"
+			logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
+			//return nil, 0, vm.ErrExecutionReverted
+		}
 
-	resultHash := result.Hash()
+		// If we are doing gas estimation, skip execution and insert a random ciphertext as a result.
 
-	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
-	return resultHash[:], gas, nil
+		result, err := lhs.Add(rhs)
+		if err != nil {
+			logger.Error(functionName.String()+" failed", "err", err)
+			//return nil, 0, vm.ErrExecutionReverted
+		}
+
+		err = storeCipherText(storage, result, tp.ContractAddress)
+		if err != nil {
+			logger.Error(functionName.String()+" failed", "err", err)
+			//return nil, 0, vm.ErrExecutionReverted
+		}
+
+		resultHash := result.Hash()
+		//Update placeholderValue with the correct address
+		_ = storePlaceholderValue(storage, types.Hash(placeholderKey), fhe.CreateFheEncryptedWithData(resultHash[:], fhe.EncryptionType(utype)), tp.ContractAddress)
+		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
+		//return resultHash[:], gas, nil
+	}(lhsHashCopy, rhsHashCopy)
+
+	return placeholderKey[:], gas, err
 }
 
 // Verify takes inputs from the user and runs them through verification. Note that we will always get ciphertexts that
@@ -392,6 +439,11 @@ func Mul(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	functionName := types.Mul
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
+
+	placeholderValue := fhe.CreateFheEncryptedWithData(make([]byte, 32)[:], fhe.EncryptionType(utype))
+	placeholderKey := fhe.CalcBinaryPlaceholderValueHash(lhsHash, rhsHash)
+	err := storePlaceholderValue(storage, types.Hash(placeholderKey), placeholderValue, tp.ContractAddress)
+
 	uintType := fhe.EncryptionType(utype)
 	if !types.IsValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
@@ -408,33 +460,42 @@ func Mul(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
-	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
-	if err != nil {
-		logger.Error(functionName.String()+": inputs not verified", "err", err)
-		return nil, 0, vm.ErrExecutionReverted
-	}
+	lhsHashCopy := CopySlice(lhsHash)
+	rhsHashCopy := CopySlice(rhsHash)
 
-	if lhs.UintType != rhs.UintType {
-		msg := functionName.String() + " operand type mismatch"
-		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
-		return nil, 0, vm.ErrExecutionReverted
-	}
+	go func(lhsHash, rhsHash []byte) {
+		lhsData, rhsData := blockUntilBinaryOperandsAvailable(storage, lhsHash, rhsHash, tp)
 
-	result, err := lhs.Mul(rhs)
-	if err != nil {
-		logger.Error(functionName.String()+" failed", "err", err)
-		return nil, 0, vm.ErrExecutionReverted
-	}
+		lhs, rhs, err := get2VerifiedOperands(storage, lhsData, rhsData, tp.ContractAddress)
 
-	err = storeCipherText(storage, result, tp.ContractAddress)
-	if err != nil {
-		logger.Error(functionName.String()+" failed", "err", err)
-		return nil, 0, vm.ErrExecutionReverted
-	}
+		if err != nil {
+			logger.Error(functionName.String()+": inputs not verified", "err", err)
+			//return nil, 0, vm.ErrExecutionReverted
+		}
 
-	ctHash := result.Hash()
+		if lhs.UintType != rhs.UintType {
+			msg := functionName.String() + " operand type mismatch"
+			logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
+			//return nil, 0, vm.ErrExecutionReverted
+		}
 
-	return ctHash[:], gas, nil
+		result, err := lhs.Mul(rhs)
+		if err != nil {
+			logger.Error(functionName.String()+" failed", "err", err)
+			//return nil, 0, vm.ErrExecutionReverted
+		}
+
+		err = storeCipherText(storage, result, tp.ContractAddress)
+		if err != nil {
+			logger.Error(functionName.String()+" failed", "err", err)
+			//return nil, 0, vm.ErrExecutionReverted
+		}
+
+		ctHash := result.Hash()
+		_ = storePlaceholderValue(storage, types.Hash(placeholderKey), fhe.CreateFheEncryptedWithData(ctHash[:], fhe.EncryptionType(utype)), tp.ContractAddress)
+
+	}(lhsHashCopy, rhsHashCopy)
+	return placeholderKey, gas, err
 }
 
 func Lt(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {

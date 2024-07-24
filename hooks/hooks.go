@@ -14,6 +14,9 @@ import (
 type FheOSHooks interface {
 	StoreCiphertextHook(contract common.Address, loc [32]byte, original common.Hash, val [32]byte) error
 	StoreGasHook(contract common.Address, loc [32]byte, val [32]byte) (uint64, uint64)
+	StorePlaceholderValue(val []byte)
+	BlockAsync()
+	BlockUntilValueReplaced(val [32]byte) [32]byte
 	LoadCiphertextHook() [32]byte
 	EvmCallStart()
 	EvmCallEnd(evmSuccess bool)
@@ -23,6 +26,16 @@ type FheOSHooks interface {
 
 type FheOSHooksImpl struct {
 	evm *vm.EVM
+}
+
+func (h FheOSHooksImpl) BlockAsync() {
+	storage := storage2.NewEphemeralStorage(h.evm.CiphertextDb)
+	storage.BlockUntilPlaceholderValuesRemoved()
+}
+
+func (h FheOSHooksImpl) BlockUntilValueReplaced(val [32]byte) [32]byte {
+	storage := storage2.NewEphemeralStorage(h.evm.CiphertextDb)
+	return storage.BlockUntilPlaceHolderValueReplaced(val)
 }
 
 func (h FheOSHooksImpl) updateCiphertextReferences(original common.Hash, newHash types.Hash) (bool, error) {
@@ -57,6 +70,13 @@ func (h FheOSHooksImpl) updateCiphertextReferences(original common.Hash, newHash
 
 	return false, nil
 }
+func (h FheOSHooksImpl) StorePlaceholderValue(val []byte) {
+	if fhe.IsPlaceholderValue(val) {
+		storage := storage2.NewEphemeralStorage(h.evm.CiphertextDb)
+		//TODO: Errorhandling
+		_ = storage.MarkForPlaceholding(types.Hash(val))
+	}
+}
 
 // StoreCiphertextHook The purpose of this hook is to mark the ciphertext as LTS if the tx is successful and update reference counts
 // contract - The address of the contract in which the ciphertext is stored
@@ -67,9 +87,12 @@ func (h FheOSHooksImpl) StoreCiphertextHook(contract common.Address, loc [32]byt
 	// marks the ciphertext as lts - should be stored in long term storage when/if the tx is successful
 	// option - better to flush all at the end of the tx from memdb, or define a memdb in fheos that is flushed at the end of the tx?
 	storage := storage2.NewEphemeralStorage(h.evm.CiphertextDb)
+	//Checks if val and commited are PlaceholderValues and if yes waits until it is a standard daedbeef one
+	hash := storage.BlockUntilPlaceHolderValueReplaced(val)
+	commited = storage.BlockUntilPlaceHolderValueReplaced(commited)
 
 	// Skip for non-ciphertext
-	ctHash := types.Hash(val)
+	ctHash := types.Hash(hash)
 
 	wasDereferenced, err := h.updateCiphertextReferences(commited, ctHash)
 	if err != nil {
@@ -93,7 +116,7 @@ func (h FheOSHooksImpl) StoreCiphertextHook(contract common.Address, loc [32]byt
 		return nil
 	}
 
-	err = storage.MarkForPersistence(contract, val)
+	err = storage.MarkForPersistence(contract, hash)
 	if err != nil {
 		log.Crit("Error marking ciphertext as LTS", "err", err)
 		return err
@@ -123,6 +146,9 @@ func (h FheOSHooksImpl) EvmCallStart() {
 func (h FheOSHooksImpl) EvmCallEnd(evmSuccess bool) {
 	if evmSuccess && h.evm.Commit {
 		storage := storage2.NewEphemeralStorage(h.evm.CiphertextDb)
+
+		//storage.BlockUntilPlaceholderValuesRemoved()
+
 		toStore := storage.GetAllToPersist()
 		toDelete := storage.GetAllToDelete()
 
@@ -211,11 +237,7 @@ func (h FheOSHooksImpl) iterateHashes(data []byte, dataType string, owner common
 			continue
 		}
 
-		err := storage.AddOwner(hash, ct, newOwner)
-		if err != nil {
-			log.Error("Failed to add owner to ciphertext", "hash", hex.EncodeToString(hash[:]), "owner", newOwner.Hex(), "err", err)
-			continue
-		}
+		_ = storage.AddOwner(hash, ct, newOwner)
 
 		log.Info("Contract has been added as an owner to the ciphertext", "contract", newOwner, "ciphertext", hex.EncodeToString(hash[:]))
 	}

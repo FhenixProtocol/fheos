@@ -37,6 +37,12 @@ func (ms *MultiStore) PutCt(h types.Hash, cipher *types.CipherTextRepresentation
 	return err
 }
 
+// AppendPhV stores a PlaceholderValue in ephemeral storage - it does NOT mark it as LTS. The reason is that we want only SSTORE to mark it as LTS, which is
+// TODO: Verify that we don't need to worry about RefCount
+func (ms *MultiStore) AppendPhV(h types.Hash, cipher *types.FheEncrypted, owner common.Address) error {
+	return ms.PutCt(h, &types.CipherTextRepresentation{Data: cipher, Owners: []common.Address{owner}, RefCount: 1})
+}
+
 // AppendCt stores a ciphertext in the ephemeral storage - it does NOT mark it as LTS. The reason is that we want only SSTORE to mark it as LTS, which is
 // called not only by the precompiles, only by the EVM hook from the evm interpreter.
 // When a CT with the same hash exists in the disk storage, an owner is added to the list of owners.
@@ -78,6 +84,7 @@ func (ms *MultiStore) GetCtRepresentation(h types.Hash, caller common.Address) (
 		return nil, err
 	}
 
+	//This is new
 	owner, err := ms.isOwner(h, ct, caller)
 	if err != nil {
 		return nil, err
@@ -123,9 +130,9 @@ func (ms *MultiStore) DereferenceCiphertext(hash types.Hash) (bool, error) {
 	return false, ms.PutCt(hash, ct)
 }
 func (ms *MultiStore) ReferenceCiphertext(hash types.Hash) error {
-	ct, err := ms.getCtHelper(hash)
+	ct, _ := ms.getCtHelper(hash)
 	if ct == nil {
-		return fmt.Errorf("can not reference a ciphertext with hash: %s, err: %s", hex.EncodeToString(hash[:]), err)
+		return fmt.Errorf("can not reference a ciphertext with hash: %s", hex.EncodeToString(hash[:]))
 	}
 
 	ct.RefCount++

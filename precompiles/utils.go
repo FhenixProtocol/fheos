@@ -21,6 +21,12 @@ type TxParams struct {
 	ContractAddress common.Address
 }
 
+type NotPlaceholderKeyError struct{}
+
+func (err *NotPlaceholderKeyError) Error() string {
+	return "Placeholder key in incorrect format."
+}
+
 type GasBurner interface {
 	Burn(amount uint64) error
 	Burned() uint64
@@ -31,7 +37,6 @@ func TxParamsFromEVM(evm *vm.EVM, callerContract common.Address) TxParams {
 	tp.Commit = evm.Commit
 	tp.GasEstimation = evm.GasEstimation
 	tp.EthCall = evm.EthCall
-
 	tp.CiphertextDb = evm.CiphertextDb
 	tp.ContractAddress = callerContract
 
@@ -91,6 +96,20 @@ func get3VerifiedOperands(storage *storage.MultiStore, controlHash []byte, ifTru
 	return
 }
 
+func storePlaceholderValue(storage *storage.MultiStore, key types.Hash, ct *fhe.FheEncrypted, owner common.Address) error {
+	var err error
+	if fhe.IsPlaceholderValue(key[:]) {
+		err = storage.AppendPhV(key, (*types.FheEncrypted)(ct), owner)
+	} else {
+		err = &NotPlaceholderKeyError{}
+	}
+	if err != nil {
+		logger.Error("failed importing placeholder value to storage: ", err)
+		return err
+	}
+	return nil
+}
+
 func storeCipherText(storage *storage.MultiStore, ct *fhe.FheEncrypted, owner common.Address) error {
 	err := storage.AppendCt(types.Hash(ct.Hash()), (*types.FheEncrypted)(ct), owner)
 	if err != nil {
@@ -137,4 +156,9 @@ func FakeDecryptionResult(encType fhe.EncryptionType) *big.Int {
 	default:
 		return big.NewInt(0)
 	}
+}
+func CopySlice(original []byte) []byte {
+	copied := make([]byte, len(original))
+	copy(copied, original)
+	return copied
 }
