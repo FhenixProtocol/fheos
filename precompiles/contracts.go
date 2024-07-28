@@ -162,6 +162,17 @@ func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		lhs, rhs, err := get2VerifiedOperands(storage, lhsData, rhsData, tp.ContractAddress)
 		if err != nil {
 			logger.Error(functionName.String()+": inputs not verified", "err", err)
+			//Probably this is how it should be if we are relying on stopToken (or other error)
+			//We need to make sure that opSstore doesn't block indefinitely
+			//Another option would be to make the other hooks that potentially block "look for" errors
+			//And end prematurely by returning the error
+			//This would be a less simple approach, however it would be more full proof?
+			//var hash [32]byte
+			//var magicBytes = [...]byte{0xde, 0xed, 0xbe, 0xaf}
+			//copy(hash[:4], magicBytes[:])
+			//_ = storePlaceholderValue(storage, types.Hash(placeholderKey), fhe.CreateFheEncryptedWithData(hash[:], fhe.EncryptionType(utype)), tp.ContractAddress)
+			tp.ErrChannel <- vm.ErrExecutionReverted
+			return
 			//return nil, 0, vm.ErrExecutionReverted
 		}
 		// for now as a hotfix so that benchmarking can be done, needs to be figured out later
@@ -171,6 +182,8 @@ func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		if lhs.UintType != rhs.UintType || (lhs.UintType != uintType) {
 			msg := functionName.String() + " operand type mismatch"
 			logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
+			tp.ErrChannel <- vm.ErrExecutionReverted
+			return
 			//return nil, 0, vm.ErrExecutionReverted
 		}
 
@@ -179,12 +192,16 @@ func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		result, err := lhs.Add(rhs)
 		if err != nil {
 			logger.Error(functionName.String()+" failed", "err", err)
+			tp.ErrChannel <- vm.ErrExecutionReverted
+			return
 			//return nil, 0, vm.ErrExecutionReverted
 		}
 
 		err = storeCipherText(storage, result, tp.ContractAddress)
 		if err != nil {
 			logger.Error(functionName.String()+" failed", "err", err)
+			tp.ErrChannel <- vm.ErrExecutionReverted
+			return
 			//return nil, 0, vm.ErrExecutionReverted
 		}
 

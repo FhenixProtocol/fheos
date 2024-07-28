@@ -15,8 +15,8 @@ type FheOSHooks interface {
 	StoreCiphertextHook(contract common.Address, loc [32]byte, original common.Hash, val [32]byte) error
 	StoreGasHook(contract common.Address, loc [32]byte, val [32]byte) (uint64, uint64)
 	StorePlaceholderValue(val []byte)
-	BlockAsync()
-	BlockUntilValueReplaced(val [32]byte) [32]byte
+	BlockAsync() error
+	BlockUntilValueReplaced(val [32]byte) ([32]byte, error)
 	LoadCiphertextHook() [32]byte
 	EvmCallStart()
 	EvmCallEnd(evmSuccess bool)
@@ -28,14 +28,15 @@ type FheOSHooksImpl struct {
 	evm *vm.EVM
 }
 
-func (h FheOSHooksImpl) BlockAsync() {
+func (h FheOSHooksImpl) BlockAsync() error {
 	storage := storage2.NewEphemeralStorage(h.evm.CiphertextDb)
-	storage.BlockUntilPlaceholderValuesRemoved()
+	err := storage.BlockUntilPlaceholderValuesRemoved(h.evm.ErrorChannel)
+	return err
 }
 
-func (h FheOSHooksImpl) BlockUntilValueReplaced(val [32]byte) [32]byte {
+func (h FheOSHooksImpl) BlockUntilValueReplaced(val [32]byte) ([32]byte, error) {
 	storage := storage2.NewEphemeralStorage(h.evm.CiphertextDb)
-	return storage.BlockUntilPlaceHolderValueReplaced(val)
+	return storage.BlockUntilPlaceHolderValueReplaced(val, h.evm.ErrorChannel)
 }
 
 func (h FheOSHooksImpl) updateCiphertextReferences(original common.Hash, newHash types.Hash) (bool, error) {
@@ -88,9 +89,12 @@ func (h FheOSHooksImpl) StoreCiphertextHook(contract common.Address, loc [32]byt
 	// option - better to flush all at the end of the tx from memdb, or define a memdb in fheos that is flushed at the end of the tx?
 	storage := storage2.NewEphemeralStorage(h.evm.CiphertextDb)
 	//Checks if val and commited are PlaceholderValues and if yes waits until it is a standard daedbeef one
-	hash := storage.BlockUntilPlaceHolderValueReplaced(val)
-	commited = storage.BlockUntilPlaceHolderValueReplaced(commited)
+	hash, err := storage.BlockUntilPlaceHolderValueReplaced(val, h.evm.ErrorChannel)
+	commited, err = storage.BlockUntilPlaceHolderValueReplaced(commited, h.evm.ErrorChannel)
 
+	if err != nil {
+		return err
+	}
 	// Skip for non-ciphertext
 	ctHash := types.Hash(hash)
 

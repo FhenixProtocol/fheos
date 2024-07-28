@@ -8,7 +8,6 @@ import (
 	"github.com/ethereum/go-ethereum/ethdb/memorydb"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
-	"time"
 )
 
 type EphemeralStorage interface {
@@ -22,8 +21,8 @@ type EphemeralStorage interface {
 	GetAllToPersist() []ContractCiphertext
 	GetAllToDelete() []types.Hash
 
-	BlockUntilPlaceholderValuesRemoved()
-	BlockUntilPlaceHolderValueReplaced(val [32]byte) [32]byte
+	BlockUntilPlaceholderValuesRemoved(errorChannel chan error) error
+	BlockUntilPlaceHolderValueReplaced(val [32]byte, errorChannel chan error) ([32]byte, error)
 }
 
 type ContractCiphertext struct {
@@ -81,10 +80,15 @@ func (es *EphemeralStorageImpl) contains(item [32]byte) bool {
 
 // BlockUntilPlaceholderValuesRemoved is a special "blocking" function, and it is not intended to be used
 // anywhere where you do not expect this to finish. It requires async operations on the background to finish working.
-func (es *EphemeralStorageImpl) BlockUntilPlaceholderValuesRemoved() {
+func (es *EphemeralStorageImpl) BlockUntilPlaceholderValuesRemoved(errorChannel chan error) error {
 	knownPlaceholderValues := es.GetAllToPlacehold()
 
 	for len(knownPlaceholderValues) > 0 {
+		select {
+		case err := <-errorChannel:
+			return err
+		default:
+		}
 		for i := 0; i < len(knownPlaceholderValues); {
 			hash := knownPlaceholderValues[i]
 			addr, _ := es.GetCt(hash)
@@ -97,11 +101,12 @@ func (es *EphemeralStorageImpl) BlockUntilPlaceholderValuesRemoved() {
 			}
 		}
 	}
+	return nil
 }
 
 // BlockUntilPlaceHolderValueReplaced is a special "blocking" function, and it is not intended to be used
 // anywhere where you do not expect this to finish. It requires async operations on the background to finish working.
-func (es *EphemeralStorageImpl) BlockUntilPlaceHolderValueReplaced(val [32]byte) [32]byte {
+func (es *EphemeralStorageImpl) BlockUntilPlaceHolderValueReplaced(val [32]byte, errorChannel chan error) ([32]byte, error) {
 	hash := val
 
 	if fhe.IsPlaceholderValue(hash[:]) {
@@ -109,14 +114,19 @@ func (es *EphemeralStorageImpl) BlockUntilPlaceHolderValueReplaced(val [32]byte)
 		var addrToCheck [32]byte
 		copy(addrToCheck[:], addr.Data.Data)
 		for fhe.IsZero(addrToCheck[:]) {
-			time.Sleep(100 * time.Millisecond)
+			select {
+			case err := <-errorChannel:
+				var nothing [32]byte
+				return nothing, err
+			default:
+			}
 			addr, _ = es.GetCt(hash)
 			copy(addrToCheck[:], addr.Data.Data)
 		}
 		copy(hash[:], addrToCheck[:])
 	}
 
-	return hash
+	return hash, nil
 }
 
 func (es *EphemeralStorageImpl) getPersistKey() []byte {

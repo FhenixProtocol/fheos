@@ -102,7 +102,7 @@ func initFheos() (*precompiles.TxParams, error) {
 		return nil, err
 	}
 
-	tp := precompiles.TxParams{false, false, true, nil, common.HexToAddress("0x0000000000000000000000000000000000000000")}
+	tp := precompiles.TxParams{false, false, true, nil, common.HexToAddress("0x0000000000000000000000000000000000000000"), make(chan error, 1)}
 
 	return &tp, err
 }

@@ -19,6 +19,7 @@ type TxParams struct {
 	EthCall         bool
 	CiphertextDb    *memorydb.Database
 	ContractAddress common.Address
+	ErrChannel      chan (error)
 }
 
 type NotPlaceholderKeyError struct{}
@@ -39,7 +40,7 @@ func TxParamsFromEVM(evm *vm.EVM, callerContract common.Address) TxParams {
 	tp.EthCall = evm.EthCall
 	tp.CiphertextDb = evm.CiphertextDb
 	tp.ContractAddress = callerContract
-
+	tp.ErrChannel = evm.ErrorChannel
 	return tp
 }
 
