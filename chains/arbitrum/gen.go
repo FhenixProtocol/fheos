@@ -141,7 +141,7 @@ interface FheOps {
 		Name := ""
 		Ret := ""
 		var params []Param
-		if strings.Contains(line, "func ") {
+		if strings.Contains(line, "func ") && !strings.Contains(line, "go func ") {
 			chunks := strings.Fields(line)
 			inner := strings.Split(chunks[1], "(")
 			Name = inner[0]

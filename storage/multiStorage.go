@@ -37,6 +37,18 @@ func (ms *MultiStore) PutCt(h types.Hash, cipher *types.CipherTextRepresentation
 	return err
 }
 
+func (ms *MultiStore) SetAsyncCtStart(h types.Hash) error {
+	return ms.ephemeral.SetAsyncCtStart(h)
+}
+
+func (ms *MultiStore) SetAsyncCtDone(h types.Hash) error {
+	return ms.ephemeral.SetAsyncCtDone(h)
+}
+
+func (ms *MultiStore) IsAsyncCtDone() (bool, error) {
+	return ms.ephemeral.IsAsyncCtDone()
+}
+
 // AppendPhV stores a PlaceholderValue in ephemeral storage - it does NOT mark it as LTS. The reason is that we want only SSTORE to mark it as LTS, which is
 // TODO: Verify that we don't need to worry about RefCount
 func (ms *MultiStore) AppendPhV(h types.Hash, cipher *types.FheEncrypted, owner common.Address) error {

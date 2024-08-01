@@ -3,15 +3,13 @@ package precompiles
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 	"math/big"
-	"os"
 	"strings"
-
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/log"
 )
 
 var logger log.Logger
@@ -19,102 +17,6 @@ var warpDriveLogger log.Logger
 
 func init() {
 	InitLogger()
-}
-
-func blockUntilBinaryOperandsAvailable(storage *storage2.MultiStore, lhsHash, rhsHash []byte, tp *TxParams) ([]byte, []byte) {
-	var lhsAddress *fhe.FheEncrypted
-	var rhsAddress *fhe.FheEncrypted
-
-	lhsAddress = getCiphertext(storage, fhe.Hash(lhsHash), tp.ContractAddress)
-	rhsAddress = getCiphertext(storage, fhe.Hash(rhsHash), tp.ContractAddress)
-
-	var lhsCheck, rhsCheck [32]byte
-	copy(lhsCheck[:], lhsAddress.Data)
-	copy(rhsCheck[:], rhsAddress.Data)
-	//for now like this but needs a refactor
-	for (fhe.IsPlaceholderValue(lhsHash) && !fhe.IsCtHash(lhsCheck)) || (fhe.IsPlaceholderValue(rhsHash) && !fhe.IsCtHash(rhsCheck)) {
-		lhsAddress = getCiphertext(storage, fhe.Hash(lhsHash), tp.ContractAddress)
-		rhsAddress = getCiphertext(storage, fhe.Hash(rhsHash), tp.ContractAddress)
-		copy(lhsCheck[:], lhsAddress.Data)
-		copy(rhsCheck[:], rhsAddress.Data)
-	}
-	var lhsData []byte = lhsHash
-	var rhsData []byte = rhsHash
-
-	if fhe.IsPlaceholderValue(lhsHash) {
-		copy(lhsData, lhsCheck[:])
-	}
-	if fhe.IsPlaceholderValue(rhsHash) {
-		copy(rhsData, rhsCheck[:])
-	}
-	return lhsData, rhsData
-}
-
-func InitLogger() {
-	logger = log.Root().New("module", "fheos")
-	warpDriveLogger = log.Root().New("module", "warp-drive")
-	fhe.SetLogger(warpDriveLogger)
-}
-
-func InitFheConfig(fheConfig *fhe.Config) error {
-	// Itzik: I'm not sure if this is the right way to initialize the logger
-	handler := log.NewTerminalHandlerWithLevel(os.Stderr, log.FromLegacyLevel(fheConfig.LogLevel), true)
-	glogger := log.NewGlogHandler(handler)
-
-	logger = log.NewLogger(glogger)
-	fhe.SetLogger(log.NewLogger(glogger))
-
-	err := fhe.Init(fheConfig)
-
-	if err != nil {
-		logger.Error("Failed to init fhe config with", "error:", err)
-		return err
-	}
-
-	logger.Info("Successfully initialized fhe config", "config", fheConfig)
-
-	return nil
-}
-
-func InitFheos(tfheConfig *fhe.Config) error {
-	err := InitFheConfig(tfheConfig)
-	if err != nil {
-		return err
-	}
-
-	err = InitializeFheosState()
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func shouldPrintPrecompileInfo(tp *TxParams) bool {
-	return tp.Commit && !tp.GasEstimation
-}
-
-func UtypeToString(utype byte) string {
-	switch fhe.EncryptionType(utype) {
-	case fhe.Uint8:
-		return "uint8"
-	case fhe.Uint16:
-		return "uint16"
-	case fhe.Uint32:
-		return "uint32"
-	case fhe.Uint64:
-		return "uint64"
-	case fhe.Uint128:
-		return "uint128"
-	case fhe.Uint256:
-		return "uint256"
-	case fhe.Address:
-		return "address"
-	case fhe.Bool:
-		return "bool"
-	default:
-		return "unknown"
-	}
 }
 
 // ============================================================
@@ -132,9 +34,21 @@ func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	functionName := types.Add
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 
-	placeholderValue := fhe.CreateFheEncryptedWithData(make([]byte, 32)[:], fhe.EncryptionType(utype))
-	placeholderKey := fhe.CalcBinaryPlaceholderValueHash(lhsHash, rhsHash)
-	err := storePlaceholderValue(storage, types.Hash(placeholderKey), placeholderValue, tp.ContractAddress)
+	placeholderCt := fhe.CreateFheEncryptedWithData(CreatePlaceHolderData(), fhe.EncryptionType(utype), true)
+	placeholderKey := fhe.CalcBinaryPlaceholderValueHash(lhsHash, rhsHash, int(functionName))
+	placeholderCt.SetHash(placeholderKey)
+
+	err := storeCipherText(storage, placeholderCt, tp.ContractAddress)
+	if err != nil {
+		logger.Error(functionName.String()+" failed to store async ciphertext", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	err = storage.SetAsyncCtStart(types.Hash(placeholderKey))
+	if err != nil {
+		logger.Error(functionName.String()+" failed to set async value start", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
 
 	uintType := fhe.EncryptionType(utype)
 	if !types.IsValidType(uintType) {
@@ -152,14 +66,11 @@ func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
-	lhsHashCopy := CopySlice(lhsHash)
-	rhsHashCopy := CopySlice(rhsHash)
+	go func(lhsHash, rhsHash, resultHash []byte) {
 
-	go func(lhsHash, rhsHash []byte) {
+		lhs, rhs := blockUntilBinaryOperandsAvailable(storage, lhsHash, rhsHash, tp)
 
-		lhsData, rhsData := blockUntilBinaryOperandsAvailable(storage, lhsHash, rhsHash, tp)
-
-		lhs, rhs, err := get2VerifiedOperands(storage, lhsData, rhsData, tp.ContractAddress)
+		//lhs, rhs, err := get2VerifiedOperands(storage, lhsData, rhsData, tp.ContractAddress)
 		if err != nil {
 			logger.Error(functionName.String()+": inputs not verified", "err", err)
 			//Probably this is how it should be if we are relying on stopToken (or other error)
@@ -194,23 +105,24 @@ func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 			logger.Error(functionName.String()+" failed", "err", err)
 			tp.ErrChannel <- vm.ErrExecutionReverted
 			return
-			//return nil, 0, vm.ErrExecutionReverted
 		}
+
+		result.SetHash(resultHash)
 
 		err = storeCipherText(storage, result, tp.ContractAddress)
 		if err != nil {
 			logger.Error(functionName.String()+" failed", "err", err)
 			tp.ErrChannel <- vm.ErrExecutionReverted
 			return
-			//return nil, 0, vm.ErrExecutionReverted
 		}
 
-		resultHash := result.Hash()
-		//Update placeholderValue with the correct address
-		_ = storePlaceholderValue(storage, types.Hash(placeholderKey), fhe.CreateFheEncryptedWithData(resultHash[:], fhe.EncryptionType(utype)), tp.ContractAddress)
-		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", resultHash.Hex())
+		//resultHash := result.Hash()
+		//Update placeholderCt with the correct address
+		_ = storage.SetAsyncCtDone(types.Hash(resultHash))
+		//_ = storePlaceholderValue(storage, types.Hash(placeholderKey), fhe.CreateFheEncryptedWithData(resultHash[:], fhe.EncryptionType(utype), true), tp.ContractAddress)
+		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", result.Hash().Hex())
 		//return resultHash[:], gas, nil
-	}(lhsHashCopy, rhsHashCopy)
+	}(CopySlice(lhsHash), CopySlice(rhsHash), CopySlice(placeholderKey))
 
 	return placeholderKey[:], gas, err
 }
@@ -243,6 +155,7 @@ func Verify(utype byte, input []byte, securityZone int32, tp *TxParams) ([]byte,
 		true,
 		false, // TODO: not sure + shouldn't be hardcoded
 		securityZone,
+		false,
 	)
 
 	err := ct.Verify()
@@ -336,10 +249,11 @@ func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	ct := getCiphertext(storage, fhe.BytesToHash(input), tp.ContractAddress)
+	ct := awaitCtResult(storage, input, tp)
+	//ct := getCiphertext(storage, fhe.BytesToHash(toDecrypt), tp.ContractAddress)
 	if ct == nil {
 		msg := functionName.String() + " unverified ciphertext handle"
-		logger.Error(msg, " input ", hex.EncodeToString(input))
+		logger.Error(msg, " input ", hex.EncodeToString(ct.GetHashBytes()))
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -457,9 +371,16 @@ func Mul(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 
-	placeholderValue := fhe.CreateFheEncryptedWithData(make([]byte, 32)[:], fhe.EncryptionType(utype))
-	placeholderKey := fhe.CalcBinaryPlaceholderValueHash(lhsHash, rhsHash)
-	err := storePlaceholderValue(storage, types.Hash(placeholderKey), placeholderValue, tp.ContractAddress)
+	placeholderCt := fhe.CreateFheEncryptedWithData(CreatePlaceHolderData(), fhe.EncryptionType(utype), true)
+	placeholderKey := fhe.CalcBinaryPlaceholderValueHash(lhsHash, rhsHash, int(functionName))
+	placeholderCt.SetHash(placeholderKey)
+
+	// err := storePlaceholderValue(storage, types.Hash(placeholderKey), placeholderCt, tp.ContractAddress)
+	err := storeCipherText(storage, placeholderCt, tp.ContractAddress)
+	if err != nil {
+		logger.Error(functionName.String()+" failed to store async ciphertext", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
 
 	uintType := fhe.EncryptionType(utype)
 	if !types.IsValidType(uintType) {
@@ -477,13 +398,9 @@ func Mul(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
-	lhsHashCopy := CopySlice(lhsHash)
-	rhsHashCopy := CopySlice(rhsHash)
-
-	go func(lhsHash, rhsHash []byte) {
-		lhsData, rhsData := blockUntilBinaryOperandsAvailable(storage, lhsHash, rhsHash, tp)
-
-		lhs, rhs, err := get2VerifiedOperands(storage, lhsData, rhsData, tp.ContractAddress)
+	go func(lhsHash, rhsHash, resultHash []byte) {
+		lhs, rhs := blockUntilBinaryOperandsAvailable(storage, lhsHash, rhsHash, tp)
+		//lhs, rhs, err := get2VerifiedOperands(storage, lhsData, rhsData, tp.ContractAddress)
 
 		if err != nil {
 			logger.Error(functionName.String()+": inputs not verified", "err", err)
@@ -502,6 +419,8 @@ func Mul(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 			//return nil, 0, vm.ErrExecutionReverted
 		}
 
+		lhs.SetHash(placeholderKey)
+
 		err = storeCipherText(storage, result, tp.ContractAddress)
 		if err != nil {
 			logger.Error(functionName.String()+" failed", "err", err)
@@ -509,9 +428,9 @@ func Mul(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		}
 
 		ctHash := result.Hash()
-		_ = storePlaceholderValue(storage, types.Hash(placeholderKey), fhe.CreateFheEncryptedWithData(ctHash[:], fhe.EncryptionType(utype)), tp.ContractAddress)
+		_ = storePlaceholderValue(storage, types.Hash(placeholderKey), fhe.CreateFheEncryptedWithData(ctHash[:], fhe.EncryptionType(utype), false), tp.ContractAddress)
 
-	}(lhsHashCopy, rhsHashCopy)
+	}(CopySlice(lhsHash), CopySlice(rhsHash), CopySlice(placeholderKey))
 	return placeholderKey, gas, err
 }
 

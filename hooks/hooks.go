@@ -88,17 +88,8 @@ func (h FheOSHooksImpl) StoreCiphertextHook(contract common.Address, loc [32]byt
 	// marks the ciphertext as lts - should be stored in long term storage when/if the tx is successful
 	// option - better to flush all at the end of the tx from memdb, or define a memdb in fheos that is flushed at the end of the tx?
 	storage := storage2.NewEphemeralStorage(h.evm.CiphertextDb)
-	//Checks if val and commited are PlaceholderValues and if yes waits until it is a standard daedbeef one
-	hash, err := storage.BlockUntilPlaceHolderValueReplaced(val, h.evm.ErrorChannel)
-	commited, err = storage.BlockUntilPlaceHolderValueReplaced(commited, h.evm.ErrorChannel)
 
-	if err != nil {
-		return err
-	}
-	// Skip for non-ciphertext
-	ctHash := types.Hash(hash)
-
-	wasDereferenced, err := h.updateCiphertextReferences(commited, ctHash)
+	wasDereferenced, err := h.updateCiphertextReferences(commited, val)
 	if err != nil {
 		return err
 	}
@@ -111,16 +102,16 @@ func (h FheOSHooksImpl) StoreCiphertextHook(contract common.Address, loc [32]byt
 		}
 	}
 
-	if !fhe.IsCtHash(ctHash) {
+	if !fhe.IsCtHash(val) {
 		return nil
 	}
 
 	// Skip for values who are not in memory as there is nothing to persist
-	if !storage.HasCt(ctHash) {
+	if !storage.HasCt(val) {
 		return nil
 	}
 
-	err = storage.MarkForPersistence(contract, hash)
+	err = storage.MarkForPersistence(contract, val)
 	if err != nil {
 		log.Crit("Error marking ciphertext as LTS", "err", err)
 		return err
@@ -152,6 +143,16 @@ func (h FheOSHooksImpl) EvmCallEnd(evmSuccess bool) {
 		storage := storage2.NewEphemeralStorage(h.evm.CiphertextDb)
 
 		//storage.BlockUntilPlaceholderValuesRemoved()
+
+		ctDone, err := storage.IsAsyncCtDone()
+		for ctDone {
+			ctDone, err = storage.IsAsyncCtDone()
+			if err != nil {
+				log.Crit("Error checking if async ct is done", "err", err)
+				// panic? for now skip forward and assume that something got corrupted, but we're still okay?
+				ctDone = true
+			}
+		}
 
 		toStore := storage.GetAllToPersist()
 		toDelete := storage.GetAllToDelete()

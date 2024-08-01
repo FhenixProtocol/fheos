@@ -6,12 +6,38 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/ethdb/memorydb"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	"github.com/fhenixprotocol/fheos/storage"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 	"math"
 	"math/big"
+	"os"
+	"time"
 )
+
+func UtypeToString(utype byte) string {
+	switch fhe.EncryptionType(utype) {
+	case fhe.Uint8:
+		return "uint8"
+	case fhe.Uint16:
+		return "uint16"
+	case fhe.Uint32:
+		return "uint32"
+	case fhe.Uint64:
+		return "uint64"
+	case fhe.Uint128:
+		return "uint128"
+	case fhe.Uint256:
+		return "uint256"
+	case fhe.Address:
+		return "address"
+	case fhe.Bool:
+		return "bool"
+	default:
+		return "unknown"
+	}
+}
 
 type TxParams struct {
 	Commit          bool
@@ -19,13 +45,17 @@ type TxParams struct {
 	EthCall         bool
 	CiphertextDb    *memorydb.Database
 	ContractAddress common.Address
-	ErrChannel      chan (error)
+	ErrChannel      chan error
 }
 
 type NotPlaceholderKeyError struct{}
 
 func (err *NotPlaceholderKeyError) Error() string {
 	return "Placeholder key in incorrect format."
+}
+
+func shouldPrintPrecompileInfo(tp *TxParams) bool {
+	return tp.Commit && !tp.GasEstimation
 }
 
 type GasBurner interface {
@@ -47,6 +77,99 @@ func TxParamsFromEVM(evm *vm.EVM, callerContract common.Address) TxParams {
 type Precompile struct {
 	Metadata *bind.MetaData
 	Address  common.Address
+}
+
+func InitLogger() {
+	logger = log.Root().New("module", "fheos")
+	warpDriveLogger = log.Root().New("module", "warp-drive")
+	fhe.SetLogger(warpDriveLogger)
+}
+
+func InitFheConfig(fheConfig *fhe.Config) error {
+	// Itzik: I'm not sure if this is the right way to initialize the logger
+	handler := log.NewTerminalHandlerWithLevel(os.Stderr, log.FromLegacyLevel(fheConfig.LogLevel), true)
+	glogger := log.NewGlogHandler(handler)
+
+	logger = log.NewLogger(glogger)
+	fhe.SetLogger(log.NewLogger(glogger))
+
+	err := fhe.Init(fheConfig)
+
+	if err != nil {
+		logger.Error("Failed to init fhe config with", "error:", err)
+		return err
+	}
+
+	logger.Info("Successfully initialized fhe config", "config", fheConfig)
+
+	return nil
+}
+
+func InitFheos(tfheConfig *fhe.Config) error {
+	err := InitFheConfig(tfheConfig)
+	if err != nil {
+		return err
+	}
+
+	err = InitializeFheosState()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func CreatePlaceHolderData() []byte {
+	return make([]byte, 32)[:]
+}
+
+func blockUntilBinaryOperandsAvailable(storage *storage.MultiStore, lhsHash, rhsHash []byte, tp *TxParams) (*fhe.FheEncrypted, *fhe.FheEncrypted) {
+	var lhsValue *fhe.FheEncrypted
+	var rhsValue *fhe.FheEncrypted
+
+	if !fhe.IsCtHash([32]byte(lhsHash)) || !fhe.IsCtHash([32]byte(rhsHash)) {
+		// return error
+	}
+
+	// can speed this up to be concurrent, but for now this is fine I guess?
+
+	lhsValue = awaitCtResult(storage, lhsHash, tp)
+	rhsValue = awaitCtResult(storage, rhsHash, tp)
+	//rhsValue = getCiphertext(storage, fhe.Hash(rhsHash), tp.ContractAddress)
+	//for rhsValue.IsPlaceholderValue() {
+	//	rhsValue = getCiphertext(storage, fhe.Hash(rhsHash), tp.ContractAddress)
+	//	time.Sleep(1 * time.Millisecond)
+	//}
+
+	//var lhsCheck, rhsCheck [32]byte
+	////copy(lhsCheck[:], lhsValue.Data)
+	////copy(rhsCheck[:], rhsAddress.Data)
+	////for now like this but needs a refactor
+	//for (lhsValue.IsPlaceholderValue() || (rhsValue.IsPlaceholderValue() && !fhe.IsCtHash(rhsCheck)) {
+	//	rhsValue = getCiphertext(storage, fhe.Hash(rhsHash), tp.ContractAddress)
+	//	//copy(lhsCheck[:], lhsAddress.Data)
+	//	//copy(rhsCheck[:], rhsAddress.Data)
+	//}
+	//var lhsData []byte = lhsHash
+	//var rhsData []byte = rhsHash
+	//
+
+	//if fhe.IsPlaceholderValue(lhsHash) {
+	//	copy(lhsData, lhsCheck[:])
+	//}
+	//if fhe.IsPlaceholderValue(rhsHash) {
+	//	copy(rhsData, rhsCheck[:])
+	//}
+	return lhsValue, rhsValue
+}
+
+func awaitCtResult(storage *storage.MultiStore, lhsHash []byte, tp *TxParams) *fhe.FheEncrypted {
+	lhsValue := getCiphertext(storage, fhe.Hash(lhsHash), tp.ContractAddress)
+	for lhsValue.IsPlaceholderValue() {
+		lhsValue = getCiphertext(storage, fhe.Hash(lhsHash), tp.ContractAddress)
+		time.Sleep(1 * time.Millisecond)
+	}
+	return lhsValue
 }
 
 func getCiphertext(state *storage.MultiStore, ciphertextHash fhe.Hash, caller common.Address) *fhe.FheEncrypted {

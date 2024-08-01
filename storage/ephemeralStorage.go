@@ -30,6 +30,10 @@ type ContractCiphertext struct {
 	CipherTextHash  types.Hash
 }
 
+type AsyncCtList = []types.Hash
+
+const AsyncCtKey = "ASYNCCT"
+
 type EphemeralStorageImpl struct {
 	//ltsCache []ContractCiphertext
 	memstore *memorydb.Database
@@ -209,6 +213,29 @@ func (es *EphemeralStorageImpl) DecodeDeletionCiphertexts(raw []byte) ([]types.H
 
 	return deletion, nil
 }
+
+func (es *EphemeralStorageImpl) GetAsyncList() ([]types.Hash, error) {
+	raw, err := es.memstore.Get([]byte(AsyncCtKey))
+	if err != nil {
+		return nil, err
+	}
+
+	var asyncList []types.Hash
+	err = gob.NewDecoder(bytes.NewBuffer(raw)).Decode(&asyncList)
+
+	return asyncList, err
+}
+
+func (es *EphemeralStorageImpl) SetAsyncList(asyncList []types.Hash) error {
+	var buf bytes.Buffer
+	err := gob.NewEncoder(&buf).Encode(asyncList)
+	if err != nil {
+		return err
+	}
+
+	return es.memstore.Put([]byte(AsyncCtKey), buf.Bytes())
+}
+
 func (es *EphemeralStorageImpl) MarkForPlaceholding(h types.Hash) error {
 	key := es.getPlaceholderKey()
 
@@ -404,6 +431,41 @@ func (es *EphemeralStorageImpl) GetAllToDelete() []types.Hash {
 	}
 
 	return parsedDeletions
+}
+
+func (es *EphemeralStorageImpl) SetAsyncCtStart(h types.Hash) error {
+	asyncList, err := es.GetAsyncList()
+	if err != nil {
+		return err
+	}
+
+	asyncList = append(asyncList, h)
+	return es.SetAsyncList(asyncList)
+}
+
+func (es *EphemeralStorageImpl) SetAsyncCtDone(h types.Hash) error {
+	asyncList, err := es.GetAsyncList()
+	if err != nil {
+		return err
+	}
+
+	for i, v := range asyncList {
+		if v == h {
+			asyncList = append(asyncList[:i], asyncList[i+1:]...)
+			break
+		}
+	}
+
+	return es.SetAsyncList(asyncList)
+}
+
+func (es *EphemeralStorageImpl) IsAsyncCtDone() (bool, error) {
+	asyncList, err := es.GetAsyncList()
+	if err != nil {
+		return false, err
+	}
+
+	return len(asyncList) == 0, nil
 }
 
 func NewEphemeralStorage(db *memorydb.Database) EphemeralStorage {
