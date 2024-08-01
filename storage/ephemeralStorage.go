@@ -217,9 +217,12 @@ func (es *EphemeralStorageImpl) DecodeDeletionCiphertexts(raw []byte) ([]types.H
 func (es *EphemeralStorageImpl) GetAsyncList() ([]types.Hash, error) {
 	raw, err := es.memstore.Get([]byte(AsyncCtKey))
 	if err != nil {
+		if err.Error() == "not found" {
+			return []types.Hash{}, nil
+		}
+
 		return nil, err
 	}
-
 	var asyncList []types.Hash
 	err = gob.NewDecoder(bytes.NewBuffer(raw)).Decode(&asyncList)
 

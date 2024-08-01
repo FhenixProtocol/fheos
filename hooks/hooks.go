@@ -145,7 +145,7 @@ func (h FheOSHooksImpl) EvmCallEnd(evmSuccess bool) {
 		//storage.BlockUntilPlaceholderValuesRemoved()
 
 		ctDone, err := storage.IsAsyncCtDone()
-		for ctDone {
+		for !ctDone {
 			ctDone, err = storage.IsAsyncCtDone()
 			if err != nil {
 				log.Crit("Error checking if async ct is done", "err", err)

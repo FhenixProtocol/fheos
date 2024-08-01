@@ -38,6 +38,8 @@ func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 	placeholderKey := fhe.CalcBinaryPlaceholderValueHash(lhsHash, rhsHash, int(functionName))
 	placeholderCt.SetHash(placeholderKey)
 
+	logger.Info("Add: ", "lhs", hex.EncodeToString(lhsHash), "rhs", hex.EncodeToString(rhsHash), "placeholderKey", hex.EncodeToString(placeholderKey))
+
 	err := storeCipherText(storage, placeholderCt, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName.String()+" failed to store async ciphertext", "err", err)
@@ -66,8 +68,13 @@ func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
+	lhsHashCopy := CopySlice(lhsHash)
+	rhsHashCopy := CopySlice(rhsHash)
+	placeholderKeyCopy := CopySlice(placeholderKey)
+
 	go func(lhsHash, rhsHash, resultHash []byte) {
 
+		println("******** AWAITING LHS & RHS: ")
 		lhs, rhs := blockUntilBinaryOperandsAvailable(storage, lhsHash, rhsHash, tp)
 
 		//lhs, rhs, err := get2VerifiedOperands(storage, lhsData, rhsData, tp.ContractAddress)
@@ -107,6 +114,8 @@ func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 			return
 		}
 
+		println("******** DONE MATH OP")
+
 		result.SetHash(resultHash)
 
 		err = storeCipherText(storage, result, tp.ContractAddress)
@@ -115,14 +124,15 @@ func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 			tp.ErrChannel <- vm.ErrExecutionReverted
 			return
 		}
-
+		println("HERE3")
 		//resultHash := result.Hash()
 		//Update placeholderCt with the correct address
 		_ = storage.SetAsyncCtDone(types.Hash(resultHash))
+		println("************* DONE SET DONE")
 		//_ = storePlaceholderValue(storage, types.Hash(placeholderKey), fhe.CreateFheEncryptedWithData(resultHash[:], fhe.EncryptionType(utype), true), tp.ContractAddress)
 		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", result.Hash().Hex())
 		//return resultHash[:], gas, nil
-	}(CopySlice(lhsHash), CopySlice(rhsHash), CopySlice(placeholderKey))
+	}(lhsHashCopy, rhsHashCopy, placeholderKeyCopy)
 
 	return placeholderKey[:], gas, err
 }
@@ -398,6 +408,10 @@ func Mul(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
+	lhsHashCopy := CopySlice(lhsHash)
+	rhsHashCopy := CopySlice(rhsHash)
+	placeholderKeyCopy := CopySlice(placeholderKey)
+
 	go func(lhsHash, rhsHash, resultHash []byte) {
 		lhs, rhs := blockUntilBinaryOperandsAvailable(storage, lhsHash, rhsHash, tp)
 		//lhs, rhs, err := get2VerifiedOperands(storage, lhsData, rhsData, tp.ContractAddress)
@@ -430,7 +444,7 @@ func Mul(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 		ctHash := result.Hash()
 		_ = storePlaceholderValue(storage, types.Hash(placeholderKey), fhe.CreateFheEncryptedWithData(ctHash[:], fhe.EncryptionType(utype), false), tp.ContractAddress)
 
-	}(CopySlice(lhsHash), CopySlice(rhsHash), CopySlice(placeholderKey))
+	}(lhsHashCopy, rhsHashCopy, placeholderKeyCopy)
 	return placeholderKey, gas, err
 }
 
