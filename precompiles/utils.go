@@ -165,6 +165,10 @@ func blockUntilBinaryOperandsAvailable(storage *storage.MultiStore, lhsHash, rhs
 
 func awaitCtResult(storage *storage.MultiStore, lhsHash []byte, tp *TxParams) *fhe.FheEncrypted {
 	lhsValue := getCiphertext(storage, fhe.Hash(lhsHash), tp.ContractAddress)
+	if lhsValue == nil {
+		return nil
+	}
+
 	for lhsValue.IsPlaceholderValue() {
 		lhsValue = getCiphertext(storage, fhe.Hash(lhsHash), tp.ContractAddress)
 		time.Sleep(1 * time.Millisecond)
@@ -199,20 +203,20 @@ func get2VerifiedOperands(storage *storage.MultiStore, lhsHash []byte, rhsHash [
 	return
 }
 
-func get3VerifiedOperands(storage *storage.MultiStore, controlHash []byte, ifTrueHash []byte, ifFalseHash []byte, caller common.Address) (control *fhe.FheEncrypted, ifTrue *fhe.FheEncrypted, ifFalse *fhe.FheEncrypted, err error) {
+func get3VerifiedOperands(storage *storage.MultiStore, controlHash []byte, ifTrueHash []byte, ifFalseHash []byte, tp *TxParams) (control *fhe.FheEncrypted, ifTrue *fhe.FheEncrypted, ifFalse *fhe.FheEncrypted, err error) {
 	if len(controlHash) != 32 || len(ifTrueHash) != 32 || len(ifFalseHash) != 32 {
 		return nil, nil, nil, errors.New("ciphertext's hashes need to be 32 bytes long")
 	}
 
-	control = getCiphertext(storage, fhe.BytesToHash(controlHash), caller)
+	control = awaitCtResult(storage, controlHash, tp)
 	if control == nil {
 		return nil, nil, nil, errors.New("unverified ciphertext handle")
 	}
-	ifTrue = getCiphertext(storage, fhe.BytesToHash(ifTrueHash), caller)
+	ifTrue = awaitCtResult(storage, ifTrueHash, tp)
 	if ifTrue == nil {
 		return nil, nil, nil, errors.New("unverified ciphertext handle")
 	}
-	ifFalse = getCiphertext(storage, fhe.BytesToHash(ifFalseHash), caller)
+	ifFalse = awaitCtResult(storage, ifFalseHash, tp)
 	if ifFalse == nil {
 		return nil, nil, nil, errors.New("unverified ciphertext handle")
 	}
@@ -235,7 +239,7 @@ func storePlaceholderValue(storage *storage.MultiStore, key types.Hash, ct *fhe.
 }
 
 func storeCipherText(storage *storage.MultiStore, ct *fhe.FheEncrypted, owner common.Address) error {
-	err := storage.AppendCt(types.Hash(ct.Hash()), (*types.FheEncrypted)(ct), owner)
+	err := storage.AppendCt(types.Hash(ct.GetHash()), (*types.FheEncrypted)(ct), owner)
 	if err != nil {
 		logger.Error("failed importing ciphertext to state: ", err)
 		return err

@@ -9,14 +9,15 @@ import (
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
+	"time"
 )
 
 type FheOSHooks interface {
 	StoreCiphertextHook(contract common.Address, loc [32]byte, original common.Hash, val [32]byte) error
 	StoreGasHook(contract common.Address, loc [32]byte, val [32]byte) (uint64, uint64)
-	StorePlaceholderValue(val []byte)
-	BlockAsync() error
-	BlockUntilValueReplaced(val [32]byte) ([32]byte, error)
+	// StorePlaceholderValue(val []byte)
+	AwaitAsync() error
+	// BlockUntilValueReplaced(val [32]byte) ([32]byte, error)
 	LoadCiphertextHook() [32]byte
 	EvmCallStart()
 	EvmCallEnd(evmSuccess bool)
@@ -28,16 +29,37 @@ type FheOSHooksImpl struct {
 	evm *vm.EVM
 }
 
-func (h FheOSHooksImpl) BlockAsync() error {
+func (h FheOSHooksImpl) AwaitAsync() error {
 	storage := storage2.NewEphemeralStorage(h.evm.CiphertextDb)
-	err := storage.BlockUntilPlaceholderValuesRemoved(h.evm.ErrorChannel)
-	return err
+
+	ctDone := false
+	timeout := time.After(5 * time.Second) // Adjust the duration as needed
+	for !ctDone {
+		select {
+		case err := <-h.evm.ErrorChannel:
+			log.Error("Error in async ct", "err", err)
+			return err
+		case <-timeout:
+			log.Error("Timeout waiting for async ct to complete")
+			return vm.ErrExecutionReverted
+		default:
+			ctDoneInner, err := storage.IsAsyncCtDone()
+			if err != nil {
+				log.Error("Error checking if async ct is done", "err", err)
+				return vm.ErrExecutionReverted
+			}
+			ctDone = ctDoneInner
+			time.Sleep(10 * time.Millisecond) // Adjust the duration as needed
+		}
+	}
+
+	return nil
 }
 
-func (h FheOSHooksImpl) BlockUntilValueReplaced(val [32]byte) ([32]byte, error) {
-	storage := storage2.NewEphemeralStorage(h.evm.CiphertextDb)
-	return storage.BlockUntilPlaceHolderValueReplaced(val, h.evm.ErrorChannel)
-}
+//func (h FheOSHooksImpl) BlockUntilValueReplaced(val [32]byte) ([32]byte, error) {
+//	storage := storage2.NewEphemeralStorage(h.evm.CiphertextDb)
+//	return storage.BlockUntilPlaceHolderValueReplaced(val, h.evm.ErrorChannel)
+//}
 
 func (h FheOSHooksImpl) updateCiphertextReferences(original common.Hash, newHash types.Hash) (bool, error) {
 	if fheos.State == nil {
@@ -71,13 +93,14 @@ func (h FheOSHooksImpl) updateCiphertextReferences(original common.Hash, newHash
 
 	return false, nil
 }
-func (h FheOSHooksImpl) StorePlaceholderValue(val []byte) {
-	if fhe.IsPlaceholderValue(val) {
-		storage := storage2.NewEphemeralStorage(h.evm.CiphertextDb)
-		//TODO: Errorhandling
-		_ = storage.MarkForPlaceholding(types.Hash(val))
-	}
-}
+
+//func (h FheOSHooksImpl) StorePlaceholderValue(val []byte) {
+//	if fhe.IsPlaceholderValue(val) {
+//		storage := storage2.NewEphemeralStorage(h.evm.CiphertextDb)
+//		//TODO: Errorhandling
+//		_ = storage.MarkForPlaceholding(types.Hash(val))
+//	}
+//}
 
 // StoreCiphertextHook The purpose of this hook is to mark the ciphertext as LTS if the tx is successful and update reference counts
 // contract - The address of the contract in which the ciphertext is stored
@@ -144,16 +167,6 @@ func (h FheOSHooksImpl) EvmCallEnd(evmSuccess bool) {
 
 		//storage.BlockUntilPlaceholderValuesRemoved()
 
-		ctDone, err := storage.IsAsyncCtDone()
-		for !ctDone {
-			ctDone, err = storage.IsAsyncCtDone()
-			if err != nil {
-				log.Crit("Error checking if async ct is done", "err", err)
-				// panic? for now skip forward and assume that something got corrupted, but we're still okay?
-				ctDone = true
-			}
-		}
-
 		toStore := storage.GetAllToPersist()
 		toDelete := storage.GetAllToDelete()
 
@@ -172,6 +185,8 @@ func (h FheOSHooksImpl) EvmCallEnd(evmSuccess bool) {
 			if err != nil {
 				log.Crit("Error storing ciphertext in LTS - state corruption detected", "err", err)
 			}
+
+			log.Info("Added ct to store", "hash", (*fhe.FheEncrypted)(cipherText.Data).GetHash().Hex())
 		}
 
 		for _, hash := range toDelete {
