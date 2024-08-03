@@ -48,12 +48,6 @@ type TxParams struct {
 	ErrChannel      chan error
 }
 
-type NotPlaceholderKeyError struct{}
-
-func (err *NotPlaceholderKeyError) Error() string {
-	return "Placeholder key in incorrect format."
-}
-
 func shouldPrintPrecompileInfo(tp *TxParams) bool {
 	return tp.Commit && !tp.GasEstimation
 }
@@ -129,37 +123,13 @@ func blockUntilBinaryOperandsAvailable(storage *storage.MultiStore, lhsHash, rhs
 
 	if !fhe.IsCtHash([32]byte(lhsHash)) || !fhe.IsCtHash([32]byte(rhsHash)) {
 		// return error
+		return nil, nil
 	}
 
 	// can speed this up to be concurrent, but for now this is fine I guess?
-
 	lhsValue = awaitCtResult(storage, lhsHash, tp)
 	rhsValue = awaitCtResult(storage, rhsHash, tp)
-	//rhsValue = getCiphertext(storage, fhe.Hash(rhsHash), tp.ContractAddress)
-	//for rhsValue.IsPlaceholderValue() {
-	//	rhsValue = getCiphertext(storage, fhe.Hash(rhsHash), tp.ContractAddress)
-	//	time.Sleep(1 * time.Millisecond)
-	//}
 
-	//var lhsCheck, rhsCheck [32]byte
-	////copy(lhsCheck[:], lhsValue.Data)
-	////copy(rhsCheck[:], rhsAddress.Data)
-	////for now like this but needs a refactor
-	//for (lhsValue.IsPlaceholderValue() || (rhsValue.IsPlaceholderValue() && !fhe.IsCtHash(rhsCheck)) {
-	//	rhsValue = getCiphertext(storage, fhe.Hash(rhsHash), tp.ContractAddress)
-	//	//copy(lhsCheck[:], lhsAddress.Data)
-	//	//copy(rhsCheck[:], rhsAddress.Data)
-	//}
-	//var lhsData []byte = lhsHash
-	//var rhsData []byte = rhsHash
-	//
-
-	//if fhe.IsPlaceholderValue(lhsHash) {
-	//	copy(lhsData, lhsCheck[:])
-	//}
-	//if fhe.IsPlaceholderValue(rhsHash) {
-	//	copy(rhsData, rhsCheck[:])
-	//}
 	return lhsValue, rhsValue
 }
 
@@ -222,20 +192,6 @@ func get3VerifiedOperands(storage *storage.MultiStore, controlHash []byte, ifTru
 	}
 	err = nil
 	return
-}
-
-func storePlaceholderValue(storage *storage.MultiStore, key types.Hash, ct *fhe.FheEncrypted, owner common.Address) error {
-	var err error
-	if fhe.IsPlaceholderValue(key[:]) {
-		err = storage.AppendPhV(key, (*types.FheEncrypted)(ct), owner)
-	} else {
-		err = &NotPlaceholderKeyError{}
-	}
-	if err != nil {
-		logger.Error("failed importing placeholder value to storage: ", err)
-		return err
-	}
-	return nil
 }
 
 func storeCipherText(storage *storage.MultiStore, ct *fhe.FheEncrypted, owner common.Address) error {

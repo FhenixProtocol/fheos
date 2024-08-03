@@ -15,9 +15,7 @@ import (
 type FheOSHooks interface {
 	StoreCiphertextHook(contract common.Address, loc [32]byte, original common.Hash, val [32]byte) error
 	StoreGasHook(contract common.Address, loc [32]byte, val [32]byte) (uint64, uint64)
-	// StorePlaceholderValue(val []byte)
 	AwaitAsync() error
-	// BlockUntilValueReplaced(val [32]byte) ([32]byte, error)
 	LoadCiphertextHook() [32]byte
 	EvmCallStart()
 	EvmCallEnd(evmSuccess bool)
@@ -56,11 +54,6 @@ func (h FheOSHooksImpl) AwaitAsync() error {
 	return nil
 }
 
-//func (h FheOSHooksImpl) BlockUntilValueReplaced(val [32]byte) ([32]byte, error) {
-//	storage := storage2.NewEphemeralStorage(h.evm.CiphertextDb)
-//	return storage.BlockUntilPlaceHolderValueReplaced(val, h.evm.ErrorChannel)
-//}
-
 func (h FheOSHooksImpl) updateCiphertextReferences(original common.Hash, newHash types.Hash) (bool, error) {
 	if fheos.State == nil {
 		return false, nil
@@ -93,14 +86,6 @@ func (h FheOSHooksImpl) updateCiphertextReferences(original common.Hash, newHash
 
 	return false, nil
 }
-
-//func (h FheOSHooksImpl) StorePlaceholderValue(val []byte) {
-//	if fhe.IsPlaceholderValue(val) {
-//		storage := storage2.NewEphemeralStorage(h.evm.CiphertextDb)
-//		//TODO: Errorhandling
-//		_ = storage.MarkForPlaceholding(types.Hash(val))
-//	}
-//}
 
 // StoreCiphertextHook The purpose of this hook is to mark the ciphertext as LTS if the tx is successful and update reference counts
 // contract - The address of the contract in which the ciphertext is stored
@@ -164,8 +149,6 @@ func (h FheOSHooksImpl) EvmCallStart() {
 func (h FheOSHooksImpl) EvmCallEnd(evmSuccess bool) {
 	if evmSuccess && h.evm.Commit {
 		storage := storage2.NewEphemeralStorage(h.evm.CiphertextDb)
-
-		//storage.BlockUntilPlaceholderValuesRemoved()
 
 		toStore := storage.GetAllToPersist()
 		toDelete := storage.GetAllToDelete()

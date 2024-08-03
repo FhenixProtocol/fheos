@@ -7,22 +7,16 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethdb/memorydb"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
-	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 )
 
 type EphemeralStorage interface {
 	types.FheCipherTextStorage
 
-	MarkForPlaceholding(h types.Hash) error
 	MarkForPersistence(common.Address, types.Hash) error
 	MarkForDeletion(types.Hash) error
 
-	GetAllToPlacehold() []types.Hash
 	GetAllToPersist() []ContractCiphertext
 	GetAllToDelete() []types.Hash
-
-	BlockUntilPlaceholderValuesRemoved(errorChannel chan error) error
-	BlockUntilPlaceHolderValueReplaced(val [32]byte, errorChannel chan error) ([32]byte, error)
 }
 
 type ContractCiphertext struct {
@@ -37,101 +31,12 @@ const AsyncCtKey = "ASYNCCT"
 type EphemeralStorageImpl struct {
 	//ltsCache []ContractCiphertext
 	memstore *memorydb.Database
-	// PlaceholderValues are "leetboobs" i.e. locations that may or may not hold the actual daedbeef addresses
-	// They are essentially used as futures for async eval operations
-	knownPlaceholderValues [][]byte
-}
-
-// ----------------------------------------------------------
-// Helper functions for working with the [][32]byte container
-// ----------------------------------------------------------
-func (es *EphemeralStorageImpl) append(item []byte) {
-	es.knownPlaceholderValues = append(es.knownPlaceholderValues, item)
-}
-
-func (es *EphemeralStorageImpl) remove(item []byte) {
-	for i, v := range es.knownPlaceholderValues {
-		if bytes.Equal(v[:], item[:]) {
-			es.knownPlaceholderValues = append(es.knownPlaceholderValues[:i], es.knownPlaceholderValues[i+1:]...)
-			break
-		}
-	}
-}
-func removeFromSliceAt(kpv []types.Hash, index int) []types.Hash {
-	return append(kpv[:index], kpv[index+1:]...)
-}
-
-func (es *EphemeralStorageImpl) contains(item [32]byte) bool {
-	for _, v := range es.knownPlaceholderValues {
-		if bytes.Equal(v[:], item[:]) {
-			return true
-		}
-	}
-	return false
 }
 
 // ----------------------------------------------------------
 // ----------------------------------------------------------
 
 //TODO: For now lets stick with it being in FHEencrypted and just getting the fhe module here
-
-//func (es *EphemeralStorageImpl) StorePlaceholderValue(val [32]byte) {
-//	log.Info("{{StorePlaceholderValue}}", "VAL:", fhe.Hash(val).Hex())
-//	if fhe.IsPlaceholderValue(val[:]) {
-//		es.append(val[:])
-//	}
-//}
-
-// BlockUntilPlaceholderValuesRemoved is a special "blocking" function, and it is not intended to be used
-// anywhere where you do not expect this to finish. It requires async operations on the background to finish working.
-func (es *EphemeralStorageImpl) BlockUntilPlaceholderValuesRemoved(errorChannel chan error) error {
-	knownPlaceholderValues := es.GetAllToPlacehold()
-
-	for len(knownPlaceholderValues) > 0 {
-		select {
-		case err := <-errorChannel:
-			return err
-		default:
-		}
-		for i := 0; i < len(knownPlaceholderValues); {
-			hash := knownPlaceholderValues[i]
-			addr, _ := es.GetCt(hash)
-			var addrToCheck [32]byte
-			copy(addrToCheck[:], addr.Data.Data)
-			if fhe.IsCtHash(addrToCheck) {
-				knownPlaceholderValues = removeFromSliceAt(knownPlaceholderValues, i)
-			} else {
-				i++
-			}
-		}
-	}
-	return nil
-}
-
-// BlockUntilPlaceHolderValueReplaced is a special "blocking" function, and it is not intended to be used
-// anywhere where you do not expect this to finish. It requires async operations on the background to finish working.
-func (es *EphemeralStorageImpl) BlockUntilPlaceHolderValueReplaced(val [32]byte, errorChannel chan error) ([32]byte, error) {
-	hash := val
-
-	if fhe.IsPlaceholderValue(hash[:]) {
-		addr, _ := es.GetCt(hash)
-		var addrToCheck [32]byte
-		copy(addrToCheck[:], addr.Data.Data)
-		for fhe.IsZero(addrToCheck[:]) {
-			select {
-			case err := <-errorChannel:
-				var nothing [32]byte
-				return nothing, err
-			default:
-			}
-			addr, _ = es.GetCt(hash)
-			copy(addrToCheck[:], addr.Data.Data)
-		}
-		copy(hash[:], addrToCheck[:])
-	}
-
-	return hash, nil
-}
 
 func (es *EphemeralStorageImpl) getPersistKey() []byte {
 	return []byte("LTS")
@@ -142,27 +47,6 @@ func (es *EphemeralStorageImpl) getDeletionKey() []byte {
 }
 
 func (es *EphemeralStorageImpl) getPlaceholderKey() []byte { return []byte("PHV") }
-
-// I shouldn't repeat myself, but for now lets leave it like this
-func encodeKnownPlaceholderValues(phv []types.Hash) ([]byte, error) {
-	var buf bytes.Buffer
-	err := gob.NewEncoder(&buf).Encode(phv)
-	if err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
-}
-
-func (es *EphemeralStorageImpl) encodeKnownPlaceholderValues(phv []types.Hash) ([]byte, error) {
-	var buf bytes.Buffer
-	err := gob.NewEncoder(&buf).Encode(phv)
-	if err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
-}
 
 func (es *EphemeralStorageImpl) encodePersistingCiphertexts(lts []ContractCiphertext) ([]byte, error) {
 	var buf bytes.Buffer
@@ -182,16 +66,6 @@ func (es *EphemeralStorageImpl) encodeDeletionCiphertexts(deletion []types.Hash)
 	}
 
 	return buf.Bytes(), nil
-}
-
-func (es *EphemeralStorageImpl) DecodeKnownPlaceholderValues(phv []byte) ([]types.Hash, error) {
-	var phvHash []types.Hash
-	err := gob.NewDecoder(bytes.NewBuffer(phv)).Decode(&phvHash)
-	if err != nil {
-		return nil, err
-	}
-
-	return phvHash, nil
 }
 
 func (es *EphemeralStorageImpl) DecodePersistingCiphertexts(raw []byte) ([]ContractCiphertext, error) {
@@ -237,32 +111,6 @@ func (es *EphemeralStorageImpl) SetAsyncList(asyncList []types.Hash) error {
 	}
 
 	return es.memstore.Put([]byte(AsyncCtKey), buf.Bytes())
-}
-
-func (es *EphemeralStorageImpl) MarkForPlaceholding(h types.Hash) error {
-	key := es.getPlaceholderKey()
-
-	var parsedPlaceholders []types.Hash
-	rawPhv, err := es.memstore.Get(key)
-	if err != nil {
-		if err.Error() != "not found" {
-			return err
-		}
-	} else {
-		parsedPlaceholders, err = es.DecodeKnownPlaceholderValues(rawPhv)
-		if err != nil {
-			return err
-		}
-	}
-
-	parsedPlaceholders = append(parsedPlaceholders, h)
-
-	encodedLts, err := es.encodeKnownPlaceholderValues(parsedPlaceholders)
-	if err != nil {
-		return err
-	}
-
-	return es.memstore.Put(key, encodedLts)
 }
 
 func (es *EphemeralStorageImpl) MarkForPersistence(contract common.Address, h types.Hash) error {
@@ -375,25 +223,6 @@ func (es *EphemeralStorageImpl) HasCt(h types.Hash) bool {
 	}
 
 	return ok
-}
-func (es *EphemeralStorageImpl) GetAllToPlacehold() []types.Hash {
-	key := es.getPlaceholderKey()
-
-	rawPhv, err := es.memstore.Get(key)
-	if err != nil {
-		if err.Error() == "not found" {
-			return []types.Hash{}
-		}
-
-		return nil
-	}
-
-	parsedPlaceholders, err := es.DecodeDeletionCiphertexts(rawPhv)
-	if err != nil {
-		return nil
-	}
-
-	return parsedPlaceholders
 }
 
 func (es *EphemeralStorageImpl) GetAllToPersist() []ContractCiphertext {
