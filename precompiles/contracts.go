@@ -300,7 +300,7 @@ func TrivialEncrypt(input []byte, toType byte, securityZone int32, tp *TxParams)
 	if len(input) != 32 {
 		msg := functionName.String() + " input len must be 32 bytes"
 		logger.Error(msg, " input ", hex.EncodeToString(input), " len ", len(input))
-		return nil, 0, vm.ErrExecutionReverted
+		return nil, gas, vm.ErrExecutionReverted
 	}
 
 	valueToEncrypt := *new(big.Int).SetBytes(input)
@@ -311,13 +311,13 @@ func TrivialEncrypt(input []byte, toType byte, securityZone int32, tp *TxParams)
 	maxOfType := fhe.MaxOfType(uintType)
 	if maxOfType == nil {
 		logger.Error("failed to create trivially encrypted value, type is not supported.")
-		return nil, 0, vm.ErrExecutionReverted
+		return nil, gas, vm.ErrExecutionReverted
 	}
 
 	// If value is bigger than the maximal value that is supported by the type
 	if valueToEncrypt.Cmp(maxOfType) > 0 {
 		logger.Error("failed to create trivially encrypted value, value is too large for type.")
-		return nil, 0, vm.ErrExecutionReverted
+		return nil, gas, vm.ErrExecutionReverted
 	}
 
 	// we encrypt this using the computation key not the public key. Also, compact to save space in case this gets saved directly
@@ -325,14 +325,14 @@ func TrivialEncrypt(input []byte, toType byte, securityZone int32, tp *TxParams)
 	ct, err = fhe.EncryptPlainText(valueToEncrypt, uintType, securityZone)
 	if err != nil {
 		logger.Error("failed to create trivial encrypted value")
-		return nil, 0, vm.ErrExecutionReverted
+		return nil, gas, vm.ErrExecutionReverted
 	}
 
 	ctHash := ct.GetHash()
 	err = storeCipherText(storage, ct, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName.String()+" failed", "err", err)
-		return nil, 0, vm.ErrExecutionReverted
+		return nil, gas, vm.ErrExecutionReverted
 	}
 
 	if shouldPrintPrecompileInfo(tp) {

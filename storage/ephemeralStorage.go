@@ -46,8 +46,6 @@ func (es *EphemeralStorageImpl) getDeletionKey() []byte {
 	return []byte("DEL")
 }
 
-func (es *EphemeralStorageImpl) getPlaceholderKey() []byte { return []byte("PHV") }
-
 func (es *EphemeralStorageImpl) encodePersistingCiphertexts(lts []ContractCiphertext) ([]byte, error) {
 	var buf bytes.Buffer
 	err := gob.NewEncoder(&buf).Encode(lts)
