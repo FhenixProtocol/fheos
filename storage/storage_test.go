@@ -98,7 +98,13 @@ func TestStorageConcurrency(t *testing.T) {
 		go func(i int) {
 			defer wg.Done()
 
-			if err := storage.PutCt(types.Hash(fhe.Hash{byte(i)}), (*types.FheEncrypted)(ct)); err != nil {
+			ctRep := &types.CipherTextRepresentation{
+				Data:     (*types.FheEncrypted)(ct),
+				Owners:   nil,
+				RefCount: 0,
+			}
+
+			if err := storage.PutCt(types.Hash(fhe.Hash{byte(i)}), ctRep); err != nil {
 				t.Errorf("Failed to put ciphertext: %v", err)
 			}
 		}(i)
@@ -128,7 +134,14 @@ func TestStorageEphemeralConcurrency(t *testing.T) {
 	for i := 0; i < concurrencyLevel; i++ {
 		go func(i int) {
 			defer wg.Done()
-			if err := storage.PutCt(types.Hash(fhe.Hash{byte(i)}), (*types.FheEncrypted)(ct)); err != nil {
+
+			ctRep := &types.CipherTextRepresentation{
+				Data:     (*types.FheEncrypted)(ct),
+				Owners:   nil,
+				RefCount: 0,
+			}
+
+			if err := storage.PutCt(types.Hash(fhe.Hash{byte(i)}), ctRep); err != nil {
 				t.Errorf("Failed to put ciphertext: %v", err)
 			}
 		}(i)
@@ -150,7 +163,13 @@ func TestStorageCt(t *testing.T) {
 	ct := randomCiphertext()
 	hash := fhe.Hash{0} // Simplified hash for testing
 
-	if err := storage.PutCt(types.Hash(hash), (*types.FheEncrypted)(ct)); err != nil {
+	ctRep := &types.CipherTextRepresentation{
+		Data:     (*types.FheEncrypted)(ct),
+		Owners:   nil,
+		RefCount: 0,
+	}
+
+	if err := storage.PutCt(types.Hash(hash), ctRep); err != nil {
 		t.Fatalf("Failed to put ciphertext: %v", err)
 	}
 
@@ -159,11 +178,11 @@ func TestStorageCt(t *testing.T) {
 		t.Fatalf("Failed to get ciphertext: %v", err)
 	}
 
-	if !bytes.Equal(retrievedCt.Data, ct.Data) || !((*fhe.FheEncrypted)(retrievedCt).Hash() == ct.Hash()) {
+	if !bytes.Equal(retrievedCt.Data.Data, ct.Data) || !((*fhe.FheEncrypted)(retrievedCt.Data).Hash() == ct.Hash()) {
 		t.Errorf("Retrieved ciphertext does not match the original")
 	}
-	assert.Equal(t, ct.Compact, retrievedCt.Compact)
-	assert.Equal(t, ct.Compressed, retrievedCt.Compressed)
+	assert.Equal(t, ct.Compact, retrievedCt.Data.Compact)
+	assert.Equal(t, ct.Compressed, retrievedCt.Data.Compressed)
 }
 
 func TestStorageEphemeralCt(t *testing.T) {
@@ -178,7 +197,13 @@ func TestStorageEphemeralCt(t *testing.T) {
 
 	//storage.SetEphemeral()
 
-	if err := storage.PutCt(types.Hash(hash), (*types.FheEncrypted)(ct)); err != nil {
+	ctRep := &types.CipherTextRepresentation{
+		Data:     (*types.FheEncrypted)(ct),
+		Owners:   nil,
+		RefCount: 0,
+	}
+
+	if err := storage.PutCt(types.Hash(hash), ctRep); err != nil {
 		t.Fatalf("Failed to put ciphertext: %v", err)
 	}
 
@@ -187,7 +212,7 @@ func TestStorageEphemeralCt(t *testing.T) {
 		t.Fatalf("Failed to get ciphertext: %v", err)
 	}
 
-	if !bytes.Equal(retrievedCt.Data, ct.Data) || !((*fhe.FheEncrypted)(retrievedCt).Hash() == ct.Hash()) {
+	if !bytes.Equal(retrievedCt.Data.Data, ct.Data) || !((*fhe.FheEncrypted)(retrievedCt.Data).Hash() == ct.Hash()) {
 		t.Errorf("Retrieved ciphertext does not match the original")
 	}
 }
@@ -229,7 +254,13 @@ func TestStorageGetSetReset(t *testing.T) {
 	ct := randomCiphertext()
 	hash := fhe.Hash{0} // Simplified hash for testing
 
-	if err := storage.PutCt(types.Hash(hash), (*types.FheEncrypted)(ct)); err != nil {
+	ctRep := &types.CipherTextRepresentation{
+		Data:     (*types.FheEncrypted)(ct),
+		Owners:   nil,
+		RefCount: 0,
+	}
+
+	if err := storage.PutCt(types.Hash(hash), ctRep); err != nil {
 		t.Fatalf("Failed to put ciphertext: %v", err)
 	}
 
@@ -245,7 +276,7 @@ func TestStorageGetSetReset(t *testing.T) {
 		t.Fatalf("Failed to get ciphertext from ephemeral (should have fallen back to disk storage): %v", err)
 	}
 
-	if !bytes.Equal(retrievedCt.Data, ct.Data) || !((*fhe.FheEncrypted)(retrievedCt).Hash() == ct.Hash()) {
+	if !bytes.Equal(retrievedCt.Data.Data, ct.Data) || !((*fhe.FheEncrypted)(retrievedCt.Data).Hash() == ct.Hash()) {
 		t.Errorf("Retrieved ciphertext does not match the original")
 	}
 
@@ -272,7 +303,14 @@ func BenchmarkConcurrentPut(b *testing.B) {
 		for j := 0; j < concurrencyLevel; j++ {
 			go func(j int) {
 				defer wg.Done()
-				if err := storage.PutCt(types.Hash(fhe.Hash{byte(i)}), (*types.FheEncrypted)(ct)); err != nil {
+
+				ctRep := &types.CipherTextRepresentation{
+					Data:     (*types.FheEncrypted)(ct),
+					Owners:   nil,
+					RefCount: 0,
+				}
+
+				if err := storage.PutCt(types.Hash(fhe.Hash{byte(i)}), ctRep); err != nil {
 					b.Errorf("Failed to put ciphertext: %v", err)
 				}
 			}(j)
@@ -288,7 +326,13 @@ func TestEphemeralStorageImpl_Basic(t *testing.T) {
 	ct := randomCiphertext()
 	hash := fhe.Hash{0} // Simplified hash for testing
 
-	if err := ephemeralStorage.PutCt(types.Hash(hash), (*types.FheEncrypted)(ct)); err != nil {
+	ctRep := &types.CipherTextRepresentation{
+		Data:     (*types.FheEncrypted)(ct),
+		Owners:   nil,
+		RefCount: 0,
+	}
+
+	if err := ephemeralStorage.PutCt(types.Hash(hash), ctRep); err != nil {
 		t.Fatalf("Failed to put ciphertext: %v", err)
 	}
 
@@ -297,7 +341,7 @@ func TestEphemeralStorageImpl_Basic(t *testing.T) {
 		t.Fatalf("Failed to get ciphertext: %v", err)
 	}
 
-	if !bytes.Equal(retrievedCt.Data, ct.Data) || !((*fhe.FheEncrypted)(retrievedCt).Hash() == ct.Hash()) {
+	if !bytes.Equal(retrievedCt.Data.Data, ct.Data) || !((*fhe.FheEncrypted)(retrievedCt.Data).Hash() == ct.Hash()) {
 		t.Errorf("Retrieved ciphertext does not match the original")
 	}
 }
@@ -309,7 +353,13 @@ func TestEphemeralStorageImpl_Lts(t *testing.T) {
 	ct := randomCiphertext()
 	hash := fhe.Hash{0} // Simplified hash for testing
 
-	if err := ephemeralStorage.PutCt(types.Hash(hash), (*types.FheEncrypted)(ct)); err != nil {
+	ctRep := &types.CipherTextRepresentation{
+		Data:     (*types.FheEncrypted)(ct),
+		Owners:   nil,
+		RefCount: 0,
+	}
+
+	if err := ephemeralStorage.PutCt(types.Hash(hash), ctRep); err != nil {
 		t.Fatalf("Failed to put ciphertext: %v", err)
 	}
 
@@ -333,7 +383,7 @@ func TestEphemeralStorageImpl_Lts(t *testing.T) {
 		t.Fatalf("Failed to get ciphertext: %v", err)
 	}
 
-	if !bytes.Equal(retrievedCt.Data, ct.Data) || !((*fhe.FheEncrypted)(retrievedCt).Hash() == ct.Hash()) {
+	if !bytes.Equal(retrievedCt.Data.Data, ct.Data) || !((*fhe.FheEncrypted)(retrievedCt.Data).Hash() == ct.Hash()) {
 		t.Errorf("Retrieved ciphertext does not match the original")
 	}
 }
@@ -344,7 +394,13 @@ func TestEphemeralStorageImpl_HasCt(t *testing.T) {
 	ct := randomCiphertext()
 	hash := fhe.Hash{0} // Simplified hash for testing
 
-	if err := ephemeralStorage.PutCt(types.Hash(hash), (*types.FheEncrypted)(ct)); err != nil {
+	ctRep := &types.CipherTextRepresentation{
+		Data:     (*types.FheEncrypted)(ct),
+		Owners:   nil,
+		RefCount: 0,
+	}
+
+	if err := ephemeralStorage.PutCt(types.Hash(hash), ctRep); err != nil {
 		t.Fatalf("Failed to put ciphertext: %v", err)
 	}
 
@@ -353,7 +409,7 @@ func TestEphemeralStorageImpl_HasCt(t *testing.T) {
 		t.Fatalf("Failed to get ciphertext: %v", err)
 	}
 
-	if !bytes.Equal(retrievedCt.Data, ct.Data) || !((*fhe.FheEncrypted)(retrievedCt).Hash() == ct.Hash()) {
+	if !bytes.Equal(retrievedCt.Data.Data, ct.Data) || !((*fhe.FheEncrypted)(retrievedCt.Data).Hash() == ct.Hash()) {
 		t.Errorf("Retrieved ciphertext does not match the original")
 	}
 
@@ -365,4 +421,159 @@ func TestEphemeralStorageImpl_HasCt(t *testing.T) {
 	if ephemeralStorage.HasCt(types.Hash(hash2)) {
 		t.Errorf("Expected to not have ciphertext")
 	}
+}
+
+func TestEphemeralStorageImpl_OverrideValue(t *testing.T) {
+	ephemeralStorage := storage2.NewEphemeralStorage(nil)
+
+	ct := randomCiphertext()
+	hash := fhe.Hash{0} // Simplified hash for testing
+
+	ct.Placeholder = true
+
+	ctRep := &types.CipherTextRepresentation{
+		Data:     (*types.FheEncrypted)(ct),
+		Owners:   nil,
+		RefCount: 0,
+	}
+
+	if err := ephemeralStorage.PutCt(types.Hash(hash), ctRep); err != nil {
+		t.Fatalf("Failed to put ciphertext: %v", err)
+	}
+
+	retrievedCt, err := ephemeralStorage.GetCt(types.Hash(hash))
+	if err != nil {
+		t.Fatalf("Failed to get ciphertext: %v", err)
+	}
+
+	if retrievedCt.Data.Placeholder != true {
+		t.Errorf("Retrieved ciphertext does not match the original")
+	}
+
+	ctRep.Data.Placeholder = false
+
+	if err := ephemeralStorage.PutCt(types.Hash(hash), ctRep); err != nil {
+		t.Fatalf("Failed to put ciphertext: %v", err)
+	}
+
+	retrievedCt, err = ephemeralStorage.GetCt(types.Hash(hash))
+	if err != nil {
+		t.Fatalf("Failed to get ciphertext: %v", err)
+	}
+
+	if retrievedCt.Data.Placeholder != false {
+		t.Errorf("Retrieved ciphertext does not match the original")
+	}
+}
+
+func TestMultiStore_AppendCt(t *testing.T) {
+	diskStorage, err := storage2.InitStorage(storagePath)
+	multiStore := storage2.NewMultiStore(nil, diskStorage)
+
+	ct := randomCiphertext()
+	hash := fhe.Hash{100} // this key needs to be unique for the test
+
+	owner := common.HexToAddress("0x1234567890abcdef1234567890abcdef12345678")
+
+	if err := multiStore.AppendCt(types.Hash(hash), (*types.FheEncrypted)(ct), owner); err != nil {
+		t.Fatalf("Failed to put ciphertext: %v", err)
+	}
+
+	retrievedCt, err := multiStore.GetCt(types.Hash(hash), owner)
+	if err != nil {
+		t.Fatalf("Failed to get ciphertext: %v", err)
+	}
+
+	assert.Equal(t, (*fhe.FheEncrypted)(retrievedCt).Hash(), ct.Hash())
+
+	if !bytes.Equal(retrievedCt.Data, ct.Data) {
+		t.Errorf("Retrieved ciphertext does not match the original")
+	}
+}
+
+func TestMultiStore_AppendCtMultipleOwner(t *testing.T) {
+	diskStorage, err := storage2.InitStorage(storagePath)
+	multiStore := storage2.NewMultiStore(nil, diskStorage)
+
+	ct := randomCiphertext()
+	hash := fhe.Hash{101} // this key needs to be unique for the test
+
+	owner := common.HexToAddress("0x1234567890abcdef1234567890abcdef12345678")
+
+	if err := multiStore.AppendCt(types.Hash(hash), (*types.FheEncrypted)(ct), owner); err != nil {
+		t.Fatalf("Failed to put ciphertext: %v", err)
+	}
+
+	owner2 := common.HexToAddress("0x1234567890abcdef1234567890abcdef123456ff")
+
+	if err := multiStore.AppendCt(types.Hash(hash), (*types.FheEncrypted)(ct), owner2); err != nil {
+		t.Fatalf("Failed to put ciphertext: %v", err)
+	}
+
+	retrievedCt, err := multiStore.GetCt(types.Hash(hash), owner)
+	if err != nil {
+		t.Fatalf("Failed to get ciphertext: %v", err)
+	}
+
+	assert.Equal(t, (*fhe.FheEncrypted)(retrievedCt).Hash(), ct.Hash())
+
+	retrievedCt, err = multiStore.GetCt(types.Hash(hash), owner2)
+	if err != nil {
+		t.Fatalf("Failed to get ciphertext: %v", err)
+	}
+
+	assert.Equal(t, (*fhe.FheEncrypted)(retrievedCt).Hash(), ct.Hash())
+}
+
+func TestMultiStore_AppendCt_Fail_NotOwner(t *testing.T) {
+	diskStorage, err := storage2.InitStorage(storagePath)
+	multiStore := storage2.NewMultiStore(nil, diskStorage)
+
+	ct := randomCiphertext()
+	hash := fhe.Hash{102} // this key needs to be unique for the test
+
+	owner := common.HexToAddress("0x1234567890abcdef1234567890abcdef12345678")
+
+	if err := multiStore.AppendCt(types.Hash(hash), (*types.FheEncrypted)(ct), owner); err != nil {
+		t.Fatalf("Failed to put ciphertext: %v", err)
+	}
+
+	loser := common.HexToAddress("0x1234567890abcdef1234567890abcdefffffffff")
+
+	_, err = multiStore.GetCt(types.Hash(hash), loser)
+	// expect an error, fail the test if not
+	if err == nil {
+		t.Fatalf("Expected to fail to get ciphertext")
+	}
+}
+
+func TestMultiStore_AppendCtPlaceholderReplace(t *testing.T) {
+	diskStorage, err := storage2.InitStorage(storagePath)
+	multiStore := storage2.NewMultiStore(nil, diskStorage)
+
+	ct := randomCiphertext()
+	ct.Placeholder = true
+	hash := fhe.Hash{104} // this key needs to be unique for the test
+
+	owner := common.HexToAddress("0x1234567890abcdef1234567890abcdef12345678")
+
+	if err := multiStore.AppendCt(types.Hash(hash), (*types.FheEncrypted)(ct), owner); err != nil {
+		t.Fatalf("Failed to put ciphertext: %v", err)
+	}
+
+	owner2 := common.HexToAddress("0x1234567890abcdef1234567890abcdef123456ff")
+
+	ct.Placeholder = false
+
+	if err := multiStore.AppendCt(types.Hash(hash), (*types.FheEncrypted)(ct), owner2); err != nil {
+		t.Fatalf("Failed to put ciphertext: %v", err)
+	}
+
+	retrievedCt, err := multiStore.GetCt(types.Hash(hash), owner)
+	if err != nil {
+		t.Fatalf("Failed to get ciphertext: %v", err)
+	}
+
+	assert.Equal(t, (*fhe.FheEncrypted)(retrievedCt).Hash(), ct.Hash())
+	assert.Equal(t, retrievedCt.Placeholder, false)
 }

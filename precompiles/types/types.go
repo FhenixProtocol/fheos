@@ -36,6 +36,10 @@ type FheCipherTextStorage interface {
 	HasCt(h Hash) bool
 
 	DeleteCt(h Hash) error
+
+	SetAsyncCtStart(h Hash) error
+	SetAsyncCtDone(h Hash) error
+	IsAsyncCtDone() (bool, error)
 }
 
 type PrecompileName int

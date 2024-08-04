@@ -21,11 +21,11 @@ const specificFunctions = [
     paramTypes: ["encrypted", "encrypted", "encrypted"],
   },
   {
-    name: "get2VerifiedOperands(",
+    name: "ProcessOperation2(",
     amount: 2,
     paramTypes: ["encrypted", "uint8", "plaintext"],
   },
-  { name: "getCiphertext(", amount: 1, paramTypes: ["encrypted"] },
+  { name: "ProcessOperation1(", amount: 1, paramTypes: ["encrypted"] },
   { name: "fhedriver.UintType(", amount: 1, paramTypes: ["encrypted"] },
 ];
 

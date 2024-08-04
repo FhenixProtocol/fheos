@@ -1463,26 +1463,26 @@ describe("Test Not", () => {
       function: "not(ebool)",
       bits: 1,
     },
-    // {
-    //   function: "not(euint8)",
-    //   bits: 8,
-    // },
-    // {
-    //   function: "not(euint16)",
-    //   bits: 16,
-    // },
-    // {
-    //   function: "not(euint32)",
-    //   bits: 32,
-    // },
-    // {
-    //   function: "not(euint64)",
-    //   bits: 64,
-    // },
-    // {
-    //   function: "not(euint128)",
-    //   bits: 128,
-    // },
+    {
+      function: "not(euint8)",
+      bits: 8,
+    },
+    {
+      function: "not(euint16)",
+      bits: 16,
+    },
+    {
+      function: "not(euint32)",
+      bits: 32,
+    },
+    {
+      function: "not(euint64)",
+      bits: 64,
+    },
+    {
+      function: "not(euint128)",
+      bits: 128,
+    },
   ];
 
   for (const test of testCases) {

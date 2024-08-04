@@ -9,11 +9,13 @@ import (
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
+	"time"
 )
 
 type FheOSHooks interface {
 	StoreCiphertextHook(contract common.Address, loc [32]byte, original common.Hash, val [32]byte) error
 	StoreGasHook(contract common.Address, loc [32]byte, val [32]byte) (uint64, uint64)
+	AwaitAsync() error
 	LoadCiphertextHook() [32]byte
 	EvmCallStart()
 	EvmCallEnd(evmSuccess bool)
@@ -23,6 +25,33 @@ type FheOSHooks interface {
 
 type FheOSHooksImpl struct {
 	evm *vm.EVM
+}
+
+func (h FheOSHooksImpl) AwaitAsync() error {
+	storage := storage2.NewEphemeralStorage(h.evm.CiphertextDb)
+
+	ctDone := false
+	timeout := time.After(5 * time.Second) // Adjust the duration as needed
+	for !ctDone {
+		select {
+		case err := <-h.evm.ErrorChannel:
+			log.Error("Error in async ct", "err", err)
+			return err
+		case <-timeout:
+			log.Error("Timeout waiting for async ct to complete")
+			return vm.ErrExecutionReverted
+		default:
+			ctDoneInner, err := storage.IsAsyncCtDone()
+			if err != nil {
+				log.Error("Error checking if async ct is done", "err", err)
+				return vm.ErrExecutionReverted
+			}
+			ctDone = ctDoneInner
+			time.Sleep(10 * time.Millisecond) // Adjust the duration as needed
+		}
+	}
+
+	return nil
 }
 
 func (h FheOSHooksImpl) updateCiphertextReferences(original common.Hash, newHash types.Hash) (bool, error) {
@@ -68,10 +97,7 @@ func (h FheOSHooksImpl) StoreCiphertextHook(contract common.Address, loc [32]byt
 	// option - better to flush all at the end of the tx from memdb, or define a memdb in fheos that is flushed at the end of the tx?
 	storage := storage2.NewEphemeralStorage(h.evm.CiphertextDb)
 
-	// Skip for non-ciphertext
-	ctHash := types.Hash(val)
-
-	wasDereferenced, err := h.updateCiphertextReferences(commited, ctHash)
+	wasDereferenced, err := h.updateCiphertextReferences(commited, val)
 	if err != nil {
 		return err
 	}
@@ -84,12 +110,12 @@ func (h FheOSHooksImpl) StoreCiphertextHook(contract common.Address, loc [32]byt
 		}
 	}
 
-	if !fhe.IsCtHash(ctHash) {
+	if !fhe.IsCtHash(val) {
 		return nil
 	}
 
 	// Skip for values who are not in memory as there is nothing to persist
-	if !storage.HasCt(ctHash) {
+	if !storage.HasCt(val) {
 		return nil
 	}
 
@@ -123,6 +149,7 @@ func (h FheOSHooksImpl) EvmCallStart() {
 func (h FheOSHooksImpl) EvmCallEnd(evmSuccess bool) {
 	if evmSuccess && h.evm.Commit {
 		storage := storage2.NewEphemeralStorage(h.evm.CiphertextDb)
+
 		toStore := storage.GetAllToPersist()
 		toDelete := storage.GetAllToDelete()
 
@@ -141,6 +168,8 @@ func (h FheOSHooksImpl) EvmCallEnd(evmSuccess bool) {
 			if err != nil {
 				log.Crit("Error storing ciphertext in LTS - state corruption detected", "err", err)
 			}
+
+			log.Info("Added ct to store", "hash", (*fhe.FheEncrypted)(cipherText.Data).GetHash().Hex())
 		}
 
 		for _, hash := range toDelete {
@@ -211,11 +240,7 @@ func (h FheOSHooksImpl) iterateHashes(data []byte, dataType string, owner common
 			continue
 		}
 
-		err := storage.AddOwner(hash, ct, newOwner)
-		if err != nil {
-			log.Error("Failed to add owner to ciphertext", "hash", hex.EncodeToString(hash[:]), "owner", newOwner.Hex(), "err", err)
-			continue
-		}
+		_ = storage.AddOwner(hash, ct, newOwner)
 
 		log.Info("Contract has been added as an owner to the ciphertext", "contract", newOwner, "ciphertext", hex.EncodeToString(hash[:]))
 	}
