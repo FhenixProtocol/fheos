@@ -54,7 +54,7 @@ jobs:
           tags: ghcr.io/fhenixprotocol/localfhenix:v0.0.0
       - name: Run Local Dev Image
         run: |
-          docker run -p 8547:8547 -p 8548:8548 -p 3000:3000 ghcr.io/fhenixprotocol/localfhenix:v0.0.0 &
+          docker run -p 8547:8547 -p 8548:8548 -p 3000:3000 -e FHEOS_SECURITY_ZONES=2 ghcr.io/fhenixprotocol/localfhenix:v0.0.0 &
       - name: Run tests
         run: |
           make test

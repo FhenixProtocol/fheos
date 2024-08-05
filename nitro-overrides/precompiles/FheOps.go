@@ -9,8 +9,7 @@ import (
 )
 
 type FheOps struct {
-	Address                addr // 0x80
-	CachedNetworkPublicKey []byte
+	Address addr // 0x80
 }
 
 func (con FheOps) Log(c ctx, evm mech, s string) error {
@@ -240,16 +239,10 @@ func (con FheOps) Eq(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 	return ret, err
 }
 
-func (con FheOps) GetNetworkPublicKey(c ctx, evm mech) ([]byte, error) {
-	if con.CachedNetworkPublicKey == nil || len(con.CachedNetworkPublicKey) == 0 {
-		tp := fheos.TxParamsFromEVM(evm, c.caller)
-		tempNetworkPublicKey, err := fheos.GetNetworkPublicKey(&tp)
-		if err != nil {
-			return nil, err
-		}
-		con.CachedNetworkPublicKey = tempNetworkPublicKey
-	}
-	return con.CachedNetworkPublicKey, nil
+func (con FheOps) GetNetworkPublicKey(c ctx, evm mech, securityZone int32) ([]byte, error) {
+
+	tp := fheos.TxParamsFromEVM(evm, c.caller)
+	return fheos.GetNetworkPublicKey(securityZone, &tp)
 }
 
 func (con FheOps) Gt(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte) ([]byte, error) {
@@ -864,7 +857,7 @@ func (con FheOps) Sub(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	return ret, err
 }
 
-func (con FheOps) TrivialEncrypt(c ctx, evm mech, input []byte, toType byte) ([]byte, error) {
+func (con FheOps) TrivialEncrypt(c ctx, evm mech, input []byte, toType byte, securityZone int32) ([]byte, error) {
 	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "TrivialEncrypt", fheos.UtypeToString(toType))
@@ -876,7 +869,7 @@ func (con FheOps) TrivialEncrypt(c ctx, evm mech, input []byte, toType byte) ([]
 		}(time.Now())
 	}
 
-	ret, gas, err := fheos.TrivialEncrypt(input, toType, &tp)
+	ret, gas, err := fheos.TrivialEncrypt(input, toType, securityZone, &tp)
 
 	if err != nil {
 		if metrics.Enabled {
@@ -900,7 +893,7 @@ func (con FheOps) TrivialEncrypt(c ctx, evm mech, input []byte, toType byte) ([]
 	return ret, err
 }
 
-func (con FheOps) Verify(c ctx, evm mech, utype byte, input []byte) ([]byte, error) {
+func (con FheOps) Verify(c ctx, evm mech, utype byte, input []byte, securityZone int32) ([]byte, error) {
 	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "Verify", fheos.UtypeToString(utype))
@@ -912,7 +905,7 @@ func (con FheOps) Verify(c ctx, evm mech, utype byte, input []byte) ([]byte, err
 		}(time.Now())
 	}
 
-	ret, gas, err := fheos.Verify(utype, input, &tp)
+	ret, gas, err := fheos.Verify(utype, input, securityZone, &tp)
 
 	if err != nil {
 		if metrics.Enabled {

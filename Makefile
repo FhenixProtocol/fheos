@@ -9,9 +9,17 @@ gen:
 	./gen.sh
 	cd solgen && pnpm build
 
+.PHONY: gen-fheops
+gen-fheops:
+	./gen.sh -g true -n true
+	cd solgen && pnpm build
+
 .PHONY: compile
 compile:
 	cd solidity && pnpm compile
+
+.PHONY: gencompile
+gencompile: gen compile
 
 .PHONY: lint
 lint:
@@ -28,6 +36,11 @@ test: check_network_is_running gen compile
 	cp solidity/.env.example solidity/.env
 	cd solidity && pnpm install
 	cd solidity && pnpm test
+
+.PHONY: test-precomp
+test-precomp: check_network_is_running
+	cp solidity/.env.example solidity/.env
+	cd solidity && pnpm test -- precompiles.test.ts
 
 .PHONY: build
 build:

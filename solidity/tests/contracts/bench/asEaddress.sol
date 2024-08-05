@@ -3,13 +3,14 @@ pragma solidity ^0.8.17;
 
 import {FHE} from "../../../FHE.sol";
 import {
-    euint256, inEuint256
+    euint256, inEuint256,
+    inEaddress
 } from "../../../FHE.sol";
 
 contract AsEaddressBench {
     euint256 internal a256;
     uint256 internal aUint256;
-    bytes internal aBytes;
+    inEaddress internal aPreEncrypted;
 
     function load256(inEuint256 calldata _a) public {
         a256 = FHE.asEuint256(_a);
@@ -17,8 +18,8 @@ contract AsEaddressBench {
     function loadUint256(uint256 _a) public {
         aUint256 = _a;
     }
-    function loadBytes(bytes memory _a) public {
-        aBytes = _a;
+    function loadPreEncrypted(inEaddress calldata _a) public {
+        aPreEncrypted = _a;
     }
 
     function benchCastEuint256ToEaddress() public view {
@@ -27,7 +28,7 @@ contract AsEaddressBench {
     function benchCastUint256ToEaddress() public view {
         FHE.asEaddress(aUint256);
     }
-    function benchCastBytesToEaddress() public view {
-        FHE.asEaddress(aBytes);
+    function benchCastPreEncryptedToEaddress() public view {
+        FHE.asEaddress(aPreEncrypted);
     }
 }

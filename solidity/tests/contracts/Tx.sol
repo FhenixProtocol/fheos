@@ -26,6 +26,13 @@ contract AddCaller {
         return counter.seal(publicKey);
     }
 
+    function addPlainSecurityZone(uint256 lhs, uint256 rhs, int32 securityZone, bytes32 publicKey) public pure returns (string memory) {
+        euint32 lhsEncrypted = FHE.asEuint32(lhs, securityZone);
+        euint32 rhsEncrypted = FHE.asEuint32(rhs, securityZone);
+        euint32 result = lhsEncrypted.add(rhsEncrypted);
+        return result.seal(publicKey);
+    }
+
     function subViaContractCallAsPlain(uint32 value, bytes32 publicKey) public returns (string memory) {
         counter = addContract.sub(FHE.decrypt(counter), value);
         return counter.seal(publicKey);

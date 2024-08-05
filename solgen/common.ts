@@ -25,6 +25,9 @@ const patternAllowedOperationsEuint256 =   ["ne|eq|sealoutput|select|seal|decryp
 const patternAllowedOperationsEaddress =   ["ne|^eq$|sealoutput|select|seal|decrypt"];
 /*------------------------------------------------------------*/
 
+// Although casts from eaddress to types with < 256 bits are possible, we don't want to test them.
+export const AllowedTypesOnCastToEaddress = ["euint256", "uint256", "inEaddress", "bytes memory", "address"]
+
 export const AllowedOperations = [
   patternAllowedOperationsEbool,
   patternAllowedOperationsEuint8,
@@ -278,3 +281,7 @@ export const shortenType = (type: string) => {
   return type === "ebool" ? "Bool" : "U" + type.slice(5); // get only number at the end
 };
 
+export const toInType = (inputType: string) => "inE" + inputType.slice(1);
+export const toInTypeParam = (inputType: string) => toInType(inputType) + " calldata";
+export const toVarSuffix = (inputType: string) => capitalize(inputType.slice(1).replace("uint", ""));
+export const toAsType = (inputType: string) => "asE" + inputType.slice(1);

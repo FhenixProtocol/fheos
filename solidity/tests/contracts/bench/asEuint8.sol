@@ -9,7 +9,8 @@ import {
     euint64, inEuint64,
     euint128, inEuint128,
     euint256, inEuint256,
-    eaddress, inEaddress
+    eaddress, inEaddress,
+    inEuint8
 } from "../../../FHE.sol";
 
 contract AsEuint8Bench {
@@ -21,7 +22,7 @@ contract AsEuint8Bench {
     euint256 internal a256;
     eaddress internal aAddress;
     uint256 internal aUint256;
-    bytes internal aBytes;
+    inEuint8 internal aPreEncrypted;
 
     function loadBool(inEbool calldata _a) public {
         aBool = FHE.asEbool(_a);
@@ -47,8 +48,8 @@ contract AsEuint8Bench {
     function loadUint256(uint256 _a) public {
         aUint256 = _a;
     }
-    function loadBytes(bytes memory _a) public {
-        aBytes = _a;
+    function loadPreEncrypted(inEuint8 calldata _a) public {
+        aPreEncrypted = _a;
     }
 
     function benchCastEboolToEuint8() public view {
@@ -75,7 +76,7 @@ contract AsEuint8Bench {
     function benchCastUint256ToEuint8() public view {
         FHE.asEuint8(aUint256);
     }
-    function benchCastBytesToEuint8() public view {
-        FHE.asEuint8(aBytes);
+    function benchCastPreEncryptedToEuint8() public view {
+        FHE.asEuint8(aPreEncrypted);
     }
 }

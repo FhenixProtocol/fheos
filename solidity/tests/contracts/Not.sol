@@ -9,24 +9,24 @@ error TestNotFound(string test);
 contract NotTest {
     using Utils for *;
     
-    function not(string calldata test, uint256 a) public pure returns (uint256 output) {
+    function not(string calldata test, uint256 a, int32 securityZone) public pure returns (uint256 output) {
         if (Utils.cmp(test, "not(euint8)")) {
-            return FHE.decrypt(FHE.not(FHE.asEuint8(a)));
+            return FHE.decrypt(FHE.not(FHE.asEuint8(a, securityZone)));
         } else if (Utils.cmp(test, "not(euint16)")) {
-            return FHE.decrypt(FHE.not(FHE.asEuint16(a)));
+            return FHE.decrypt(FHE.not(FHE.asEuint16(a, securityZone)));
         } else if (Utils.cmp(test, "not(euint32)")) {
-            return FHE.decrypt(FHE.not(FHE.asEuint32(a)));
+            return FHE.decrypt(FHE.not(FHE.asEuint32(a, securityZone)));
         } else if (Utils.cmp(test, "not(euint64)")) {
-            return FHE.decrypt(FHE.not(FHE.asEuint64(a)));
+            return FHE.decrypt(FHE.not(FHE.asEuint64(a, securityZone)));
         } else if (Utils.cmp(test, "not(euint128)")) {
-            return FHE.decrypt(FHE.not(FHE.asEuint128(a)));
+            return FHE.decrypt(FHE.not(FHE.asEuint128(a, securityZone)));
         } else if (Utils.cmp(test, "not(ebool)")) {
             bool aBool = true;
             if (a == 0) {
                 aBool = false;
             }
 
-            if (FHE.decrypt(FHE.not(FHE.asEbool(aBool)))) {
+            if (FHE.decrypt(FHE.not(FHE.asEbool(aBool, securityZone)))) {
                 return 1;
             }
 

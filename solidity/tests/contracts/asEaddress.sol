@@ -2,6 +2,7 @@
 pragma solidity ^0.8.17;
 
 import {FHE} from "../../FHE.sol";
+import {inEaddress} from "../../FHE.sol";
 import {Utils} from "./utils/Utils.sol";
 
 error TestNotFound(string test);
@@ -23,7 +24,11 @@ contract AsEaddressTest {
         return FHE.decrypt(FHE.asEaddress(val));
     }
 
-    function castFromPreEncryptedToEaddress(bytes memory val) public pure returns (address) {
+    function castFromPlaintextAddressToEaddress(address val) public pure returns (address) {
+        return FHE.decrypt(FHE.asEaddress(val));
+    }
+
+    function castFromPreEncryptedToEaddress(inEaddress calldata val) public pure returns (address) {
         return FHE.decrypt(FHE.asEaddress(val));
     }
 }

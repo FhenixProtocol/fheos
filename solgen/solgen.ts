@@ -428,7 +428,7 @@ const main = async () => {
       outputFile += AsTypeFunction(fromType, toType);
     }
   }
-  // (Hardcoded) For a better UX we need to be able to cast address to eaddress, the following line does so:
+  // For a better UX, allow casting from address to eaddress:
   outputFile += AsTypeFunction('address', 'eaddress')
   
   for (let type of EInputType) {

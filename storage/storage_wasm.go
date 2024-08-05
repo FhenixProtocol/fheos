@@ -44,4 +44,8 @@ func (store FheosStorage) GetCt(h types.Hash) (*types.CipherTextRepresentation, 
 	return nil, nil
 }
 
+func (store FheosStorage) DeleteCt(h types.Hash) error {
+	return nil
+}
+
 func (store FheosStorage) Size() uint64 { return 0 }
