@@ -31,7 +31,7 @@ func (ms *MultiStore) GetEphemeral() EphemeralStorage {
 }
 
 // PutCt stores a ciphertext in the ephemeral storage - it does NOT mark it as LTS. The reason is that we want only SSTORE to mark it as LTS, which is
-// called not only by the precompiles, only by the EVM hook from the evm interpreter.
+// called not only by the precompiles, but also by the EVM hook from the evm interpreter.
 func (ms *MultiStore) PutCt(h types.Hash, cipher *types.CipherTextRepresentation) error {
 	err := ms.ephemeral.PutCt(h, cipher)
 	return err
