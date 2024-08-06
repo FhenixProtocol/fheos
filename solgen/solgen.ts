@@ -225,11 +225,7 @@ const generateSolidityTestContract = (metadata: FunctionMetadata): string[] => {
 
 /** Generates a Solidity bench contract based on the provided metadata */
 const generateSolidityBenchContract = (metadata: FunctionMetadata): string => {
-  const {
-    functionName,
-    inputCount,
-    inputs,
-  } = metadata;
+  const { functionName, inputCount, inputs } = metadata;
 
   if (functionName === SEALING_FUNCTION_NAME) {
     return benchContractReencrypt();
@@ -243,9 +239,7 @@ const generateSolidityBenchContract = (metadata: FunctionMetadata): string => {
     return benchContract2Arg(functionName);
   }
 
-  if (
-    inputCount === 1
-  ) {
+  if (inputCount === 1) {
     return benchContract1Arg(functionName);
   }
 
@@ -355,6 +349,44 @@ const parseFunctionDefinition = (funcDef: string): ParsedFunction => {
   };
 };
 
+const generateRandomGenericFunction = () => {
+  return `
+    /// @notice Generates a random value of a given type
+    /// @dev Calls the desired precompile and returns the hash of the ciphertext
+    /// @param uintType the type of the random value to generate
+    /// @param seed the seed to use for the random value
+    function random(uint8 uintType, uint64 seed) internal pure returns (uint256) {
+        bytes memory b = FheOps(Precompiles.Fheos).random(uintType, seed);
+        return Impl.getValue(b);
+    }
+    `;
+};
+
+const generateRandomFunctionForType = (type: string) => {
+  if (type === "ebool" || type === "eaddress") {
+    return "";
+  }
+  return `/// @notice Generates a random value of a ${type} type
+    /// @dev Calls the desired precompile and returns the hash of the ciphertext
+    /// @param seed the seed to use for the random value
+    function random${capitalize(
+      type
+    )}(uint64 seed) internal pure returns (${type}) {
+        uint256 result = random(Common.${type.toUpperCase()}_TFHE, seed);
+        return ${type}.getValue(result);
+    }
+    `;
+};
+
+const generateRandomFunctions = () => {
+  let outputFile = "";
+  for (let type of EInputType) {
+    outputFile += generateRandomFunctionForType(type);
+  }
+
+  return outputFile;
+};
+
 // Helper function to capitalize type name for asEuintX function call.
 
 // This will generate the Solidity function body based on the function definition provided.
@@ -412,13 +444,15 @@ const main = async () => {
       parseFunctionDefinition(fn)
     );
     outputFile += funcDefinition;
+    outputFile += generateRandomGenericFunction();
+    outputFile += generateRandomFunctions();
   }
   outputFile += `\n\n    // ********** TYPE CASTING ************* //`;
 
   // generate casting functions
   for (let fromType of EInputType.concat("uint256", "bytes memory")) {
     for (let toType of EInputType) {
-      if (fromType === toType) { 
+      if (fromType === toType) {
         // todo: this is a bit weird, but I'm using this place to create asXXX functions for the cast from the input types (inXXX)
         const inputTypeName = `in${capitalize(fromType)}`;
         outputFile += AsTypeFunction(inputTypeName, toType);
@@ -429,8 +463,8 @@ const main = async () => {
     }
   }
   // For a better UX, allow casting from address to eaddress:
-  outputFile += AsTypeFunction('address', 'eaddress')
-  
+  outputFile += AsTypeFunction("address", "eaddress");
+
   for (let type of EInputType) {
     const functionName = `as${capitalize(type)}`;
     const testContract = AsTypeTestingContract(type);

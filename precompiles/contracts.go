@@ -1397,6 +1397,44 @@ func Not(utype byte, value []byte, tp *TxParams) ([]byte, uint64, error) {
 	return resultHash[:], gas, nil
 }
 
+func Random(utype byte, seed uint64, tp *TxParams) ([]byte, uint64, error) {
+	functionName := types.Random
+
+	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
+	uintType := fhe.EncryptionType(utype)
+	if !types.IsValidType(uintType) {
+		logger.Error("invalid random output type", "type", utype)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	gas := getGasForPrecompile(functionName, uintType)
+	if tp.GasEstimation {
+		randomHash := State.GetRandomForGasEstimation()
+		return randomHash[:], gas, nil
+	}
+
+	if shouldPrintPrecompileInfo(tp) {
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
+	}
+
+	// Currently security zone is not yet supported for random numbers, deaulted to 0
+	result, err := fhe.FheRandom(0, uintType, seed)
+	if err != nil {
+		logger.Error("not failed", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	err = storeCipherText(storage, result, tp.ContractAddress)
+	if err != nil {
+		logger.Error(functionName.String()+" failed", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	resultHash := result.Hash()
+	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "result", resultHash.Hex())
+	return resultHash[:], gas, nil
+}
+
 func GetNetworkPublicKey(securityZone int32, tp *TxParams) ([]byte, error) {
 	functionName := types.GetNetworkKey
 
