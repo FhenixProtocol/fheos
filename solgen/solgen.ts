@@ -444,9 +444,9 @@ const main = async () => {
       parseFunctionDefinition(fn)
     );
     outputFile += funcDefinition;
-    outputFile += generateRandomGenericFunction();
-    outputFile += generateRandomFunctions();
   }
+  outputFile += generateRandomGenericFunction();
+  outputFile += generateRandomFunctions();
   outputFile += `\n\n    // ********** TYPE CASTING ************* //`;
 
   // generate casting functions
