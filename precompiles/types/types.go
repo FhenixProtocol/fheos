@@ -144,3 +144,8 @@ func PrecompileNameFromString(s string) (PrecompileName, bool) {
 	pn, ok := stringToPrecompileName[s]
 	return pn, ok
 }
+
+type PendingDecryption struct {
+	Hash fhe.Hash
+	Type PrecompileName
+}
