@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/big"
 	"sync"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
@@ -154,14 +155,19 @@ type PendingDecryption struct {
 	Type PrecompileName
 }
 
+type DecryptionRecord struct {
+	Value     interface{}
+	Timestamp time.Time
+}
+
 type DecryptionResults struct {
-	data map[PendingDecryption]interface{}
+	data map[PendingDecryption]DecryptionRecord
 	mu   sync.RWMutex
 }
 
 func NewDecryptionResultsMap() *DecryptionResults {
 	return &DecryptionResults{
-		data: make(map[PendingDecryption]interface{}),
+		data: make(map[PendingDecryption]DecryptionRecord),
 	}
 }
 
@@ -169,7 +175,7 @@ func (dr *DecryptionResults) CreateEmptyRecord(key PendingDecryption) {
 	dr.mu.Lock()
 	defer dr.mu.Unlock()
 	if _, exists := dr.data[key]; !exists {
-		dr.data[key] = nil
+		dr.data[key] = DecryptionRecord{Value: nil, Timestamp: time.Now()}
 	}
 }
 
@@ -194,41 +200,41 @@ func (dr *DecryptionResults) SetValue(key PendingDecryption, value interface{}) 
 		return fmt.Errorf("unknown PrecompileName")
 	}
 
-	dr.data[key] = value
+	dr.data[key] = DecryptionRecord{Value: value, Timestamp: time.Now()}
 	return nil
 }
 
-func (dr *DecryptionResults) Get(key PendingDecryption) (interface{}, bool, error) {
+func (dr *DecryptionResults) Get(key PendingDecryption) (interface{}, bool, time.Time, error) {
 	dr.mu.RLock()
 	defer dr.mu.RUnlock()
 
-	value, exists := dr.data[key]
+	record, exists := dr.data[key]
 	if !exists {
-		return nil, false, nil
+		return nil, false, time.Time{}, nil
 	}
 
-	if value == nil {
-		return nil, true, nil // Exists but no value
+	if record.Value == nil {
+		return nil, true, record.Timestamp, nil // Exists but no value
 	}
 
 	switch key.Type {
 	case SealOutput:
-		if bytes, ok := value.([]byte); ok {
-			return bytes, true, nil
+		if bytes, ok := record.Value.([]byte); ok {
+			return bytes, true, record.Timestamp, nil
 		}
-		return nil, true, fmt.Errorf("value is not []byte as expected for SealOutput")
+		return nil, true, record.Timestamp, fmt.Errorf("value is not []byte as expected for SealOutput")
 	case Require:
-		if boolValue, ok := value.(bool); ok {
-			return boolValue, true, nil
+		if boolValue, ok := record.Value.(bool); ok {
+			return boolValue, true, record.Timestamp, nil
 		}
-		return nil, true, fmt.Errorf("value is not bool as expected for Require")
+		return nil, true, record.Timestamp, fmt.Errorf("value is not bool as expected for Require")
 	case Decrypt:
-		if bigInt, ok := value.(*big.Int); ok {
-			return bigInt, true, nil
+		if bigInt, ok := record.Value.(*big.Int); ok {
+			return bigInt, true, record.Timestamp, nil
 		}
-		return nil, true, fmt.Errorf("value is not *big.Int as expected for Decrypt")
+		return nil, true, record.Timestamp, fmt.Errorf("value is not *big.Int as expected for Decrypt")
 	default:
-		return nil, true, fmt.Errorf("unknown PrecompileName")
+		return nil, true, record.Timestamp, fmt.Errorf("unknown PrecompileName")
 	}
 }
 
