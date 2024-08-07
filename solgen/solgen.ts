@@ -373,7 +373,7 @@ const generateRandomFunctionForType = (type: string) => {
       type
     )}(uint64 seed) internal pure returns (${type}) {
         uint256 result = random(Common.${type.toUpperCase()}_TFHE, seed);
-        return ${type}.getValue(result);
+        return ${type}.wrap(result);
     }
     `;
 };
@@ -421,7 +421,7 @@ const main = async () => {
   let importLineHelper: string = "import { ";
   for (let func of metadata) {
     // Decrypt is already tested in every test contract
-    if (func.functionName !== "decrypt") {
+    if (func.functionName !== "decrypt" && func.functionName !== "random") {
       // this generates test contract for every function
       const testContract = generateSolidityTestContract(func);
       const benchContract = generateSolidityBenchContract(func);
