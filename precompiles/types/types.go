@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 	"math/big"
+	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
@@ -155,6 +156,7 @@ type PendingDecryption struct {
 
 type DecryptionResults struct {
 	data map[PendingDecryption]interface{}
+	mu   sync.RWMutex
 }
 
 func NewDecryptionResultsMap() *DecryptionResults {
@@ -164,13 +166,16 @@ func NewDecryptionResultsMap() *DecryptionResults {
 }
 
 func (dr *DecryptionResults) CreateEmptyRecord(key PendingDecryption) {
-	dr.data[key] = nil
+	dr.mu.Lock()
+	defer dr.mu.Unlock()
+	if _, exists := dr.data[key]; !exists {
+		dr.data[key] = nil
+	}
 }
 
 func (dr *DecryptionResults) SetValue(key PendingDecryption, value interface{}) error {
-	if _, exists := dr.data[key]; !exists {
-		return fmt.Errorf("record does not exist, create an empty record first")
-	}
+	dr.mu.Lock()
+	defer dr.mu.Unlock()
 
 	switch key.Type {
 	case SealOutput:
@@ -193,33 +198,42 @@ func (dr *DecryptionResults) SetValue(key PendingDecryption, value interface{}) 
 	return nil
 }
 
-func (dr *DecryptionResults) Get(key PendingDecryption) (interface{}, error) {
+func (dr *DecryptionResults) Get(key PendingDecryption) (interface{}, bool, error) {
+	dr.mu.RLock()
+	defer dr.mu.RUnlock()
+
 	value, exists := dr.data[key]
 	if !exists {
-		return nil, fmt.Errorf("key not found")
+		return nil, false, nil
 	}
 
 	if value == nil {
-		return nil, nil // Exists but no value
+		return nil, true, nil // Exists but no value
 	}
 
 	switch key.Type {
 	case SealOutput:
 		if bytes, ok := value.([]byte); ok {
-			return bytes, nil
+			return bytes, true, nil
 		}
-		return nil, fmt.Errorf("value is not []byte as expected for SealOutput")
+		return nil, true, fmt.Errorf("value is not []byte as expected for SealOutput")
 	case Require:
 		if boolValue, ok := value.(bool); ok {
-			return boolValue, nil
+			return boolValue, true, nil
 		}
-		return nil, fmt.Errorf("value is not bool as expected for Require")
+		return nil, true, fmt.Errorf("value is not bool as expected for Require")
 	case Decrypt:
 		if bigInt, ok := value.(*big.Int); ok {
-			return bigInt, nil
+			return bigInt, true, nil
 		}
-		return nil, fmt.Errorf("value is not *big.Int as expected for Decrypt")
+		return nil, true, fmt.Errorf("value is not *big.Int as expected for Decrypt")
 	default:
-		return nil, fmt.Errorf("unknown PrecompileName")
+		return nil, true, fmt.Errorf("unknown PrecompileName")
 	}
+}
+
+func (dr *DecryptionResults) Remove(key PendingDecryption) {
+	dr.mu.Lock()
+	defer dr.mu.Unlock()
+	delete(dr.data, key)
 }
