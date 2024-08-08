@@ -1397,7 +1397,7 @@ func Not(utype byte, value []byte, tp *TxParams) ([]byte, uint64, error) {
 	return resultHash[:], gas, nil
 }
 
-func Random(utype byte, seed uint64, tp *TxParams) ([]byte, uint64, error) {
+func Random(utype byte, seed uint64, securityZone int32, tp *TxParams) ([]byte, uint64, error) {
 	functionName := types.Random
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
@@ -1418,7 +1418,7 @@ func Random(utype byte, seed uint64, tp *TxParams) ([]byte, uint64, error) {
 	}
 
 	// Currently security zone is not yet supported for random numbers, deaulted to 0
-	result, err := fhe.FheRandom(0, uintType, seed)
+	result, err := fhe.FheRandom(securityZone, uintType, seed)
 	if err != nil {
 		logger.Error("not failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted

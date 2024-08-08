@@ -351,13 +351,21 @@ const parseFunctionDefinition = (funcDef: string): ParsedFunction => {
 
 const generateRandomGenericFunction = () => {
   return `
+    /// @notice Generates a random value of a given type for the provided securityZone
+    /// @dev Calls the desired precompile and returns the hash of the ciphertext
+    /// @param uintType the type of the random value to generate
+    /// @param seed the seed to use for the random value
+    /// @param securityZone the security zone to use for the random value
+    function random(uint8 uintType, uint64 seed, int32 securityZone) internal pure returns (uint256) {
+        bytes memory b = FheOps(Precompiles.Fheos).random(uintType, seed, securityZone);
+        return Impl.getValue(b);
+    }
     /// @notice Generates a random value of a given type
     /// @dev Calls the desired precompile and returns the hash of the ciphertext
     /// @param uintType the type of the random value to generate
     /// @param seed the seed to use for the random value
     function random(uint8 uintType, uint64 seed) internal pure returns (uint256) {
-        bytes memory b = FheOps(Precompiles.Fheos).random(uintType, seed);
-        return Impl.getValue(b);
+        return random(uintType, seed, 0);
     }
     `;
 };
@@ -366,14 +374,23 @@ const generateRandomFunctionForType = (type: string) => {
   if (type === "ebool" || type === "eaddress") {
     return "";
   }
-  return `/// @notice Generates a random value of a ${type} type
+  return `/// @notice Generates a random value of a ${type} type for provided securityZone
+    /// @dev Calls the desired precompile and returns the hash of the ciphertext
+    /// @param seed the seed to use for the random value
+    /// @param securityZone the security zone to use for the random value
+    function random${capitalize(
+      type
+    )}(uint64 seed, int32 securityZone) internal pure returns (${type}) {
+        uint256 result = random(Common.${type.toUpperCase()}_TFHE, seed, securityZone);
+        return ${type}.wrap(result);
+    }
+    /// @notice Generates a random value of a ${type} type
     /// @dev Calls the desired precompile and returns the hash of the ciphertext
     /// @param seed the seed to use for the random value
     function random${capitalize(
       type
     )}(uint64 seed) internal pure returns (${type}) {
-        uint256 result = random(Common.${type.toUpperCase()}_TFHE, seed);
-        return ${type}.wrap(result);
+        return random${capitalize(type)}(seed, 0);
     }
     `;
 };
