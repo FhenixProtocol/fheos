@@ -1417,7 +1417,6 @@ func Random(utype byte, seed uint64, securityZone int32, tp *TxParams) ([]byte, 
 		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
-	// Currently security zone is not yet supported for random numbers, deaulted to 0
 	result, err := fhe.FheRandom(securityZone, uintType, seed)
 	if err != nil {
 		logger.Error("not failed", "err", err)
