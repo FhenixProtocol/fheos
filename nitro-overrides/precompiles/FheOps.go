@@ -605,6 +605,42 @@ func (con FheOps) Or(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 	return ret, err
 }
 
+func (con FheOps) Random(c ctx, evm mech, utype byte, seed uint64, securityZone int32) ([]byte, error) {
+	tp := fheos.TxParamsFromEVM(evm, c.caller)
+	if metrics.Enabled {
+		h := fmt.Sprintf("%s/%s/%s", "fheos", "Random", fheos.UtypeToString(utype))
+		defer func(start time.Time) {
+			sampler := func() metrics.Sample {
+				return metrics.NewBoundedHistogramSample()
+			}
+			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+		}(time.Now())
+	}
+
+	ret, gas, err := fheos.Random(utype, seed, securityZone, &tp)
+
+	if err != nil {
+		if metrics.Enabled {
+			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Random", fheos.UtypeToString(utype), "error/fhe_failure")
+			metrics.GetOrRegisterCounter(c, nil).Inc(1)
+		}
+		return ret, err
+	}
+
+	err = c.Burn(gas)
+
+	if metrics.Enabled {
+		metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Random", fheos.UtypeToString(utype), "success/total")
+		if err != nil {
+			metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "Random", fheos.UtypeToString(utype), "error/fhe_gas_failure")
+		}
+
+		metrics.GetOrRegisterCounter(metricPath, nil).Inc(1)
+	}
+
+	return ret, err
+}
+
 func (con FheOps) Rem(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte) ([]byte, error) {
 	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	if metrics.Enabled {

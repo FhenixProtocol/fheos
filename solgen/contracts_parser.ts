@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-import {SEAL_RETURN_TYPE, SEALING_FUNCTION_NAME} from "./common";
+import { SEAL_RETURN_TYPE, SEALING_FUNCTION_NAME } from "./common";
 
 type ParamTypes = "encrypted" | "uint8" | "plaintext" | "bytes32";
 
@@ -105,7 +105,7 @@ async function analyzeGoFile(
 
           // we generate these manually for now
           if (
-            ["trivialencrypt", "cast", "verify"].includes(
+            ["trivialencrypt", "cast", "verify", "random"].includes(
               funcName.toLowerCase()
             )
           ) {
