@@ -9,9 +9,12 @@ import {Utils} from "./utils/Utils.sol";
 error TestNotFound(string test);
 
 contract AddCaller {
-    uint32 private counterPublic = 0;
-    euint32 private counter = FHE.asEuint32(0);
+    uint64 private counterPublic = 0;
+    // Don't change the order of these variables!
+    // Apparently, a non-encrypted variable has to come right after the variable being
+    // tested for sstore, to catch the sstore bug, AND it has to be initialized to some address
     AddCallee public addContract;
+    euint32 private counter = FHE.asEuint32(0);
     error DelegateCallFailed();
 
     constructor(address addCallee) {
@@ -114,10 +117,9 @@ contract AddCaller {
         return counter.seal(publicKey);
     }
 
-    function sStoreSanity() public returns (uint32) {
+    function sStoreSanity() public {
         // catches a bug we had a in the past on the sstore hook
-        counterPublic += 1;
-        return counterPublic;
+        counterPublic = counterPublic + 1;
     }
 }
 
