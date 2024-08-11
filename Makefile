@@ -16,6 +16,7 @@ gen-fheops:
 
 .PHONY: compile
 compile:
+	cp solidity/.env.example solidity/.env
 	cd solidity && pnpm compile
 
 .PHONY: gencompile
@@ -33,7 +34,6 @@ check_network_is_running:
 
 .PHONY: test
 test: check_network_is_running gen compile
-	cp solidity/.env.example solidity/.env
 	cd solidity && pnpm install
 	cd solidity && pnpm test
 
