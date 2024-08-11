@@ -9,6 +9,7 @@ import {Utils} from "./utils/Utils.sol";
 error TestNotFound(string test);
 
 contract AddCaller {
+    uint32 private counterPublic = 0;
     euint32 private counter = FHE.asEuint32(0);
     AddCallee public addContract;
     error DelegateCallFailed();
@@ -111,6 +112,12 @@ contract AddCaller {
 
     function getCounter(bytes32 publicKey) public view returns (string memory) {
         return counter.seal(publicKey);
+    }
+
+    function sStoreSanity() public returns (uint32) {
+        // catches a bug we had a in the past on the sstore hook
+        counterPublic += 1;
+        return counterPublic;
     }
 }
 

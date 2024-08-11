@@ -290,6 +290,16 @@ describe("Test Transactions Scenarios", () => {
     expect(Number(counter)).toEqual(28);
   });
 
+  it.only("sStore sanity check", async () => {
+    try {
+      const tx = await contractCaller.sStoreSanity();
+      await tx.wait();
+    } catch (e) {
+      console.error("failed sstore sanity check");
+      fail("Should not have reverted");
+    }
+  });
+
   // function addDelegate(inEuint32 calldata value, bytes32 publicKey) public returns (bytes memory) {
 });
 
