@@ -1,6 +1,7 @@
 package precompiles
 
 import (
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
@@ -91,6 +92,22 @@ func UtypeToString(utype byte) string {
 // ============================================================
 
 func Log(s string, tp *TxParams) (uint64, error) {
+	// Ensure localVar is not nil
+	//if tp.PrevRandao != nil {
+	//	logger.Info(fmt.Sprintf("Block Prev Randao: %x", tp.PrevRandao))
+	//	// Convert the first 8 bytes of the Hash to uint64
+	//	value := binary.LittleEndian.Uint64(tp.PrevRandao[:8])
+	//	logger.Info(fmt.Sprintf("Block Prev Randao: %d", value))
+	//} else {
+	//	logger.Info("tp.PrevRandao is nil")
+	//}
+	logger.Debug(fmt.Sprintf("Just checking if debug loglevel is on"))
+
+	if tp.BlockNumber != nil {
+		logger.Info(fmt.Sprintf("Block Number: %d", tp.BlockNumber.Uint64()))
+	} else {
+		logger.Info("tp.Blocknumber is nil")
+	}
 	if tp.GasEstimation {
 		return 1, nil
 	}
@@ -1417,7 +1434,27 @@ func Random(utype byte, seed uint64, securityZone int32, tp *TxParams) ([]byte, 
 		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
-	result, err := fhe.FheRandom(securityZone, uintType, seed)
+	var newSeed uint64 = 0
+	//if tp.PrevRandao != nil {
+	//	// Convert the first 8 bytes of the Hash to uint64
+	//	newSeed = binary.LittleEndian.Uint64(tp.PrevRandao[:8])
+	//	logger.Info(fmt.Sprintf("using this randao as seed for random: %d", newSeed))
+	//} else {
+	//	logger.Info("tp.PrevRandao is nil")
+	//}
+
+	if tp.BlockNumber != nil {
+		blockNumber := tp.BlockNumber.Uint64()
+		logger.Info(fmt.Sprintf("using Block Number: %d as new input", blockNumber))
+		blockHash := tp.GetBlockHash(blockNumber)
+		logger.Info(fmt.Sprintf("using Block Hash: %x as new input", blockHash))
+		newSeed = binary.LittleEndian.Uint64(blockHash[:8])
+		logger.Info(fmt.Sprintf("block hash was converted to seed: %d", newSeed))
+	} else {
+		logger.Info("tp.Blocknumber is nil")
+	}
+
+	result, err := fhe.FheRandom(securityZone, uintType, newSeed)
 	if err != nil {
 		logger.Error("not failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted

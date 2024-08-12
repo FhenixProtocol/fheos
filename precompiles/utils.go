@@ -2,6 +2,7 @@ package precompiles
 
 import (
 	"errors"
+	"fmt"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
@@ -19,6 +20,10 @@ type TxParams struct {
 	EthCall         bool
 	CiphertextDb    *memorydb.Database
 	ContractAddress common.Address
+	GetBlockHash    vm.GetHashFunc
+	BlockNumber     *big.Int
+	BlockContext    vm.BlockContext
+	//PrevRandao      *common.Hash
 }
 
 type GasBurner interface {
@@ -34,6 +39,15 @@ func TxParamsFromEVM(evm *vm.EVM, callerContract common.Address) TxParams {
 
 	tp.CiphertextDb = evm.CiphertextDb
 	tp.ContractAddress = callerContract
+	//tp.PrevRandao = evm.Context.Random
+	tp.BlockContext = evm.Context
+	tp.BlockNumber = evm.Context.BlockNumber
+	tp.GetBlockHash = evm.Context.GetHash
+
+	// todo (eshel) remove:
+	logger.Info(fmt.Sprintf("debug: block number: %d", evm.Context.BlockNumber.Uint64()))
+	logger.Info(fmt.Sprintf("debug: getting prev block hash from evm struct: %x", evm.Context.GetHash(evm.Context.BlockNumber.Uint64()-1)))
+	logger.Info(fmt.Sprintf("debug: getting curr block hash from evm struct: %x", evm.Context.GetHash(evm.Context.BlockNumber.Uint64())))
 
 	return tp
 }

@@ -26,6 +26,9 @@ type Storage interface {
 	// Get(t types.DataType, key []byte) ([]byte, error)
 	GetVersion() (uint64, error)
 	PutVersion(v uint64) error
+	GetRandomCounter() (uint64, error)
+	IncRandomCounter() error
+	ResetRandomCounter() error
 	FheCipherTextStorage
 }
 

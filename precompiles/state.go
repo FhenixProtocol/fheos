@@ -3,6 +3,7 @@ package precompiles
 import (
 	"errors"
 	"fmt"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/metrics"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
@@ -12,8 +13,10 @@ import (
 )
 
 type FheosState struct {
-	FheosVersion uint64
-	Storage      storage2.FheosStorage
+	FheosVersion  uint64
+	Storage       storage2.FheosStorage
+	RandomCounter uint64
+	PrevBlockHash *common.Hash
 	//MaxUintValue *big.Int // This should contain the max value of the supported uint type
 }
 
@@ -68,10 +71,32 @@ func (fs *FheosState) SetCiphertext(ct *types.CipherTextRepresentation) error {
 	return result
 }
 
+func (fs *FheosState) GetRandomCounter(currHash *common.Hash) uint64 {
+	if fs.PrevBlockHash == nil || fs.PrevBlockHash != currHash {
+		return 0
+	} else if fs.PrevBlockHash == currHash {
+		return fs.RandomCounter
+	}
+
+	logger.Crit("unexpected error in GetRandomCounter")
+	return 0
+}
+
+func (fs *FheosState) IncRandomCounter(currHash *common.Hash) {
+	if fs.PrevBlockHash == nil || fs.PrevBlockHash != currHash {
+		fs.PrevBlockHash = currHash
+		fs.RandomCounter = 0
+	} else if fs.PrevBlockHash == currHash {
+		fs.RandomCounter += 1
+	}
+}
+
 func createFheosState(storage storage2.FheosStorage, version uint64) {
 	State = &FheosState{
 		version,
 		storage,
+		0,
+		nil,
 	}
 }
 
