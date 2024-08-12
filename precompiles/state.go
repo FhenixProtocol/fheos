@@ -3,17 +3,19 @@ package precompiles
 import (
 	"errors"
 	"fmt"
+	"os"
+	"time"
+
 	"github.com/ethereum/go-ethereum/metrics"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
-	"os"
-	"time"
 )
 
 type FheosState struct {
-	FheosVersion uint64
-	Storage      storage2.FheosStorage
+	FheosVersion   uint64
+	Storage        storage2.FheosStorage
+	DecryptResults *types.DecryptionResults
 	//MaxUintValue *big.Int // This should contain the max value of the supported uint type
 }
 
@@ -72,6 +74,7 @@ func createFheosState(storage storage2.FheosStorage, version uint64) {
 	State = &FheosState{
 		version,
 		storage,
+		types.NewDecryptionResultsMap(),
 	}
 }
 

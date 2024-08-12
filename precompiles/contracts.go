@@ -17,7 +17,6 @@ import (
 
 var logger log.Logger
 var warpDriveLogger log.Logger
-var decryptResults = types.NewDecryptionResultsMap()
 
 func init() {
 	InitLogger()
