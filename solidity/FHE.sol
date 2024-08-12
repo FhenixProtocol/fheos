@@ -3322,7 +3322,10 @@ library BindingsEbool {
         return FHE.sealoutput(value, publicKey);
     }
     function decrypt(ebool value) internal pure returns (bool) {
-        return FHE.decrypt(value);
+        return decrypt(value, 0);
+    }
+    function decrypt(ebool value, bool defaultValue) internal pure returns (bool) {
+        return FHE.decrypt(value, defaultValue);
     }
 }
 
@@ -3494,7 +3497,10 @@ library BindingsEuint8 {
         return FHE.sealoutput(value, publicKey);
     }
     function decrypt(euint8 value) internal pure returns (uint8) {
-        return FHE.decrypt(value);
+        return decrypt(value, 0);
+    }
+    function decrypt(euint8 value, uint8 defaultValue) internal pure returns (uint8) {
+        return FHE.decrypt(value, defaultValue);
     }
 }
 
@@ -3666,7 +3672,10 @@ library BindingsEuint16 {
         return FHE.sealoutput(value, publicKey);
     }
     function decrypt(euint16 value) internal pure returns (uint16) {
-        return FHE.decrypt(value);
+        return decrypt(value, 0);
+    }
+    function decrypt(euint16 value, uint16 defaultValue) internal pure returns (uint16) {
+        return FHE.decrypt(value, defaultValue);
     }
 }
 
@@ -3838,7 +3847,10 @@ library BindingsEuint32 {
         return FHE.sealoutput(value, publicKey);
     }
     function decrypt(euint32 value) internal pure returns (uint32) {
-        return FHE.decrypt(value);
+        return decrypt(value, 0);
+    }
+    function decrypt(euint32 value, uint32 defaultValue) internal pure returns (uint32) {
+        return FHE.decrypt(value, defaultValue);
     }
 }
 
@@ -3994,7 +4006,10 @@ library BindingsEuint64 {
         return FHE.sealoutput(value, publicKey);
     }
     function decrypt(euint64 value) internal pure returns (uint64) {
-        return FHE.decrypt(value);
+        return decrypt(value, 0);
+    }
+    function decrypt(euint64 value, uint64 defaultValue) internal pure returns (uint64) {
+        return FHE.decrypt(value, defaultValue);
     }
 }
 
@@ -4142,7 +4157,10 @@ library BindingsEuint128 {
         return FHE.sealoutput(value, publicKey);
     }
     function decrypt(euint128 value) internal pure returns (uint128) {
-        return FHE.decrypt(value);
+        return decrypt(value, 0);
+    }
+    function decrypt(euint128 value, uint128 defaultValue) internal pure returns (uint128) {
+        return FHE.decrypt(value, defaultValue);
     }
 }
 
@@ -4189,7 +4207,10 @@ library BindingsEuint256 {
         return FHE.sealoutput(value, publicKey);
     }
     function decrypt(euint256 value) internal pure returns (uint256) {
-        return FHE.decrypt(value);
+        return decrypt(value, 0);
+    }
+    function decrypt(euint256 value, uint256 defaultValue) internal pure returns (uint256) {
+        return FHE.decrypt(value, defaultValue);
     }
 }
 
@@ -4236,6 +4257,9 @@ library BindingsEaddress {
         return FHE.sealoutput(value, publicKey);
     }
     function decrypt(eaddress value) internal pure returns (address) {
-        return FHE.decrypt(value);
+        return decrypt(value, 0);
+    }
+    function decrypt(eaddress value, address defaultValue) internal pure returns (address) {
+        return FHE.decrypt(value, defaultValue);
     }
 }

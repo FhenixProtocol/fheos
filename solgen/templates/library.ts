@@ -225,12 +225,24 @@ const castFromEncrypted = (
   }, ${fromType}.unwrap(${name}), Common.${toType.toUpperCase()}_TFHE)`;
 };
 
-const castFromPlaintext = (name: string, toType: string, addSecurityZone: boolean = false): string => {
-  return `Impl.trivialEncrypt(${name}, Common.${toType.toUpperCase()}_TFHE, ${addSecurityZone ? "securityZone" : "0"})`;
+const castFromPlaintext = (
+  name: string,
+  toType: string,
+  addSecurityZone: boolean = false
+): string => {
+  return `Impl.trivialEncrypt(${name}, Common.${toType.toUpperCase()}_TFHE, ${
+    addSecurityZone ? "securityZone" : "0"
+  })`;
 };
 
-const castFromPlaintextAddress = (name: string, toType: string, addSecurityZone: boolean = false): string => {
-  return `Impl.trivialEncrypt(uint256(uint160(${name})), Common.${toType.toUpperCase()}_TFHE, ${addSecurityZone ? "securityZone" : "0"})`;
+const castFromPlaintextAddress = (
+  name: string,
+  toType: string,
+  addSecurityZone: boolean = false
+): string => {
+  return `Impl.trivialEncrypt(uint256(uint160(${name})), Common.${toType.toUpperCase()}_TFHE, ${
+    addSecurityZone ? "securityZone" : "0"
+  })`;
 };
 
 const castFromBytes = (name: string, toType: string): string => {
@@ -251,13 +263,20 @@ const castToEbool = (name: string, fromType: string): string => {
     }`;
 };
 
-export const AsTypeFunction = (fromType: string, toType: string, addSecurityZone: boolean = false) => {
-  if (toType === "eaddress" && !AllowedTypesOnCastToEaddress.includes(fromType) ) {
+export const AsTypeFunction = (
+  fromType: string,
+  toType: string,
+  addSecurityZone: boolean = false
+) => {
+  if (
+    toType === "eaddress" &&
+    !AllowedTypesOnCastToEaddress.includes(fromType)
+  ) {
     return ""; // skip unsupported cast
   }
 
   let castString = castFromEncrypted(fromType, toType, "value");
-  let overrideFuncs = '';
+  let overrideFuncs = "";
 
   let docString = `
     /// @notice Converts a ${fromType} to an ${toType}`;
@@ -329,9 +348,9 @@ export const AsTypeFunction = (fromType: string, toType: string, addSecurityZone
   }
 
   let func = `${docString}
-    function as${capitalize(
-      toType
-    )}(${fromType} value${addSecurityZone ? ", int32 securityZone" : ""}) internal pure returns (${toType}) {
+    function as${capitalize(toType)}(${fromType} value${
+    addSecurityZone ? ", int32 securityZone" : ""
+  }) internal pure returns (${toType}) {
         return ${toType}.wrap(${castString});
     }`;
 
@@ -659,7 +678,10 @@ export const OperatorBinding = (
 };
 
 export const CastBinding = (thisType: string, targetType: string) => {
-  if (targetType === "eaddress" && !AllowedTypesOnCastToEaddress.includes(thisType) ) {
+  if (
+    targetType === "eaddress" &&
+    !AllowedTypesOnCastToEaddress.includes(thisType)
+  ) {
     return ""; // skip unsupported cast
   }
 
@@ -683,6 +705,11 @@ export const DecryptBinding = (thisType: string) => {
     function ${LOCAL_DECRYPT_FUNCTION_NAME}(${thisType} value) internal pure returns (${toPlaintextType(
     thisType
   )}) {
-        return FHE.decrypt(value);
+        return ${LOCAL_DECRYPT_FUNCTION_NAME}(value, 0);
+    }
+    function ${LOCAL_DECRYPT_FUNCTION_NAME}(${thisType} value, ${toPlaintextType(
+    thisType
+  )} defaultValue) internal pure returns (${toPlaintextType(thisType)}) {
+        return FHE.decrypt(value, defaultValue);
     }`;
 };
