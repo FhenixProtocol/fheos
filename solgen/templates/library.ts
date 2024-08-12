@@ -700,16 +700,33 @@ export const SealFromType = (thisType: string) => {
     }`;
 };
 
+export const getHalfValueFrom = (thisType: string) => {
+  const match = thisType.match(/\d+/);
+  const bits = match ? parseInt(match[0], 10) : 0;
+  if (bits === 0) {
+    return "0";
+  }
+
+  return `(2 ** ${bits}) / 2`;
+};
+
 export const DecryptBinding = (thisType: string) => {
+  let plaintextType = toPlaintextType(thisType);
+  if (thisType === "eaddress") {
+    plaintextType = "uint128";
+  } else if (thisType === "ebool") {
+    plaintextType = "uint8";
+  }
+  let defaultValue = getHalfValueFrom(plaintextType);
   return `
     function ${LOCAL_DECRYPT_FUNCTION_NAME}(${thisType} value) internal pure returns (${toPlaintextType(
     thisType
   )}) {
-        return ${LOCAL_DECRYPT_FUNCTION_NAME}(value, 0);
+        return ${LOCAL_DECRYPT_FUNCTION_NAME}(value, ${defaultValue});
     }
-    function ${LOCAL_DECRYPT_FUNCTION_NAME}(${thisType} value, ${toPlaintextType(
+    function ${LOCAL_DECRYPT_FUNCTION_NAME}(${thisType} value, ${plaintextType} defaultValue) internal pure returns (${toPlaintextType(
     thisType
-  )} defaultValue) internal pure returns (${toPlaintextType(thisType)}) {
+  )}) {
         return FHE.decrypt(value, defaultValue);
     }`;
 };

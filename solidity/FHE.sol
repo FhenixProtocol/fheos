@@ -3322,9 +3322,11 @@ library BindingsEbool {
         return FHE.sealoutput(value, publicKey);
     }
     function decrypt(ebool value) internal pure returns (bool) {
-        return decrypt(value, 0);
+        return decrypt(value, 2 ** 8 / 2);
     }
-    function decrypt(ebool value, bool defaultValue) internal pure returns (bool) {
+    function decrypt(ebool value, uint8
+    thisType
+  )} defaultValue) internal pure returns (bool) {
         return FHE.decrypt(value, defaultValue);
     }
 }
@@ -3497,9 +3499,11 @@ library BindingsEuint8 {
         return FHE.sealoutput(value, publicKey);
     }
     function decrypt(euint8 value) internal pure returns (uint8) {
-        return decrypt(value, 0);
+        return decrypt(value, 2 ** 8 / 2);
     }
-    function decrypt(euint8 value, uint8 defaultValue) internal pure returns (uint8) {
+    function decrypt(euint8 value, uint8
+    thisType
+  )} defaultValue) internal pure returns (uint8) {
         return FHE.decrypt(value, defaultValue);
     }
 }
@@ -3672,9 +3676,11 @@ library BindingsEuint16 {
         return FHE.sealoutput(value, publicKey);
     }
     function decrypt(euint16 value) internal pure returns (uint16) {
-        return decrypt(value, 0);
+        return decrypt(value, 2 ** 16 / 2);
     }
-    function decrypt(euint16 value, uint16 defaultValue) internal pure returns (uint16) {
+    function decrypt(euint16 value, uint16
+    thisType
+  )} defaultValue) internal pure returns (uint16) {
         return FHE.decrypt(value, defaultValue);
     }
 }
@@ -3847,9 +3853,11 @@ library BindingsEuint32 {
         return FHE.sealoutput(value, publicKey);
     }
     function decrypt(euint32 value) internal pure returns (uint32) {
-        return decrypt(value, 0);
+        return decrypt(value, 2 ** 32 / 2);
     }
-    function decrypt(euint32 value, uint32 defaultValue) internal pure returns (uint32) {
+    function decrypt(euint32 value, uint32
+    thisType
+  )} defaultValue) internal pure returns (uint32) {
         return FHE.decrypt(value, defaultValue);
     }
 }
@@ -4006,9 +4014,11 @@ library BindingsEuint64 {
         return FHE.sealoutput(value, publicKey);
     }
     function decrypt(euint64 value) internal pure returns (uint64) {
-        return decrypt(value, 0);
+        return decrypt(value, 2 ** 64 / 2);
     }
-    function decrypt(euint64 value, uint64 defaultValue) internal pure returns (uint64) {
+    function decrypt(euint64 value, uint64
+    thisType
+  )} defaultValue) internal pure returns (uint64) {
         return FHE.decrypt(value, defaultValue);
     }
 }
@@ -4157,9 +4167,11 @@ library BindingsEuint128 {
         return FHE.sealoutput(value, publicKey);
     }
     function decrypt(euint128 value) internal pure returns (uint128) {
-        return decrypt(value, 0);
+        return decrypt(value, 2 ** 128 / 2);
     }
-    function decrypt(euint128 value, uint128 defaultValue) internal pure returns (uint128) {
+    function decrypt(euint128 value, uint128
+    thisType
+  )} defaultValue) internal pure returns (uint128) {
         return FHE.decrypt(value, defaultValue);
     }
 }
@@ -4207,9 +4219,11 @@ library BindingsEuint256 {
         return FHE.sealoutput(value, publicKey);
     }
     function decrypt(euint256 value) internal pure returns (uint256) {
-        return decrypt(value, 0);
+        return decrypt(value, 2 ** 256 / 2);
     }
-    function decrypt(euint256 value, uint256 defaultValue) internal pure returns (uint256) {
+    function decrypt(euint256 value, uint256
+    thisType
+  )} defaultValue) internal pure returns (uint256) {
         return FHE.decrypt(value, defaultValue);
     }
 }
@@ -4257,9 +4271,11 @@ library BindingsEaddress {
         return FHE.sealoutput(value, publicKey);
     }
     function decrypt(eaddress value) internal pure returns (address) {
-        return decrypt(value, 0);
+        return decrypt(value, 2 ** 128 / 2);
     }
-    function decrypt(eaddress value, address defaultValue) internal pure returns (address) {
+    function decrypt(eaddress value, uint128
+    thisType
+  )} defaultValue) internal pure returns (address) {
         return FHE.decrypt(value, defaultValue);
     }
 }

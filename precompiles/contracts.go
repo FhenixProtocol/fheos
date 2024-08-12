@@ -259,12 +259,7 @@ func Decrypt(utype byte, input []byte, defaultValue *big.Int, tp *TxParams) (*bi
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
-		zero := big.NewInt(0)
-		defaultResponse := defaultValue
-		if defaultValue.Cmp(zero) == 0 {
-			defaultResponse = FakeDecryptionResult(uintType)
-		}
-		return defaultResponse, gas, nil
+		return defaultValue, gas, nil
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
