@@ -490,6 +490,90 @@ ${abi}
 `;
 }
 
+export function SolTemplateDecrypt(input1: AllTypes, returnType: AllTypes) {
+  let docString = `
+    /// @notice Performs the decrypt operation on a ciphertext
+    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @param input1 the input ciphertext
+    function decrypt(${input1} input1) internal pure returns (${returnType}) {
+        return FHE.decrypt(input1, ${getHalfValueFrom(returnType)});
+    }`;
+
+  docString += `
+    /// @notice Performs the decrypt operation on a ciphertext with default value for gas estimation
+    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @param input1 the input ciphertext
+    /// @param defaultValue default value to be returned on gas estimation
+    function decrypt(${input1} input1, ${returnType} defaultValue) internal pure returns (${returnType}) {`;
+
+  let funcBody = docString;
+
+  if (valueIsEncrypted(input1)) {
+    // Get the proper function
+    funcBody += `
+        if (!isInitialized(input1)) {
+            input1 = ${asEuintFuncName(input1)}(0);
+        }`;
+    let unwrap = `${UnderlyingTypes[input1]} unwrappedInput1 = ${unwrapType(
+      input1,
+      "input1"
+    )};`;
+    funcBody += `
+        uint256 gasDefaultValue;
+    `;
+    if (returnType === "bool") {
+      funcBody += `
+        if (defaultValue) {
+           gasDefaultValue = 1;
+        } else {
+           gasDefaultValue = 0;
+        }
+        `;
+    } else if (returnType === "address") {
+      funcBody += `
+        gasDefaultValue = uint256(uint160(defaultValue));
+      `;
+    } else {
+      funcBody += `
+        gasDefaultValue = uint256(defaultValue);
+      `;
+    }
+    let getResult = (inputName: string) =>
+      `FheOps(Precompiles.Fheos).decrypt(${UintTypes[input1]}, ${inputName}, gasDefaultValue);`;
+
+    if (valueIsEncrypted(returnType)) {
+      // input and return type are encrypted - not/neg other unary functions
+      funcBody += `
+        ${unwrap}
+        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
+        bytes memory b = ${getResult("inputAsBytes")}
+        uint256 result = Impl.getValue(b);
+        return ${wrapType(returnType, "result")};
+    }`;
+    } else if (returnType === "none") {
+      // this is essentially req
+      funcBody += `
+        ${unwrap}
+        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
+        ${getResult("inputAsBytes")}
+    }`;
+    } else if (valueIsPlaintext(returnType)) {
+      let returnTypeCamelCase =
+        returnType.charAt(0).toUpperCase() + returnType.slice(1);
+      let outputConvertor = `Common.bigIntTo${returnTypeCamelCase}(result);`;
+      funcBody += `
+        ${unwrap}
+        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
+        uint256 result = ${getResult("inputAsBytes")}
+        return ${outputConvertor}
+    }`;
+    }
+  } else {
+    throw new Error("unsupported function of 1 input that is not encrypted");
+  }
+  return funcBody;
+}
+
 export function SolTemplate1Arg(
   name: string,
   input1: AllTypes,
@@ -701,6 +785,12 @@ export const SealFromType = (thisType: string) => {
 };
 
 export const getHalfValueFrom = (thisType: string) => {
+  if (thisType === "bool") {
+    return "false";
+  }
+  if (thisType === "address") {
+    return "address(0)";
+  }
   const match = thisType.match(/\d+/);
   const bits = match ? parseInt(match[0], 10) : 0;
   if (bits === 0) {
@@ -712,17 +802,11 @@ export const getHalfValueFrom = (thisType: string) => {
 
 export const DecryptBinding = (thisType: string) => {
   let plaintextType = toPlaintextType(thisType);
-  if (thisType === "eaddress") {
-    plaintextType = "uint128";
-  } else if (thisType === "ebool") {
-    plaintextType = "uint8";
-  }
-  let defaultValue = getHalfValueFrom(plaintextType);
   return `
     function ${LOCAL_DECRYPT_FUNCTION_NAME}(${thisType} value) internal pure returns (${toPlaintextType(
     thisType
   )}) {
-        return ${LOCAL_DECRYPT_FUNCTION_NAME}(value, ${defaultValue});
+        return FHE.decrypt(value);
     }
     function ${LOCAL_DECRYPT_FUNCTION_NAME}(${thisType} value, ${plaintextType} defaultValue) internal pure returns (${toPlaintextType(
     thisType

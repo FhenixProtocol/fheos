@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import {FHE} from "../../FHE.sol";
+import {FHE, euint8, euint16, euint32, euint64, euint128, euint256, ebool} from "../../FHE.sol";
 import {inEuint128} from "../../FHE.sol";
 import {Utils} from "./utils/Utils.sol";
 
