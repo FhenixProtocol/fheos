@@ -1,9 +1,9 @@
 package precompiles
 
 import (
-	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
@@ -92,27 +92,17 @@ func UtypeToString(utype byte) string {
 // ============================================================
 
 func Log(s string, tp *TxParams) (uint64, error) {
-	// Ensure localVar is not nil
-	//if tp.PrevRandao != nil {
-	//	logger.Info(fmt.Sprintf("Block Prev Randao: %x", tp.PrevRandao))
-	//	// Convert the first 8 bytes of the Hash to uint64
-	//	value := binary.LittleEndian.Uint64(tp.PrevRandao[:8])
-	//	logger.Info(fmt.Sprintf("Block Prev Randao: %d", value))
+	//if tp.BlockNumber != nil {
+	//	logger.Info(fmt.Sprintf("Block Number: %d", tp.BlockNumber.Uint64()))
 	//} else {
-	//	logger.Info("tp.PrevRandao is nil")
+	//	logger.Info("tp.Blocknumber is nil")
 	//}
-	logger.Debug(fmt.Sprintf("Just checking if debug loglevel is on"))
-
-	if tp.BlockNumber != nil {
-		logger.Info(fmt.Sprintf("Block Number: %d", tp.BlockNumber.Uint64()))
-	} else {
-		logger.Info("tp.Blocknumber is nil")
-	}
 	if tp.GasEstimation {
 		return 1, nil
 	}
 
 	logger.Debug(fmt.Sprintf("Contract Log: %s", s))
+	logger.Info(fmt.Sprintf("Contract Log: %s", s))
 	return 1, nil
 }
 
@@ -1434,29 +1424,42 @@ func Random(utype byte, seed uint64, securityZone int32, tp *TxParams) ([]byte, 
 		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
-	var newSeed uint64 = 0
-	//if tp.PrevRandao != nil {
-	//	// Convert the first 8 bytes of the Hash to uint64
-	//	newSeed = binary.LittleEndian.Uint64(tp.PrevRandao[:8])
-	//	logger.Info(fmt.Sprintf("using this randao as seed for random: %d", newSeed))
-	//} else {
-	//	logger.Info("tp.PrevRandao is nil")
-	//}
+	// todo remove 'seed' from params
+	newSeed := uint64(0)
+	// the current block hash is not yet calculated, se we use the previous block hash
+	var prevBlockHash = common.Hash{}
 
 	if tp.BlockNumber != nil {
-		blockNumber := tp.BlockNumber.Uint64()
-		logger.Info(fmt.Sprintf("using Block Number: %d as new input", blockNumber))
-		blockHash := tp.GetBlockHash(blockNumber)
-		logger.Info(fmt.Sprintf("using Block Hash: %x as new input", blockHash))
-		newSeed = binary.LittleEndian.Uint64(blockHash[:8])
-		logger.Info(fmt.Sprintf("block hash was converted to seed: %d", newSeed))
+		prevBlockNumber := tp.BlockNumber.Uint64() - 1
+		prevBlockHash = tp.GetBlockHash(prevBlockNumber)
 	} else {
-		logger.Info("tp.Blocknumber is nil")
+		logger.Warn("missing BlockNumber inside precompile")
+	}
+
+	randomCounter := uint64(0)
+	if tp.Commit {
+		// We're incrementing nonce regardless of whether the transaction is successful or not,
+		// so that even after a revert, the random is different.
+		// Secondly, we're incrementing before the request for the random number, so that queries
+		// that came before this Tx would have received a different seed.
+		randomCounter = State.IncRandomCounter(prevBlockHash)
+	} else {
+		State.GetRandomCounter(prevBlockHash)
+	}
+
+	newSeed = GenerateSeedFromEntropy(tp.ContractAddress, prevBlockHash, randomCounter)
+
+	if tp.BlockNumber != nil {
+		prevBlockNumber := tp.BlockNumber.Uint64() - 1
+		prevBlockHash = tp.GetBlockHash(prevBlockNumber)
+		newSeed = GenerateSeedFromEntropy(tp.ContractAddress, prevBlockHash, randomCounter)
+	} else {
+		logger.Warn("missing BlockNumber inside precompile")
 	}
 
 	result, err := fhe.FheRandom(securityZone, uintType, newSeed)
 	if err != nil {
-		logger.Error("not failed", "err", err)
+		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 

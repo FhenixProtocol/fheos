@@ -1,6 +1,7 @@
 package precompiles
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -10,6 +11,8 @@ import (
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	"github.com/fhenixprotocol/fheos/storage"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
+	"golang.org/x/crypto/sha3"
+	"hash"
 	"math"
 	"math/big"
 )
@@ -39,15 +42,9 @@ func TxParamsFromEVM(evm *vm.EVM, callerContract common.Address) TxParams {
 
 	tp.CiphertextDb = evm.CiphertextDb
 	tp.ContractAddress = callerContract
-	//tp.PrevRandao = evm.Context.Random
 	tp.BlockContext = evm.Context
 	tp.BlockNumber = evm.Context.BlockNumber
 	tp.GetBlockHash = evm.Context.GetHash
-
-	// todo (eshel) remove:
-	logger.Info(fmt.Sprintf("debug: block number: %d", evm.Context.BlockNumber.Uint64()))
-	logger.Info(fmt.Sprintf("debug: getting prev block hash from evm struct: %x", evm.Context.GetHash(evm.Context.BlockNumber.Uint64()-1)))
-	logger.Info(fmt.Sprintf("debug: getting curr block hash from evm struct: %x", evm.Context.GetHash(evm.Context.BlockNumber.Uint64())))
 
 	return tp
 }
@@ -151,4 +148,34 @@ func FakeDecryptionResult(encType fhe.EncryptionType) *big.Int {
 	default:
 		return big.NewInt(0)
 	}
+}
+
+func GenerateSeedFromEntropy(contractAddress common.Address, prevBlockHash common.Hash, randomCounter uint64) uint64 {
+	data := make([]byte, 0, len(contractAddress)+len(prevBlockHash)+8) // 8 bytes for uint64
+
+	data = append(data, contractAddress[:]...)
+	data = append(data, prevBlockHash[:]...)
+
+	uint64Bytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(uint64Bytes, randomCounter)
+	data = append(data, uint64Bytes...)
+
+	hashResult := Keccak256(data)
+
+	result := binary.LittleEndian.Uint64(hashResult)
+	logger.Info(fmt.Sprintf("generated seed: %d", result))
+	return result
+}
+
+func Keccak256(data ...[]byte) []byte {
+	d := NewKeccakState()
+	for _, datum := range data {
+		d.Write(datum)
+	}
+	return d.Sum(nil)
+}
+
+// NewKeccakState creates a new KeccakState
+func NewKeccakState() hash.Hash {
+	return sha3.NewLegacyKeccak256()
 }
