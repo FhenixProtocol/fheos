@@ -234,6 +234,11 @@ const generateSolidityTestContract = (metadata: FunctionMetadata): string[] => {
 const generateSolidityBenchContract = (metadata: FunctionMetadata): string => {
   const { functionName, inputCount, inputs } = metadata;
 
+  if (functionName === "random") {
+    // todo: bench random function
+    return "";
+  }
+
   if (functionName === SEALING_FUNCTION_NAME) {
     return benchContractReencrypt();
   }
