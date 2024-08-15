@@ -1404,7 +1404,7 @@ func Not(utype byte, value []byte, tp *TxParams) ([]byte, uint64, error) {
 	return resultHash[:], gas, nil
 }
 
-func Random(utype byte, seed uint64, securityZone int32, tp *TxParams) ([]byte, uint64, error) {
+func Random(utype byte, securityZone int32, tp *TxParams) ([]byte, uint64, error) {
 	functionName := types.Random
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
@@ -1424,9 +1424,8 @@ func Random(utype byte, seed uint64, securityZone int32, tp *TxParams) ([]byte, 
 		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
-	// todo remove 'seed' from params
-	newSeed := uint64(0)
-	// the current block hash is not yet calculated, se we use the previous block hash
+	// Seed generation
+	// The current block hash is not yet calculated, se we use the previous block hash
 	var prevBlockHash = common.Hash{}
 
 	if tp.BlockNumber != nil {
@@ -1447,17 +1446,17 @@ func Random(utype byte, seed uint64, securityZone int32, tp *TxParams) ([]byte, 
 		State.GetRandomCounter(prevBlockHash)
 	}
 
-	newSeed = GenerateSeedFromEntropy(tp.ContractAddress, prevBlockHash, randomCounter)
+	seed = GenerateSeedFromEntropy(tp.ContractAddress, prevBlockHash, randomCounter)
 
 	if tp.BlockNumber != nil {
 		prevBlockNumber := tp.BlockNumber.Uint64() - 1
 		prevBlockHash = tp.GetBlockHash(prevBlockNumber)
-		newSeed = GenerateSeedFromEntropy(tp.ContractAddress, prevBlockHash, randomCounter)
+		seed = GenerateSeedFromEntropy(tp.ContractAddress, prevBlockHash, randomCounter)
 	} else {
 		logger.Warn("missing BlockNumber inside precompile")
 	}
 
-	result, err := fhe.FheRandom(securityZone, uintType, newSeed)
+	result, err := fhe.FheRandom(securityZone, uintType, seed)
 	if err != nil {
 		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
