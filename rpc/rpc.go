@@ -6,11 +6,11 @@ import (
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 )
 
-type ChainPublicKeyAPI struct {
+type FhenixAPI struct {
 }
 
 // Get the public key of the chain
-func (s *ChainPublicKeyAPI) GetNetworkPublicKey() (string, error) {
+func (s *FhenixAPI) GetNetworkPublicKey() (string, error) {
 	expectedPk, err := fhe.PublicKey(0)
 	if err != nil {
 		return "", err
@@ -18,14 +18,11 @@ func (s *ChainPublicKeyAPI) GetNetworkPublicKey() (string, error) {
 	return "0x" + hex.EncodeToString(expectedPk), nil
 }
 
-func GetRpcApis() []rpc.API {
-	var apis []rpc.API
-	apis = append(apis, rpc.API{
-		Namespace: "chainpublickey",
+func GetRpcApis() rpc.API {
+	return rpc.API{
+		Namespace: "fhenix",
 		Version:   "1.0",
-		Service:   &ChainPublicKeyAPI{},
+		Service:   &FhenixAPI{},
 		Public:    true,
-	})
-
-	return apis
+	}
 }
