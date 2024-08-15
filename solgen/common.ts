@@ -21,7 +21,7 @@ const patternAllowedOperationsEuint32 = [".*"];
 const patternAllowedOperationsEuint64 = ["^(?!div)", "^(?!rem)"];
 const patternAllowedOperationsEuint128 = ["^(?!div)", "^(?!rem)", "^(?!mul)"];
 
-const patternAllowedOperationsEuint256 =   ["ne|eq|sealoutput|select|seal|decrypt"];
+const patternAllowedOperationsEuint256 =   ["ne|eq|sealoutput|select|seal|decrypt|random"];
 const patternAllowedOperationsEaddress =   ["ne|^eq$|sealoutput|select|seal|decrypt"];
 /*------------------------------------------------------------*/
 

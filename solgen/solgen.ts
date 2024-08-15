@@ -20,8 +20,9 @@ import {
 } from "./templates/library";
 
 import {
-  testContract2Arg,
+  testContract0Args,
   testContract1Arg,
+  testContract2Arg,
   testContract3Arg,
   testContract2ArgBoolRes,
   testContractReencrypt,
@@ -191,6 +192,18 @@ const generateSolidityTestContract = (metadata: FunctionMetadata): string[] => {
     return testContractReencrypt();
   }
 
+  if (inputCount === 0) {
+    return testContract0Args(functionName);
+  }
+
+  if (
+    inputCount === 1 &&
+    inputs[0] === "encrypted" &&
+    returnValueType === "encrypted"
+  ) {
+    return testContract1Arg(functionName);
+  }
+
   if (
     inputCount === 2 &&
     inputs[0] === "encrypted" &&
@@ -204,14 +217,6 @@ const generateSolidityTestContract = (metadata: FunctionMetadata): string[] => {
       isBooleanMathOp,
       getOperator(functionName)
     );
-  }
-
-  if (
-    inputCount === 1 &&
-    inputs[0] === "encrypted" &&
-    returnValueType === "encrypted"
-  ) {
-    return testContract1Arg(functionName);
   }
 
   if (inputCount === 3) {
@@ -385,7 +390,7 @@ const main = async () => {
   let importLineHelper: string = "import { ";
   for (let func of metadata) {
     // Decrypt is already tested in every test contract
-    if (func.functionName !== "decrypt" && func.functionName !== "random") {
+    if (func.functionName !== "decrypt") {
       // this generates test contract for every function
       const testContract = generateSolidityTestContract(func);
       const benchContract = generateSolidityBenchContract(func);
