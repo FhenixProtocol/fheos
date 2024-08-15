@@ -263,6 +263,10 @@ export function testContract2ArgBoolRes(name: string, isBoolean: boolean) {
 }
 
 export function testContract0Args(name: string) {
+  const isEBoolAllowed = IsOperationAllowed(
+    name,
+    EInputType.indexOf("ebool")
+  );
   const isEuint64Allowed = IsOperationAllowed(
     name,
     EInputType.indexOf("euint64")
@@ -298,7 +302,8 @@ export function testContract0Args(name: string) {
             return FHE.decrypt(FHE.${name + "Euint256"}());
         }`;
   }
-  func += ` else if (Utils.cmp(test, "${name}_ebool()")) {
+  if (isEBoolAllowed) {
+    func += ` else if (Utils.cmp(test, "${name}_ebool()")) {
             if (FHE.decrypt(FHE.${name + "EuintBool"}())) {
                 return 1;
             }
@@ -306,8 +311,10 @@ export function testContract0Args(name: string) {
             return 0;
         }
         
-        revert TestNotFound(test);
-    }`;
+        revert TestNotFound(test);`;
+  }
+  func += `}`;
+
   const abi = `export interface ${capitalize(
     name
   )}TestType extends BaseContract {
@@ -512,7 +519,6 @@ export const IsOperationAllowed = (
       return false;
     }
   }
-
   return true;
 };
 
