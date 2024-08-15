@@ -15,8 +15,8 @@ import {
   SealFromType,
   DecryptBinding,
   IsOperationAllowed,
-  generateRandomGenericFunction,
-  generateRandomFunctions,
+  RandomGenericFunction,
+  RandomFunctions,
 } from "./templates/library";
 
 import {
@@ -409,8 +409,8 @@ const main = async () => {
     );
     outputFile += funcDefinition;
   }
-  outputFile += generateRandomGenericFunction();
-  outputFile += generateRandomFunctions();
+  outputFile += RandomGenericFunction();
+  outputFile += RandomFunctions();
   outputFile += `\n\n    // ********** TYPE CASTING ************* //`;
 
   // generate casting functions

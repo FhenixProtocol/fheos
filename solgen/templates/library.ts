@@ -688,7 +688,7 @@ export const DecryptBinding = (thisType: string) => {
 };
 
 
-export const generateRandomGenericFunction = () => {
+export const RandomGenericFunction = () => {
   return `
     /// @notice Generates a random value of a given type for the provided securityZone
     /// @dev Calls the desired precompile and returns the hash of the ciphertext
@@ -707,7 +707,7 @@ export const generateRandomGenericFunction = () => {
     `;
 };
 
-const generateRandomFunctionForType = (type: string) => {
+const RandomFunctionForType = (type: string) => {
   if (type === "ebool" || type === "eaddress") {
     return "";
   }
@@ -730,10 +730,10 @@ const generateRandomFunctionForType = (type: string) => {
     `;
 };
 
-export const generateRandomFunctions = () => {
+export const RandomFunctions = () => {
   let outputFile = "";
   for (let type of EInputType) {
-    outputFile += generateRandomFunctionForType(type);
+    outputFile += RandomFunctionForType(type);
   }
 
   return outputFile;
