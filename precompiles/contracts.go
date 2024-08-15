@@ -1446,15 +1446,7 @@ func Random(utype byte, securityZone int32, tp *TxParams) ([]byte, uint64, error
 		State.GetRandomCounter(prevBlockHash)
 	}
 
-	seed = GenerateSeedFromEntropy(tp.ContractAddress, prevBlockHash, randomCounter)
-
-	if tp.BlockNumber != nil {
-		prevBlockNumber := tp.BlockNumber.Uint64() - 1
-		prevBlockHash = tp.GetBlockHash(prevBlockNumber)
-		seed = GenerateSeedFromEntropy(tp.ContractAddress, prevBlockHash, randomCounter)
-	} else {
-		logger.Warn("missing BlockNumber inside precompile")
-	}
+	seed := GenerateSeedFromEntropy(tp.ContractAddress, prevBlockHash, randomCounter)
 
 	result, err := fhe.FheRandom(securityZone, uintType, seed)
 	if err != nil {
