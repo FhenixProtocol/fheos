@@ -163,7 +163,7 @@ func GenerateSeedFromEntropy(contractAddress common.Address, prevBlockHash commo
 	hashResult := Keccak256(data)
 
 	result := binary.LittleEndian.Uint64(hashResult)
-	logger.Info(fmt.Sprintf("generated seed: %d", result))
+	logger.Debug(fmt.Sprintf("generated seed for random: %d", result))
 	return result
 }
 
