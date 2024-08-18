@@ -10,17 +10,17 @@ contract RandomTest {
     using Utils for *;
     
     function random(string calldata test) public pure returns (uint256) {
-        if (Utils.cmp(test, "random_euint8()")) {
+        if (Utils.cmp(test, "randomEuint8()")) {
             return FHE.decrypt(FHE.randomEuint8());
-        } else if (Utils.cmp(test, "random_euint16()")) {
+        } else if (Utils.cmp(test, "randomEuint16()")) {
             return FHE.decrypt(FHE.randomEuint16());
-        } else if (Utils.cmp(test, "random_euint32()")) {
+        } else if (Utils.cmp(test, "randomEuint32()")) {
             return FHE.decrypt(FHE.randomEuint32());
-        } else if (Utils.cmp(test, "random_euint64()")) {
+        } else if (Utils.cmp(test, "randomEuint64()")) {
             return FHE.decrypt(FHE.randomEuint64());
-        } else if (Utils.cmp(test, "random_euint128()")) {
+        } else if (Utils.cmp(test, "randomEuint128()")) {
             return FHE.decrypt(FHE.randomEuint128());
-        } else if (Utils.cmp(test, "random_euint256()")) {
+        } else if (Utils.cmp(test, "randomEuint256()")) {
             return FHE.decrypt(FHE.randomEuint256());
         }
         revert TestNotFound(test);

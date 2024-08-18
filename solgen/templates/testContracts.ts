@@ -280,30 +280,30 @@ export function testContract0Args(name: string) {
     EInputType.indexOf("euint256")
   );
   let func = `function ${name}(string calldata test) public pure returns (uint256) {
-        if (Utils.cmp(test, "${name}_euint8()")) {
+        if (Utils.cmp(test, "${name}Euint8()")) {
             return FHE.decrypt(FHE.${name + "Euint8"}());
-        } else if (Utils.cmp(test, "${name}_euint16()")) {
+        } else if (Utils.cmp(test, "${name}Euint16()")) {
             return FHE.decrypt(FHE.${name + "Euint16"}());
-        } else if (Utils.cmp(test, "${name}_euint32()")) {
+        } else if (Utils.cmp(test, "${name}Euint32()")) {
             return FHE.decrypt(FHE.${name + "Euint32"}());
         }`;
   if (isEuint64Allowed) {
-    func += ` else if (Utils.cmp(test, "${name}_euint64()")) {
+    func += ` else if (Utils.cmp(test, "${name}Euint64()")) {
             return FHE.decrypt(FHE.${name + "Euint64"}());
         }`;
   }
   if (isEuint128Allowed) {
-    func += ` else if (Utils.cmp(test, "${name}_euint128()")) {
+    func += ` else if (Utils.cmp(test, "${name}Euint128()")) {
             return FHE.decrypt(FHE.${name + "Euint128"}());
         }`;
   }
   if (isEuint256Allowed) {
-    func += ` else if (Utils.cmp(test, "${name}_euint256()")) {
+    func += ` else if (Utils.cmp(test, "${name}Euint256()")) {
             return FHE.decrypt(FHE.${name + "Euint256"}());
         }`;
   }
   if (isEBoolAllowed) {
-    func += ` else if (Utils.cmp(test, "${name}_ebool()")) {
+    func += ` else if (Utils.cmp(test, "${name}Ebool()")) {
             if (FHE.decrypt(FHE.${name + "EuintBool"}())) {
                 return 1;
             }
