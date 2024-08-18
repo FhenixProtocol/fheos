@@ -42,6 +42,11 @@ test-precomp: check_network_is_running
 	cp solidity/.env.example solidity/.env
 	cd solidity && pnpm test -- precompiles.test.ts
 
+.PHONY: test-tx
+test-tx: check_network_is_running
+	cp solidity/.env.example solidity/.env
+	cd solidity && pnpm test -- transaction.test.ts
+
 .PHONY: build
 build:
 	go build -o build/main ./cmd/

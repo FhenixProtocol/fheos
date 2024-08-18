@@ -16,6 +16,7 @@ contract AddCaller {
     AddCallee public addContract;
     euint32 private counter = FHE.asEuint32(0);
     error DelegateCallFailed();
+    event RandomSanityEvent(uint32 a, uint32 b);
 
     constructor(address addCallee) {
         addContract = AddCallee(addCallee);
@@ -120,6 +121,13 @@ contract AddCaller {
     function sStoreSanity() public {
         // catches a bug we had a in the past on the sstore hook
         counterPublic = counterPublic + 1;
+    }
+
+    function RandomSanity() public {
+        counterPublic = counterPublic + 1;
+        uint32 a = FHE.decrypt(FHE.randomEuint32());
+        uint32 b = FHE.decrypt(FHE.randomEuint32());
+        emit RandomSanityEvent(a, b);
     }
 }
 

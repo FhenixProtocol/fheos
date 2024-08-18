@@ -290,7 +290,7 @@ describe("Test Transactions Scenarios", () => {
     expect(Number(counter)).toEqual(28);
   });
 
-  it.only("sStore sanity check", async () => {
+  it("sStore sanity check", async () => {
     try {
       const tx = await contractCaller.sStoreSanity();
       await tx.wait();
@@ -298,6 +298,25 @@ describe("Test Transactions Scenarios", () => {
       console.error("failed sstore sanity check");
       fail("Should not have reverted");
     }
+  });
+
+  it.skip("Random sanity check", async () => {
+    let result;
+    try {
+      const tx = await contractCaller.RandomSanity();
+      await tx.wait();
+      const filter = contractCaller.filters.RandomSanityEvent
+      const events = await contractCaller.queryFilter(filter, -1)
+      console.log("events[0]:", events[0]);
+      console.log("events[0].args:", events[0].args);
+      // console.log("result.events args:", result.events[0].args);
+      result = events[0].args;
+    } catch (e) {
+      console.error("failed sstore sanity check");
+      fail("Should not have reverted");
+    }
+
+    expect(result[0] === result[1]).toBeFalsy();
   });
 
   // function addDelegate(inEuint32 calldata value, bytes32 publicKey) public returns (bytes memory) {
