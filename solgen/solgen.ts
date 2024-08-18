@@ -393,17 +393,22 @@ const main = async () => {
   const benchContracts: Record<string, string> = {};
   let testContractsAbis = "";
   let importLineHelper: string = "import { ";
+
   for (let func of metadata) {
     // Decrypt is already tested in every test contract
     if (func.functionName !== "decrypt") {
       // this generates test contract for every function
       const testContract = generateSolidityTestContract(func);
       const benchContract = generateSolidityBenchContract(func);
+
       if (testContract[0] !== "") {
         testContracts[capitalize(func.functionName)] = testContract[0];
-        benchContracts[capitalize(func.functionName)] = benchContract;
         testContractsAbis += testContract[1];
         importLineHelper += `${capitalize(func.functionName)}TestType,\n`;
+      }
+
+      if (benchContract !== "") {
+        benchContracts[capitalize(func.functionName)] = benchContract;
       }
     }
     // this generates solidity header functions for all the different possible types
