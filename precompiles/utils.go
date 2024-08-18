@@ -25,8 +25,6 @@ type TxParams struct {
 	ContractAddress common.Address
 	GetBlockHash    vm.GetHashFunc
 	BlockNumber     *big.Int
-	BlockContext    vm.BlockContext
-	//PrevRandao      *common.Hash
 }
 
 type GasBurner interface {
@@ -42,7 +40,6 @@ func TxParamsFromEVM(evm *vm.EVM, callerContract common.Address) TxParams {
 
 	tp.CiphertextDb = evm.CiphertextDb
 	tp.ContractAddress = callerContract
-	tp.BlockContext = evm.Context
 	tp.BlockNumber = evm.Context.BlockNumber
 	tp.GetBlockHash = evm.Context.GetHash
 
