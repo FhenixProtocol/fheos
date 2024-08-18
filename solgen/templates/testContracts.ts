@@ -279,7 +279,7 @@ export function testContract0Args(name: string) {
     name,
     EInputType.indexOf("euint256")
   );
-  let func = `function ${name}(string calldata test) public pure returns (uint256 output) {
+  let func = `function ${name}(string calldata test) public pure returns (uint256) {
         if (Utils.cmp(test, "${name}_euint8()")) {
             return FHE.decrypt(FHE.${name + "Euint8"}());
         } else if (Utils.cmp(test, "${name}_euint16()")) {
@@ -309,11 +309,11 @@ export function testContract0Args(name: string) {
             }
 
             return 0;
-        }
-        
-        revert TestNotFound(test);`;
+        }`
   }
-  func += `}`;
+  func += `
+        revert TestNotFound(test);
+    }`;
 
   const abi = `export interface ${capitalize(
     name

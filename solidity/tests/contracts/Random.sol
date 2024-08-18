@@ -9,7 +9,7 @@ error TestNotFound(string test);
 contract RandomTest {
     using Utils for *;
     
-    function random(string calldata test) public pure returns (uint256 output) {
+    function random(string calldata test) public pure returns (uint256) {
         if (Utils.cmp(test, "random_euint8()")) {
             return FHE.decrypt(FHE.randomEuint8());
         } else if (Utils.cmp(test, "random_euint16()")) {
@@ -22,5 +22,7 @@ contract RandomTest {
             return FHE.decrypt(FHE.randomEuint128());
         } else if (Utils.cmp(test, "random_euint256()")) {
             return FHE.decrypt(FHE.randomEuint256());
-        }}
+        }
+        revert TestNotFound(test);
+    }
 }
