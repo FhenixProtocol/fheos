@@ -299,7 +299,6 @@ describe("Test Transactions Scenarios", () => {
       fail("Should not have reverted");
     }
   });
-
   // function addDelegate(inEuint32 calldata value, bytes32 publicKey) public returns (bytes memory) {
 });
 

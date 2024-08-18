@@ -9,12 +9,14 @@ import {Utils} from "./utils/Utils.sol";
 error TestNotFound(string test);
 
 contract AddCaller {
-    uint64 private counterPublic = 0;
     // Don't change the order of these variables!
-    // Apparently, a non-encrypted variable has to come right after the variable being
-    // tested for sstore, to catch the sstore bug, AND it has to be initialized to some address
-    AddCallee public addContract;
+    // Two things must be preserved:
+    // 1. The counter variable must be the first one, to allow delegate calls
+    // 2. The counterPublic has to come right before the addContract variable, which can't be initialized.
+    //    Only this catches the sstore bug
     euint32 private counter = FHE.asEuint32(0);
+    uint64 private counterPublic = 0;
+    AddCallee public addContract;
     error DelegateCallFailed();
 
     constructor(address addCallee) {
