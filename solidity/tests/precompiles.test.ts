@@ -21,6 +21,7 @@ import {
   ShlTestType,
   ShrTestType,
   NotTestType,
+  RandomTestType,
   AsEboolTestType,
   AsEuint8TestType,
   AsEuint16TestType,
@@ -1502,6 +1503,52 @@ describe("Test Not", () => {
         });
       }
     }
+  }
+});
+
+describe("Test Random", () => {
+  let contract;
+
+  // We don't really need it as test but it is a test since it is async
+  it(`Test Contract Deployment`, async () => {
+    contract = (await deployContract("RandomTest")) as RandomTestType;
+    expect(contract).toBeTruthy();
+  });
+
+  const testCases = [
+    {
+      function: "randomEuint8()",
+      bits: 8,
+    },
+    {
+      function: "randomEuint16()",
+      bits: 16,
+    },
+    {
+      function: "randomEuint32()",
+      bits: 32,
+    },
+    {
+      function: "randomEuint64()",
+      bits: 64,
+    },
+    {
+      function: "randomEuint128()",
+      bits: 128,
+    },
+    {
+      function: "randomEuint256()",
+      bits: 256,
+    },
+  ];
+
+  for (const test of testCases) {
+    it(`Test ${test.function}`, async () => {
+      const decryptedResult = await contract.random(test.function);
+
+      console.log("decryptedResult", decryptedResult.toString());
+      expect(decryptedResult).toBeLessThan(2 ** test.bits);
+    });
   }
 });
 
