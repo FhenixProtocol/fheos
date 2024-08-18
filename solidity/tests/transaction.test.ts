@@ -290,7 +290,7 @@ describe("Test Transactions Scenarios", () => {
     expect(Number(counter)).toEqual(28);
   });
 
-  it.only("sStore sanity check", async () => {
+  it("sStore sanity check", async () => {
     try {
       const tx = await contractCaller.sStoreSanity();
       await tx.wait();
