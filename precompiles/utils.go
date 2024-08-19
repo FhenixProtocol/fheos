@@ -9,8 +9,6 @@ import (
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	"github.com/fhenixprotocol/fheos/storage"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
-	"math"
-	"math/big"
 )
 
 type TxParams struct {
@@ -109,32 +107,4 @@ func minInt(a int, b int) int {
 
 func evaluateRequire(ct *fhe.FheEncrypted) bool {
 	return fhe.Require(ct)
-}
-
-func FakeDecryptionResult(encType fhe.EncryptionType) *big.Int {
-
-	switch encType {
-	case fhe.Uint8:
-		return big.NewInt(math.MaxUint8 / 2)
-	case fhe.Uint16:
-		return big.NewInt(math.MaxInt16 / 2)
-	case fhe.Uint32:
-		return big.NewInt(math.MaxUint32 / 2)
-	case fhe.Uint64:
-		return big.NewInt(math.MaxUint64 / 2)
-	case fhe.Uint128:
-		value := &big.Int{}
-		value.SetString("2222222222222222222222222222222", 16)
-		return value
-	case fhe.Uint256:
-		value := &big.Int{}
-		value.SetString("2222222222222222222222222222222222222222222222222", 16)
-		return value
-	case fhe.Address:
-		value := &big.Int{}
-		value.SetString("Dd4BEac65bad064932FB21aE7Ba2aa6e8fbc41A4", 16)
-		return value
-	default:
-		return big.NewInt(0)
-	}
 }

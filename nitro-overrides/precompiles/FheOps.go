@@ -131,7 +131,7 @@ func (con FheOps) Cast(c ctx, evm mech, utype byte, input []byte, toType byte) (
 	return ret, err
 }
 
-func (con FheOps) Decrypt(c ctx, evm mech, utype byte, input []byte) (*big.Int, error) {
+func (con FheOps) Decrypt(c ctx, evm mech, utype byte, input []byte, defaultValue *big.Int) (*big.Int, error) {
 	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "Decrypt", fheos.UtypeToString(utype))
@@ -143,7 +143,7 @@ func (con FheOps) Decrypt(c ctx, evm mech, utype byte, input []byte) (*big.Int, 
 		}(time.Now())
 	}
 
-	ret, gas, err := fheos.Decrypt(utype, input, &tp)
+	ret, gas, err := fheos.Decrypt(utype, input, defaultValue, &tp)
 
 	if err != nil {
 		if metrics.Enabled {

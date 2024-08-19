@@ -247,7 +247,7 @@ func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) (string, uin
 	return string(reencryptedValue), gas, nil
 }
 
-func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
+func Decrypt(utype byte, input []byte, defaultValue *big.Int, tp *TxParams) (*big.Int, uint64, error) {
 	//solgen: output plaintext
 	functionName := types.Decrypt
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
@@ -259,7 +259,7 @@ func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
-		return FakeDecryptionResult(uintType), gas, nil
+		return defaultValue, gas, nil
 	}
 
 	if shouldPrintPrecompileInfo(tp) {

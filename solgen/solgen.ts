@@ -15,6 +15,7 @@ import {
   SealFromType,
   DecryptBinding,
   IsOperationAllowed,
+  SolTemplateDecrypt,
 } from "./templates/library";
 
 import {
@@ -25,6 +26,7 @@ import {
   testContractReencrypt,
   testContractReq,
   AsTypeTestingContract,
+  testContractDecrypt,
 } from "./templates/testContracts";
 
 import {
@@ -183,6 +185,10 @@ const generateSolidityTestContract = (metadata: FunctionMetadata): string[] => {
 
   if (functionName === "req") {
     return testContractReq();
+  }
+
+  if (functionName === "decrypt") {
+    return testContractDecrypt();
   }
 
   if (functionName === SEALING_FUNCTION_NAME) {
@@ -411,10 +417,11 @@ const generateSolidityFunction = (parsedFunction: ParsedFunction): string => {
   const { funcName, inputs, returnType } = parsedFunction;
   switch (inputs.length) {
     case 1:
+      if (funcName === "decrypt") {
+        return SolTemplateDecrypt(inputs[0], returnType);
+      }
       return SolTemplate1Arg(funcName, inputs[0], returnType);
     case 2:
-      if (funcName === "div") {
-      }
       return SolTemplate2Arg(funcName, inputs[0], inputs[1], returnType);
     case 3:
       return SolTemplate3Arg(
@@ -437,14 +444,18 @@ const main = async () => {
   let testContractsAbis = "";
   let importLineHelper: string = "import { ";
   for (let func of metadata) {
-    // Decrypt is already tested in every test contract
-    if (func.functionName !== "decrypt" && func.functionName !== "random") {
+    if (func.functionName !== "random") {
       // this generates test contract for every function
       const testContract = generateSolidityTestContract(func);
-      const benchContract = generateSolidityBenchContract(func);
+      const benchContract =
+        func.functionName === "decrypt"
+          ? ""
+          : generateSolidityBenchContract(func);
       if (testContract[0] !== "") {
         testContracts[capitalize(func.functionName)] = testContract[0];
-        benchContracts[capitalize(func.functionName)] = benchContract;
+        if (benchContract !== "") {
+          benchContracts[capitalize(func.functionName)] = benchContract;
+        }
         testContractsAbis += testContract[1];
         importLineHelper += `${capitalize(func.functionName)}TestType,\n`;
       }
