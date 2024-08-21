@@ -5,17 +5,15 @@ import (
 	"math/big"
 	"sync"
 	"time"
-
-	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 )
 
 type PendingDecryption struct {
-	Hash fhe.Hash
+	Hash Hash
 	Type PrecompileName
 }
 
 type DecryptionRecord struct {
-	Value     interface{}
+	Value     any
 	Timestamp time.Time
 }
 
@@ -38,7 +36,7 @@ func (dr *DecryptionResults) CreateEmptyRecord(key PendingDecryption) {
 	}
 }
 
-func (dr *DecryptionResults) SetValue(key PendingDecryption, value interface{}) error {
+func (dr *DecryptionResults) SetValue(key PendingDecryption, value any) error {
 	dr.mu.Lock()
 	defer dr.mu.Unlock()
 
@@ -63,7 +61,7 @@ func (dr *DecryptionResults) SetValue(key PendingDecryption, value interface{}) 
 	return nil
 }
 
-func (dr *DecryptionResults) Get(key PendingDecryption) (interface{}, bool, time.Time, error) {
+func (dr *DecryptionResults) Get(key PendingDecryption) (any, bool, time.Time, error) {
 	dr.mu.RLock()
 	defer dr.mu.RUnlock()
 
