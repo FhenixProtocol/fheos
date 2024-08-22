@@ -11,6 +11,9 @@ export interface AddTestType extends BaseContract {
 export interface SealoutputTestType extends BaseContract {
     sealoutput: (test: string, a: bigint, pubkey: Uint8Array) => Promise<string>;
 }
+export interface DecryptTestType extends BaseContract {
+    decrypt: (test: string) => Promise<{}>;
+}
 export interface LteTestType extends BaseContract {
     lte: (test: string, a: bigint, b: bigint) => Promise<bigint>;
 }

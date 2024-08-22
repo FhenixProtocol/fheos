@@ -17,6 +17,7 @@ import {
   IsOperationAllowed,
   RandomGenericFunction,
   RandomFunctions,
+  SolTemplateDecrypt,
 } from "./templates/library";
 
 import {
@@ -28,6 +29,7 @@ import {
   testContractReencrypt,
   testContractReq,
   AsTypeTestingContract,
+  testContractDecrypt,
 } from "./templates/testContracts";
 
 import {
@@ -188,6 +190,10 @@ const generateSolidityTestContract = (metadata: FunctionMetadata): string[] => {
     return testContractReq();
   }
 
+  if (functionName === "decrypt") {
+    return testContractDecrypt();
+  }
+
   if (functionName === SEALING_FUNCTION_NAME) {
     return testContractReencrypt();
   }
@@ -234,8 +240,8 @@ const generateSolidityTestContract = (metadata: FunctionMetadata): string[] => {
 const generateSolidityBenchContract = (metadata: FunctionMetadata): string => {
   const { functionName, inputCount, inputs } = metadata;
 
-  if (functionName === "random") {
-    // todo: bench random function
+  if (functionName === "random" || functionName === "decrypt") {
+    // todo: bench random/decrypt function
     return "";
   }
 
@@ -368,10 +374,11 @@ const generateSolidityFunction = (parsedFunction: ParsedFunction): string => {
   const { funcName, inputs, returnType } = parsedFunction;
   switch (inputs.length) {
     case 1:
+      if (funcName === "decrypt") {
+        return SolTemplateDecrypt(inputs[0], returnType);
+      }
       return SolTemplate1Arg(funcName, inputs[0], returnType);
     case 2:
-      if (funcName === "div") {
-      }
       return SolTemplate2Arg(funcName, inputs[0], inputs[1], returnType);
     case 3:
       return SolTemplate3Arg(
@@ -395,21 +402,18 @@ const main = async () => {
   let importLineHelper: string = "import { ";
 
   for (let func of metadata) {
-    // Decrypt is already tested in every test contract
-    if (func.functionName !== "decrypt") {
-      // this generates test contract for every function
-      const testContract = generateSolidityTestContract(func);
-      const benchContract = generateSolidityBenchContract(func);
+    // this generates test contract for every function
+    const testContract = generateSolidityTestContract(func);
+    const benchContract = generateSolidityBenchContract(func);
 
-      if (testContract[0] !== "") {
-        testContracts[capitalize(func.functionName)] = testContract[0];
-        testContractsAbis += testContract[1];
-        importLineHelper += `${capitalize(func.functionName)}TestType,\n`;
-      }
+    if (testContract[0] !== "") {
+      testContracts[capitalize(func.functionName)] = testContract[0];
+      testContractsAbis += testContract[1];
+      importLineHelper += `${capitalize(func.functionName)}TestType,\n`;
+    }
 
-      if (benchContract !== "") {
-        benchContracts[capitalize(func.functionName)] = benchContract;
-      }
+    if (benchContract !== "") {
+      benchContracts[capitalize(func.functionName)] = benchContract;
     }
     // this generates solidity header functions for all the different possible types
     solidityHeaders = solidityHeaders.concat(genSolidityFunctionHeaders(func));

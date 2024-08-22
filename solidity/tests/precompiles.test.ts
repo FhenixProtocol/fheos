@@ -1,4 +1,4 @@
-import {createFheInstance, deployContract, fromHexString} from "./utils";
+import { createFheInstance, deployContract, fromHexString } from "./utils";
 import {
   AddTestType,
   LteTestType,
@@ -27,9 +27,11 @@ import {
   AsEuint16TestType,
   AsEuint32TestType,
   SealoutputTestType,
+  DecryptTestType,
   AsEuint64TestType,
   AsEuint128TestType,
-  AsEuint256TestType, AsEaddressTestType,
+  AsEuint256TestType,
+  AsEaddressTestType,
 } from "./abis";
 
 const getFheContract = async (contractAddress: string) => {
@@ -37,585 +39,676 @@ const getFheContract = async (contractAddress: string) => {
   return fheContract;
 };
 
-describe("Test Add", () => {
-  const getMaxValue = (bits: number) => {
-    const val = BigInt.asUintN(bits, BigInt(1));
-    return (val << BigInt(bits)) - BigInt(2);
-  };
+// describe("Test Add", () => {
+//   const getMaxValue = (bits: number) => {
+//     const val = BigInt.asUintN(bits, BigInt(1));
+//     return (val << BigInt(bits)) - BigInt(2);
+//   };
+//
+//   const cases = [
+//     { overflow: false, name: "" },
+//     {
+//       overflow: true,
+//       name: " with overflow",
+//     },
+//   ];
+//
+//   let contract;
+//
+//   // We don't really need it as test but it is a test since it is async
+//   it(`Test Contract Deployment`, async () => {
+//     contract = (await deployContract("AddTest")) as AddTestType;
+//     expect(contract).toBeTruthy();
+//   });
+//
+//   const testCases = [
+//     {
+//       function: ["add(euint8,euint8)", "euint8.add(euint8)", "euint8 + euint8"],
+//       cases,
+//       resType: 8,
+//     },
+//     {
+//       function: [
+//         "add(euint16,euint16)",
+//         "euint16.add(euint16)",
+//         "euint16 + euint16",
+//       ],
+//       cases,
+//       resType: 16,
+//     },
+//     {
+//       function: [
+//         "add(euint32,euint32)",
+//         "euint32.add(euint32)",
+//         "euint32 + euint32",
+//       ],
+//       cases,
+//       resType: 32,
+//     },
+//     {
+//       function: [
+//         "add(euint64,euint64)",
+//         "euint64.add(euint64)",
+//         "euint64 + euint64",
+//       ],
+//       cases,
+//       resType: 64,
+//     },
+//     {
+//       function: [
+//         "add(euint128,euint128)",
+//         "euint128.add(euint128)",
+//         "euint128 + euint128",
+//       ],
+//       cases,
+//       resType: 128,
+//     },
+//   ];
+//
+//   for (const test of testCases) {
+//     for (const testFunc of test.function) {
+//       for (const testCase of test.cases) {
+//         it(`Test ${testFunc}${testCase.name}`, async () => {
+//           let a = BigInt.asUintN(test.resType, BigInt(2));
+//           if (testCase.overflow) {
+//             a = getMaxValue(test.resType);
+//           }
+//
+//           const b = a - BigInt(1);
+//           const decryptedResult = await contract.add(testFunc, a, b);
+//           expect(decryptedResult).toBe(BigInt.asUintN(test.resType, a + b));
+//         });
+//       }
+//     }
+//   }
+//
+//   it(`Custom error test`, async () => {
+//     try {
+//       await contract.add("no such test", 1, 2);
+//       fail();
+//     } catch (error) {
+//       const revertData = error.data;
+//       const decodedError = contract.interface.parseError(revertData);
+//       expect(decodedError.name).toBe("TestNotFound");
+//       expect(decodedError.args[0]).toBe("no such test");
+//     }
+//   });
+// });
+//
+// describe("Test SealOutput", () => {
+//   let contract;
+//   let fheContract;
+//   let contractAddress;
+//
+//   // We don't really need it as test but it is a test since it is async
+//   it(`Test Contract Deployment`, async () => {
+//     const baseContract = await deployContract("SealoutputTest");
+//     contract = baseContract as SealoutputTestType;
+//     contractAddress = await baseContract.getAddress();
+//     fheContract = await getFheContract(contractAddress);
+//
+//     expect(contract).toBeTruthy();
+//     expect(fheContract).toBeTruthy();
+//   });
+//
+//   const testCases = [
+//     "sealoutput(euint8)",
+//     "sealoutput(euint16)",
+//     "sealoutput(euint32)",
+//     "sealoutput(euint64)",
+//     "sealoutput(euint128)",
+//     "sealoutput(euint256)",
+//     "sealoutput(ebool)",
+//     "seal(euint8)",
+//   ];
+//
+//   for (const test of testCases) {
+//     it(`Test ${test}`, async () => {
+//       let plaintextInput = Math.floor(Math.random() * 1000) % 256;
+//       let encryptedOutput = await contract.sealoutput(
+//         test,
+//         plaintextInput,
+//         fromHexString(fheContract.permit.sealingKey.publicKey)
+//       );
+//       let decryptedOutput = fheContract.instance.unseal(
+//         contractAddress,
+//         encryptedOutput
+//       );
+//       if (test.includes("ebool")) {
+//         expect(decryptedOutput).toBe(BigInt(Math.min(1, plaintextInput)));
+//       } else {
+//         expect(decryptedOutput).toBe(BigInt(plaintextInput));
+//       }
+//     });
+//   }
+// });
+//
+// describe("Test Lte", () => {
+//   let contract;
+//
+//   // We don't really need it as test but it is a test since it is async
+//   it(`Test Contract Deployment`, async () => {
+//     contract = (await deployContract("LteTest")) as LteTestType;
+//     expect(contract).toBeTruthy();
+//   });
+//
+//   const cases = [
+//     { a: 1, b: 2, expectedResult: 1, name: " a < b" },
+//     { a: 2, b: 1, expectedResult: 0, name: " a > b" },
+//     { a: 3, b: 3, expectedResult: 1, name: " a == b" },
+//   ];
+//
+//   const testCases = [
+//     {
+//       function: ["lte(euint8,euint8)", "euint8.lte(euint8)"],
+//       cases,
+//     },
+//     {
+//       function: ["lte(euint16,euint16)", "euint16.lte(euint16)"],
+//       cases,
+//     },
+//     {
+//       function: ["lte(euint32,euint32)", "euint32.lte(euint32)"],
+//       cases,
+//     },
+//     {
+//       function: ["lte(euint64,euint64)", "euint64.lte(euint64)"],
+//       cases,
+//     },
+//     {
+//       function: ["lte(euint128,euint128)", "euint128.lte(euint128)"],
+//       cases,
+//     },
+//   ];
+//   for (const test of testCases) {
+//     for (const testFunc of test.function) {
+//       for (const testCase of test.cases) {
+//         it(`Test ${testFunc}${testCase.name}`, async () => {
+//           const decryptedResult = await contract.lte(
+//             testFunc,
+//             BigInt(testCase.a),
+//             BigInt(testCase.b)
+//           );
+//           expect(decryptedResult).toBe(BigInt(testCase.expectedResult));
+//         });
+//       }
+//     }
+//   }
+// });
+//
+// describe("Test Sub", () => {
+//   const aUnderflow = 1;
+//   const bUnderflow = 4;
+//   let contract;
+//
+//   // We don't really need it as test but it is a test since it is async
+//   it(`Test Contract Deployment`, async () => {
+//     contract = (await deployContract("SubTest")) as SubTestType;
+//     expect(contract).toBeTruthy();
+//   });
+//
+//   const testCases = [
+//     {
+//       function: ["sub(euint8,euint8)", "euint8.sub(euint8)", "euint8 - euint8"],
+//       cases: [
+//         { a: 9, b: 4, expectedResult: 5, name: "" },
+//         {
+//           a: aUnderflow,
+//           b: bUnderflow,
+//           expectedResult: Number(
+//             BigInt.asUintN(8, BigInt(aUnderflow - bUnderflow))
+//           ),
+//           name: " with underflow",
+//         },
+//       ],
+//     },
+//     {
+//       function: [
+//         "sub(euint16,euint16)",
+//         "euint16.sub(euint16)",
+//         "euint16 - euint16",
+//       ],
+//       cases: [
+//         { a: 9, b: 4, expectedResult: 5, name: "" },
+//         {
+//           a: aUnderflow,
+//           b: bUnderflow,
+//           expectedResult: Number(
+//             BigInt.asUintN(16, BigInt(aUnderflow - bUnderflow))
+//           ),
+//           name: " with underflow",
+//         },
+//       ],
+//     },
+//     {
+//       function: [
+//         "sub(euint32,euint32)",
+//         "euint32.sub(euint32)",
+//         "euint32 - euint32",
+//       ],
+//       cases: [
+//         { a: 9, b: 4, expectedResult: 5, name: "" },
+//         {
+//           a: aUnderflow,
+//           b: bUnderflow,
+//           expectedResult: Number(
+//             BigInt.asUintN(32, BigInt(aUnderflow - bUnderflow))
+//           ),
+//           name: " with underflow",
+//         },
+//       ],
+//     },
+//     {
+//       function: [
+//         "sub(euint64,euint64)",
+//         "euint64.sub(euint64)",
+//         "euint64 - euint64",
+//       ],
+//       cases: [
+//         { a: 9, b: 4, expectedResult: 5, name: "" },
+//         {
+//           a: aUnderflow,
+//           b: bUnderflow,
+//           expectedResult: BigInt.asUintN(64, BigInt(aUnderflow - bUnderflow)),
+//           name: " with underflow",
+//         },
+//       ],
+//     },
+//     {
+//       function: [
+//         "sub(euint128,euint128)",
+//         "euint128.sub(euint128)",
+//         "euint128 - euint128",
+//       ],
+//       cases: [
+//         { a: 9, b: 4, expectedResult: 5, name: "" },
+//         {
+//           a: aUnderflow,
+//           b: bUnderflow,
+//           expectedResult: BigInt.asUintN(128, BigInt(aUnderflow - bUnderflow)),
+//           name: " with underflow",
+//         },
+//       ],
+//     },
+//   ];
+//
+//   for (const test of testCases) {
+//     for (const testFunc of test.function) {
+//       for (const testCase of test.cases) {
+//         it(`Test ${testFunc}${testCase.name}`, async () => {
+//           const decryptedResult = await contract.sub(
+//             testFunc,
+//             BigInt(testCase.a),
+//             BigInt(testCase.b)
+//           );
+//           expect(BigInt(decryptedResult)).toBe(BigInt(testCase.expectedResult));
+//         });
+//       }
+//     }
+//   }
+// });
+//
+// describe("Test Mul", () => {
+//   const overflow8 = 2 ** 8 / 2 + 1;
+//   const overflow16 = 2 ** 16 / 2 + 1;
+//   const overflow32 = 2 ** 32 / 2 + 1;
+//   let contract;
+//
+//   // We don't really need it as test but it is a test since it is async
+//   it(`Test Contract Deployment`, async () => {
+//     contract = (await deployContract("MulTest")) as MulTestType;
+//     expect(contract).toBeTruthy();
+//   });
+//
+//   const testCases = [
+//     {
+//       function: ["mul(euint8,euint8)", "euint8.mul(euint8)", "euint8 * euint8"],
+//       cases: [
+//         { a: 2, b: 3, expectedResult: 6, name: "" },
+//         {
+//           a: overflow8,
+//           b: 2,
+//           expectedResult: Number(BigInt.asUintN(8, BigInt(overflow8 * 2))),
+//           name: " as overflow",
+//         },
+//       ],
+//     },
+//     {
+//       function: [
+//         "mul(euint16,euint16)",
+//         "euint16.mul(euint16)",
+//         "euint16 * euint16",
+//       ],
+//       cases: [
+//         { a: 2, b: 3, expectedResult: 6, name: "" },
+//         {
+//           a: overflow16,
+//           b: 2,
+//           expectedResult: Number(BigInt.asUintN(16, BigInt(overflow16 * 2))),
+//           name: " as overflow",
+//         },
+//       ],
+//     },
+//     {
+//       function: [
+//         "mul(euint32,euint32)",
+//         "euint32.mul(euint32)",
+//         "euint32 * euint32",
+//       ],
+//       cases: [
+//         { a: 2, b: 3, expectedResult: 6, name: "" },
+//         {
+//           a: overflow32,
+//           b: 2,
+//           expectedResult: Number(BigInt.asUintN(32, BigInt(overflow32 * 2))),
+//           name: " as overflow",
+//         },
+//       ],
+//     },
+//     {
+//       function: [
+//         "mul(euint64,euint64)",
+//         "euint64.mul(euint64)",
+//         "euint64 * euint64",
+//       ],
+//       cases: [
+//         { a: 2, b: 3, expectedResult: 6, name: "" },
+//         {
+//           a: 3000300300,
+//           b: 2000200200,
+//           expectedResult: BigInt(6001201260120060000n),
+//           name: " with large number",
+//         },
+//       ],
+//     },
+//   ];
+//
+//   for (const test of testCases) {
+//     for (const testFunc of test.function) {
+//       for (const testCase of test.cases) {
+//         it(`Test ${testFunc}${testCase.name}`, async () => {
+//           const decryptedResult = await contract.mul(
+//             testFunc,
+//             BigInt(testCase.a),
+//             BigInt(testCase.b)
+//           );
+//           expect(decryptedResult).toBe(BigInt(testCase.expectedResult));
+//         });
+//       }
+//     }
+//   }
+// });
+//
+// describe("Test Lt", () => {
+//   let contract;
+//
+//   // We don't really need it as test but it is a test since it is async
+//   it(`Test Contract Deployment`, async () => {
+//     contract = (await deployContract("LtTest")) as LtTestType;
+//     expect(contract).toBeTruthy();
+//   });
+//
+//   const cases = [
+//     { a: 1, b: 2, expectedResult: 1, name: " a < b" },
+//     { a: 2, b: 1, expectedResult: 0, name: " a > b" },
+//     { a: 3, b: 3, expectedResult: 0, name: " a == b" },
+//   ];
+//
+//   const testCases = [
+//     {
+//       function: ["lt(euint8,euint8)", "euint8.lt(euint8)"],
+//       cases,
+//     },
+//     {
+//       function: ["lt(euint16,euint16)", "euint16.lt(euint16)"],
+//       cases,
+//     },
+//     {
+//       function: ["lt(euint32,euint32)", "euint32.lt(euint32)"],
+//       cases,
+//     },
+//     {
+//       function: ["lt(euint64,euint64)", "euint64.lt(euint64)"],
+//       cases,
+//     },
+//     {
+//       function: ["lt(euint128,euint128)", "euint128.lt(euint128)"],
+//       cases,
+//     },
+//   ];
+//   for (const test of testCases) {
+//     for (const testFunc of test.function) {
+//       for (const testCase of test.cases) {
+//         it(`Test ${testFunc}${testCase.name}`, async () => {
+//           const decryptedResult = await contract.lt(
+//             testFunc,
+//             BigInt(testCase.a),
+//             BigInt(testCase.b)
+//           );
+//           expect(decryptedResult).toBe(BigInt(testCase.expectedResult));
+//         });
+//       }
+//     }
+//   }
+// });
+//
+// describe("Test Select", () => {
+//   let contract;
+//
+//   // We don't really need it as test but it is a test since it is async
+//   it(`Test Contract Deployment`, async () => {
+//     contract = (await deployContract("SelectTest")) as SelectTestType;
+//     expect(contract).toBeTruthy();
+//   });
+//
+//   const cases = [
+//     { control: true, a: 2, b: 3, expectedResult: 2, name: " true" },
+//     { control: false, a: 2, b: 3, expectedResult: 3, name: " false" },
+//   ];
+//
+//   const testCases = [
+//     {
+//       function: "select: euint8",
+//       cases,
+//     },
+//     {
+//       function: "select: euint16",
+//       cases,
+//     },
+//     {
+//       function: "select: euint32",
+//       cases,
+//     },
+//     {
+//       function: "select: euint64",
+//       cases,
+//     },
+//     {
+//       function: "select: euint128",
+//       cases,
+//     },
+//     {
+//       function: "select: ebool",
+//       cases: [
+//         { control: true, a: 0, b: 1, expectedResult: 0, name: "true" },
+//         { control: false, a: 0, b: 1, expectedResult: 1, name: "false" },
+//       ],
+//     },
+//   ];
+//
+//   for (const test of testCases) {
+//     for (const testCase of test.cases) {
+//       it(`Test ${test.function}${testCase.name}`, async () => {
+//         const decryptedResult = await contract.select(
+//           test.function,
+//           testCase.control,
+//           BigInt(testCase.a),
+//           BigInt(testCase.b)
+//         );
+//         expect(decryptedResult).toBe(BigInt(testCase.expectedResult));
+//       });
+//     }
+//   }
+// });
+//
+// describe("Test Req", () => {
+//   let contract;
+//
+//   // We don't really need it as test but it is a test since it is async
+//   it(`Test Contract Deployment`, async () => {
+//     contract = (await deployContract("ReqTest")) as ReqTestType;
+//     expect(contract).toBeTruthy();
+//   });
+//
+//   const cases = [
+//     { a: 0, shouldCrash: true, name: " with crash" },
+//     { a: 1, shouldCrash: false, name: " no crash" },
+//   ];
+//
+//   const testCases = [
+//     {
+//       function: "req(euint8)",
+//       cases,
+//     },
+//     {
+//       function: "req(euint16)",
+//       cases,
+//     },
+//     {
+//       function: "req(euint32)",
+//       cases,
+//     },
+//     {
+//       function: "req(euint64)",
+//       cases,
+//     },
+//     {
+//       function: "req(euint128)",
+//       cases,
+//     },
+//     {
+//       function: "req(euint256)",
+//       cases,
+//     },
+//     {
+//       function: "req(ebool)",
+//       cases,
+//     },
+//   ];
+//
+//   for (const test of testCases) {
+//     for (const testCase of test.cases) {
+//       it(`Test ${test.function}${testCase.name}`, async () => {
+//         let hadEvaluationFailure = false;
+//         let err = "";
+//         try {
+//           let tx = await contract.req(test.function, BigInt(testCase.a));
+//           let result = await tx.wait();
+//         } catch (e) {
+//           hadEvaluationFailure = true;
+//           err = `${e}`;
+//           console.log(`err: ${err}`);
+//         }
+//         expect(hadEvaluationFailure).toBe(testCase.shouldCrash);
+//         if (hadEvaluationFailure) {
+//           expect(err.includes("execution reverted")).toBe(true);
+//           if (!testCase.shouldCrash) {
+//             console.log(`crashed in req even though it shouldn't have: ${err}`);
+//           }
+//         }
+//       });
+//     }
+//   }
+// });
 
-  const cases = [
-    { overflow: false, name: "" },
-    {
-      overflow: true,
-      name: " with overflow",
-    },
-  ];
-
+describe("Test Decrypt", () => {
   let contract;
 
   // We don't really need it as test but it is a test since it is async
   it(`Test Contract Deployment`, async () => {
-    contract = (await deployContract("AddTest")) as AddTestType;
+    contract = (await deployContract("DecryptTest")) as DecryptTestType;
     expect(contract).toBeTruthy();
   });
 
   const testCases = [
     {
-      function: ["add(euint8,euint8)", "euint8.add(euint8)", "euint8 + euint8"],
-      cases,
-      resType: 8,
+      function: "decrypt(euint8)",
+      shouldPass: true,
     },
     {
-      function: [
-        "add(euint16,euint16)",
-        "euint16.add(euint16)",
-        "euint16 + euint16",
-      ],
-      cases,
-      resType: 16,
+      function: "decrypt(euint16)",
+      shouldPass: true,
     },
     {
-      function: [
-        "add(euint32,euint32)",
-        "euint32.add(euint32)",
-        "euint32 + euint32",
-      ],
-      cases,
-      resType: 32,
+      function: "decrypt(euint32)",
+      shouldPass: true,
     },
     {
-      function: [
-        "add(euint64,euint64)",
-        "euint64.add(euint64)",
-        "euint64 + euint64",
-      ],
-      cases,
-      resType: 64,
+      function: "decrypt(euint64)",
+      shouldPass: true,
     },
     {
-      function: [
-        "add(euint128,euint128)",
-        "euint128.add(euint128)",
-        "euint128 + euint128",
-      ],
-      cases,
-      resType: 128,
+      function: "decrypt(euint128)",
+      shouldPass: true,
+    },
+    {
+      function: "decrypt(euint256)",
+      shouldPass: true,
+    },
+    {
+      function: "decrypt(ebool)",
+      shouldPass: true,
+    },
+    {
+      function: "decrypt(euint8) fail",
+      shouldPass: false,
+    },
+    {
+      function: "decrypt(euint16) fail",
+      shouldPass: false,
+    },
+    {
+      function: "decrypt(euint32) fail",
+      shouldPass: false,
+    },
+    {
+      function: "decrypt(euint64) fail",
+      shouldPass: false,
+    },
+    {
+      function: "decrypt(euint128) fail",
+      shouldPass: false,
+    },
+    {
+      function: "decrypt(euint256) fail",
+      shouldPass: false,
+    },
+    {
+      function: "decrypt(ebool) fail",
+      shouldPass: false,
     },
   ];
 
   for (const test of testCases) {
-    for (const testFunc of test.function) {
-      for (const testCase of test.cases) {
-        it(`Test ${testFunc}${testCase.name}`, async () => {
-          let a = BigInt.asUintN(test.resType, BigInt(2));
-          if (testCase.overflow) {
-            a = getMaxValue(test.resType);
-          }
-
-          const b = a - BigInt(1);
-          const decryptedResult = await contract.add(testFunc, a, b);
-          expect(decryptedResult).toBe(BigInt.asUintN(test.resType, a + b));
-        });
+    it(`Test ${test.function}`, async () => {
+      let hadEvaluationFailure = false;
+      let err = "";
+      try {
+        let tx = await contract.decrypt(test.function);
+        let result = await tx.wait();
+      } catch (e) {
+        hadEvaluationFailure = true;
+        err = `${e}`;
+        console.log(`err: ${err}`);
       }
-    }
-  }
-
-  it(`Custom error test`, async () => {
-    try {
-      await contract.add("no such test", 1, 2);
-      fail();
-    } catch (error) {
-      const revertData = error.data;
-      const decodedError = contract.interface.parseError(revertData);
-      expect(decodedError.name).toBe("TestNotFound");
-      expect(decodedError.args[0]).toBe("no such test");
-    }
-  });
-});
-
-describe("Test SealOutput", () => {
-  let contract;
-  let fheContract;
-  let contractAddress;
-
-  // We don't really need it as test but it is a test since it is async
-  it(`Test Contract Deployment`, async () => {
-    const baseContract = await deployContract("SealoutputTest");
-    contract = baseContract as SealoutputTestType;
-    contractAddress = await baseContract.getAddress();
-    fheContract = await getFheContract(contractAddress);
-
-    expect(contract).toBeTruthy();
-    expect(fheContract).toBeTruthy();
-  });
-
-  const testCases = [
-    "sealoutput(euint8)",
-    "sealoutput(euint16)",
-    "sealoutput(euint32)",
-    "sealoutput(euint64)",
-    "sealoutput(euint128)",
-    "sealoutput(euint256)",
-    "sealoutput(ebool)",
-    "seal(euint8)",
-  ];
-
-  for (const test of testCases) {
-    it(`Test ${test}`, async () => {
-      let plaintextInput = Math.floor(Math.random() * 1000) % 256;
-      let encryptedOutput = await contract.sealoutput(
-        test,
-        plaintextInput,
-        fromHexString(fheContract.permit.sealingKey.publicKey)
-      );
-      let decryptedOutput = fheContract.instance.unseal(
-        contractAddress,
-        encryptedOutput
-      );
-      if (test.includes("ebool")) {
-        expect(decryptedOutput).toBe(BigInt(Math.min(1, plaintextInput)));
-      } else {
-        expect(decryptedOutput).toBe(BigInt(plaintextInput));
+      expect(hadEvaluationFailure).toBe(!test.shouldPass);
+      if (hadEvaluationFailure) {
+        expect(err.includes("execution reverted")).toBe(true);
+        if (test.shouldPass) {
+          console.log(`crashed in req even though it shouldn't have: ${err}`);
+        }
       }
     });
-  }
-});
-
-describe("Test Lte", () => {
-  let contract;
-
-  // We don't really need it as test but it is a test since it is async
-  it(`Test Contract Deployment`, async () => {
-    contract = (await deployContract("LteTest")) as LteTestType;
-    expect(contract).toBeTruthy();
-  });
-
-  const cases = [
-    { a: 1, b: 2, expectedResult: 1, name: " a < b" },
-    { a: 2, b: 1, expectedResult: 0, name: " a > b" },
-    { a: 3, b: 3, expectedResult: 1, name: " a == b" },
-  ];
-
-  const testCases = [
-    {
-      function: ["lte(euint8,euint8)", "euint8.lte(euint8)"],
-      cases,
-    },
-    {
-      function: ["lte(euint16,euint16)", "euint16.lte(euint16)"],
-      cases,
-    },
-    {
-      function: ["lte(euint32,euint32)", "euint32.lte(euint32)"],
-      cases,
-    },
-    {
-      function: ["lte(euint64,euint64)", "euint64.lte(euint64)"],
-      cases,
-    },
-    {
-      function: ["lte(euint128,euint128)", "euint128.lte(euint128)"],
-      cases,
-    },
-  ];
-  for (const test of testCases) {
-    for (const testFunc of test.function) {
-      for (const testCase of test.cases) {
-        it(`Test ${testFunc}${testCase.name}`, async () => {
-          const decryptedResult = await contract.lte(
-            testFunc,
-            BigInt(testCase.a),
-            BigInt(testCase.b)
-          );
-          expect(decryptedResult).toBe(BigInt(testCase.expectedResult));
-        });
-      }
-    }
-  }
-});
-
-describe("Test Sub", () => {
-  const aUnderflow = 1;
-  const bUnderflow = 4;
-  let contract;
-
-  // We don't really need it as test but it is a test since it is async
-  it(`Test Contract Deployment`, async () => {
-    contract = (await deployContract("SubTest")) as SubTestType;
-    expect(contract).toBeTruthy();
-  });
-
-  const testCases = [
-    {
-      function: ["sub(euint8,euint8)", "euint8.sub(euint8)", "euint8 - euint8"],
-      cases: [
-        { a: 9, b: 4, expectedResult: 5, name: "" },
-        {
-          a: aUnderflow,
-          b: bUnderflow,
-          expectedResult: Number(
-            BigInt.asUintN(8, BigInt(aUnderflow - bUnderflow))
-          ),
-          name: " with underflow",
-        },
-      ],
-    },
-    {
-      function: [
-        "sub(euint16,euint16)",
-        "euint16.sub(euint16)",
-        "euint16 - euint16",
-      ],
-      cases: [
-        { a: 9, b: 4, expectedResult: 5, name: "" },
-        {
-          a: aUnderflow,
-          b: bUnderflow,
-          expectedResult: Number(
-            BigInt.asUintN(16, BigInt(aUnderflow - bUnderflow))
-          ),
-          name: " with underflow",
-        },
-      ],
-    },
-    {
-      function: [
-        "sub(euint32,euint32)",
-        "euint32.sub(euint32)",
-        "euint32 - euint32",
-      ],
-      cases: [
-        { a: 9, b: 4, expectedResult: 5, name: "" },
-        {
-          a: aUnderflow,
-          b: bUnderflow,
-          expectedResult: Number(
-            BigInt.asUintN(32, BigInt(aUnderflow - bUnderflow))
-          ),
-          name: " with underflow",
-        },
-      ],
-    },
-    {
-      function: [
-        "sub(euint64,euint64)",
-        "euint64.sub(euint64)",
-        "euint64 - euint64",
-      ],
-      cases: [
-        { a: 9, b: 4, expectedResult: 5, name: "" },
-        {
-          a: aUnderflow,
-          b: bUnderflow,
-          expectedResult: BigInt.asUintN(64, BigInt(aUnderflow - bUnderflow)),
-          name: " with underflow",
-        },
-      ],
-    },
-    {
-      function: [
-        "sub(euint128,euint128)",
-        "euint128.sub(euint128)",
-        "euint128 - euint128",
-      ],
-      cases: [
-        { a: 9, b: 4, expectedResult: 5, name: "" },
-        {
-          a: aUnderflow,
-          b: bUnderflow,
-          expectedResult: BigInt.asUintN(128, BigInt(aUnderflow - bUnderflow)),
-          name: " with underflow",
-        },
-      ],
-    },
-  ];
-
-  for (const test of testCases) {
-    for (const testFunc of test.function) {
-      for (const testCase of test.cases) {
-        it(`Test ${testFunc}${testCase.name}`, async () => {
-          const decryptedResult = await contract.sub(
-            testFunc,
-            BigInt(testCase.a),
-            BigInt(testCase.b)
-          );
-          expect(BigInt(decryptedResult)).toBe(BigInt(testCase.expectedResult));
-        });
-      }
-    }
-  }
-});
-
-describe("Test Mul", () => {
-  const overflow8 = 2 ** 8 / 2 + 1;
-  const overflow16 = 2 ** 16 / 2 + 1;
-  const overflow32 = 2 ** 32 / 2 + 1;
-  let contract;
-
-  // We don't really need it as test but it is a test since it is async
-  it(`Test Contract Deployment`, async () => {
-    contract = (await deployContract("MulTest")) as MulTestType;
-    expect(contract).toBeTruthy();
-  });
-
-  const testCases = [
-    {
-      function: ["mul(euint8,euint8)", "euint8.mul(euint8)", "euint8 * euint8"],
-      cases: [
-        { a: 2, b: 3, expectedResult: 6, name: "" },
-        {
-          a: overflow8,
-          b: 2,
-          expectedResult: Number(BigInt.asUintN(8, BigInt(overflow8 * 2))),
-          name: " as overflow",
-        },
-      ],
-    },
-    {
-      function: [
-        "mul(euint16,euint16)",
-        "euint16.mul(euint16)",
-        "euint16 * euint16",
-      ],
-      cases: [
-        { a: 2, b: 3, expectedResult: 6, name: "" },
-        {
-          a: overflow16,
-          b: 2,
-          expectedResult: Number(BigInt.asUintN(16, BigInt(overflow16 * 2))),
-          name: " as overflow",
-        },
-      ],
-    },
-    {
-      function: [
-        "mul(euint32,euint32)",
-        "euint32.mul(euint32)",
-        "euint32 * euint32",
-      ],
-      cases: [
-        { a: 2, b: 3, expectedResult: 6, name: "" },
-        {
-          a: overflow32,
-          b: 2,
-          expectedResult: Number(BigInt.asUintN(32, BigInt(overflow32 * 2))),
-          name: " as overflow",
-        },
-      ],
-    },
-    {
-      function: [
-        "mul(euint64,euint64)",
-        "euint64.mul(euint64)",
-        "euint64 * euint64",
-      ],
-      cases: [
-        { a: 2, b: 3, expectedResult: 6, name: "" },
-        {
-          a: 3000300300,
-          b: 2000200200,
-          expectedResult: BigInt(6001201260120060000n),
-          name: " with large number",
-        },
-      ],
-    },
-  ];
-
-  for (const test of testCases) {
-    for (const testFunc of test.function) {
-      for (const testCase of test.cases) {
-        it(`Test ${testFunc}${testCase.name}`, async () => {
-          const decryptedResult = await contract.mul(
-            testFunc,
-            BigInt(testCase.a),
-            BigInt(testCase.b)
-          );
-          expect(decryptedResult).toBe(BigInt(testCase.expectedResult));
-        });
-      }
-    }
-  }
-});
-
-describe("Test Lt", () => {
-  let contract;
-
-  // We don't really need it as test but it is a test since it is async
-  it(`Test Contract Deployment`, async () => {
-    contract = (await deployContract("LtTest")) as LtTestType;
-    expect(contract).toBeTruthy();
-  });
-
-  const cases = [
-    { a: 1, b: 2, expectedResult: 1, name: " a < b" },
-    { a: 2, b: 1, expectedResult: 0, name: " a > b" },
-    { a: 3, b: 3, expectedResult: 0, name: " a == b" },
-  ];
-
-  const testCases = [
-    {
-      function: ["lt(euint8,euint8)", "euint8.lt(euint8)"],
-      cases,
-    },
-    {
-      function: ["lt(euint16,euint16)", "euint16.lt(euint16)"],
-      cases,
-    },
-    {
-      function: ["lt(euint32,euint32)", "euint32.lt(euint32)"],
-      cases,
-    },
-    {
-      function: ["lt(euint64,euint64)", "euint64.lt(euint64)"],
-      cases,
-    },
-    {
-      function: ["lt(euint128,euint128)", "euint128.lt(euint128)"],
-      cases,
-    },
-  ];
-  for (const test of testCases) {
-    for (const testFunc of test.function) {
-      for (const testCase of test.cases) {
-        it(`Test ${testFunc}${testCase.name}`, async () => {
-          const decryptedResult = await contract.lt(
-            testFunc,
-            BigInt(testCase.a),
-            BigInt(testCase.b)
-          );
-          expect(decryptedResult).toBe(BigInt(testCase.expectedResult));
-        });
-      }
-    }
-  }
-});
-
-describe("Test Select", () => {
-  let contract;
-
-  // We don't really need it as test but it is a test since it is async
-  it(`Test Contract Deployment`, async () => {
-    contract = (await deployContract("SelectTest")) as SelectTestType;
-    expect(contract).toBeTruthy();
-  });
-
-  const cases = [
-    { control: true, a: 2, b: 3, expectedResult: 2, name: " true" },
-    { control: false, a: 2, b: 3, expectedResult: 3, name: " false" },
-  ];
-
-  const testCases = [
-    {
-      function: "select: euint8",
-      cases,
-    },
-    {
-      function: "select: euint16",
-      cases,
-    },
-    {
-      function: "select: euint32",
-      cases,
-    },
-    {
-      function: "select: euint64",
-      cases,
-    },
-    {
-      function: "select: euint128",
-      cases,
-    },
-    {
-      function: "select: ebool",
-      cases: [
-        { control: true, a: 0, b: 1, expectedResult: 0, name: "true" },
-        { control: false, a: 0, b: 1, expectedResult: 1, name: "false" },
-      ],
-    },
-  ];
-
-  for (const test of testCases) {
-    for (const testCase of test.cases) {
-      it(`Test ${test.function}${testCase.name}`, async () => {
-        const decryptedResult = await contract.select(
-          test.function,
-          testCase.control,
-          BigInt(testCase.a),
-          BigInt(testCase.b)
-        );
-        expect(decryptedResult).toBe(BigInt(testCase.expectedResult));
-      });
-    }
-  }
-});
-
-describe("Test Req", () => {
-  let contract;
-
-  // We don't really need it as test but it is a test since it is async
-  it(`Test Contract Deployment`, async () => {
-    contract = (await deployContract("ReqTest")) as ReqTestType;
-    expect(contract).toBeTruthy();
-  });
-
-  const cases = [
-    { a: 0, shouldCrash: true, name: " with crash" },
-    { a: 1, shouldCrash: false, name: " no crash" },
-  ];
-
-  const testCases = [
-    {
-      function: "req(euint8)",
-      cases,
-    },
-    {
-      function: "req(euint16)",
-      cases,
-    },
-    {
-      function: "req(euint32)",
-      cases,
-    },
-    {
-      function: "req(euint64)",
-      cases,
-    },
-    {
-      function: "req(euint128)",
-      cases,
-    },
-    {
-      function: "req(euint256)",
-      cases,
-    },
-    {
-      function: "req(ebool)",
-      cases,
-    },
-  ];
-
-  for (const test of testCases) {
-    for (const testCase of test.cases) {
-      it(`Test ${test.function}${testCase.name}`, async () => {
-        let hadEvaluationFailure = false;
-        let err = "";
-        try {
-          let tx = await contract.req(test.function, BigInt(testCase.a));
-          let result = await tx.wait();
-        } catch (e) {
-          hadEvaluationFailure = true;
-          err = `${e}`;
-          console.log(`err: ${err}`)
-        }
-        expect(hadEvaluationFailure).toBe(testCase.shouldCrash);
-        if (hadEvaluationFailure) {
-          expect(err.includes("execution reverted")).toBe(true);
-          if (!testCase.shouldCrash) {
-            console.log(`crashed in req even though it shouldn't have: ${err}`);
-          }
-        }
-      });
-    }
   }
 });
 
@@ -1464,26 +1557,26 @@ describe("Test Not", () => {
       function: "not(ebool)",
       bits: 1,
     },
-    // {
-    //   function: "not(euint8)",
-    //   bits: 8,
-    // },
-    // {
-    //   function: "not(euint16)",
-    //   bits: 16,
-    // },
-    // {
-    //   function: "not(euint32)",
-    //   bits: 32,
-    // },
-    // {
-    //   function: "not(euint64)",
-    //   bits: 64,
-    // },
-    // {
-    //   function: "not(euint128)",
-    //   bits: 128,
-    // },
+    {
+      function: "not(euint8)",
+      bits: 8,
+    },
+    {
+      function: "not(euint16)",
+      bits: 16,
+    },
+    {
+      function: "not(euint32)",
+      bits: 32,
+    },
+    {
+      function: "not(euint64)",
+      bits: 64,
+    },
+    {
+      function: "not(euint128)",
+      bits: 128,
+    },
   ];
 
   for (const test of testCases) {
@@ -1491,13 +1584,17 @@ describe("Test Not", () => {
       for (const input of [true, false]) {
         it(`Test ${test.function} !${input} - security zone ${securityZone}`, async () => {
           let val = BigInt(+input);
-          let expectedResult = BigInt(+(!input));
+          let expectedResult = BigInt(+!input);
           if (test.bits !== 1) {
             val = BigInt.asUintN(test.bits, BigInt(+input));
-            expectedResult = (1n << BigInt(test.bits)) - BigInt(1 + (+input));
+            expectedResult = (1n << BigInt(test.bits)) - BigInt(1 + +input);
           }
 
-          const decryptedResult = await contract.not(test.function, val, securityZone);
+          const decryptedResult = await contract.not(
+            test.function,
+            val,
+            securityZone
+          );
 
           expect(decryptedResult).toBe(expectedResult);
         });
@@ -1664,7 +1761,9 @@ describe("Test AsEbool", () => {
       const encInput = await fheContract.instance.encrypt_bool(
         !!Number(testCase.input)
       );
-      let decryptedResult = await contract.castFromPreEncryptedToEbool(encInput);
+      let decryptedResult = await contract.castFromPreEncryptedToEbool(
+        encInput
+      );
       expect(decryptedResult).toBe(testCase.output);
     }
   });
@@ -1680,7 +1779,9 @@ describe("Test AsEbool", () => {
         !!Number(testCase.input),
         1 // non-default security zone
       );
-      let decryptedResult = await contract.castFromPreEncryptedToEbool(encInput);
+      let decryptedResult = await contract.castFromPreEncryptedToEbool(
+        encInput
+      );
       expect(decryptedResult).toBe(testCase.output);
     }
   });
@@ -1801,9 +1902,7 @@ describe("Test AsEuint8", () => {
 
   it(`From pre encrypted - Security Zone 1`, async () => {
     const encInput = await fheContract.instance.encrypt_uint8(Number(value), 1);
-    let decryptedResult = await contract.castFromPreEncryptedToEuint8(
-      encInput
-    );
+    let decryptedResult = await contract.castFromPreEncryptedToEuint8(encInput);
     expect(decryptedResult).toBe(value);
   });
 });
@@ -1894,18 +1993,28 @@ describe("Test AsEuint16", () => {
 
   it(`From pre encrypted`, async () => {
     const encInput = await fheContract.instance.encrypt_uint16(Number(value));
-    let decryptedResult = await contract.castFromPreEncryptedToEuint16(encInput);
+    let decryptedResult = await contract.castFromPreEncryptedToEuint16(
+      encInput
+    );
     expect(decryptedResult).toBe(value);
   });
 
   it(`From pre encrypted - Security Zone 1`, async () => {
-    const encInput = await fheContract.instance.encrypt_uint16(Number(value), 1);
-    let decryptedResult = await contract.castFromPreEncryptedToEuint16(encInput);
+    const encInput = await fheContract.instance.encrypt_uint16(
+      Number(value),
+      1
+    );
+    let decryptedResult = await contract.castFromPreEncryptedToEuint16(
+      encInput
+    );
     expect(decryptedResult).toBe(value);
   });
 
   it(`From pre encrypted - Security Zone 1`, async () => {
-    const encInput = await fheContract.instance.encrypt_uint16(Number(value), 1);
+    const encInput = await fheContract.instance.encrypt_uint16(
+      Number(value),
+      1
+    );
     let decryptedResult = await contract.castFromPreEncryptedToEuint16(
       encInput
     );
@@ -1999,18 +2108,28 @@ describe("Test AsEuint32", () => {
 
   it(`From pre encrypted`, async () => {
     const encInput = await fheContract.instance.encrypt_uint32(Number(value));
-    let decryptedResult = await contract.castFromPreEncryptedToEuint32(encInput);
+    let decryptedResult = await contract.castFromPreEncryptedToEuint32(
+      encInput
+    );
     expect(decryptedResult).toBe(value);
   });
 
   it(`From pre encrypted - Security Zone 1`, async () => {
-    const encInput = await fheContract.instance.encrypt_uint32(Number(value), 1);
-    let decryptedResult = await contract.castFromPreEncryptedToEuint32(encInput);
+    const encInput = await fheContract.instance.encrypt_uint32(
+      Number(value),
+      1
+    );
+    let decryptedResult = await contract.castFromPreEncryptedToEuint32(
+      encInput
+    );
     expect(decryptedResult).toBe(value);
   });
 
   it(`From pre encrypted - Security Zone 1`, async () => {
-    const encInput = await fheContract.instance.encrypt_uint32(Number(value), 1);
+    const encInput = await fheContract.instance.encrypt_uint32(
+      Number(value),
+      1
+    );
     let decryptedResult = await contract.castFromPreEncryptedToEuint32(
       encInput
     );
@@ -2104,13 +2223,17 @@ describe("Test AsEuint64", () => {
 
   it(`From pre encrypted`, async () => {
     const encInput = await fheContract.instance.encrypt_uint64(value);
-    let decryptedResult = await contract.castFromPreEncryptedToEuint64(encInput);
+    let decryptedResult = await contract.castFromPreEncryptedToEuint64(
+      encInput
+    );
     expect(decryptedResult).toBe(value);
   });
 
   it(`From pre encrypted - Security Zone 1`, async () => {
     const encInput = await fheContract.instance.encrypt_uint64(value, 1);
-    let decryptedResult = await contract.castFromPreEncryptedToEuint64(encInput);
+    let decryptedResult = await contract.castFromPreEncryptedToEuint64(
+      encInput
+    );
     expect(decryptedResult).toBe(value);
   });
 
@@ -2208,13 +2331,17 @@ describe("Test AsEuint128", () => {
 
   it(`From pre encrypted`, async () => {
     const encInput = await fheContract.instance.encrypt_uint128(value);
-    let decryptedResult = await contract.castFromPreEncryptedToEuint128(encInput);
+    let decryptedResult = await contract.castFromPreEncryptedToEuint128(
+      encInput
+    );
     expect(decryptedResult).toBe(value);
   });
 
   it(`From pre encrypted - Security Zone 1`, async () => {
     const encInput = await fheContract.instance.encrypt_uint128(value, 1);
-    let decryptedResult = await contract.castFromPreEncryptedToEuint128(encInput);
+    let decryptedResult = await contract.castFromPreEncryptedToEuint128(
+      encInput
+    );
     expect(decryptedResult).toBe(value);
   });
 
@@ -2323,13 +2450,17 @@ describe("Test AsEuint256", () => {
 
   it(`From pre encrypted`, async () => {
     const encInput = await fheContract.instance.encrypt_uint256(value);
-    let decryptedResult = await contract.castFromPreEncryptedToEuint256(encInput);
+    let decryptedResult = await contract.castFromPreEncryptedToEuint256(
+      encInput
+    );
     expect(decryptedResult).toBe(value);
   });
 
   it(`From pre encrypted - Security Zone 1`, async () => {
     const encInput = await fheContract.instance.encrypt_uint256(value, 1);
-    let decryptedResult = await contract.castFromPreEncryptedToEuint256(encInput);
+    let decryptedResult = await contract.castFromPreEncryptedToEuint256(
+      encInput
+    );
     expect(decryptedResult).toBe(value);
   });
 });
@@ -2355,8 +2486,8 @@ describe("Test AsEaddress", () => {
   for (const funcType of funcTypes) {
     it(`From euint256 - ${funcType}`, async () => {
       let decryptedResult = await contract.castFromEuint256ToEaddress(
-          value,
-          funcType
+        value,
+        funcType
       );
       let decimal = BigInt(decryptedResult);
       expect(decimal).toBe(value);
@@ -2382,21 +2513,27 @@ describe("Test AsEaddress", () => {
   });
 
   it(`From plaintext address`, async () => {
-    let decryptedResult = await contract.castFromPlaintextAddressToEaddress("0x4fB7FF4e004FcADbff708d8d873592B2044d5E8f");
+    let decryptedResult = await contract.castFromPlaintextAddressToEaddress(
+      "0x4fB7FF4e004FcADbff708d8d873592B2044d5E8f"
+    );
     let decimal = BigInt(decryptedResult);
     expect(decimal).toBe(value);
   });
 
   it(`From pre encrypted`, async () => {
     const encInput = await fheContract.instance.encrypt_address(value);
-    let decryptedResult = await contract.castFromPreEncryptedToEaddress(encInput);
+    let decryptedResult = await contract.castFromPreEncryptedToEaddress(
+      encInput
+    );
     let decimal = BigInt(decryptedResult);
     expect(decimal).toBe(value);
   });
 
   it(`From pre encrypted - Security Zone 1`, async () => {
     const encInput = await fheContract.instance.encrypt_address(value, 1);
-    let decryptedResult = await contract.castFromPreEncryptedToEaddress(encInput);
+    let decryptedResult = await contract.castFromPreEncryptedToEaddress(
+      encInput
+    );
     let decimal = BigInt(decryptedResult);
     expect(decimal).toBe(value);
   });

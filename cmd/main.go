@@ -126,7 +126,7 @@ func encrypt(val uint32, t uint8, securityZone int32, tp *precompiles.TxParams) 
 }
 
 func decrypt(utype byte, val []byte, tp *precompiles.TxParams) (uint64, error) {
-	decrypted, _, err := precompiles.Decrypt(utype, val, tp)
+	decrypted, _, err := precompiles.Decrypt(utype, val, big.NewInt(0), tp)
 	if err != nil {
 		return 0, err
 	}

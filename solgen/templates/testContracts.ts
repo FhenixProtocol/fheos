@@ -24,18 +24,25 @@ function TypeCastTestingFunction(
   testType = testType === "uint256" ? "Plaintext" : testType;
   testType = testType === "address" ? "PlaintextAddress" : testType;
   testType = testType.startsWith("inE") ? "PreEncrypted" : testType;
-  testType = capitalize(testType)
+  testType = capitalize(testType);
 
   const encryptedVal = fromTypeEncrypted
     ? `FHE.as${capitalize(fromTypeEncrypted)}(val)`
     : "val";
   let retTypeTs = retType === "bool" ? "boolean" : retType;
-  retTypeTs = retTypeTs.includes("uint") || retTypeTs.includes("address") ? "bigint" : retTypeTs;
+  retTypeTs =
+    retTypeTs.includes("uint") || retTypeTs.includes("address")
+      ? "bigint"
+      : retTypeTs;
 
   let abi: string;
   let func = "\n\n    ";
 
-  if (testType === "PreEncrypted" || testType === "Plaintext" || testType === "PlaintextAddress") {
+  if (
+    testType === "PreEncrypted" ||
+    testType === "Plaintext" ||
+    testType === "PlaintextAddress"
+  ) {
     func += `function castFrom${testType}To${to}(${fromType} val) public pure returns (${retType}) {
         return FHE.decrypt(FHE.as${to}(${encryptedVal}));
     }`;
@@ -61,20 +68,27 @@ export function AsTypeTestingContract(type: string) {
     type
   )}TestType extends BaseContract {\n`;
 
-  let typesToEaddres = AllowedTypesOnCastToEaddress
-    .filter(t => t !== "inEaddress")    // added explicitly later
-    .filter(t => t !== "bytes memory"); // tested indirectly via "inEaddress"
-  let fromTypeCollection = type === "eaddress" ? typesToEaddres : EInputType.concat("uint256");
+  let typesToEaddres = AllowedTypesOnCastToEaddress.filter(
+    (t) => t !== "inEaddress"
+  ) // added explicitly later
+    .filter((t) => t !== "bytes memory"); // tested indirectly via "inEaddress"
+  let fromTypeCollection =
+    type === "eaddress" ? typesToEaddres : EInputType.concat("uint256");
 
   // add inE(type) calldata
   fromTypeCollection = fromTypeCollection.concat(toInTypeParam(type));
 
   for (const fromType of fromTypeCollection) {
-    if (type === fromType || (fromType === "eaddress" && !AllowedTypesOnCastToEaddress.includes(type))) {
+    if (
+      type === fromType ||
+      (fromType === "eaddress" && !AllowedTypesOnCastToEaddress.includes(type))
+    ) {
       continue;
     }
 
-    const fromTypeTs = fromType.startsWith("inE") ? "EncryptedNumber" : `bigint`;
+    const fromTypeTs = fromType.startsWith("inE")
+      ? "EncryptedNumber"
+      : `bigint`;
     const fromTypeSol = fromType.startsWith("e") ? `uint256` : fromType;
     const fromTypeEncrypted = EInputType.includes(fromType)
       ? fromType
@@ -92,7 +106,10 @@ export function AsTypeTestingContract(type: string) {
   funcs = funcs.slice(1);
   abi += `}\n`;
 
-  return [generateTestContract(`As${capitalize(type)}`, funcs, [toInType(type)]), abi];
+  return [
+    generateTestContract(`As${capitalize(type)}`, funcs, [toInType(type)]),
+    abi,
+  ];
 }
 
 export function testContract2ArgBoolRes(name: string, isBoolean: boolean) {
@@ -111,7 +128,7 @@ export function testContract2ArgBoolRes(name: string, isBoolean: boolean) {
   const isEaddressAllowed = IsOperationAllowed(
     name,
     EInputType.indexOf("eaddress")
-  )
+  );
   let func = `function ${name}(string calldata test, uint256 a, uint256 b) public pure returns (uint256 output) {
         if (Utils.cmp(test, "${name}(euint8,euint8)")) {
             if (FHE.decrypt(FHE.${name}(FHE.asEuint8(a), FHE.asEuint8(b)))) {
@@ -387,13 +404,14 @@ export function generateTestContract(
   testFunc: string,
   importTypes: Array<string> = []
 ) {
-  const importStatement = importTypes.length > 0
-    ? `\nimport {${importTypes.join(", ")}} from "../../FHE.sol";`
-    : "";
+  const importStatement =
+    importTypes.length > 0
+      ? `\nimport {${importTypes.join(", ")}} from "../../FHE.sol";`
+      : "";
   return `// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import {FHE} from "../../FHE.sol";${importStatement}
+import {FHE, euint8, euint16, euint32, euint64, euint128, euint256, ebool} from "../../FHE.sol";${importStatement}
 import {Utils} from "./utils/Utils.sol";
 
 error TestNotFound(string test);
@@ -437,6 +455,70 @@ export function testContractReq() {
   return [generateTestContract("req", func), abi];
 }
 
+export function testContractDecrypt() {
+  let func = `function decrypt(string calldata test) public {
+        if (Utils.cmp(test, "decrypt(euint8)")) {
+            euint8 aEnc = FHE.asEuint8(1);
+            require(aEnc.decrypt(1) < 10, "Decryption failed");
+            require(FHE.decrypt(aEnc, 1) < 10, "Decryption failed");
+        } else if (Utils.cmp(test, "decrypt(euint16)")) {
+            euint16 aEnc = FHE.asEuint16(1);
+            require(aEnc.decrypt(1) < 10, "Decryption failed");
+            require(FHE.decrypt(aEnc, 1) < 10, "Decryption failed");
+        } else if (Utils.cmp(test, "decrypt(euint32)")) {
+            euint32 aEnc = FHE.asEuint32(1);
+            require(aEnc.decrypt(1) < 10, "Decryption failed");
+            require(FHE.decrypt(aEnc, 1) < 10, "Decryption failed");
+        } else if (Utils.cmp(test, "decrypt(euint64)")) {
+            euint64 aEnc = FHE.asEuint64(1);
+            require(aEnc.decrypt(1) < 10, "Decryption failed");
+            require(FHE.decrypt(aEnc, 1) < 10, "Decryption failed");
+        } else if (Utils.cmp(test, "decrypt(euint128)")) {
+            euint128 aEnc = FHE.asEuint128(1);
+            require(aEnc.decrypt(1) < 10, "Decryption failed");
+            require(FHE.decrypt(aEnc, 1) < 10, "Decryption failed");
+        } else if (Utils.cmp(test, "decrypt(euint256)")) {
+            euint256 aEnc = FHE.asEuint256(1);
+            require(aEnc.decrypt(1) < 10, "Decryption failed");
+            require(FHE.decrypt(aEnc, 1) < 10, "Decryption failed");
+        } else if (Utils.cmp(test, "decrypt(ebool)")) {
+            ebool aEnc = FHE.asEbool(false);
+            require(!aEnc.decrypt(false), "Decryption failed");
+            require(!FHE.decrypt(aEnc, false), "Decryption failed");
+        } else if (Utils.cmp(test, "decrypt(euint8) fail")) {
+            euint8 aEnc = FHE.asEuint8(1);
+            require(aEnc.decrypt() < 10, "Decryption failed");
+            require(FHE.decrypt(aEnc) < 10, "Decryption failed");
+        } else if (Utils.cmp(test, "decrypt(euint16) fail")) {
+            euint16 aEnc = FHE.asEuint16(1);
+            require(aEnc.decrypt() < 10, "Decryption failed");
+            require(FHE.decrypt(aEnc) < 10, "Decryption failed");
+        } else if (Utils.cmp(test, "decrypt(euint32) fail")) {
+            euint32 aEnc = FHE.asEuint32(1);
+            require(aEnc.decrypt() < 10, "Decryption failed");
+            require(FHE.decrypt(aEnc) < 10, "Decryption failed");
+        } else if (Utils.cmp(test, "decrypt(euint64) fail")) {
+            euint64 aEnc = FHE.asEuint64(1);
+            require(aEnc.decrypt() < 10, "Decryption failed");
+            require(FHE.decrypt(aEnc) < 10, "Decryption failed");
+        } else if (Utils.cmp(test, "decrypt(euint128) fail")) {
+            euint128 aEnc = FHE.asEuint128(1);
+            require(aEnc.decrypt() < 10, "Decryption failed");
+            require(FHE.decrypt(aEnc) < 10, "Decryption failed");
+        } else if (Utils.cmp(test, "decrypt(euint256) fail")) {
+            euint256 aEnc = FHE.asEuint256(1);
+            require(aEnc.decrypt() < 10, "Decryption failed");
+            require(FHE.decrypt(aEnc) < 10, "Decryption failed");
+        }  else {
+            revert TestNotFound(test);
+        }
+    }`;
+  const abi = `export interface DecryptTestType extends BaseContract {
+    decrypt: (test: string) => Promise<{}>;
+}\n`;
+  return [generateTestContract("decrypt", func), abi];
+}
+
 export function testContractReencrypt() {
   let func = `function ${SEALING_FUNCTION_NAME}(string calldata test, uint256 a, bytes32 pubkey) public pure returns (${SEAL_RETURN_TYPE} memory reencrypted) {
         if (Utils.cmp(test, "${SEALING_FUNCTION_NAME}(euint8)")) {
@@ -467,7 +549,10 @@ export function testContractReencrypt() {
   const abi = `export interface SealoutputTestType extends BaseContract {
     ${SEALING_FUNCTION_NAME}: (test: string, a: bigint, pubkey: Uint8Array) => Promise<string>;
 }\n`;
-  return [generateTestContract(SEALING_FUNCTION_NAME, func, ["ebool", "euint8"]), abi];
+  return [
+    generateTestContract(SEALING_FUNCTION_NAME, func, ["ebool", "euint8"]),
+    abi,
+  ];
 }
 
 export function testContract3Arg(name: string) {
