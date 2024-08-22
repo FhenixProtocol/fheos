@@ -1643,7 +1643,6 @@ describe("Test Random", () => {
     it(`Test ${test.function}`, async () => {
       const decryptedResult = await contract.random(test.function);
 
-      console.log("decryptedResult", decryptedResult.toString());
       expect(decryptedResult).toBeLessThan(2 ** test.bits);
     });
   }
