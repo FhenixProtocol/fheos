@@ -125,7 +125,7 @@ contract AddCaller {
         counterPublic = counterPublic + 1;
     }
 
-    function RandomSanity() public {
+    function randomSanity() public {
         counterPublic = counterPublic + 1;
         uint32 a = FHE.decrypt(FHE.randomEuint32());
         uint32 b = FHE.decrypt(FHE.randomEuint32());

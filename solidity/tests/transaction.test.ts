@@ -303,7 +303,7 @@ describe("Test Transactions Scenarios", () => {
   it("Random sanity check", async () => {
     let result;
     try {
-      const tx = await contractCaller.RandomSanity();
+      const tx = await contractCaller.randomSanity();
       await tx.wait();
       const filter = contractCaller.filters.RandomSanityEvent
       const events = await contractCaller.queryFilter(filter, -1)
