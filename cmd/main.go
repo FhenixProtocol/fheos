@@ -103,7 +103,15 @@ func initFheos() (*precompiles.TxParams, error) {
 		return nil, err
 	}
 
-	tp := precompiles.TxParams{false, false, true, nil, common.HexToAddress("0x0000000000000000000000000000000000000000"), nil, nil, vm.BlockContext{}}
+	tp := precompiles.TxParams{
+		false,
+		false,
+		true,
+		nil,
+		common.HexToAddress("0x0000000000000000000000000000000000000000"),
+		vm.GetHashFunc(nil),
+		nil,
+	}
 
 	return &tp, err
 }
