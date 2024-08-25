@@ -2,14 +2,15 @@ package main
 
 import (
 	"fmt"
+	"math/big"
+	"os"
+	"strconv"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/fhenixprotocol/fheos/precompiles"
 	fhedriver "github.com/fhenixprotocol/warp-drive/fhe-driver"
 	"github.com/spf13/cobra"
-	"math/big"
-	"os"
-	"strconv"
 )
 
 func removeDb() error {
@@ -104,13 +105,14 @@ func initFheos() (*precompiles.TxParams, error) {
 	}
 
 	tp := precompiles.TxParams{
-		false,
-		false,
-		true,
-		nil,
-		common.HexToAddress("0x0000000000000000000000000000000000000000"),
-		vm.GetHashFunc(nil),
-		nil,
+		Commit:          false,
+		GasEstimation:   false,
+		EthCall:         true,
+		CiphertextDb:    nil,
+		ContractAddress: common.HexToAddress("0x0000000000000000000000000000000000000000"),
+		GetBlockHash:    vm.GetHashFunc(nil),
+		BlockNumber:     nil,
+		ParallelTxHooks: nil,
 	}
 
 	return &tp, err

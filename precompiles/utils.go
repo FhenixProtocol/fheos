@@ -4,6 +4,8 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
@@ -12,7 +14,6 @@ import (
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	"github.com/fhenixprotocol/fheos/storage"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
-	"math/big"
 )
 
 type TxParams struct {
@@ -23,6 +24,7 @@ type TxParams struct {
 	ContractAddress common.Address
 	GetBlockHash    vm.GetHashFunc
 	BlockNumber     *big.Int
+	ParallelTxHooks types.ParallelTxProcessingHook
 }
 
 type GasBurner interface {
@@ -40,6 +42,13 @@ func TxParamsFromEVM(evm *vm.EVM, callerContract common.Address) TxParams {
 	tp.ContractAddress = callerContract
 	tp.BlockNumber = evm.Context.BlockNumber
 	tp.GetBlockHash = evm.Context.GetHash
+
+	// If this is running in a sequencer, this should not be nil
+	if parallelHook, ok := evm.ProcessingHook.(types.ParallelTxProcessingHook); ok {
+		tp.ParallelTxHooks = parallelHook
+	} else {
+		tp.ParallelTxHooks = nil
+	}
 
 	return tp
 }
