@@ -18,8 +18,7 @@ var (
 )
 
 const (
-	VersionKey       = "version"
-	RandomCounterKey = "random_counter"
+	VersionKey = "version"
 )
 
 type EthDbWrapper struct {
@@ -117,47 +116,4 @@ func (p *EthDbWrapper) GetCt(h types.Hash) (*types.CipherTextRepresentation, err
 	}
 
 	return &cipher, nil
-}
-
-func (p *EthDbWrapper) GetRandomCounter() (uint64, error) {
-	key := []byte(RandomCounterKey)
-	val, err := p.db.Get(key)
-	if err != nil {
-		return 0, err
-	}
-
-	// Assuming the random counter is stored as a uint64
-	var version uint64
-	buf := bytes.NewBuffer(val)
-	err = gob.NewDecoder(buf).Decode(&version)
-	if err != nil {
-		return 0, err
-	}
-
-	return version, nil
-}
-
-func (p *EthDbWrapper) IncRandomCounter() error {
-	counter, err := p.GetRandomCounter()
-	if err != nil {
-		return err
-	}
-
-	key := []byte(RandomCounterKey)
-	var buf bytes.Buffer
-	err = gob.NewEncoder(&buf).Encode(counter + 1)
-	if err != nil {
-		return err
-	}
-	return p.db.Put(key, buf.Bytes())
-}
-
-func (p *EthDbWrapper) ResetRandomCounter() error {
-	key := []byte(RandomCounterKey)
-	var buf bytes.Buffer
-	err := gob.NewEncoder(&buf).Encode(0)
-	if err != nil {
-		return err
-	}
-	return p.db.Put(key, buf.Bytes())
 }
