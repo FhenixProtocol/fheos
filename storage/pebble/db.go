@@ -17,10 +17,6 @@ var (
 	once     sync.Once
 )
 
-const (
-	VersionKey = "version"
-)
-
 type EthDbWrapper struct {
 	types.Storage
 	db ethdb.Database
@@ -60,7 +56,7 @@ func NewStorage(path string) (*EthDbWrapper, error) {
 //}
 
 func (p *EthDbWrapper) GetVersion() (uint64, error) {
-	key := []byte(VersionKey)
+	key := []byte("version")
 	val, err := p.db.Get(key)
 	if err != nil {
 		return 0, err
@@ -78,7 +74,7 @@ func (p *EthDbWrapper) GetVersion() (uint64, error) {
 }
 
 func (p *EthDbWrapper) PutVersion(v uint64) error {
-	key := []byte(VersionKey)
+	key := []byte("version")
 	var buf bytes.Buffer
 	err := gob.NewEncoder(&buf).Encode(v)
 	if err != nil {
