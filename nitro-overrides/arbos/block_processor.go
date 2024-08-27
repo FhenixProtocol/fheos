@@ -348,6 +348,7 @@ func ProduceBlockAdvanced(
 					return hooks.PostTxFilter(header, state, tx, sender, dataGas, result)
 				},
 				NewParallelTxProcessor(
+					vm.DefaultTxProcessor{},
 					func(decrypt *fheos.PendingDecryption) {
 						hooks.NotifyCt(tx, options, decrypt)
 					},
