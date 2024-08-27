@@ -11,22 +11,23 @@ type PendingDecryption = fheos.PendingDecryption
 // Ensure ParallelTxProcessor implements ParallelTxProcessingHook
 var _ fheos.ParallelTxProcessingHook = (*ParallelTxProcessor)(nil)
 
-// Update ParallelTxProcessor to implement ParallelTxProcessingHook
+// Update ParallelTxProcessor to implement ParallelTxProcessingHook and hold TxProcessingHook
 type ParallelTxProcessor struct {
-	vm.DefaultTxProcessor
+	vm.TxProcessingHook
 	notifyCt         func(*PendingDecryption)
 	notifyDecryptRes func(*PendingDecryption) error
 }
 
-// NewParallelTxProcessor creates a new ParallelTxProcessor with the provided notification functions
+// NewParallelTxProcessor creates a new ParallelTxProcessor with the provided TxProcessingHook and notification functions
 func NewParallelTxProcessor(
+	txProcessingHook vm.TxProcessingHook,
 	notifyCt func(*PendingDecryption),
 	notifyDecryptRes func(*PendingDecryption) error,
 ) *ParallelTxProcessor {
 	return &ParallelTxProcessor{
-		DefaultTxProcessor: vm.DefaultTxProcessor{},
-		notifyCt:           notifyCt,
-		notifyDecryptRes:   notifyDecryptRes,
+		TxProcessingHook: txProcessingHook,
+		notifyCt:         notifyCt,
+		notifyDecryptRes: notifyDecryptRes,
 	}
 }
 
