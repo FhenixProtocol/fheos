@@ -1429,7 +1429,7 @@ func Random(utype byte, securityZone int32, tp *TxParams) ([]byte, uint64, error
 		logger.Warn("missing BlockNumber inside precompile")
 	}
 
-	randomCounter := uint64(0)
+	var randomCounter uint64
 	if tp.Commit {
 		// We're incrementing nonce regardless of whether the transaction is successful or not,
 		// so that even after a revert, the random is different.
@@ -1437,7 +1437,7 @@ func Random(utype byte, securityZone int32, tp *TxParams) ([]byte, uint64, error
 		// that came before this Tx would have received a different seed.
 		randomCounter = State.IncRandomCounter(prevBlockHash)
 	} else {
-		State.GetRandomCounter(prevBlockHash)
+		randomCounter = State.GetRandomCounter(prevBlockHash)
 	}
 
 	seed := GenerateSeedFromEntropy(tp.ContractAddress, prevBlockHash, randomCounter)
