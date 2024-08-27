@@ -92,17 +92,11 @@ func UtypeToString(utype byte) string {
 // ============================================================
 
 func Log(s string, tp *TxParams) (uint64, error) {
-	//if tp.BlockNumber != nil {
-	//	logger.Info(fmt.Sprintf("Block Number: %d", tp.BlockNumber.Uint64()))
-	//} else {
-	//	logger.Info("tp.Blocknumber is nil")
-	//}
 	if tp.GasEstimation {
 		return 1, nil
 	}
 
 	logger.Debug(fmt.Sprintf("Contract Log: %s", s))
-	logger.Info(fmt.Sprintf("Contract Log: %s", s))
 	return 1, nil
 }
 
