@@ -7,12 +7,11 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethdb/memorydb"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	"github.com/fhenixprotocol/fheos/storage"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
-	"golang.org/x/crypto/sha3"
-	"hash"
 	"math/big"
 )
 
@@ -128,22 +127,9 @@ func GenerateSeedFromEntropy(contractAddress common.Address, prevBlockHash commo
 	binary.BigEndian.PutUint64(uint64Bytes, randomCounter)
 	data = append(data, uint64Bytes...)
 
-	hashResult := Keccak256(data)
+	hashResult := crypto.Keccak256Hash(data)
 
-	result := binary.LittleEndian.Uint64(hashResult)
+	result := binary.LittleEndian.Uint64(hashResult[:])
 	logger.Debug(fmt.Sprintf("generated seed for random: %d", result))
 	return result
-}
-
-func Keccak256(data ...[]byte) []byte {
-	d := NewKeccakState()
-	for _, datum := range data {
-		d.Write(datum)
-	}
-	return d.Sum(nil)
-}
-
-// NewKeccakState creates a new KeccakState
-func NewKeccakState() hash.Hash {
-	return sha3.NewLegacyKeccak256()
 }
