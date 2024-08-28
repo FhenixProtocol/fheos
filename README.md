@@ -23,6 +23,8 @@ Right now we support `Arbitrum Nitro` as the base EVM chain and `TFHE` as the FH
  
 ## Usage
 
+![call-order](./schemas/call-order.png)
+
 ### Prerequisites
 
 - Node.js and (p)npm
@@ -48,6 +50,9 @@ Run `make install` to install all dependencies, or choose a specific folder:
 ### Generating Code
 
 Run `make gen` will generate both the chain code and the solidity library.
+
+generation order
+![gen-order](./schemas/gen-order.png)
 
 #### Arbitrum
 
