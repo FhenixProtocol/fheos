@@ -16,6 +16,7 @@ gen-fheops:
 
 .PHONY: compile
 compile:
+	cp solidity/.env.example solidity/.env
 	cd solidity && pnpm compile
 
 .PHONY: gencompile
@@ -33,7 +34,6 @@ check_network_is_running:
 
 .PHONY: test
 test: check_network_is_running gen compile
-	cp solidity/.env.example solidity/.env
 	cd solidity && pnpm install
 	cd solidity && pnpm test
 
@@ -41,6 +41,11 @@ test: check_network_is_running gen compile
 test-precomp: check_network_is_running
 	cp solidity/.env.example solidity/.env
 	cd solidity && pnpm test -- precompiles.test.ts
+
+.PHONY: test-tx
+test-tx: check_network_is_running
+	cp solidity/.env.example solidity/.env
+	cd solidity && pnpm test -- transaction.test.ts
 
 .PHONY: build
 build:

@@ -9,7 +9,13 @@ import {Utils} from "./utils/Utils.sol";
 error TestNotFound(string test);
 
 contract AddCaller {
+    // Don't change the order of these variables!
+    // Two things must be preserved:
+    // 1. The counter variable must be the first one, to allow delegate calls
+    // 2. The counterPublic has to come right before the addContract variable, which can't be initialized.
+    //    Only this catches the sstore bug
     euint32 private counter = FHE.asEuint32(0);
+    uint64 private counterPublic = 0;
     AddCallee public addContract;
     error DelegateCallFailed();
 
@@ -111,6 +117,11 @@ contract AddCaller {
 
     function getCounter(bytes32 publicKey) public view returns (string memory) {
         return counter.seal(publicKey);
+    }
+
+    function sStoreSanity() public {
+        // catches a bug we had a in the past on the sstore hook
+        counterPublic = counterPublic + 1;
     }
 }
 
