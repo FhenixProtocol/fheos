@@ -1398,7 +1398,7 @@ func Not(utype byte, value []byte, tp *TxParams) ([]byte, uint64, error) {
 	return resultHash[:], gas, nil
 }
 
-func Random(utype byte, securityZone int32, tp *TxParams) ([]byte, uint64, error) {
+func Random(utype byte, seed uint64, securityZone int32, tp *TxParams) ([]byte, uint64, error) {
 	functionName := types.Random
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
@@ -1418,31 +1418,36 @@ func Random(utype byte, securityZone int32, tp *TxParams) ([]byte, uint64, error
 		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
-	// Seed generation
-	// The current block hash is not yet calculated, se we use the previous block hash
-	var prevBlockHash = common.Hash{}
-
-	if tp.BlockNumber != nil {
-		prevBlockNumber := tp.BlockNumber.Uint64() - 1
-		prevBlockHash = tp.GetBlockHash(prevBlockNumber)
+	var finalSeed uint64
+	if seed != 0 {
+		finalSeed = seed
 	} else {
-		logger.Warn("missing BlockNumber inside precompile")
+		// Seed generation
+		// The current block hash is not yet calculated, se we use the previous block hash
+		var prevBlockHash = common.Hash{}
+
+		if tp.BlockNumber != nil {
+			prevBlockNumber := tp.BlockNumber.Uint64() - 1
+			prevBlockHash = tp.GetBlockHash(prevBlockNumber)
+		} else {
+			logger.Warn("missing BlockNumber inside precompile")
+		}
+
+		var randomCounter uint64
+		if tp.Commit {
+			// We're incrementing nonce regardless of whether the transaction is successful or not,
+			// so that even after a revert, the random is different.
+			// Secondly, we're incrementing before the request for the random number, so that queries
+			// that came before this Tx would have received a different seed.
+			randomCounter = State.IncRandomCounter(prevBlockHash)
+		} else {
+			randomCounter = State.GetRandomCounter(prevBlockHash)
+		}
+
+		finalSeed = GenerateSeedFromEntropy(tp.ContractAddress, prevBlockHash, randomCounter)
 	}
 
-	var randomCounter uint64
-	if tp.Commit {
-		// We're incrementing nonce regardless of whether the transaction is successful or not,
-		// so that even after a revert, the random is different.
-		// Secondly, we're incrementing before the request for the random number, so that queries
-		// that came before this Tx would have received a different seed.
-		randomCounter = State.IncRandomCounter(prevBlockHash)
-	} else {
-		randomCounter = State.GetRandomCounter(prevBlockHash)
-	}
-
-	seed := GenerateSeedFromEntropy(tp.ContractAddress, prevBlockHash, randomCounter)
-
-	result, err := fhe.FheRandom(securityZone, uintType, seed)
+	result, err := fhe.FheRandom(securityZone, uintType, finalSeed)
 	if err != nil {
 		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
