@@ -2624,7 +2624,7 @@ library FHE {
     /// @dev Calls the desired precompile and returns the hash of the ciphertext
     /// @param securityZone the security zone to use for the random value
     function randomEuint8(int32 securityZone) internal pure returns (euint8) {
-        uint256 result = random(Common.EUINT8_TFHE, securityZone);
+        uint256 result = random(Common.EUINT8_TFHE, 0, securityZone);
         return euint8.wrap(result);
     }
     /// @notice Generates a random value of a euint8 type
@@ -2636,7 +2636,7 @@ library FHE {
     /// @dev Calls the desired precompile and returns the hash of the ciphertext
     /// @param securityZone the security zone to use for the random value
     function randomEuint16(int32 securityZone) internal pure returns (euint16) {
-        uint256 result = random(Common.EUINT16_TFHE, securityZone);
+        uint256 result = random(Common.EUINT16_TFHE, 0, securityZone);
         return euint16.wrap(result);
     }
     /// @notice Generates a random value of a euint16 type
@@ -2648,7 +2648,7 @@ library FHE {
     /// @dev Calls the desired precompile and returns the hash of the ciphertext
     /// @param securityZone the security zone to use for the random value
     function randomEuint32(int32 securityZone) internal pure returns (euint32) {
-        uint256 result = random(Common.EUINT32_TFHE, securityZone);
+        uint256 result = random(Common.EUINT32_TFHE, 0, securityZone);
         return euint32.wrap(result);
     }
     /// @notice Generates a random value of a euint32 type
@@ -2660,7 +2660,7 @@ library FHE {
     /// @dev Calls the desired precompile and returns the hash of the ciphertext
     /// @param securityZone the security zone to use for the random value
     function randomEuint64(int32 securityZone) internal pure returns (euint64) {
-        uint256 result = random(Common.EUINT64_TFHE, securityZone);
+        uint256 result = random(Common.EUINT64_TFHE, 0, securityZone);
         return euint64.wrap(result);
     }
     /// @notice Generates a random value of a euint64 type
@@ -2672,7 +2672,7 @@ library FHE {
     /// @dev Calls the desired precompile and returns the hash of the ciphertext
     /// @param securityZone the security zone to use for the random value
     function randomEuint128(int32 securityZone) internal pure returns (euint128) {
-        uint256 result = random(Common.EUINT128_TFHE, securityZone);
+        uint256 result = random(Common.EUINT128_TFHE, 0, securityZone);
         return euint128.wrap(result);
     }
     /// @notice Generates a random value of a euint128 type
@@ -2684,7 +2684,7 @@ library FHE {
     /// @dev Calls the desired precompile and returns the hash of the ciphertext
     /// @param securityZone the security zone to use for the random value
     function randomEuint256(int32 securityZone) internal pure returns (euint256) {
-        uint256 result = random(Common.EUINT256_TFHE, securityZone);
+        uint256 result = random(Common.EUINT256_TFHE, 0, securityZone);
         return euint256.wrap(result);
     }
     /// @notice Generates a random value of a euint256 type

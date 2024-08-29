@@ -853,7 +853,7 @@ const RandomFunctionForType = (type: string) => {
     function random${capitalize(
     type
   )}(int32 securityZone) internal pure returns (${type}) {
-        uint256 result = random(Common.${type.toUpperCase()}_TFHE, securityZone);
+        uint256 result = random(Common.${type.toUpperCase()}_TFHE, 0, securityZone);
         return ${type}.wrap(result);
     }
     /// @notice Generates a random value of a ${type} type
