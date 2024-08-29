@@ -821,6 +821,7 @@ export const RandomGenericFunction = () => {
     /// @notice Generates a random value of a given type with the given seed, for the provided securityZone
     /// @dev Calls the desired precompile and returns the hash of the ciphertext
     /// @param uintType the type of the random value to generate
+    /// @param seed the seed to use to create a random value from
     /// @param securityZone the security zone to use for the random value
     function random(uint8 uintType, uint64 seed, int32 securityZone) internal pure returns (uint256) {
         bytes memory b = FheOps(Precompiles.Fheos).random(uintType, seed, securityZone);
@@ -829,7 +830,7 @@ export const RandomGenericFunction = () => {
     /// @notice Generates a random value of a given type with the given seed
     /// @dev Calls the desired precompile and returns the hash of the ciphertext
     /// @param uintType the type of the random value to generate
-    /// @param securityZone the security zone to use for the random value
+    /// @param seed the seed to use to create a random value from
     function random(uint8 uintType, uint32 seed) internal pure returns (uint256) {
         return random(uintType, seed, 0);
     }
