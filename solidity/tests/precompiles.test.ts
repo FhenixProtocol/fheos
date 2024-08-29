@@ -1648,7 +1648,7 @@ describe("Test Random", () => {
   }
 });
 
-describe.only("Test Random with seed", () => {
+describe("Test Random with seed", () => {
   let contract;
 
   // We don't really need it as test but it is a test since it is async
