@@ -814,3 +814,63 @@ export const DecryptBinding = (thisType: string) => {
         return FHE.decrypt(value, defaultValue);
     }`;
 };
+
+
+export const RandomGenericFunction = () => {
+  return `
+    /// @notice Generates a random value of a given type with the given seed, for the provided securityZone
+    /// @dev Calls the desired precompile and returns the hash of the ciphertext
+    /// @param uintType the type of the random value to generate
+    /// @param seed the seed to use to create a random value from
+    /// @param securityZone the security zone to use for the random value
+    function random(uint8 uintType, uint64 seed, int32 securityZone) internal pure returns (uint256) {
+        bytes memory b = FheOps(Precompiles.Fheos).random(uintType, seed, securityZone);
+        return Impl.getValue(b);
+    }
+    /// @notice Generates a random value of a given type with the given seed
+    /// @dev Calls the desired precompile and returns the hash of the ciphertext
+    /// @param uintType the type of the random value to generate
+    /// @param seed the seed to use to create a random value from
+    function random(uint8 uintType, uint32 seed) internal pure returns (uint256) {
+        return random(uintType, seed, 0);
+    }
+    /// @notice Generates a random value of a given type
+    /// @dev Calls the desired precompile and returns the hash of the ciphertext
+    /// @param uintType the type of the random value to generate
+    function random(uint8 uintType) internal pure returns (uint256) {
+        return random(uintType, 0, 0);
+    }
+    `;
+};
+
+const RandomFunctionForType = (type: string) => {
+  if (type === "ebool" || type === "eaddress") {
+    return "";
+  }
+  return `/// @notice Generates a random value of a ${type} type for provided securityZone
+    /// @dev Calls the desired precompile and returns the hash of the ciphertext
+    /// @param securityZone the security zone to use for the random value
+    function random${capitalize(
+    type
+  )}(int32 securityZone) internal pure returns (${type}) {
+        uint256 result = random(Common.${type.toUpperCase()}_TFHE, 0, securityZone);
+        return ${type}.wrap(result);
+    }
+    /// @notice Generates a random value of a ${type} type
+    /// @dev Calls the desired precompile and returns the hash of the ciphertext
+    function random${capitalize(
+    type
+  )}() internal pure returns (${type}) {
+        return random${capitalize(type)}(0);
+    }
+    `;
+};
+
+export const RandomFunctions = () => {
+  let outputFile = "";
+  for (let type of EInputType) {
+    outputFile += RandomFunctionForType(type);
+  }
+
+  return outputFile;
+};

@@ -27,6 +27,7 @@ const specificFunctions = [
   },
   { name: "getCiphertext(", amount: 1, paramTypes: ["encrypted"] },
   { name: "fhedriver.UintType(", amount: 1, paramTypes: ["encrypted"] },
+  { name: "GenerateSeedFromEntropy(", amount: 0, paramTypes: [] },
 ];
 
 async function analyzeGoFile(
@@ -96,7 +97,6 @@ async function analyzeGoFile(
           );
           let amount = keyfn.amount;
           if (funcName === SEALING_FUNCTION_NAME) {
-            // console.log(`func name: ${funcName}`)
             amount = 2;
             returnType = `${SEAL_RETURN_TYPE} memory`;
             needsSameType = false;
@@ -105,7 +105,7 @@ async function analyzeGoFile(
 
           // we generate these manually for now
           if (
-            ["trivialencrypt", "cast", "verify", "random"].includes(
+            ["trivialencrypt", "cast", "verify" ].includes(
               funcName.toLowerCase()
             )
           ) {

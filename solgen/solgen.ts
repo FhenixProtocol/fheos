@@ -15,12 +15,15 @@ import {
   SealFromType,
   DecryptBinding,
   IsOperationAllowed,
+  RandomGenericFunction,
+  RandomFunctions,
   SolTemplateDecrypt,
 } from "./templates/library";
 
 import {
-  testContract2Arg,
+  testContract0Args,
   testContract1Arg,
+  testContract2Arg,
   testContract3Arg,
   testContract2ArgBoolRes,
   testContractReencrypt,
@@ -195,6 +198,18 @@ const generateSolidityTestContract = (metadata: FunctionMetadata): string[] => {
     return testContractReencrypt();
   }
 
+  if (inputCount === 0) {
+    return testContract0Args(functionName);
+  }
+
+  if (
+    inputCount === 1 &&
+    inputs[0] === "encrypted" &&
+    returnValueType === "encrypted"
+  ) {
+    return testContract1Arg(functionName);
+  }
+
   if (
     inputCount === 2 &&
     inputs[0] === "encrypted" &&
@@ -208,14 +223,6 @@ const generateSolidityTestContract = (metadata: FunctionMetadata): string[] => {
       isBooleanMathOp,
       getOperator(functionName)
     );
-  }
-
-  if (
-    inputCount === 1 &&
-    inputs[0] === "encrypted" &&
-    returnValueType === "encrypted"
-  ) {
-    return testContract1Arg(functionName);
   }
 
   if (inputCount === 3) {
@@ -232,6 +239,11 @@ const generateSolidityTestContract = (metadata: FunctionMetadata): string[] => {
 /** Generates a Solidity bench contract based on the provided metadata */
 const generateSolidityBenchContract = (metadata: FunctionMetadata): string => {
   const { functionName, inputCount, inputs } = metadata;
+
+  if (functionName === "random" || functionName === "decrypt") {
+    // todo: bench random/decrypt function
+    return "";
+  }
 
   if (functionName === SEALING_FUNCTION_NAME) {
     return benchContractReencrypt();
@@ -355,61 +367,6 @@ const parseFunctionDefinition = (funcDef: string): ParsedFunction => {
   };
 };
 
-const generateRandomGenericFunction = () => {
-  return `
-    /// @notice Generates a random value of a given type for the provided securityZone
-    /// @dev Calls the desired precompile and returns the hash of the ciphertext
-    /// @param uintType the type of the random value to generate
-    /// @param seed the seed to use for the random value
-    /// @param securityZone the security zone to use for the random value
-    function random(uint8 uintType, uint64 seed, int32 securityZone) internal pure returns (uint256) {
-        bytes memory b = FheOps(Precompiles.Fheos).random(uintType, seed, securityZone);
-        return Impl.getValue(b);
-    }
-    /// @notice Generates a random value of a given type
-    /// @dev Calls the desired precompile and returns the hash of the ciphertext
-    /// @param uintType the type of the random value to generate
-    /// @param seed the seed to use for the random value
-    function random(uint8 uintType, uint64 seed) internal pure returns (uint256) {
-        return random(uintType, seed, 0);
-    }
-    `;
-};
-
-const generateRandomFunctionForType = (type: string) => {
-  if (type === "ebool" || type === "eaddress") {
-    return "";
-  }
-  return `/// @notice Generates a random value of a ${type} type for provided securityZone
-    /// @dev Calls the desired precompile and returns the hash of the ciphertext
-    /// @param seed the seed to use for the random value
-    /// @param securityZone the security zone to use for the random value
-    function random${capitalize(
-      type
-    )}(uint64 seed, int32 securityZone) internal pure returns (${type}) {
-        uint256 result = random(Common.${type.toUpperCase()}_TFHE, seed, securityZone);
-        return ${type}.wrap(result);
-    }
-    /// @notice Generates a random value of a ${type} type
-    /// @dev Calls the desired precompile and returns the hash of the ciphertext
-    /// @param seed the seed to use for the random value
-    function random${capitalize(
-      type
-    )}(uint64 seed) internal pure returns (${type}) {
-        return random${capitalize(type)}(seed, 0);
-    }
-    `;
-};
-
-const generateRandomFunctions = () => {
-  let outputFile = "";
-  for (let type of EInputType) {
-    outputFile += generateRandomFunctionForType(type);
-  }
-
-  return outputFile;
-};
-
 // Helper function to capitalize type name for asEuintX function call.
 
 // This will generate the Solidity function body based on the function definition provided.
@@ -443,22 +400,20 @@ const main = async () => {
   const benchContracts: Record<string, string> = {};
   let testContractsAbis = "";
   let importLineHelper: string = "import { ";
+
   for (let func of metadata) {
-    if (func.functionName !== "random") {
-      // this generates test contract for every function
-      const testContract = generateSolidityTestContract(func);
-      const benchContract =
-        func.functionName === "decrypt"
-          ? ""
-          : generateSolidityBenchContract(func);
-      if (testContract[0] !== "") {
-        testContracts[capitalize(func.functionName)] = testContract[0];
-        if (benchContract !== "") {
-          benchContracts[capitalize(func.functionName)] = benchContract;
-        }
-        testContractsAbis += testContract[1];
-        importLineHelper += `${capitalize(func.functionName)}TestType,\n`;
-      }
+    // this generates test contract for every function
+    const testContract = generateSolidityTestContract(func);
+    const benchContract = generateSolidityBenchContract(func);
+
+    if (testContract[0] !== "") {
+      testContracts[capitalize(func.functionName)] = testContract[0];
+      testContractsAbis += testContract[1];
+      importLineHelper += `${capitalize(func.functionName)}TestType,\n`;
+    }
+
+    if (benchContract !== "") {
+      benchContracts[capitalize(func.functionName)] = benchContract;
     }
     // this generates solidity header functions for all the different possible types
     solidityHeaders = solidityHeaders.concat(genSolidityFunctionHeaders(func));
@@ -473,8 +428,8 @@ const main = async () => {
     );
     outputFile += funcDefinition;
   }
-  outputFile += generateRandomGenericFunction();
-  outputFile += generateRandomFunctions();
+  outputFile += RandomGenericFunction();
+  outputFile += RandomFunctions();
   outputFile += `\n\n    // ********** TYPE CASTING ************* //`;
 
   // generate casting functions

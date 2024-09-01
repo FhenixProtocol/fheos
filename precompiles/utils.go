@@ -1,14 +1,18 @@
 package precompiles
 
 import (
+	"encoding/binary"
 	"errors"
+	"fmt"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethdb/memorydb"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	"github.com/fhenixprotocol/fheos/storage"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
+	"math/big"
 )
 
 type TxParams struct {
@@ -17,6 +21,8 @@ type TxParams struct {
 	EthCall         bool
 	CiphertextDb    *memorydb.Database
 	ContractAddress common.Address
+	GetBlockHash    vm.GetHashFunc
+	BlockNumber     *big.Int
 }
 
 type GasBurner interface {
@@ -32,6 +38,8 @@ func TxParamsFromEVM(evm *vm.EVM, callerContract common.Address) TxParams {
 
 	tp.CiphertextDb = evm.CiphertextDb
 	tp.ContractAddress = callerContract
+	tp.BlockNumber = evm.Context.BlockNumber
+	tp.GetBlockHash = evm.Context.GetHash
 
 	return tp
 }
@@ -107,4 +115,21 @@ func minInt(a int, b int) int {
 
 func evaluateRequire(ct *fhe.FheEncrypted) bool {
 	return fhe.Require(ct)
+}
+
+func GenerateSeedFromEntropy(contractAddress common.Address, prevBlockHash common.Hash, randomCounter uint64) uint64 {
+	data := make([]byte, 0, len(contractAddress)+len(prevBlockHash)+8) // 8 bytes for uint64
+
+	data = append(data, contractAddress[:]...)
+	data = append(data, prevBlockHash[:]...)
+
+	uint64Bytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(uint64Bytes, randomCounter)
+	data = append(data, uint64Bytes...)
+
+	hashResult := crypto.Keccak256Hash(data)
+
+	result := binary.LittleEndian.Uint64(hashResult[:])
+	logger.Debug(fmt.Sprintf("generated seed for random: %d", result))
+	return result
 }

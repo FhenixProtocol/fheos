@@ -21,6 +21,7 @@ import {
   ShlTestType,
   ShrTestType,
   NotTestType,
+  RandomTestType,
   AsEboolTestType,
   AsEuint8TestType,
   AsEuint16TestType,
@@ -1600,6 +1601,70 @@ describe("Test Not", () => {
       }
     }
   }
+});
+
+describe("Test Random", () => {
+  let contract;
+
+  // We don't really need it as test but it is a test since it is async
+  it(`Test Contract Deployment`, async () => {
+    contract = (await deployContract("RandomTest")) as RandomTestType;
+    expect(contract).toBeTruthy();
+  });
+
+  const testCases = [
+    {
+      function: "randomEuint8()",
+      bits: 8,
+    },
+    {
+      function: "randomEuint16()",
+      bits: 16,
+    },
+    {
+      function: "randomEuint32()",
+      bits: 32,
+    },
+    {
+      function: "randomEuint64()",
+      bits: 64,
+    },
+    {
+      function: "randomEuint128()",
+      bits: 128,
+    },
+    {
+      function: "randomEuint256()",
+      bits: 256,
+    },
+  ];
+
+  for (const test of testCases) {
+    it(`Test ${test.function}`, async () => {
+      const decryptedResult = await contract.random(test.function);
+
+      expect(decryptedResult).toBeLessThan(2 ** test.bits);
+    });
+  }
+});
+
+describe("Test Random with seed", () => {
+  let contract;
+
+  // We don't really need it as test but it is a test since it is async
+  it(`Test Contract Deployment`, async () => {
+    contract = (await deployContract("RandomSeedTest")) as RandomTestType;
+    expect(contract).toBeTruthy();
+  });
+
+  it(`Test Random With Seed`, async () => {
+    const firstResult = await contract.randomSeed(1337);
+    const secondResult = await contract.randomSeed(87654);
+    const thirdResult = await contract.randomSeed(1337);
+
+    expect(firstResult).toBe(thirdResult);
+    expect(firstResult).not.toBe(secondResult);
+  });
 });
 
 describe("Test AsEbool", () => {

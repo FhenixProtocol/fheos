@@ -279,6 +279,67 @@ export function testContract2ArgBoolRes(name: string, isBoolean: boolean) {
   return [generateTestContract(name, func), abi];
 }
 
+export function testContract0Args(name: string) {
+  const isEBoolAllowed = IsOperationAllowed(
+    name,
+    EInputType.indexOf("ebool")
+  );
+  const isEuint64Allowed = IsOperationAllowed(
+    name,
+    EInputType.indexOf("euint64")
+  );
+  const isEuint128Allowed = IsOperationAllowed(
+    name,
+    EInputType.indexOf("euint128")
+  );
+  const isEuint256Allowed = IsOperationAllowed(
+    name,
+    EInputType.indexOf("euint256")
+  );
+  let func = `function ${name}(string calldata test) public pure returns (uint256) {
+        if (Utils.cmp(test, "${name}Euint8()")) {
+            return FHE.decrypt(FHE.${name + "Euint8"}());
+        } else if (Utils.cmp(test, "${name}Euint16()")) {
+            return FHE.decrypt(FHE.${name + "Euint16"}());
+        } else if (Utils.cmp(test, "${name}Euint32()")) {
+            return FHE.decrypt(FHE.${name + "Euint32"}());
+        }`;
+  if (isEuint64Allowed) {
+    func += ` else if (Utils.cmp(test, "${name}Euint64()")) {
+            return FHE.decrypt(FHE.${name + "Euint64"}());
+        }`;
+  }
+  if (isEuint128Allowed) {
+    func += ` else if (Utils.cmp(test, "${name}Euint128()")) {
+            return FHE.decrypt(FHE.${name + "Euint128"}());
+        }`;
+  }
+  if (isEuint256Allowed) {
+    func += ` else if (Utils.cmp(test, "${name}Euint256()")) {
+            return FHE.decrypt(FHE.${name + "Euint256"}());
+        }`;
+  }
+  if (isEBoolAllowed) {
+    func += ` else if (Utils.cmp(test, "${name}Ebool()")) {
+            if (FHE.decrypt(FHE.${name + "EuintBool"}())) {
+                return 1;
+            }
+
+            return 0;
+        }`
+  }
+  func += `
+        revert TestNotFound(test);
+    }`;
+
+  const abi = `export interface ${capitalize(
+    name
+  )}TestType extends BaseContract {
+    ${name}: (test: string) => Promise<bigint>;
+}\n`;
+  return [generateTestContract(name, func), abi];
+}
+
 export function testContract1Arg(name: string) {
   const isEuint64Allowed = IsOperationAllowed(
     name,
@@ -544,7 +605,6 @@ export const IsOperationAllowed = (
       return false;
     }
   }
-
   return true;
 };
 
