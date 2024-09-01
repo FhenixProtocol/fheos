@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause-Clear
 // solhint-disable one-contract-per-file
 
-pragma solidity >=0.8.19 <=0.8.25;
+pragma solidity >=0.8.19 <0.9.0;
 
 import {Precompiles, FheOps} from "./FheOS.sol";
 
@@ -16,27 +16,35 @@ type eaddress is uint256;
 
 struct inEbool {
     bytes data;
+    int32 securityZone;
 }
 struct inEuint8 {
     bytes data;
+    int32 securityZone;
 }
 struct inEuint16 {
     bytes data;
+    int32 securityZone;
 }
 struct inEuint32 {
     bytes data;
+    int32 securityZone;
 }
 struct inEuint64 {
     bytes data;
+    int32 securityZone;
 }
 struct inEuint128 {
     bytes data;
+    int32 securityZone;
 }
 struct inEuint256 {
     bytes data;
+    int32 securityZone;
 }
 struct inEaddress {
     bytes data;
+    int32 securityZone;
 }
 
 struct SealedArray {
@@ -103,11 +111,11 @@ library Impl {
         return reencrypted;
     }
 
-    function verify(bytes memory _ciphertextBytes, uint8 _toType) internal pure returns (uint256 result) {
+    function verify(bytes memory _ciphertextBytes, uint8 _toType, int32 securityZone) internal pure returns (uint256 result) {
         bytes memory output;
 
         // Call the verify precompile.
-        output = FheOps(Precompiles.Fheos).verify(_toType, _ciphertextBytes);
+        output = FheOps(Precompiles.Fheos).verify(_toType, _ciphertextBytes, securityZone);
         result = getValue(output);
     }
 
@@ -125,11 +133,11 @@ library Impl {
         }
     }
 
-    function trivialEncrypt(uint256 value, uint8 toType) internal pure returns (uint256 result) {
+    function trivialEncrypt(uint256 value, uint8 toType, int32 securityZone) internal pure returns (uint256 result) {
         bytes memory output;
 
         // Call the trivialEncrypt precompile.
-        output = FheOps(Precompiles.Fheos).trivialEncrypt(Common.toBytes(value), toType);
+        output = FheOps(Precompiles.Fheos).trivialEncrypt(Common.toBytes(value), toType, securityZone);
 
         result = getValue(output);
     }
@@ -408,96 +416,188 @@ library FHE {
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
     function decrypt(ebool input1) internal pure returns (bool) {
+        return FHE.decrypt(input1, false);
+    }
+    /// @notice Performs the decrypt operation on a ciphertext with default value for gas estimation
+    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @param input1 the input ciphertext
+    /// @param defaultValue default value to be returned on gas estimation
+    function decrypt(ebool input1, bool defaultValue) internal pure returns (bool) {
         if (!isInitialized(input1)) {
             input1 = asEbool(0);
         }
+        uint256 gasDefaultValue;
+    
+        if (defaultValue) {
+           gasDefaultValue = 1;
+        } else {
+           gasDefaultValue = 0;
+        }
+        
         uint256 unwrappedInput1 = ebool.unwrap(input1);
         bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EBOOL_TFHE, inputAsBytes);
+        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EBOOL_TFHE, inputAsBytes, gasDefaultValue);
         return Common.bigIntToBool(result);
     }
     /// @notice Performs the decrypt operation on a ciphertext
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
     function decrypt(euint8 input1) internal pure returns (uint8) {
+        return FHE.decrypt(input1, (2 ** 8) / 2);
+    }
+    /// @notice Performs the decrypt operation on a ciphertext with default value for gas estimation
+    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @param input1 the input ciphertext
+    /// @param defaultValue default value to be returned on gas estimation
+    function decrypt(euint8 input1, uint8 defaultValue) internal pure returns (uint8) {
         if (!isInitialized(input1)) {
             input1 = asEuint8(0);
         }
+        uint256 gasDefaultValue;
+    
+        gasDefaultValue = uint256(defaultValue);
+      
         uint256 unwrappedInput1 = euint8.unwrap(input1);
         bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EUINT8_TFHE, inputAsBytes);
+        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EUINT8_TFHE, inputAsBytes, gasDefaultValue);
         return Common.bigIntToUint8(result);
     }
     /// @notice Performs the decrypt operation on a ciphertext
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
     function decrypt(euint16 input1) internal pure returns (uint16) {
+        return FHE.decrypt(input1, (2 ** 16) / 2);
+    }
+    /// @notice Performs the decrypt operation on a ciphertext with default value for gas estimation
+    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @param input1 the input ciphertext
+    /// @param defaultValue default value to be returned on gas estimation
+    function decrypt(euint16 input1, uint16 defaultValue) internal pure returns (uint16) {
         if (!isInitialized(input1)) {
             input1 = asEuint16(0);
         }
+        uint256 gasDefaultValue;
+    
+        gasDefaultValue = uint256(defaultValue);
+      
         uint256 unwrappedInput1 = euint16.unwrap(input1);
         bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EUINT16_TFHE, inputAsBytes);
+        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EUINT16_TFHE, inputAsBytes, gasDefaultValue);
         return Common.bigIntToUint16(result);
     }
     /// @notice Performs the decrypt operation on a ciphertext
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
     function decrypt(euint32 input1) internal pure returns (uint32) {
+        return FHE.decrypt(input1, (2 ** 32) / 2);
+    }
+    /// @notice Performs the decrypt operation on a ciphertext with default value for gas estimation
+    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @param input1 the input ciphertext
+    /// @param defaultValue default value to be returned on gas estimation
+    function decrypt(euint32 input1, uint32 defaultValue) internal pure returns (uint32) {
         if (!isInitialized(input1)) {
             input1 = asEuint32(0);
         }
+        uint256 gasDefaultValue;
+    
+        gasDefaultValue = uint256(defaultValue);
+      
         uint256 unwrappedInput1 = euint32.unwrap(input1);
         bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EUINT32_TFHE, inputAsBytes);
+        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EUINT32_TFHE, inputAsBytes, gasDefaultValue);
         return Common.bigIntToUint32(result);
     }
     /// @notice Performs the decrypt operation on a ciphertext
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
     function decrypt(euint64 input1) internal pure returns (uint64) {
+        return FHE.decrypt(input1, (2 ** 64) / 2);
+    }
+    /// @notice Performs the decrypt operation on a ciphertext with default value for gas estimation
+    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @param input1 the input ciphertext
+    /// @param defaultValue default value to be returned on gas estimation
+    function decrypt(euint64 input1, uint64 defaultValue) internal pure returns (uint64) {
         if (!isInitialized(input1)) {
             input1 = asEuint64(0);
         }
+        uint256 gasDefaultValue;
+    
+        gasDefaultValue = uint256(defaultValue);
+      
         uint256 unwrappedInput1 = euint64.unwrap(input1);
         bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EUINT64_TFHE, inputAsBytes);
+        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EUINT64_TFHE, inputAsBytes, gasDefaultValue);
         return Common.bigIntToUint64(result);
     }
     /// @notice Performs the decrypt operation on a ciphertext
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
     function decrypt(euint128 input1) internal pure returns (uint128) {
+        return FHE.decrypt(input1, (2 ** 128) / 2);
+    }
+    /// @notice Performs the decrypt operation on a ciphertext with default value for gas estimation
+    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @param input1 the input ciphertext
+    /// @param defaultValue default value to be returned on gas estimation
+    function decrypt(euint128 input1, uint128 defaultValue) internal pure returns (uint128) {
         if (!isInitialized(input1)) {
             input1 = asEuint128(0);
         }
+        uint256 gasDefaultValue;
+    
+        gasDefaultValue = uint256(defaultValue);
+      
         uint256 unwrappedInput1 = euint128.unwrap(input1);
         bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EUINT128_TFHE, inputAsBytes);
+        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EUINT128_TFHE, inputAsBytes, gasDefaultValue);
         return Common.bigIntToUint128(result);
     }
     /// @notice Performs the decrypt operation on a ciphertext
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
     function decrypt(euint256 input1) internal pure returns (uint256) {
+        return FHE.decrypt(input1, (2 ** 256) / 2);
+    }
+    /// @notice Performs the decrypt operation on a ciphertext with default value for gas estimation
+    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @param input1 the input ciphertext
+    /// @param defaultValue default value to be returned on gas estimation
+    function decrypt(euint256 input1, uint256 defaultValue) internal pure returns (uint256) {
         if (!isInitialized(input1)) {
             input1 = asEuint256(0);
         }
+        uint256 gasDefaultValue;
+    
+        gasDefaultValue = uint256(defaultValue);
+      
         uint256 unwrappedInput1 = euint256.unwrap(input1);
         bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EUINT256_TFHE, inputAsBytes);
+        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EUINT256_TFHE, inputAsBytes, gasDefaultValue);
         return Common.bigIntToUint256(result);
     }
     /// @notice Performs the decrypt operation on a ciphertext
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
     function decrypt(eaddress input1) internal pure returns (address) {
+        return FHE.decrypt(input1, address(0));
+    }
+    /// @notice Performs the decrypt operation on a ciphertext with default value for gas estimation
+    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @param input1 the input ciphertext
+    /// @param defaultValue default value to be returned on gas estimation
+    function decrypt(eaddress input1, address defaultValue) internal pure returns (address) {
         if (!isInitialized(input1)) {
             input1 = asEaddress(0);
         }
+        uint256 gasDefaultValue;
+    
+        gasDefaultValue = uint256(uint160(defaultValue));
+      
         uint256 unwrappedInput1 = eaddress.unwrap(input1);
         bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EADDRESS_TFHE, inputAsBytes);
+        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EADDRESS_TFHE, inputAsBytes, gasDefaultValue);
         return Common.bigIntToAddress(result);
     }
     /// @notice This function performs the lte operation
@@ -2420,13 +2520,18 @@ library FHE {
         uint256 result = mathHelper(Common.EUINT128_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shr);
         return euint128.wrap(result);
     }
-
-    /// @notice Performs the "not" for the ebool type
-    /// @dev Implemented by a workaround due to ebool being a euint8 type behind the scenes, therefore xor is needed to assure that not(true) = false and vise-versa
-    /// @param value input ebool ciphertext
-    /// @return Result of the not operation on `value` 
-    function not(ebool value) internal pure returns (ebool) {
-        return xor(value, asEbool(true));
+    /// @notice Performs the not operation on a ciphertext
+    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @param input1 the input ciphertext
+    function not(ebool input1) internal pure returns (ebool) {
+        if (!isInitialized(input1)) {
+            input1 = asEbool(0);
+        }
+        uint256 unwrappedInput1 = ebool.unwrap(input1);
+        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
+        bytes memory b = FheOps(Precompiles.Fheos).not(Common.EBOOL_TFHE, inputAsBytes);
+        uint256 result = Impl.getValue(b);
+        return ebool.wrap(result);
     }
     /// @notice Performs the not operation on a ciphertext
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
@@ -2493,13 +2598,108 @@ library FHE {
         uint256 result = Impl.getValue(b);
         return euint128.wrap(result);
     }
+    /// @notice Generates a random value of a given type with the given seed, for the provided securityZone
+    /// @dev Calls the desired precompile and returns the hash of the ciphertext
+    /// @param uintType the type of the random value to generate
+    /// @param seed the seed to use to create a random value from
+    /// @param securityZone the security zone to use for the random value
+    function random(uint8 uintType, uint64 seed, int32 securityZone) internal pure returns (uint256) {
+        bytes memory b = FheOps(Precompiles.Fheos).random(uintType, seed, securityZone);
+        return Impl.getValue(b);
+    }
+    /// @notice Generates a random value of a given type with the given seed
+    /// @dev Calls the desired precompile and returns the hash of the ciphertext
+    /// @param uintType the type of the random value to generate
+    /// @param seed the seed to use to create a random value from
+    function random(uint8 uintType, uint32 seed) internal pure returns (uint256) {
+        return random(uintType, seed, 0);
+    }
+    /// @notice Generates a random value of a given type
+    /// @dev Calls the desired precompile and returns the hash of the ciphertext
+    /// @param uintType the type of the random value to generate
+    function random(uint8 uintType) internal pure returns (uint256) {
+        return random(uintType, 0, 0);
+    }
+    /// @notice Generates a random value of a euint8 type for provided securityZone
+    /// @dev Calls the desired precompile and returns the hash of the ciphertext
+    /// @param securityZone the security zone to use for the random value
+    function randomEuint8(int32 securityZone) internal pure returns (euint8) {
+        uint256 result = random(Common.EUINT8_TFHE, 0, securityZone);
+        return euint8.wrap(result);
+    }
+    /// @notice Generates a random value of a euint8 type
+    /// @dev Calls the desired precompile and returns the hash of the ciphertext
+    function randomEuint8() internal pure returns (euint8) {
+        return randomEuint8(0);
+    }
+    /// @notice Generates a random value of a euint16 type for provided securityZone
+    /// @dev Calls the desired precompile and returns the hash of the ciphertext
+    /// @param securityZone the security zone to use for the random value
+    function randomEuint16(int32 securityZone) internal pure returns (euint16) {
+        uint256 result = random(Common.EUINT16_TFHE, 0, securityZone);
+        return euint16.wrap(result);
+    }
+    /// @notice Generates a random value of a euint16 type
+    /// @dev Calls the desired precompile and returns the hash of the ciphertext
+    function randomEuint16() internal pure returns (euint16) {
+        return randomEuint16(0);
+    }
+    /// @notice Generates a random value of a euint32 type for provided securityZone
+    /// @dev Calls the desired precompile and returns the hash of the ciphertext
+    /// @param securityZone the security zone to use for the random value
+    function randomEuint32(int32 securityZone) internal pure returns (euint32) {
+        uint256 result = random(Common.EUINT32_TFHE, 0, securityZone);
+        return euint32.wrap(result);
+    }
+    /// @notice Generates a random value of a euint32 type
+    /// @dev Calls the desired precompile and returns the hash of the ciphertext
+    function randomEuint32() internal pure returns (euint32) {
+        return randomEuint32(0);
+    }
+    /// @notice Generates a random value of a euint64 type for provided securityZone
+    /// @dev Calls the desired precompile and returns the hash of the ciphertext
+    /// @param securityZone the security zone to use for the random value
+    function randomEuint64(int32 securityZone) internal pure returns (euint64) {
+        uint256 result = random(Common.EUINT64_TFHE, 0, securityZone);
+        return euint64.wrap(result);
+    }
+    /// @notice Generates a random value of a euint64 type
+    /// @dev Calls the desired precompile and returns the hash of the ciphertext
+    function randomEuint64() internal pure returns (euint64) {
+        return randomEuint64(0);
+    }
+    /// @notice Generates a random value of a euint128 type for provided securityZone
+    /// @dev Calls the desired precompile and returns the hash of the ciphertext
+    /// @param securityZone the security zone to use for the random value
+    function randomEuint128(int32 securityZone) internal pure returns (euint128) {
+        uint256 result = random(Common.EUINT128_TFHE, 0, securityZone);
+        return euint128.wrap(result);
+    }
+    /// @notice Generates a random value of a euint128 type
+    /// @dev Calls the desired precompile and returns the hash of the ciphertext
+    function randomEuint128() internal pure returns (euint128) {
+        return randomEuint128(0);
+    }
+    /// @notice Generates a random value of a euint256 type for provided securityZone
+    /// @dev Calls the desired precompile and returns the hash of the ciphertext
+    /// @param securityZone the security zone to use for the random value
+    function randomEuint256(int32 securityZone) internal pure returns (euint256) {
+        uint256 result = random(Common.EUINT256_TFHE, 0, securityZone);
+        return euint256.wrap(result);
+    }
+    /// @notice Generates a random value of a euint256 type
+    /// @dev Calls the desired precompile and returns the hash of the ciphertext
+    function randomEuint256() internal pure returns (euint256) {
+        return randomEuint256(0);
+    }
+    
 
     // ********** TYPE CASTING ************* //
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an ebool
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
     function asEbool(inEbool memory value) internal pure returns (ebool) {
-        return FHE.asEbool(value.data);
+        return FHE.asEbool(value.data, value.securityZone);
     }
     /// @notice Converts a ebool to an euint8
     function asEuint8(ebool value) internal pure returns (euint8) {
@@ -2525,10 +2725,6 @@ library FHE {
     function asEuint256(ebool value) internal pure returns (euint256) {
         return euint256.wrap(Impl.cast(Common.EBOOL_TFHE, ebool.unwrap(value), Common.EUINT256_TFHE));
     }
-    /// @notice Converts a ebool to an eaddress
-    function asEaddress(ebool value) internal pure returns (eaddress) {
-        return eaddress.wrap(Impl.cast(Common.EBOOL_TFHE, ebool.unwrap(value), Common.EADDRESS_TFHE));
-    }
     
     /// @notice Converts a euint8 to an ebool
     function asEbool(euint8 value) internal pure returns (ebool) {
@@ -2538,7 +2734,7 @@ library FHE {
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
     function asEuint8(inEuint8 memory value) internal pure returns (euint8) {
-        return FHE.asEuint8(value.data);
+        return FHE.asEuint8(value.data, value.securityZone);
     }
     /// @notice Converts a euint8 to an euint16
     function asEuint16(euint8 value) internal pure returns (euint16) {
@@ -2560,10 +2756,6 @@ library FHE {
     function asEuint256(euint8 value) internal pure returns (euint256) {
         return euint256.wrap(Impl.cast(Common.EUINT8_TFHE, euint8.unwrap(value), Common.EUINT256_TFHE));
     }
-    /// @notice Converts a euint8 to an eaddress
-    function asEaddress(euint8 value) internal pure returns (eaddress) {
-        return eaddress.wrap(Impl.cast(Common.EUINT8_TFHE, euint8.unwrap(value), Common.EADDRESS_TFHE));
-    }
     
     /// @notice Converts a euint16 to an ebool
     function asEbool(euint16 value) internal pure returns (ebool) {
@@ -2577,7 +2769,7 @@ library FHE {
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
     function asEuint16(inEuint16 memory value) internal pure returns (euint16) {
-        return FHE.asEuint16(value.data);
+        return FHE.asEuint16(value.data, value.securityZone);
     }
     /// @notice Converts a euint16 to an euint32
     function asEuint32(euint16 value) internal pure returns (euint32) {
@@ -2594,10 +2786,6 @@ library FHE {
     /// @notice Converts a euint16 to an euint256
     function asEuint256(euint16 value) internal pure returns (euint256) {
         return euint256.wrap(Impl.cast(Common.EUINT16_TFHE, euint16.unwrap(value), Common.EUINT256_TFHE));
-    }
-    /// @notice Converts a euint16 to an eaddress
-    function asEaddress(euint16 value) internal pure returns (eaddress) {
-        return eaddress.wrap(Impl.cast(Common.EUINT16_TFHE, euint16.unwrap(value), Common.EADDRESS_TFHE));
     }
     
     /// @notice Converts a euint32 to an ebool
@@ -2616,7 +2804,7 @@ library FHE {
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
     function asEuint32(inEuint32 memory value) internal pure returns (euint32) {
-        return FHE.asEuint32(value.data);
+        return FHE.asEuint32(value.data, value.securityZone);
     }
     /// @notice Converts a euint32 to an euint64
     function asEuint64(euint32 value) internal pure returns (euint64) {
@@ -2629,10 +2817,6 @@ library FHE {
     /// @notice Converts a euint32 to an euint256
     function asEuint256(euint32 value) internal pure returns (euint256) {
         return euint256.wrap(Impl.cast(Common.EUINT32_TFHE, euint32.unwrap(value), Common.EUINT256_TFHE));
-    }
-    /// @notice Converts a euint32 to an eaddress
-    function asEaddress(euint32 value) internal pure returns (eaddress) {
-        return eaddress.wrap(Impl.cast(Common.EUINT32_TFHE, euint32.unwrap(value), Common.EADDRESS_TFHE));
     }
     
     /// @notice Converts a euint64 to an ebool
@@ -2655,7 +2839,7 @@ library FHE {
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
     function asEuint64(inEuint64 memory value) internal pure returns (euint64) {
-        return FHE.asEuint64(value.data);
+        return FHE.asEuint64(value.data, value.securityZone);
     }
     /// @notice Converts a euint64 to an euint128
     function asEuint128(euint64 value) internal pure returns (euint128) {
@@ -2664,10 +2848,6 @@ library FHE {
     /// @notice Converts a euint64 to an euint256
     function asEuint256(euint64 value) internal pure returns (euint256) {
         return euint256.wrap(Impl.cast(Common.EUINT64_TFHE, euint64.unwrap(value), Common.EUINT256_TFHE));
-    }
-    /// @notice Converts a euint64 to an eaddress
-    function asEaddress(euint64 value) internal pure returns (eaddress) {
-        return eaddress.wrap(Impl.cast(Common.EUINT64_TFHE, euint64.unwrap(value), Common.EADDRESS_TFHE));
     }
     
     /// @notice Converts a euint128 to an ebool
@@ -2694,15 +2874,11 @@ library FHE {
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
     function asEuint128(inEuint128 memory value) internal pure returns (euint128) {
-        return FHE.asEuint128(value.data);
+        return FHE.asEuint128(value.data, value.securityZone);
     }
     /// @notice Converts a euint128 to an euint256
     function asEuint256(euint128 value) internal pure returns (euint256) {
         return euint256.wrap(Impl.cast(Common.EUINT128_TFHE, euint128.unwrap(value), Common.EUINT256_TFHE));
-    }
-    /// @notice Converts a euint128 to an eaddress
-    function asEaddress(euint128 value) internal pure returns (eaddress) {
-        return eaddress.wrap(Impl.cast(Common.EUINT128_TFHE, euint128.unwrap(value), Common.EADDRESS_TFHE));
     }
     
     /// @notice Converts a euint256 to an ebool
@@ -2733,7 +2909,7 @@ library FHE {
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
     function asEuint256(inEuint256 memory value) internal pure returns (euint256) {
-        return FHE.asEuint256(value.data);
+        return FHE.asEuint256(value.data, value.securityZone);
     }
     /// @notice Converts a euint256 to an eaddress
     function asEaddress(euint256 value) internal pure returns (eaddress) {
@@ -2772,104 +2948,167 @@ library FHE {
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
     function asEaddress(inEaddress memory value) internal pure returns (eaddress) {
-        return FHE.asEaddress(value.data);
+        return FHE.asEaddress(value.data, value.securityZone);
     }
     /// @notice Converts a uint256 to an ebool
+    /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
     function asEbool(uint256 value) internal pure returns (ebool) {
-        return ebool.wrap(Impl.trivialEncrypt(value, Common.EBOOL_TFHE));
+        return ebool.wrap(Impl.trivialEncrypt(value, Common.EBOOL_TFHE, 0));
+    }
+    /// @notice Converts a uint256 to an ebool, specifying security zone
+    /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
+    function asEbool(uint256 value, int32 securityZone) internal pure returns (ebool) {
+        return ebool.wrap(Impl.trivialEncrypt(value, Common.EBOOL_TFHE, securityZone));
     }
     /// @notice Converts a uint256 to an euint8
+    /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
     function asEuint8(uint256 value) internal pure returns (euint8) {
-        return euint8.wrap(Impl.trivialEncrypt(value, Common.EUINT8_TFHE));
+        return euint8.wrap(Impl.trivialEncrypt(value, Common.EUINT8_TFHE, 0));
+    }
+    /// @notice Converts a uint256 to an euint8, specifying security zone
+    /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
+    function asEuint8(uint256 value, int32 securityZone) internal pure returns (euint8) {
+        return euint8.wrap(Impl.trivialEncrypt(value, Common.EUINT8_TFHE, securityZone));
     }
     /// @notice Converts a uint256 to an euint16
+    /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
     function asEuint16(uint256 value) internal pure returns (euint16) {
-        return euint16.wrap(Impl.trivialEncrypt(value, Common.EUINT16_TFHE));
+        return euint16.wrap(Impl.trivialEncrypt(value, Common.EUINT16_TFHE, 0));
+    }
+    /// @notice Converts a uint256 to an euint16, specifying security zone
+    /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
+    function asEuint16(uint256 value, int32 securityZone) internal pure returns (euint16) {
+        return euint16.wrap(Impl.trivialEncrypt(value, Common.EUINT16_TFHE, securityZone));
     }
     /// @notice Converts a uint256 to an euint32
+    /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
     function asEuint32(uint256 value) internal pure returns (euint32) {
-        return euint32.wrap(Impl.trivialEncrypt(value, Common.EUINT32_TFHE));
+        return euint32.wrap(Impl.trivialEncrypt(value, Common.EUINT32_TFHE, 0));
+    }
+    /// @notice Converts a uint256 to an euint32, specifying security zone
+    /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
+    function asEuint32(uint256 value, int32 securityZone) internal pure returns (euint32) {
+        return euint32.wrap(Impl.trivialEncrypt(value, Common.EUINT32_TFHE, securityZone));
     }
     /// @notice Converts a uint256 to an euint64
+    /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
     function asEuint64(uint256 value) internal pure returns (euint64) {
-        return euint64.wrap(Impl.trivialEncrypt(value, Common.EUINT64_TFHE));
+        return euint64.wrap(Impl.trivialEncrypt(value, Common.EUINT64_TFHE, 0));
+    }
+    /// @notice Converts a uint256 to an euint64, specifying security zone
+    /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
+    function asEuint64(uint256 value, int32 securityZone) internal pure returns (euint64) {
+        return euint64.wrap(Impl.trivialEncrypt(value, Common.EUINT64_TFHE, securityZone));
     }
     /// @notice Converts a uint256 to an euint128
+    /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
     function asEuint128(uint256 value) internal pure returns (euint128) {
-        return euint128.wrap(Impl.trivialEncrypt(value, Common.EUINT128_TFHE));
+        return euint128.wrap(Impl.trivialEncrypt(value, Common.EUINT128_TFHE, 0));
+    }
+    /// @notice Converts a uint256 to an euint128, specifying security zone
+    /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
+    function asEuint128(uint256 value, int32 securityZone) internal pure returns (euint128) {
+        return euint128.wrap(Impl.trivialEncrypt(value, Common.EUINT128_TFHE, securityZone));
     }
     /// @notice Converts a uint256 to an euint256
+    /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
     function asEuint256(uint256 value) internal pure returns (euint256) {
-        return euint256.wrap(Impl.trivialEncrypt(value, Common.EUINT256_TFHE));
+        return euint256.wrap(Impl.trivialEncrypt(value, Common.EUINT256_TFHE, 0));
+    }
+    /// @notice Converts a uint256 to an euint256, specifying security zone
+    /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
+    function asEuint256(uint256 value, int32 securityZone) internal pure returns (euint256) {
+        return euint256.wrap(Impl.trivialEncrypt(value, Common.EUINT256_TFHE, securityZone));
     }
     /// @notice Converts a uint256 to an eaddress
+    /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
     function asEaddress(uint256 value) internal pure returns (eaddress) {
-        return eaddress.wrap(Impl.trivialEncrypt(value, Common.EADDRESS_TFHE));
+        return eaddress.wrap(Impl.trivialEncrypt(value, Common.EADDRESS_TFHE, 0));
+    }
+    /// @notice Converts a uint256 to an eaddress, specifying security zone
+    /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
+    function asEaddress(uint256 value, int32 securityZone) internal pure returns (eaddress) {
+        return eaddress.wrap(Impl.trivialEncrypt(value, Common.EADDRESS_TFHE, securityZone));
     }
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an ebool
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
-    function asEbool(bytes memory value) internal pure returns (ebool) {
-        return ebool.wrap(Impl.verify(value, Common.EBOOL_TFHE));
+    function asEbool(bytes memory value, int32 securityZone) internal pure returns (ebool) {
+        return ebool.wrap(Impl.verify(value, Common.EBOOL_TFHE, securityZone));
     }
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an euint8
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
-    function asEuint8(bytes memory value) internal pure returns (euint8) {
-        return euint8.wrap(Impl.verify(value, Common.EUINT8_TFHE));
+    function asEuint8(bytes memory value, int32 securityZone) internal pure returns (euint8) {
+        return euint8.wrap(Impl.verify(value, Common.EUINT8_TFHE, securityZone));
     }
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an euint16
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
-    function asEuint16(bytes memory value) internal pure returns (euint16) {
-        return euint16.wrap(Impl.verify(value, Common.EUINT16_TFHE));
+    function asEuint16(bytes memory value, int32 securityZone) internal pure returns (euint16) {
+        return euint16.wrap(Impl.verify(value, Common.EUINT16_TFHE, securityZone));
     }
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an euint32
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
-    function asEuint32(bytes memory value) internal pure returns (euint32) {
-        return euint32.wrap(Impl.verify(value, Common.EUINT32_TFHE));
+    function asEuint32(bytes memory value, int32 securityZone) internal pure returns (euint32) {
+        return euint32.wrap(Impl.verify(value, Common.EUINT32_TFHE, securityZone));
     }
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an euint64
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
-    function asEuint64(bytes memory value) internal pure returns (euint64) {
-        return euint64.wrap(Impl.verify(value, Common.EUINT64_TFHE));
+    function asEuint64(bytes memory value, int32 securityZone) internal pure returns (euint64) {
+        return euint64.wrap(Impl.verify(value, Common.EUINT64_TFHE, securityZone));
     }
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an euint128
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
-    function asEuint128(bytes memory value) internal pure returns (euint128) {
-        return euint128.wrap(Impl.verify(value, Common.EUINT128_TFHE));
+    function asEuint128(bytes memory value, int32 securityZone) internal pure returns (euint128) {
+        return euint128.wrap(Impl.verify(value, Common.EUINT128_TFHE, securityZone));
     }
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an euint256
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
-    function asEuint256(bytes memory value) internal pure returns (euint256) {
-        return euint256.wrap(Impl.verify(value, Common.EUINT256_TFHE));
+    function asEuint256(bytes memory value, int32 securityZone) internal pure returns (euint256) {
+        return euint256.wrap(Impl.verify(value, Common.EUINT256_TFHE, securityZone));
     }
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an eaddress
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
-    function asEaddress(bytes memory value) internal pure returns (eaddress) {
-        return eaddress.wrap(Impl.verify(value, Common.EADDRESS_TFHE));
+    function asEaddress(bytes memory value, int32 securityZone) internal pure returns (eaddress) {
+        return eaddress.wrap(Impl.verify(value, Common.EADDRESS_TFHE, securityZone));
     }
     /// @notice Converts a address to an eaddress
+    /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
     /// Allows for a better user experience when working with eaddresses
     function asEaddress(address value) internal pure returns (eaddress) {
-        return eaddress.wrap(Impl.trivialEncrypt(uint256(uint160(value)), Common.EADDRESS_TFHE));
+        return eaddress.wrap(Impl.trivialEncrypt(uint256(uint160(value)), Common.EADDRESS_TFHE, 0));
+    }
+    /// @notice Converts a address to an eaddress, specifying security zone
+    /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
+    /// Allows for a better user experience when working with eaddresses
+    function asEaddress(address value, int32 securityZone) internal pure returns (eaddress) {
+        return eaddress.wrap(Impl.trivialEncrypt(uint256(uint160(value)), Common.EADDRESS_TFHE, securityZone));
     }
     /// @notice Converts a plaintext boolean value to a ciphertext ebool
-    /// @dev Privacy: The input value is public, therefore the ciphertext should be considered public and should be used
-    ///only for mathematical operations, not to represent data that should be private
-    /// @return A ciphertext representation of the input 
+    /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
+    /// @return A ciphertext representation of the input
     function asEbool(bool value) internal pure returns (ebool) {
         uint256 sVal = 0;
         if (value) {
             sVal = 1;
         }
-
         return asEbool(sVal);
+    }
+    /// @notice Converts a plaintext boolean value to a ciphertext ebool, specifying security zone
+    /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
+    /// @return A ciphertext representation of the input
+    function asEbool(bool value, int32 securityZone) internal pure returns (ebool) {
+      uint256 sVal = 0;
+      if (value) {
+        sVal = 1;
+      }
+      return asEbool(sVal, securityZone);
     }
 }
 
@@ -3165,14 +3404,14 @@ library BindingsEbool {
     function toU256(ebool value) internal pure returns (euint256) {
         return FHE.asEuint256(value);
     }
-    function toEaddress(ebool value) internal pure returns (eaddress) {
-        return FHE.asEaddress(value);
-    }
     function seal(ebool value, bytes32 publicKey) internal pure returns (string memory) {
         return FHE.sealoutput(value, publicKey);
     }
     function decrypt(ebool value) internal pure returns (bool) {
         return FHE.decrypt(value);
+    }
+    function decrypt(ebool value, bool defaultValue) internal pure returns (bool) {
+        return FHE.decrypt(value, defaultValue);
     }
 }
 
@@ -3340,14 +3579,14 @@ library BindingsEuint8 {
     function toU256(euint8 value) internal pure returns (euint256) {
         return FHE.asEuint256(value);
     }
-    function toEaddress(euint8 value) internal pure returns (eaddress) {
-        return FHE.asEaddress(value);
-    }
     function seal(euint8 value, bytes32 publicKey) internal pure returns (string memory) {
         return FHE.sealoutput(value, publicKey);
     }
     function decrypt(euint8 value) internal pure returns (uint8) {
         return FHE.decrypt(value);
+    }
+    function decrypt(euint8 value, uint8 defaultValue) internal pure returns (uint8) {
+        return FHE.decrypt(value, defaultValue);
     }
 }
 
@@ -3515,14 +3754,14 @@ library BindingsEuint16 {
     function toU256(euint16 value) internal pure returns (euint256) {
         return FHE.asEuint256(value);
     }
-    function toEaddress(euint16 value) internal pure returns (eaddress) {
-        return FHE.asEaddress(value);
-    }
     function seal(euint16 value, bytes32 publicKey) internal pure returns (string memory) {
         return FHE.sealoutput(value, publicKey);
     }
     function decrypt(euint16 value) internal pure returns (uint16) {
         return FHE.decrypt(value);
+    }
+    function decrypt(euint16 value, uint16 defaultValue) internal pure returns (uint16) {
+        return FHE.decrypt(value, defaultValue);
     }
 }
 
@@ -3690,14 +3929,14 @@ library BindingsEuint32 {
     function toU256(euint32 value) internal pure returns (euint256) {
         return FHE.asEuint256(value);
     }
-    function toEaddress(euint32 value) internal pure returns (eaddress) {
-        return FHE.asEaddress(value);
-    }
     function seal(euint32 value, bytes32 publicKey) internal pure returns (string memory) {
         return FHE.sealoutput(value, publicKey);
     }
     function decrypt(euint32 value) internal pure returns (uint32) {
         return FHE.decrypt(value);
+    }
+    function decrypt(euint32 value, uint32 defaultValue) internal pure returns (uint32) {
+        return FHE.decrypt(value, defaultValue);
     }
 }
 
@@ -3849,14 +4088,14 @@ library BindingsEuint64 {
     function toU256(euint64 value) internal pure returns (euint256) {
         return FHE.asEuint256(value);
     }
-    function toEaddress(euint64 value) internal pure returns (eaddress) {
-        return FHE.asEaddress(value);
-    }
     function seal(euint64 value, bytes32 publicKey) internal pure returns (string memory) {
         return FHE.sealoutput(value, publicKey);
     }
     function decrypt(euint64 value) internal pure returns (uint64) {
         return FHE.decrypt(value);
+    }
+    function decrypt(euint64 value, uint64 defaultValue) internal pure returns (uint64) {
+        return FHE.decrypt(value, defaultValue);
     }
 }
 
@@ -4000,14 +4239,14 @@ library BindingsEuint128 {
     function toU256(euint128 value) internal pure returns (euint256) {
         return FHE.asEuint256(value);
     }
-    function toEaddress(euint128 value) internal pure returns (eaddress) {
-        return FHE.asEaddress(value);
-    }
     function seal(euint128 value, bytes32 publicKey) internal pure returns (string memory) {
         return FHE.sealoutput(value, publicKey);
     }
     function decrypt(euint128 value) internal pure returns (uint128) {
         return FHE.decrypt(value);
+    }
+    function decrypt(euint128 value, uint128 defaultValue) internal pure returns (uint128) {
+        return FHE.decrypt(value, defaultValue);
     }
 }
 
@@ -4056,6 +4295,9 @@ library BindingsEuint256 {
     function decrypt(euint256 value) internal pure returns (uint256) {
         return FHE.decrypt(value);
     }
+    function decrypt(euint256 value, uint256 defaultValue) internal pure returns (uint256) {
+        return FHE.decrypt(value, defaultValue);
+    }
 }
 
 using BindingsEaddress for eaddress global;
@@ -4102,5 +4344,8 @@ library BindingsEaddress {
     }
     function decrypt(eaddress value) internal pure returns (address) {
         return FHE.decrypt(value);
+    }
+    function decrypt(eaddress value, address defaultValue) internal pure returns (address) {
+        return FHE.decrypt(value, defaultValue);
     }
 }

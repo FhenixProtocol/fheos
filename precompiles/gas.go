@@ -196,6 +196,8 @@ func getRawPrecompileGas(precompileName types.PrecompileName, uintType fhe.Encry
 		case fhe.Uint256, fhe.Address:
 			return 70000
 		}
+	case types.Random:
+		return 120000
 	}
 	return 0
 }

@@ -20,6 +20,11 @@ contract Ownership {
         counter = FHE.asEuint32(val);
     }
 
+    function setEnc(inEuint32 calldata val) public {
+        counter = FHE.asEuint32(val);
+    }
+
+
     function resetContractResponse() public {
         contractResponse = FHE.asEuint32(1337);
     }

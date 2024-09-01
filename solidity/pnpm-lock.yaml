@@ -78,8 +78,8 @@ devDependencies:
     specifier: ^6.9.0
     version: 6.9.1
   fhenixjs:
-    specifier: ^0.2.0-beta.3
-    version: 0.2.0-beta.3
+    specifier: github:fhenixprotocol/fhenix.js#merge-prs
+    version: github.com/fhenixprotocol/fhenix.js/4e6156d3877cf91560486bbdb24f62317c491a5c
   fs-extra:
     specifier: ^10.1.0
     version: 10.1.0
@@ -3600,19 +3600,6 @@ packages:
       bser: 2.1.1
     dev: true
 
-  /fhenixjs@0.2.0-beta.3:
-    resolution: {integrity: sha512-qCJ1t6qbkm4HeNwX5ZJwm97zjDQiq8RJ22wW7gW3Cr9ROu0W8B6fWh/ufQJXFptmMAI9DSjPeNgt2oqHDDuydQ==}
-    dependencies:
-      ethers: 6.9.1
-      node-tfhe: 0.6.1
-      tfhe: 0.6.1
-      tweetnacl: 1.0.3
-      tweetnacl-util: 0.15.1
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
-    dev: true
-
   /file-entry-cache@6.0.1:
     resolution: {integrity: sha512-7Gps/XWymbLk2QLYK4NzpMOrYjMhdIxXuIvy2QBsLE6ljuodKvdkWs/cpyJJ3CVIVpH0Oi1Hvg1ovbMzLdFBBg==}
     engines: {node: ^10.12.0 || >=12.0.0}
@@ -5363,10 +5350,6 @@ packages:
     resolution: {integrity: sha512-y10wOWt8yZpqXmOgRo77WaHEmhYQYGNA6y421PKsKYWEK8aW+cqAphborZDhqfyKrbZEN92CN1X2KbafY2s7Yw==}
     dev: true
 
-  /node-tfhe@0.6.1:
-    resolution: {integrity: sha512-p2BidmylEO+3v1Q4KqErNJC8z/Y2R+b+Yd42omweeII41AbgPM12RJCmvE9GMvr/ZbAn/H762JPijLH08oBUYQ==}
-    dev: true
-
   /nofilter@3.1.0:
     resolution: {integrity: sha512-l2NNj07e9afPnhAhvgVrCD/oy2Ai1yfLpuo3EpiO1jFTsB4sFz6oIfAfSZyQzVpkZQ9xS8ZS5g1jCBgq4Hwo0g==}
     engines: {node: '>=12.19'}
@@ -6362,10 +6345,6 @@ packages:
     resolution: {integrity: sha512-N+8UisAXDGk8PFXP4HAzVR9nbfmVJ3zYLAWiTIoqC5v5isinhr+r5uaO8+7r3BMfuNIufIsA7RdpVgacC2cSpw==}
     dev: true
 
-  /tfhe@0.6.1:
-    resolution: {integrity: sha512-csHYfEbejbQl4LVb1/37LY9AxiR9RqvzXsHT1wENMtGqIjNmev3T1aXyljooGc/4HuZmG8VjlUkX6CYvG4U80g==}
-    dev: true
-
   /then-request@6.0.2:
     resolution: {integrity: sha512-3ZBiG7JvP3wbDzA9iNY5zJQcHL4jn/0BWtXIkagfz7QgOL/LqjCEOBQuJNZfu0XYnv5JhKh+cDxCPM4ILrqruA==}
     engines: {node: '>=6.0.0'}
@@ -6887,4 +6866,15 @@ packages:
       ethers: ^5.7.0
     dependencies:
       ethers: 5.7.2
+    dev: true
+
+  github.com/fhenixprotocol/fhenix.js/4e6156d3877cf91560486bbdb24f62317c491a5c:
+    resolution: {tarball: https://codeload.github.com/fhenixprotocol/fhenix.js/tar.gz/4e6156d3877cf91560486bbdb24f62317c491a5c}
+    name: fhenixjs
+    version: 0.3.0-alpha.2
+    engines: {node: '>=20.0.0'}
+    dependencies:
+      '@types/node': 18.19.4
+      tweetnacl: 1.0.3
+      tweetnacl-util: 0.15.1
     dev: true

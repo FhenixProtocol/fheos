@@ -11,6 +11,7 @@ import {
   LOCAL_SEAL_FUNCTION_NAME,
   LOCAL_DECRYPT_FUNCTION_NAME,
   AllowedOperations,
+  AllowedTypesOnCastToEaddress,
   toPlaintextType,
   capitalize,
   shortenType,
@@ -20,7 +21,7 @@ export const preamble = () => {
   return `// SPDX-License-Identifier: BSD-3-Clause-Clear
 // solhint-disable one-contract-per-file
 
-pragma solidity >=0.8.19 <=0.8.25;
+pragma solidity >=0.8.19 <0.9.0;
 
 import {Precompiles, FheOps} from "./FheOS.sol";
 
@@ -31,6 +32,7 @@ ${EInputType.map((type) => {
 ${EInputType.map((type) => {
   return `struct in${capitalize(type)} {
     bytes data;
+    int32 securityZone;
 }`;
 }).join("\n")}
 
@@ -98,11 +100,11 @@ library Impl {
         return reencrypted;
     }
 
-    function verify(bytes memory _ciphertextBytes, uint8 _toType) internal pure returns (uint256 result) {
+    function verify(bytes memory _ciphertextBytes, uint8 _toType, int32 securityZone) internal pure returns (uint256 result) {
         bytes memory output;
 
         // Call the verify precompile.
-        output = FheOps(Precompiles.Fheos).verify(_toType, _ciphertextBytes);
+        output = FheOps(Precompiles.Fheos).verify(_toType, _ciphertextBytes, securityZone);
         result = getValue(output);
     }
 
@@ -120,11 +122,11 @@ library Impl {
         }
     }
 
-    function trivialEncrypt(uint256 value, uint8 toType) internal pure returns (uint256 result) {
+    function trivialEncrypt(uint256 value, uint8 toType, int32 securityZone) internal pure returns (uint256 result) {
         bytes memory output;
 
         // Call the trivialEncrypt precompile.
-        output = FheOps(Precompiles.Fheos).trivialEncrypt(Common.toBytes(value), toType);
+        output = FheOps(Precompiles.Fheos).trivialEncrypt(Common.toBytes(value), toType, securityZone);
 
         result = getValue(output);
     }
@@ -223,23 +225,37 @@ const castFromEncrypted = (
   }, ${fromType}.unwrap(${name}), Common.${toType.toUpperCase()}_TFHE)`;
 };
 
-const castFromPlaintext = (name: string, toType: string): string => {
-  return `Impl.trivialEncrypt(${name}, Common.${toType.toUpperCase()}_TFHE)`;
+const castFromPlaintext = (
+  name: string,
+  toType: string,
+  addSecurityZone: boolean = false
+): string => {
+  return `Impl.trivialEncrypt(${name}, Common.${toType.toUpperCase()}_TFHE, ${
+    addSecurityZone ? "securityZone" : "0"
+  })`;
 };
 
-const castFromAddress = (name: string, toType: string): string => {
-  return `Impl.trivialEncrypt(uint256(uint160(${name})), Common.${toType.toUpperCase()}_TFHE)`;
+const castFromPlaintextAddress = (
+  name: string,
+  toType: string,
+  addSecurityZone: boolean = false
+): string => {
+  return `Impl.trivialEncrypt(uint256(uint160(${name})), Common.${toType.toUpperCase()}_TFHE, ${
+    addSecurityZone ? "securityZone" : "0"
+  })`;
 };
 
 const castFromBytes = (name: string, toType: string): string => {
-  return `Impl.verify(${name}, Common.${toType.toUpperCase()}_TFHE)`;
+  return `Impl.verify(${name}, Common.${toType.toUpperCase()}_TFHE, securityZone)`;
 };
 
 const castFromInputType = (name: string, toType: string): string => {
-  return `FHE.as${capitalize(toType)}(${name}.data)`;
+  return `FHE.as${capitalize(toType)}(${name}.data, ${name}.securityZone)`;
 };
 
 const castToEbool = (name: string, fromType: string): string => {
+  // todo (eshel): this should not work for non-default security zones because the second operand of the 'ne' is always from security zone 0.
+  // check if the precompiles support the EBOOL_TFHE constant as with the other casts
   return `
     \n    /// @notice Converts a ${fromType} to an ebool
     function asEbool(${fromType} value) internal pure returns (ebool) {
@@ -247,8 +263,20 @@ const castToEbool = (name: string, fromType: string): string => {
     }`;
 };
 
-export const AsTypeFunction = (fromType: string, toType: string) => {
+export const AsTypeFunction = (
+  fromType: string,
+  toType: string,
+  addSecurityZone: boolean = false
+) => {
+  if (
+    toType === "eaddress" &&
+    !AllowedTypesOnCastToEaddress.includes(fromType)
+  ) {
+    return ""; // skip unsupported cast
+  }
+
   let castString = castFromEncrypted(fromType, toType, "value");
+  let overrideFuncs = "";
 
   let docString = `
     /// @notice Converts a ${fromType} to an ${toType}`;
@@ -256,18 +284,26 @@ export const AsTypeFunction = (fromType: string, toType: string) => {
   if (fromType === "bool" && toType === "ebool") {
     return `
     /// @notice Converts a plaintext boolean value to a ciphertext ebool
-    /// @dev Privacy: The input value is public, therefore the ciphertext should be considered public and should be used
-    ///only for mathematical operations, not to represent data that should be private
-    /// @return A ciphertext representation of the input 
+    /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
+    /// @return A ciphertext representation of the input
     function asEbool(bool value) internal pure returns (ebool) {
         uint256 sVal = 0;
         if (value) {
             sVal = 1;
         }
-
         return asEbool(sVal);
+    }
+    /// @notice Converts a plaintext boolean value to a ciphertext ebool, specifying security zone
+    /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
+    /// @return A ciphertext representation of the input
+    function asEbool(bool value, int32 securityZone) internal pure returns (ebool) {
+      uint256 sVal = 0;
+      if (value) {
+        sVal = 1;
+      }
+      return asEbool(sVal, securityZone);
     }`;
-  } else if (fromType.startsWith("in")) {
+  } else if (fromType.startsWith("inE")) {
     docString = `
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an ${toType}
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
@@ -285,25 +321,40 @@ export const AsTypeFunction = (fromType: string, toType: string) => {
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an ${toType}
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input`;
+    addSecurityZone = true;
     castString = castFromBytes("value", toType);
-  } else if (fromType == "address" && toType == "eaddress") {
-    docString += `
-    /// Allows for a better user experience when working with eaddresses`;
-    castString = castFromAddress("value", toType);
   } else if (EPlaintextType.includes(fromType)) {
-    castString = castFromPlaintext("value", toType);
+    if (!addSecurityZone) {
+      // recursive call to add the asType override with the security zone
+      overrideFuncs += AsTypeFunction(fromType, toType, true);
+    } else {
+      docString += `, specifying security zone`;
+    }
+
+    docString += `
+    /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation`;
+
+    if (fromType === "address" && toType == "eaddress") {
+      docString += `
+    /// Allows for a better user experience when working with eaddresses`;
+      castString = castFromPlaintextAddress("value", toType, addSecurityZone);
+    } else {
+      castString = castFromPlaintext("value", toType, addSecurityZone);
+    }
   } else if (toType === "ebool") {
     return castToEbool("value", fromType);
   } else if (!EInputType.includes(fromType)) {
     throw new Error(`Unsupported type for casting: ${fromType}`);
   }
 
-  return `${docString}
-    function as${capitalize(
-      toType
-    )}(${fromType} value) internal pure returns (${toType}) {
+  let func = `${docString}
+    function as${capitalize(toType)}(${fromType} value${
+    addSecurityZone ? ", int32 securityZone" : ""
+  }) internal pure returns (${toType}) {
         return ${toType}.wrap(${castString});
     }`;
+
+  return func + overrideFuncs;
 };
 
 const unwrapType = (typeName: EUintType, inputName: string): string =>
@@ -324,7 +375,7 @@ export function SolTemplate2Arg(
   let variableName2 = input2 === "bytes32" ? "publicKey" : "rhs";
 
   let docString = `
-    /// @notice This functions performs the ${name} operation
+    /// @notice This function performs the ${name} operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
     ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
@@ -428,7 +479,99 @@ export const IsOperationAllowed = (
 };
 
 export function genAbiFile(abi: string) {
-  return `import { BaseContract } from 'ethers';\n${abi}\n\n`;
+  return `
+import { BaseContract } from 'ethers';
+
+export interface EncryptedNumber {
+  data: Uint8Array;
+  securityZone: number;
+}
+${abi}
+`;
+}
+
+export function SolTemplateDecrypt(input1: AllTypes, returnType: AllTypes) {
+  let docString = `
+    /// @notice Performs the decrypt operation on a ciphertext
+    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @param input1 the input ciphertext
+    function decrypt(${input1} input1) internal pure returns (${returnType}) {
+        return FHE.decrypt(input1, ${getHalfValueFrom(returnType)});
+    }`;
+
+  docString += `
+    /// @notice Performs the decrypt operation on a ciphertext with default value for gas estimation
+    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @param input1 the input ciphertext
+    /// @param defaultValue default value to be returned on gas estimation
+    function decrypt(${input1} input1, ${returnType} defaultValue) internal pure returns (${returnType}) {`;
+
+  let funcBody = docString;
+
+  if (valueIsEncrypted(input1)) {
+    // Get the proper function
+    funcBody += `
+        if (!isInitialized(input1)) {
+            input1 = ${asEuintFuncName(input1)}(0);
+        }`;
+    let unwrap = `${UnderlyingTypes[input1]} unwrappedInput1 = ${unwrapType(
+      input1,
+      "input1"
+    )};`;
+    funcBody += `
+        uint256 gasDefaultValue;
+    `;
+    if (returnType === "bool") {
+      funcBody += `
+        if (defaultValue) {
+           gasDefaultValue = 1;
+        } else {
+           gasDefaultValue = 0;
+        }
+        `;
+    } else if (returnType === "address") {
+      funcBody += `
+        gasDefaultValue = uint256(uint160(defaultValue));
+      `;
+    } else {
+      funcBody += `
+        gasDefaultValue = uint256(defaultValue);
+      `;
+    }
+    let getResult = (inputName: string) =>
+      `FheOps(Precompiles.Fheos).decrypt(${UintTypes[input1]}, ${inputName}, gasDefaultValue);`;
+
+    if (valueIsEncrypted(returnType)) {
+      // input and return type are encrypted - not/neg other unary functions
+      funcBody += `
+        ${unwrap}
+        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
+        bytes memory b = ${getResult("inputAsBytes")}
+        uint256 result = Impl.getValue(b);
+        return ${wrapType(returnType, "result")};
+    }`;
+    } else if (returnType === "none") {
+      // this is essentially req
+      funcBody += `
+        ${unwrap}
+        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
+        ${getResult("inputAsBytes")}
+    }`;
+    } else if (valueIsPlaintext(returnType)) {
+      let returnTypeCamelCase =
+        returnType.charAt(0).toUpperCase() + returnType.slice(1);
+      let outputConvertor = `Common.bigIntTo${returnTypeCamelCase}(result);`;
+      funcBody += `
+        ${unwrap}
+        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
+        uint256 result = ${getResult("inputAsBytes")}
+        return ${outputConvertor}
+    }`;
+    }
+  } else {
+    throw new Error("unsupported function of 1 input that is not encrypted");
+  }
+  return funcBody;
 }
 
 export function SolTemplate1Arg(
@@ -441,17 +584,6 @@ export function SolTemplate1Arg(
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
     `;
-
-  if (name === "not" && input1 === "ebool") {
-    return `\n
-    /// @notice Performs the "not" for the ebool type
-    /// @dev Implemented by a workaround due to ebool being a euint8 type behind the scenes, therefore xor is needed to assure that not(true) = false and vise-versa
-    /// @param value input ebool ciphertext
-    /// @return Result of the not operation on \`value\` 
-    function not(ebool value) internal pure returns (ebool) {
-        return xor(value, asEbool(true));
-    }`;
-  }
 
   let returnStr = returnType === "none" ? `` : `returns (${returnType})`;
 
@@ -630,6 +762,13 @@ export const OperatorBinding = (
 };
 
 export const CastBinding = (thisType: string, targetType: string) => {
+  if (
+    targetType === "eaddress" &&
+    !AllowedTypesOnCastToEaddress.includes(thisType)
+  ) {
+    return ""; // skip unsupported cast
+  }
+
   return `
     function to${shortenType(
       targetType
@@ -645,11 +784,93 @@ export const SealFromType = (thisType: string) => {
     }`;
 };
 
+export const getHalfValueFrom = (thisType: string) => {
+  if (thisType === "bool") {
+    return "false";
+  }
+  if (thisType === "address") {
+    return "address(0)";
+  }
+  const match = thisType.match(/\d+/);
+  const bits = match ? parseInt(match[0], 10) : 0;
+  if (bits === 0) {
+    return "0";
+  }
+
+  return `(2 ** ${bits}) / 2`;
+};
+
 export const DecryptBinding = (thisType: string) => {
+  let plaintextType = toPlaintextType(thisType);
   return `
     function ${LOCAL_DECRYPT_FUNCTION_NAME}(${thisType} value) internal pure returns (${toPlaintextType(
     thisType
   )}) {
         return FHE.decrypt(value);
+    }
+    function ${LOCAL_DECRYPT_FUNCTION_NAME}(${thisType} value, ${plaintextType} defaultValue) internal pure returns (${toPlaintextType(
+    thisType
+  )}) {
+        return FHE.decrypt(value, defaultValue);
     }`;
+};
+
+
+export const RandomGenericFunction = () => {
+  return `
+    /// @notice Generates a random value of a given type with the given seed, for the provided securityZone
+    /// @dev Calls the desired precompile and returns the hash of the ciphertext
+    /// @param uintType the type of the random value to generate
+    /// @param seed the seed to use to create a random value from
+    /// @param securityZone the security zone to use for the random value
+    function random(uint8 uintType, uint64 seed, int32 securityZone) internal pure returns (uint256) {
+        bytes memory b = FheOps(Precompiles.Fheos).random(uintType, seed, securityZone);
+        return Impl.getValue(b);
+    }
+    /// @notice Generates a random value of a given type with the given seed
+    /// @dev Calls the desired precompile and returns the hash of the ciphertext
+    /// @param uintType the type of the random value to generate
+    /// @param seed the seed to use to create a random value from
+    function random(uint8 uintType, uint32 seed) internal pure returns (uint256) {
+        return random(uintType, seed, 0);
+    }
+    /// @notice Generates a random value of a given type
+    /// @dev Calls the desired precompile and returns the hash of the ciphertext
+    /// @param uintType the type of the random value to generate
+    function random(uint8 uintType) internal pure returns (uint256) {
+        return random(uintType, 0, 0);
+    }
+    `;
+};
+
+const RandomFunctionForType = (type: string) => {
+  if (type === "ebool" || type === "eaddress") {
+    return "";
+  }
+  return `/// @notice Generates a random value of a ${type} type for provided securityZone
+    /// @dev Calls the desired precompile and returns the hash of the ciphertext
+    /// @param securityZone the security zone to use for the random value
+    function random${capitalize(
+    type
+  )}(int32 securityZone) internal pure returns (${type}) {
+        uint256 result = random(Common.${type.toUpperCase()}_TFHE, 0, securityZone);
+        return ${type}.wrap(result);
+    }
+    /// @notice Generates a random value of a ${type} type
+    /// @dev Calls the desired precompile and returns the hash of the ciphertext
+    function random${capitalize(
+    type
+  )}() internal pure returns (${type}) {
+        return random${capitalize(type)}(0);
+    }
+    `;
+};
+
+export const RandomFunctions = () => {
+  let outputFile = "";
+  for (let type of EInputType) {
+    outputFile += RandomFunctionForType(type);
+  }
+
+  return outputFile;
 };

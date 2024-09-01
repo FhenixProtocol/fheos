@@ -1,9 +1,18 @@
+
 import { BaseContract } from 'ethers';
+
+export interface EncryptedNumber {
+  data: Uint8Array;
+  securityZone: number;
+}
 export interface AddTestType extends BaseContract {
     add: (test: string, a: bigint, b: bigint) => Promise<bigint>;
 }
 export interface SealoutputTestType extends BaseContract {
     sealoutput: (test: string, a: bigint, pubkey: Uint8Array) => Promise<string>;
+}
+export interface DecryptTestType extends BaseContract {
+    decrypt: (test: string) => Promise<{}>;
 }
 export interface LteTestType extends BaseContract {
     lte: (test: string, a: bigint, b: bigint) => Promise<bigint>;
@@ -65,6 +74,9 @@ export interface ShrTestType extends BaseContract {
 export interface NotTestType extends BaseContract {
     not: (test: string, a: bigint) => Promise<bigint>;
 }
+export interface RandomTestType extends BaseContract {
+    random: (test: string) => Promise<bigint>;
+}
 export interface AsEboolTestType extends BaseContract {
     castFromEuint8ToEbool: (val: bigint, test: string) => Promise<boolean>;
     castFromEuint16ToEbool: (val: bigint, test: string) => Promise<boolean>;
@@ -73,7 +85,7 @@ export interface AsEboolTestType extends BaseContract {
     castFromEuint128ToEbool: (val: bigint, test: string) => Promise<boolean>;
     castFromEuint256ToEbool: (val: bigint, test: string) => Promise<boolean>;
     castFromPlaintextToEbool: (val: bigint) => Promise<boolean>;
-    castFromPreEncryptedToEbool: (val: Uint8Array) => Promise<boolean>;
+    castFromPreEncryptedToEbool: (val: EncryptedNumber) => Promise<boolean>;
 }
 export interface AsEuint8TestType extends BaseContract {
     castFromEboolToEuint8: (val: bigint, test: string) => Promise<bigint>;
@@ -83,7 +95,7 @@ export interface AsEuint8TestType extends BaseContract {
     castFromEuint128ToEuint8: (val: bigint, test: string) => Promise<bigint>;
     castFromEuint256ToEuint8: (val: bigint, test: string) => Promise<bigint>;
     castFromPlaintextToEuint8: (val: bigint) => Promise<bigint>;
-    castFromPreEncryptedToEuint8: (val: Uint8Array) => Promise<bigint>;
+    castFromPreEncryptedToEuint8: (val: EncryptedNumber) => Promise<bigint>;
 }
 export interface AsEuint16TestType extends BaseContract {
     castFromEboolToEuint16: (val: bigint, test: string) => Promise<bigint>;
@@ -93,7 +105,7 @@ export interface AsEuint16TestType extends BaseContract {
     castFromEuint128ToEuint16: (val: bigint, test: string) => Promise<bigint>;
     castFromEuint256ToEuint16: (val: bigint, test: string) => Promise<bigint>;
     castFromPlaintextToEuint16: (val: bigint) => Promise<bigint>;
-    castFromPreEncryptedToEuint16: (val: Uint8Array) => Promise<bigint>;
+    castFromPreEncryptedToEuint16: (val: EncryptedNumber) => Promise<bigint>;
 }
 export interface AsEuint32TestType extends BaseContract {
     castFromEboolToEuint32: (val: bigint, test: string) => Promise<bigint>;
@@ -103,7 +115,7 @@ export interface AsEuint32TestType extends BaseContract {
     castFromEuint128ToEuint32: (val: bigint, test: string) => Promise<bigint>;
     castFromEuint256ToEuint32: (val: bigint, test: string) => Promise<bigint>;
     castFromPlaintextToEuint32: (val: bigint) => Promise<bigint>;
-    castFromPreEncryptedToEuint32: (val: Uint8Array) => Promise<bigint>;
+    castFromPreEncryptedToEuint32: (val: EncryptedNumber) => Promise<bigint>;
 }
 export interface AsEuint64TestType extends BaseContract {
     castFromEboolToEuint64: (val: bigint, test: string) => Promise<bigint>;
@@ -113,7 +125,7 @@ export interface AsEuint64TestType extends BaseContract {
     castFromEuint128ToEuint64: (val: bigint, test: string) => Promise<bigint>;
     castFromEuint256ToEuint64: (val: bigint, test: string) => Promise<bigint>;
     castFromPlaintextToEuint64: (val: bigint) => Promise<bigint>;
-    castFromPreEncryptedToEuint64: (val: Uint8Array) => Promise<bigint>;
+    castFromPreEncryptedToEuint64: (val: EncryptedNumber) => Promise<bigint>;
 }
 export interface AsEuint128TestType extends BaseContract {
     castFromEboolToEuint128: (val: bigint, test: string) => Promise<bigint>;
@@ -123,7 +135,7 @@ export interface AsEuint128TestType extends BaseContract {
     castFromEuint64ToEuint128: (val: bigint, test: string) => Promise<bigint>;
     castFromEuint256ToEuint128: (val: bigint, test: string) => Promise<bigint>;
     castFromPlaintextToEuint128: (val: bigint) => Promise<bigint>;
-    castFromPreEncryptedToEuint128: (val: Uint8Array) => Promise<bigint>;
+    castFromPreEncryptedToEuint128: (val: EncryptedNumber) => Promise<bigint>;
 }
 export interface AsEuint256TestType extends BaseContract {
     castFromEboolToEuint256: (val: bigint, test: string) => Promise<bigint>;
@@ -134,12 +146,12 @@ export interface AsEuint256TestType extends BaseContract {
     castFromEuint128ToEuint256: (val: bigint, test: string) => Promise<bigint>;
     castFromEaddressToEuint256: (val: bigint, test: string) => Promise<bigint>;
     castFromPlaintextToEuint256: (val: bigint) => Promise<bigint>;
-    castFromPreEncryptedToEuint256: (val: Uint8Array) => Promise<bigint>;
+    castFromPreEncryptedToEuint256: (val: EncryptedNumber) => Promise<bigint>;
 }
 export interface AsEaddressTestType extends BaseContract {
     castFromEuint256ToEaddress: (val: bigint, test: string) => Promise<bigint>;
     castFromPlaintextToEaddress: (val: bigint) => Promise<bigint>;
-    castFromPreEncryptedToEaddress: (val: Uint8Array) => Promise<bigint>;
+    castFromPlaintextAddressToEaddress: (val: bigint) => Promise<bigint>;
+    castFromPreEncryptedToEaddress: (val: EncryptedNumber) => Promise<bigint>;
 }
-
 

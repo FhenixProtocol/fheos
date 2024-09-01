@@ -3,6 +3,7 @@ package precompiles
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
@@ -28,14 +29,12 @@ func InitLogger() {
 }
 
 func InitFheConfig(fheConfig *fhe.Config) error {
-	logFormat := log.TerminalFormat(true)
-	glogger := log.NewGlogHandler(log.StreamHandler(os.Stderr, logFormat))
-	glogger.Verbosity(log.Lvl(fheConfig.LogLevel))
+	// Itzik: I'm not sure if this is the right way to initialize the logger
+	handler := log.NewTerminalHandlerWithLevel(os.Stderr, log.FromLegacyLevel(fheConfig.LogLevel), true)
+	glogger := log.NewGlogHandler(handler)
 
-	logger.SetHandler(glogger)
-	warpDriveLogger.SetHandler(glogger)
-
-	fhe.SetLogger(warpDriveLogger)
+	logger = log.NewLogger(glogger)
+	fhe.SetLogger(log.NewLogger(glogger))
 
 	err := fhe.Init(fheConfig)
 
@@ -155,7 +154,7 @@ func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 // Verify takes inputs from the user and runs them through verification. Note that we will always get ciphertexts that
 // are public-key encrypted and compressed. Anything else will fail
-func Verify(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
+func Verify(utype byte, input []byte, securityZone int32, tp *TxParams) ([]byte, uint64, error) {
 	functionName := types.Verify
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
@@ -175,7 +174,14 @@ func Verify(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
-	ct := fhe.NewFheEncryptedFromBytes(input, uintType, true, false /* TODO: not sure + shouldn't be hardcoded */)
+	ct := fhe.NewFheEncryptedFromBytes(
+		input,
+		uintType,
+		true,
+		false, // TODO: not sure + shouldn't be hardcoded
+		securityZone,
+	)
+
 	err := ct.Verify()
 	if err != nil {
 		logger.Info(fmt.Sprintf("failed to verify ciphertext %s for type %d - was input corrupted?", ct.Hash().Hex(), uintType))
@@ -242,7 +248,7 @@ func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) (string, uin
 	return string(reencryptedValue), gas, nil
 }
 
-func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
+func Decrypt(utype byte, input []byte, defaultValue *big.Int, tp *TxParams) (*big.Int, uint64, error) {
 	//solgen: output plaintext
 	functionName := types.Decrypt
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
@@ -254,7 +260,7 @@ func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
-		return FakeDecryptionResult(uintType), gas, nil
+		return defaultValue, gas, nil
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
@@ -555,14 +561,14 @@ func Req(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 	if len(input) != 32 {
 		msg := functionName.String() + " input len must be 32 bytes"
 		logger.Error(msg, " input ", hex.EncodeToString(input), " len ", len(input))
-		return nil, 0, vm.ErrExecutionReverted
+		return nil, gas, vm.ErrExecutionReverted
 	}
 
 	ct := getCiphertext(storage, fhe.BytesToHash(input), tp.ContractAddress)
 	if ct == nil {
 		msg := functionName.String() + " unverified handle"
 		logger.Error(msg, " input ", hex.EncodeToString(input))
-		return nil, 0, vm.ErrExecutionReverted
+		return nil, gas, vm.ErrExecutionReverted
 	}
 
 	ev := evaluateRequire(ct)
@@ -570,7 +576,7 @@ func Req(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 	if !ev {
 		msg := functionName.String() + " condition not met"
 		logger.Error(msg)
-		return nil, 0, vm.ErrExecutionReverted
+		return nil, gas, vm.ErrExecutionReverted
 	}
 
 	return nil, gas, nil
@@ -633,7 +639,7 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams) ([]byte, uint64, 
 // TrivialEncrypt takes a plaintext number and encrypts it to a _compact_ ciphertext
 // using the server/computation key - obviously this doesn't hide any information as the
 // number was known plaintext
-func TrivialEncrypt(input []byte, toType byte, tp *TxParams) ([]byte, uint64, error) {
+func TrivialEncrypt(input []byte, toType byte, securityZone int32, tp *TxParams) ([]byte, uint64, error) {
 	functionName := types.TrivialEncrypt
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
@@ -661,41 +667,28 @@ func TrivialEncrypt(input []byte, toType byte, tp *TxParams) ([]byte, uint64, er
 	}
 
 	valueToEncrypt := *new(big.Int).SetBytes(input)
-	encryptToType := fhe.EncryptionType(toType)
 
 	var ct *fhe.FheEncrypted
 	var err error
-	// Optimize trivial encrypts of zero since we already have trivially encrypted zeros
-	// Trivial encryption of zero is common because it is done for every uninitialized ciphertext
-	if State.EZero != nil && valueToEncrypt.Cmp(big.NewInt(0)) == 0 {
-		// if EZero isn't initialized just initialize it
-		ct = State.GetZero(encryptToType)
-		if ct == nil {
-			logger.Error("failed to create trivial encrypted value")
-			return nil, 0, vm.ErrExecutionReverted
-		}
+	// Check if value is not overflowing the type
+	maxOfType := fhe.MaxOfType(uintType)
+	if maxOfType == nil {
+		logger.Error("failed to create trivially encrypted value, type is not supported.")
+		return nil, 0, vm.ErrExecutionReverted
+	}
 
-	} else {
-		// Check if value is not overflowing the type
-		maxOfType := fhe.MaxOfType(uintType)
-		if maxOfType == nil {
-			logger.Error("failed to create trivially encrypted value, type is not supported.")
-			return nil, 0, vm.ErrExecutionReverted
-		}
+	// If value is bigger than the maximal value that is supported by the type
+	if valueToEncrypt.Cmp(maxOfType) > 0 {
+		logger.Error("failed to create trivially encrypted value, value is too large for type.")
+		return nil, 0, vm.ErrExecutionReverted
+	}
 
-		// If value is bigger than the maximal value that is supported by the type
-		if valueToEncrypt.Cmp(maxOfType) > 0 {
-			logger.Error("failed to create trivially encrypted value, value is too large for type.")
-			return nil, 0, vm.ErrExecutionReverted
-		}
-
-		// we encrypt this using the computation key not the public key. Also, compact to save space in case this gets saved directly
-		// to storage
-		ct, err = fhe.EncryptPlainText(valueToEncrypt, uintType)
-		if err != nil {
-			logger.Error("failed to create trivial encrypted value")
-			return nil, 0, vm.ErrExecutionReverted
-		}
+	// we encrypt this using the computation key not the public key. Also, compact to save space in case this gets saved directly
+	// to storage
+	ct, err = fhe.EncryptPlainText(valueToEncrypt, uintType, securityZone)
+	if err != nil {
+		logger.Error("failed to create trivial encrypted value")
+		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	ctHash := ct.Hash()
@@ -706,7 +699,7 @@ func TrivialEncrypt(input []byte, toType byte, tp *TxParams) ([]byte, uint64, er
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "ctHash", ctHash.Hex(), "valueToEncrypt", valueToEncrypt.Uint64())
+		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "ctHash", ctHash.Hex(), "valueToEncrypt", valueToEncrypt.Uint64(), "securityZone", ct.SecurityZone)
 	}
 	return ctHash[:], gas, nil
 }
@@ -1405,16 +1398,82 @@ func Not(utype byte, value []byte, tp *TxParams) ([]byte, uint64, error) {
 	return resultHash[:], gas, nil
 }
 
-func GetNetworkPublicKey(tp *TxParams) ([]byte, error) {
+func Random(utype byte, seed uint64, securityZone int32, tp *TxParams) ([]byte, uint64, error) {
+	functionName := types.Random
+
+	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
+	uintType := fhe.EncryptionType(utype)
+	if !types.IsValidType(uintType) {
+		logger.Error("invalid random output type", "type", utype)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	gas := getGasForPrecompile(functionName, uintType)
+	if tp.GasEstimation {
+		randomHash := State.GetRandomForGasEstimation()
+		return randomHash[:], gas, nil
+	}
+
+	if shouldPrintPrecompileInfo(tp) {
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
+	}
+
+	var finalSeed uint64
+	if seed != 0 {
+		finalSeed = seed
+	} else {
+		// Seed generation
+		// The current block hash is not yet calculated, se we use the previous block hash
+		var prevBlockHash = common.Hash{}
+
+		if tp.BlockNumber != nil {
+			prevBlockNumber := tp.BlockNumber.Uint64() - 1
+			prevBlockHash = tp.GetBlockHash(prevBlockNumber)
+		} else {
+			logger.Warn("missing BlockNumber inside precompile")
+		}
+
+		var randomCounter uint64
+		if tp.Commit {
+			// We're incrementing nonce regardless of whether the transaction is successful or not,
+			// so that even after a revert, the random is different.
+			// Secondly, we're incrementing before the request for the random number, so that queries
+			// that came before this Tx would have received a different seed.
+			randomCounter = State.IncRandomCounter(prevBlockHash)
+		} else {
+			randomCounter = State.GetRandomCounter(prevBlockHash)
+		}
+
+		finalSeed = GenerateSeedFromEntropy(tp.ContractAddress, prevBlockHash, randomCounter)
+	}
+
+	result, err := fhe.FheRandom(securityZone, uintType, finalSeed)
+	if err != nil {
+		logger.Error(functionName.String()+" failed", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	err = storeCipherText(storage, result, tp.ContractAddress)
+	if err != nil {
+		logger.Error(functionName.String()+" failed", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	resultHash := result.Hash()
+	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "result", resultHash.Hex())
+	return resultHash[:], gas, nil
+}
+
+func GetNetworkPublicKey(securityZone int32, tp *TxParams) ([]byte, error) {
 	functionName := types.GetNetworkKey
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
-	pk, err := fhe.PublicKey(0)
+	pk, err := fhe.PublicKey(securityZone)
 	if err != nil {
-		logger.Error("could not get public key", "err", err)
+		logger.Error("could not get public key", "err", err, "securityZone", securityZone)
 		return nil, vm.ErrExecutionReverted
 	}
 

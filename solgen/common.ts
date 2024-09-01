@@ -13,7 +13,7 @@ export const EInputType = [
 // FYI: Operations ["sealoutput", "seal", "decrypt", "ne"] are the minimum required for
 // non failing generated code.
 
-const patternAllowedOperationsEbool = ["ne|eq|and|or|xor|sealoutput|select|seal|decrypt|not"];
+const patternAllowedOperationsEbool = ["ne|eq|^and$|or|xor|sealoutput|select|seal|decrypt|not"];
 const patternAllowedOperationsEuint8 = [".*"];
 const patternAllowedOperationsEuint16 = [".*"];
 const patternAllowedOperationsEuint32 = [".*"];
@@ -21,9 +21,12 @@ const patternAllowedOperationsEuint32 = [".*"];
 const patternAllowedOperationsEuint64 = ["^(?!div)", "^(?!rem)"];
 const patternAllowedOperationsEuint128 = ["^(?!div)", "^(?!rem)", "^(?!mul)"];
 
-const patternAllowedOperationsEuint256 =   ["ne|eq|sealoutput|select|seal|decrypt"];
+const patternAllowedOperationsEuint256 =   ["ne|eq|sealoutput|select|seal|decrypt|random"];
 const patternAllowedOperationsEaddress =   ["ne|^eq$|sealoutput|select|seal|decrypt"];
 /*------------------------------------------------------------*/
+
+// Although casts from eaddress to types with < 256 bits are possible, we don't want to test them.
+export const AllowedTypesOnCastToEaddress = ["euint256", "uint256", "inEaddress", "bytes memory", "address"]
 
 export const AllowedOperations = [
   patternAllowedOperationsEbool,
@@ -278,3 +281,7 @@ export const shortenType = (type: string) => {
   return type === "ebool" ? "Bool" : "U" + type.slice(5); // get only number at the end
 };
 
+export const toInType = (inputType: string) => "inE" + inputType.slice(1);
+export const toInTypeParam = (inputType: string) => toInType(inputType) + " calldata";
+export const toVarSuffix = (inputType: string) => capitalize(inputType.slice(1).replace("uint", ""));
+export const toAsType = (inputType: string) => "asE" + inputType.slice(1);

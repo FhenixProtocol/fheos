@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-import {SEAL_RETURN_TYPE, SEALING_FUNCTION_NAME} from "./common";
+import { SEAL_RETURN_TYPE, SEALING_FUNCTION_NAME } from "./common";
 
 type ParamTypes = "encrypted" | "uint8" | "plaintext" | "bytes32";
 
@@ -27,6 +27,7 @@ const specificFunctions = [
   },
   { name: "getCiphertext(", amount: 1, paramTypes: ["encrypted"] },
   { name: "fhedriver.UintType(", amount: 1, paramTypes: ["encrypted"] },
+  { name: "GenerateSeedFromEntropy(", amount: 0, paramTypes: [] },
 ];
 
 async function analyzeGoFile(
@@ -84,7 +85,7 @@ async function analyzeGoFile(
         continue;
       }
 
-      // Look for specific functions within high-level function
+      // Look for specific functions within a high-level function
       for (const keyfn of specificFunctions) {
         // skip tfhe.UintType(utype) because it will not indicate the input types
         if (
@@ -96,7 +97,6 @@ async function analyzeGoFile(
           );
           let amount = keyfn.amount;
           if (funcName === SEALING_FUNCTION_NAME) {
-            // console.log(`func name: ${funcName}`)
             amount = 2;
             returnType = `${SEAL_RETURN_TYPE} memory`;
             needsSameType = false;
@@ -105,7 +105,7 @@ async function analyzeGoFile(
 
           // we generate these manually for now
           if (
-            ["trivialencrypt", "cast", "verify"].includes(
+            ["trivialencrypt", "cast", "verify" ].includes(
               funcName.toLowerCase()
             )
           ) {

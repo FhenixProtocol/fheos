@@ -1,6 +1,7 @@
 import { AddCaller, AddCallee } from "../types/tests/contracts/Tx.sol";
 import { Ownership } from "../types/tests/contracts/Ownership";
 import { createFheInstance, deployContract } from "./utils";
+import { fail } from "assert";
 
 describe("Test Transactions Scenarios", () => {
   let contractCaller: AddCaller;
@@ -226,6 +227,43 @@ describe("Test Transactions Scenarios", () => {
     expect(Number(counter)).toEqual(26);
   });
 
+  it("Specify valid Security Zone (eth call, not tx)", async () => {
+    const { permit, instance } = await createFheInstance(contractAddr);
+
+    let encRes;
+    try {
+      encRes = await contractCaller.addPlainSecurityZone(
+        1299,
+        38,
+        1,
+        permit.publicKey
+      );
+    } catch (e) {
+      console.error(`failed operation on securityzone 1: ${e}`);
+      fail("Should not have reverted");
+    }
+
+    const result = instance.unseal(contractAddr, encRes);
+    expect(Number(result)).toEqual(1337);
+  });
+
+  it("Specify invalid Security Zone (eth call, not tx)", async () => {
+    const { permit, instance } = await createFheInstance(contractAddr);
+
+    try {
+      await contractCaller.addPlainSecurityZone(
+        1299,
+        38,
+        3,
+        permit.publicKey
+      );
+
+      fail("Should have reverted");
+    } catch (err) {
+      expect(err.message).toContain("execution reverted");
+    }
+  });
+
   it("Add via DELEGATE contract call - pass Uint32", async () => {
     const { instance, permit } = await createFheInstance(contractAddr);
     const encInput = await instance.encrypt_uint32(14);
@@ -250,6 +288,32 @@ describe("Test Transactions Scenarios", () => {
     );
     const counter = instance.unseal(contractAddr, getCounterResponse);
     expect(Number(counter)).toEqual(28);
+  });
+
+  it("sStore sanity check", async () => {
+    try {
+      const tx = await contractCaller.sStoreSanity();
+      await tx.wait();
+    } catch (e) {
+      console.error("failed sstore sanity check");
+      fail("Should not have reverted");
+    }
+  });
+
+  it("Random sanity check", async () => {
+    let result;
+    try {
+      const tx = await contractCaller.randomSanity();
+      await tx.wait();
+      const filter = contractCaller.filters.RandomSanityEvent
+      const events = await contractCaller.queryFilter(filter, -1)
+      result = events[0].args;
+    } catch (e) {
+      console.error("failed sstore sanity check");
+      fail("Should not have reverted");
+    }
+
+    expect(result[0] === result[1]).toBeFalsy();
   });
 
   // function addDelegate(inEuint32 calldata value, bytes32 publicKey) public returns (bytes memory) {
@@ -303,12 +367,15 @@ describe("Test CT Ownership", () => {
   it("Broken chain", async () => {
     const caller = contracts[2];
     const callee = contracts[3];
-    const tx = await caller.setPlain(100);
+    const { instance, permit } = await createFheInstance(contractAddrs[2]);
+    const encInput = await instance.encrypt_uint32(100);
+    const tx = await caller.setEnc(encInput);
     await tx.wait();
     const response = await caller.getEnc();
     let failed = false;
     try {
       const resp = await callee.set(response);
+      let result = await resp.wait();
     } catch (err) {
       failed = true;
     }
