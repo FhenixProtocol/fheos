@@ -607,7 +607,7 @@ func (con FheOps) Or(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 	return ret, err
 }
 
-func (con FheOps) Random(c ctx, evm mech, utype byte, securityZone int32) ([]byte, error) {
+func (con FheOps) Random(c ctx, evm mech, utype byte, seed uint64, securityZone int32) ([]byte, error) {
 	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	if metrics.Enabled {
 		h := fmt.Sprintf("%s/%s/%s", "fheos", "Random", fheos.UtypeToString(utype))
@@ -619,7 +619,7 @@ func (con FheOps) Random(c ctx, evm mech, utype byte, securityZone int32) ([]byt
 		}(time.Now())
 	}
 
-	ret, gas, err := fheos.Random(utype, securityZone, &tp)
+	ret, gas, err := fheos.Random(utype, seed, securityZone, &tp)
 
 	if err != nil {
 		if metrics.Enabled {

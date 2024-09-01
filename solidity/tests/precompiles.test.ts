@@ -1648,6 +1648,25 @@ describe("Test Random", () => {
   }
 });
 
+describe("Test Random with seed", () => {
+  let contract;
+
+  // We don't really need it as test but it is a test since it is async
+  it(`Test Contract Deployment`, async () => {
+    contract = (await deployContract("RandomSeedTest")) as RandomTestType;
+    expect(contract).toBeTruthy();
+  });
+
+  it(`Test Random With Seed`, async () => {
+    const firstResult = await contract.randomSeed(1337);
+    const secondResult = await contract.randomSeed(87654);
+    const thirdResult = await contract.randomSeed(1337);
+
+    expect(firstResult).toBe(thirdResult);
+    expect(firstResult).not.toBe(secondResult);
+  });
+});
+
 describe("Test AsEbool", () => {
   let contract;
   let fheContract;
