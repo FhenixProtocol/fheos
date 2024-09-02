@@ -71,7 +71,8 @@ WORKDIR /workspace
 
 COPY nitro-overrides/precompiles/FheOps.go precompiles/FheOps.go
 COPY nitro-overrides/arbos/block_processor.go arbos/block_processor.go
-COPY nitro-overrides/arbos/fhenix_tx_processor.go arbos/fhenix_tx_processor.go
+COPY nitro-overrides/arbos/parallel_tx_processor.go arbos/parallel_tx_processor.go
+COPY nitro-overrides/gethhook/geth-hook.go gethhook/geth-hook.go
 
 RUN go mod tidy
 
