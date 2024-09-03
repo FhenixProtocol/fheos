@@ -5,10 +5,12 @@ import (
 	"math/big"
 	"sync"
 	"time"
+
+	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 )
 
 type PendingDecryption struct {
-	Hash Hash
+	Hash fhe.Hash
 	Type PrecompileName
 }
 
@@ -28,6 +30,12 @@ func NewDecryptionResultsMap() *DecryptionResults {
 	}
 }
 
+// CreateEmptyRecord creates a new empty record for the given PendingDecryption key
+// if it doesn't already exist in the DecryptionResults map.
+// This function is intended to be used once a parallel decryption is initiated,
+// before we have a result. An empty record indicates that this decryption is pending.
+// The new record will have a nil Value and the current timestamp.
+// This method is thread-safe.
 func (dr *DecryptionResults) CreateEmptyRecord(key PendingDecryption) {
 	dr.mu.Lock()
 	defer dr.mu.Unlock()
