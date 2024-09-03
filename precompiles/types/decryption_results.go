@@ -61,38 +61,16 @@ func (dr *DecryptionResults) SetValue(key PendingDecryption, value any) error {
 	return nil
 }
 
-func (dr *DecryptionResults) Get(key PendingDecryption) (any, bool, time.Time, error) {
+func (dr *DecryptionResults) Get(key PendingDecryption) (DecryptionRecord, bool) { //(any, bool, time.Time, error) {
 	dr.mu.RLock()
 	defer dr.mu.RUnlock()
 
 	record, exists := dr.data[key]
 	if !exists {
-		return nil, false, time.Time{}, nil
+		return DecryptionRecord{}, false
 	}
 
-	if record.Value == nil {
-		return nil, true, record.Timestamp, nil // Exists but no value
-	}
-
-	switch key.Type {
-	case SealOutput:
-		if bytes, ok := record.Value.([]byte); ok {
-			return bytes, true, record.Timestamp, nil
-		}
-		return nil, true, record.Timestamp, fmt.Errorf("value is not []byte as expected for SealOutput")
-	case Require:
-		if boolValue, ok := record.Value.(bool); ok {
-			return boolValue, true, record.Timestamp, nil
-		}
-		return nil, true, record.Timestamp, fmt.Errorf("value is not bool as expected for Require")
-	case Decrypt:
-		if bigInt, ok := record.Value.(*big.Int); ok {
-			return bigInt, true, record.Timestamp, nil
-		}
-		return nil, true, record.Timestamp, fmt.Errorf("value is not *big.Int as expected for Decrypt")
-	default:
-		return nil, true, record.Timestamp, fmt.Errorf("unknown PrecompileName")
-	}
+	return record, true
 }
 
 func (dr *DecryptionResults) Remove(key PendingDecryption) {
