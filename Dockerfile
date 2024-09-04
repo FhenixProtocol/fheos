@@ -21,6 +21,7 @@ COPY warp-drive/fhe-engine/rust-toolchain warp-drive/fhe-engine/rust-toolchain
 COPY warp-drive/fhe-engine/Cargo.toml warp-drive/fhe-engine/Cargo.toml
 COPY warp-drive/fhe-engine/Cargo.lock warp-drive/fhe-engine/Cargo.lock
 COPY warp-drive/fhe-bridge warp-drive/fhe-bridge
+COPY warp-drive/tools warp-drive/tools
 
 # Update rust version & install packages
 RUN cd warp-drive/fhe-engine && cargo update
