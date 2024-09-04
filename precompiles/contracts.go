@@ -571,7 +571,12 @@ func Req(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 		return nil, gas, vm.ErrExecutionReverted
 	}
 
-	ev := evaluateRequire(ct)
+	ev, err := evaluateRequire(ct)
+	if err != nil {
+		msg := functionName.String() + " error on evaluation"
+		logger.Error(msg, " err ", err)
+		return nil, gas, vm.ErrExecutionReverted
+	}
 
 	if !ev {
 		msg := functionName.String() + " condition not met"
