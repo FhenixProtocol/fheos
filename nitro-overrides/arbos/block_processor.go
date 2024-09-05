@@ -127,6 +127,7 @@ type SequencingHooks struct {
 	// Fhenix specific
 	NotifyCt         func(*types.Transaction, *arbitrum_types.ConditionalOptions, *fheos.PendingDecryption)
 	NotifyDecryptRes func(*fheos.PendingDecryption) error
+	OnTxSuccess      func(*types.Transaction)
 }
 
 func NoopSequencingHooks() *SequencingHooks {
@@ -142,6 +143,7 @@ func NoopSequencingHooks() *SequencingHooks {
 		nil,
 		func(*types.Transaction, *arbitrum_types.ConditionalOptions, *fheos.PendingDecryption) {},
 		func(*fheos.PendingDecryption) error { return nil },
+		func(*types.Transaction) {},
 	}
 }
 
@@ -276,6 +278,7 @@ func ProduceBlockAdvanced(
 		var sender common.Address
 		var dataGas uint64 = 0
 		preTxHeaderGasUsed := header.GasUsed
+		pending := false
 		receipt, result, err := (func() (*types.Receipt, *core.ExecutionResult, error) {
 			// If we've done too much work in this block, discard the tx as early as possible
 			if blockGasLeft < params.TxGas && isUserTx {
@@ -351,10 +354,9 @@ func ProduceBlockAdvanced(
 					vm.DefaultTxProcessor{},
 					func(decrypt *fheos.PendingDecryption) {
 						hooks.NotifyCt(tx, options, decrypt)
+						pending = true
 					},
-					func(decrypt *fheos.PendingDecryption) error {
-						return hooks.NotifyDecryptRes(decrypt)
-					},
+					hooks.NotifyDecryptRes,
 				),
 			)
 			if err != nil {
@@ -369,8 +371,20 @@ func ProduceBlockAdvanced(
 				return nil, nil, err
 			}
 
+			// If reached here, no error was returned. Means that state was not reverted, but if
+			// this tx has pending dependencies we still want to revert the fake results
+			if pending {
+				statedb.RevertToSnapshot(snap)
+			}
+
 			return receipt, result, nil
 		})()
+
+		// This will always be false if not running a sequencer
+		if pending {
+			log.Warn("tried to execute tx but found parallel dependencies. Skipping..", "tx", tx.Hash())
+			continue // skip this tx
+		}
 
 		if tx.Type() == types.ArbitrumInternalTxType {
 			// ArbOS might have upgraded to a new version, so we need to refresh our state
@@ -403,6 +417,8 @@ func ProduceBlockAdvanced(
 				}
 			}
 			continue
+		} else {
+			hooks.OnTxSuccess(tx)
 		}
 
 		if tx.Type() == types.ArbitrumInternalTxType && result.Err != nil {
