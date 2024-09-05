@@ -234,6 +234,9 @@ func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) (string, uin
 	if value, ok := record.Value.(string); exists && ok {
 		logger.Debug("found existing sealoutput result, returning..", "value", value)
 		return value, gas, nil
+	} else if tp.ParallelTxHooks == nil {
+		logger.Error("no decryption result found and no parallel tx hooks were set")
+		return "", 0, vm.ErrExecutionReverted
 	}
 
 	if !tp.GasEstimation {
@@ -304,6 +307,9 @@ func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
 	if value, ok := record.Value.(*big.Int); exists && ok {
 		logger.Debug("found existing decryption result, returning..", "value", value)
 		return value, gas, nil
+	} else if tp.ParallelTxHooks == nil {
+		logger.Error("no decryption result found and no parallel tx hooks were set")
+		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	if !tp.GasEstimation {
@@ -624,6 +630,9 @@ func Req(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 			return nil, gas, vm.ErrExecutionReverted
 		}
 		return nil, gas, nil
+	} else if tp.ParallelTxHooks == nil {
+		logger.Error("no decryption result found and no parallel tx hooks were set")
+		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	if !tp.GasEstimation {
