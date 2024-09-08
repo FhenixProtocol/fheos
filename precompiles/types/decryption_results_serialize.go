@@ -10,7 +10,11 @@ import (
 	"time"
 )
 
+// GetSerializedDecryptionResult returns a byte-serialization of a decryption result.
 func (dr *DecryptionResults) GetSerializedDecryptionResult(key PendingDecryption) ([]byte, error) {
+	// The structure the encoded message is:
+	//	encoded_result = key | result_req OR result_seal OR result_decrypt
+	// see DecryptionRecord.Serialize for the format of each result type
 	result, ok := dr.Get(key)
 	if !ok {
 		return nil, errors.New("tried to serialize result of unknown decryption")
@@ -82,8 +86,17 @@ func (p *PendingDecryption) Deserialize(reader io.Reader) error {
 	return nil
 }
 
-// Serialize the struct into binary
+// Serialize a decryptionRecord into binary, based on the resultType
 func (d *DecryptionRecord) Serialize(resultType PrecompileName) ([]byte, error) {
+	// The structure the encoded message is:
+	//    encoded_result = result | timestamp
+	// where result is:
+	// if resultType == SealOutput:
+	//    len(result) | result (byte slice)
+	// if resultType == Require:
+	//    result (bool)
+	// if resultType == Decrypt:
+	//    len(result) | result (byte slice)
 	buf := new(bytes.Buffer)
 
 	// Serialize the Value based on resultType
@@ -171,7 +184,7 @@ func (d *DecryptionRecord) Deserialize(reader io.Reader, resultType PrecompileNa
 
 	// Deserialize the Timestamp as int64 and convert to time.Time
 	var timestamp int64
-	if err := binary.Read(buf, binary.LittleEndian, &timestamp); err != nil {
+	if err := binary.Read(reader, binary.LittleEndian, &timestamp); err != nil {
 		return err
 	}
 	d.Timestamp = time.Unix(0, timestamp)

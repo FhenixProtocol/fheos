@@ -69,7 +69,7 @@ func (dr *DecryptionResults) SetValue(key PendingDecryption, value any) error {
 	return nil
 }
 
-// SetRecord is just like setValue but sets the complete record, including timestamp
+// SetRecord is just like SetValue but sets the complete record, including timestamp
 // This way timestamps could be synchronized between different nodes
 func (dr *DecryptionResults) SetRecord(key PendingDecryption, record DecryptionRecord) error {
 	switch key.Type {

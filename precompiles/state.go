@@ -1,6 +1,7 @@
 package precompiles
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
@@ -108,6 +109,24 @@ func GetSerializedDecryptionResult(key types.PendingDecryption) ([]byte, error) 
 	}
 
 	return State.DecryptResults.GetSerializedDecryptionResult(key)
+}
+
+func LoadMultipleResolvedDecryptions(reader io.Reader) error {
+	// parse the number of resolved decryptions
+	var numDecryptions int32
+	err := binary.Read(reader, binary.LittleEndian, &numDecryptions)
+	if err != nil {
+		return err
+	}
+
+	for i := int32(0); i < numDecryptions; i++ {
+		err = LoadResolvedDecryption(reader)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func LoadResolvedDecryption(reader io.Reader) error {
