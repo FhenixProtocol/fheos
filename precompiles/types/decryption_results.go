@@ -69,6 +69,33 @@ func (dr *DecryptionResults) SetValue(key PendingDecryption, value any) error {
 	return nil
 }
 
+// SetRecord is just like setValue but sets the complete record, including timestamp
+// This way timestamps could be synchronized between different nodes
+func (dr *DecryptionResults) SetRecord(key PendingDecryption, record DecryptionRecord) error {
+	switch key.Type {
+	case SealOutput:
+		if _, ok := record.Value.([]byte); !ok {
+			return fmt.Errorf("value for SealOutput must be []byte")
+		}
+	case Require:
+		if _, ok := record.Value.(bool); !ok {
+			return fmt.Errorf("value for Require must be bool")
+		}
+	case Decrypt:
+		if _, ok := record.Value.(*big.Int); !ok {
+			return fmt.Errorf("value for Decrypt must be *big.Int")
+		}
+	default:
+		return fmt.Errorf("unknown PrecompileName")
+	}
+
+	dr.mu.Lock()
+	defer dr.mu.Unlock()
+
+	dr.data[key] = record
+	return nil
+}
+
 func (dr *DecryptionResults) Get(key PendingDecryption) (DecryptionRecord, bool) { //(any, bool, time.Time, error) {
 	dr.mu.RLock()
 	defer dr.mu.RUnlock()
