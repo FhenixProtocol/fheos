@@ -50,8 +50,8 @@ func (dr *DecryptionResults) SetValue(key PendingDecryption, value any) error {
 
 	switch key.Type {
 	case SealOutput:
-		if _, ok := value.([]byte); !ok {
-			return fmt.Errorf("value for SealOutput must be []byte")
+		if _, ok := value.(string); !ok {
+			return fmt.Errorf("value for SealOutput must be string")
 		}
 	case Require:
 		if _, ok := value.(bool); !ok {
