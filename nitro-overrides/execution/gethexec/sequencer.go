@@ -32,6 +32,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/txpool"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto/kzg4844"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/metrics"
@@ -337,7 +338,8 @@ type Sequencer struct {
 	expectedSurplusUpdated bool
 
 	// Fhenix specific
-	txOps *TxOpsGraph
+	txOps       *TxOpsGraph
+	txIsPending bool
 }
 
 func NewSequencer(execEngine *ExecutionEngine, l1Reader *headerreader.HeaderReader, configFetcher SequencerConfigFetcher) (*Sequencer, error) {
@@ -365,6 +367,7 @@ func NewSequencer(execEngine *ExecutionEngine, l1Reader *headerreader.HeaderRead
 		pauseChan:       nil,
 		onForwarderSet:  make(chan struct{}, 1),
 		txOps:           NewTxOpsGraph(),
+		txIsPending:     false,
 	}
 	s.nonceFailures = &nonceFailureCache{
 		containers.NewLruCacheWithOnEvict(config.NonceCacheSize, s.onNonceFailureEvict),
@@ -496,6 +499,7 @@ func (s *Sequencer) PublishTransaction(parentCtx context.Context, tx *types.Tran
 }
 
 func (s *Sequencer) preTxFilter(_ *params.ChainConfig, header *types.Header, statedb *state.StateDB, _ *arbosState.ArbosState, tx *types.Transaction, options *arbitrum_types.ConditionalOptions, sender common.Address, l1Info *arbos.L1Info) error {
+	s.txIsPending = false
 	if s.nonceCache.Caching() {
 		stateNonce := s.nonceCache.Get(header, statedb, sender)
 		err := MakeNonceError(sender, tx.Nonce(), stateNonce)
@@ -516,6 +520,9 @@ func (s *Sequencer) preTxFilter(_ *params.ChainConfig, header *types.Header, sta
 }
 
 func (s *Sequencer) postTxFilter(header *types.Header, _ *arbosState.ArbosState, tx *types.Transaction, sender common.Address, dataGas uint64, result *core.ExecutionResult) error {
+	if s.txIsPending {
+		return vm.ErrParallel
+	}
 	if result.Err != nil && result.UsedGas > dataGas && result.UsedGas-dataGas <= s.config().MaxRevertGasReject {
 		return arbitrum.NewRevertReason(result)
 	}
@@ -539,6 +546,7 @@ func (s *Sequencer) postTxFilter(header *types.Header, _ *arbosState.ArbosState,
 }
 
 func (s *Sequencer) notifyCt(tx *types.Transaction, options *arbitrum_types.ConditionalOptions, decryptKey *fheos.PendingDecryption) {
+	s.txIsPending = true
 	s.txOps.AddEdge(tx, options, *decryptKey)
 }
 
@@ -552,10 +560,16 @@ func (s *Sequencer) notifyDecryptRes(decryptKey *fheos.PendingDecryption) error 
 		tx.Retries++
 		tx.LastRun = time.Now()
 
-		log.Info("retrying pending transaction", "tx hash", tx.Tx.Hash(), "retries", tx.Retries, "last run", tx.LastRun)
-		err := s.PublishTransaction(s.GetContext(), tx.Tx, tx.TxOptions)
-		if err != nil {
-			log.Warn("failed to re-publish transaction", "err", err, "tx hash", tx.Tx.Hash(), "retries", tx.Retries, "last run", tx.LastRun)
+		queueItem := tx.QueueItem
+		if queueItem == nil || queueItem.ctx.Err() != nil {
+			log.Warn("transaction has no queue item or is cancelled", "tx hash", tx.Tx.Hash())
+			err := s.PublishTransaction(s.GetContext(), tx.Tx, tx.TxOptions)
+			if err != nil {
+				log.Warn("failed to re-publish transaction", "err", err, "tx hash", tx.Tx.Hash(), "retries", tx.Retries, "last run", tx.LastRun)
+			}
+		} else {
+			log.Info("queue item still valid, retrying", "tx hash", tx.Tx.Hash(), "retries", tx.Retries, "last run", tx.LastRun)
+			s.txQueue <- *queueItem
 		}
 	}
 
@@ -1041,6 +1055,10 @@ func (s *Sequencer) createBlock(ctx context.Context) (returnValue bool) {
 		var nonceError NonceError
 		if errors.As(err, &nonceError) && nonceError.txNonce > nonceError.stateNonce {
 			s.nonceFailures.Add(nonceError, queueItem)
+			continue
+		}
+		if errors.Is(err, vm.ErrParallel) {
+			s.txOps.SetTxQueueItem(queueItem)
 			continue
 		}
 		queueItem.returnResult(err)
