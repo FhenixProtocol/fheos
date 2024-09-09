@@ -236,8 +236,9 @@ func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) (string, uin
 	//    a. Trying to asynchronously evaluate the ct.
 	//    b. Required to have ParallelTxHooks.
 	//    c. Return default value while async evaluation is in progress.
+	hash := fhe.BytesToHash(ctHash)
 	key := types.PendingDecryption{
-		Hash: fhe.BytesToHash(ctHash),
+		Hash: hash,
 		Type: functionName,
 	}
 	record, exists := State.DecryptResults.Get(key)
@@ -247,7 +248,7 @@ func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) (string, uin
 	} else if tp.GasEstimation {
 		return "0x" + strings.Repeat("00", 370), gas, nil
 	} else {
-		ct := getCiphertext(storage, fhe.BytesToHash(ctHash), tp.ContractAddress)
+		ct := getCiphertext(storage, hash, tp.ContractAddress)
 		if ct == nil {
 			msg := functionName.String() + " unverified ciphertext handle"
 			logger.Error(msg, "ciphertext-hash", hex.EncodeToString(ctHash))
@@ -272,15 +273,17 @@ func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) (string, uin
 			State.DecryptResults.CreateEmptyRecord(key)
 		}
 
+		userPk := make([]byte, len(pk))
+		copy(userPk, pk)
 		go func() {
-			logger.Debug("sealing output", "hash", ctHash)
-			reencryptedValue, err := fhe.SealOutput(*ct, pk)
+			logger.Debug("sealing output", "hash", hash)
+			reencryptedValue, err := fhe.SealOutput(*ct, userPk)
 			if err != nil {
 				logger.Error("failed to seal output", "err", err)
 				return
 			}
 
-			logger.Debug("sealed output", "hash", ctHash, "value", reencryptedValue)
+			logger.Debug("sealed output", "hash", hash, "value", reencryptedValue)
 			err = State.DecryptResults.SetValue(key, string(reencryptedValue))
 			if err != nil {
 				logger.Error("failed setting sealoutput result", "error", err)
