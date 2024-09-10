@@ -143,7 +143,9 @@ func GenerateSeedFromEntropy(contractAddress common.Address, prevBlockHash commo
 	return result
 }
 
-// Add this new function to utils.go
+// SAFETY NOTE: this function assumes input length validity (i.e. that ctHash and pk are 32 bytes long)
+// since the SealOutput precompile is doing these checks before calling this function. Be extra careful
+// when using this function in other places.
 func genSealedKey(ctHash, pk []byte, functionName types.PrecompileName) types.PendingDecryption {
 	var hash [32]byte
 	for i := 0; i < 32; i++ {
