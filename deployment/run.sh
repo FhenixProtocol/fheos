@@ -28,6 +28,7 @@ else
     echo "Starting in debug mode"
 fi
 
+renault-server -c /home/user/fhenix/renault-server.toml &
 # Start the FHE engine server
 fhe-engine-server -c /home/user/fhenix/fhe_engine.toml &
 
@@ -66,11 +67,12 @@ if [[ "${DEBUG_MODE}" -eq 0 ]]; then
           --graphql.vhosts "*" \
           --graphql.corsdomain "*" \
           --conf.env-prefix "NITRO" \
-          --conf.fhenix.log-level 4
+          --conf.fhenix.log-level 4 \
+          --conf.fhenix.oracle-type "${ORACLE_TYPE}"
 fi
 
 # Start in debug mode if requested
 if [[ "${DEBUG_MODE}" -eq 1 ]]; then
     echo "Starting in debug mode"
-    /go/bin/dlv --listen=:4001 --headless=true --log=true --accept-multiclient --api-version=2 exec /usr/local/bin/nitro -- --conf.file /config/sequencer_config.json --node.dangerous.no-l1-listener --node.feed.output.enable --node.feed.output.port 9642 --http.api net,web3,eth,txpool,debug --node.seq-coordinator.my-url ws://sequencer:8548 --graphql.enable --graphql.vhosts "*" --graphql.corsdomain "*"
+    /go/bin/dlv --listen=:4001 --headless=true --log=true --accept-multiclient --api-version=2 exec /usr/local/bin/nitro -- --conf.file /config/sequencer_config.json --node.dangerous.no-l1-listener --node.feed.output.enable --conf.fhenix.log-level 4 --conf.fhenix.oracle-type "${ORACLE_TYPE}" --node.feed.output.port 9642 --http.api net,web3,eth,txpool,debug --node.seq-coordinator.my-url ws://sequencer:8548 --graphql.enable --graphql.vhosts "*" --graphql.corsdomain "*"
 fi
