@@ -13,7 +13,7 @@ export const EInputType = [
 // FYI: Operations ["sealoutput", "seal", "decrypt", "ne"] are the minimum required for
 // non failing generated code.
 
-const patternAllowedOperationsEbool = ["ne|eq|^and$|or|xor|sealoutput|select|seal|decrypt|not"];
+const patternAllowedOperationsEbool = ["ne|eq|^and$|^or$|xor|sealoutput|select|seal|decrypt|not"];
 const patternAllowedOperationsEuint8 = [".*"];
 const patternAllowedOperationsEuint16 = [".*"];
 const patternAllowedOperationsEuint32 = [".*"];
@@ -230,6 +230,18 @@ export const ShorthandOperations: OperatorMap[] = [
     unary: false,
     returnsBool: false,
   },
+  {
+    func: "rol",
+    operator: null,
+    unary: false,
+    returnsBool: false,
+  },
+  {
+    func: "ror",
+    operator: null,
+    unary: false,
+    returnsBool: false,
+  },
 ];
 
 export const BindMathOperators = [
@@ -251,6 +263,8 @@ export const BindMathOperators = [
   "min",
   "shl",
   "shr",
+  "rol",
+  "ror"
 ];
 export const bitwiseAndLogicalOperators = ["and", "or", "xor", "not"];
 
