@@ -147,3 +147,17 @@ func FakeDecryptionResult(encType fhe.EncryptionType) *big.Int {
 		return big.NewInt(0)
 	}
 }
+
+// Add this new function to utils.go
+func genSealedKey(ctHash, pk []byte, functionName types.PrecompileName) types.PendingDecryption {
+	var hash [32]byte
+	for i := 0; i < 32; i++ {
+		// Assumes input length validity
+		hash[i] = ctHash[i] ^ pk[i]
+	}
+
+	return types.PendingDecryption{
+		Hash: hash,
+		Type: functionName,
+	}
+}

@@ -235,10 +235,7 @@ func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) (string, uin
 	//    b. Required to have ParallelTxHooks.
 	//    c. Return default value while async evaluation is in progress.
 	hash := fhe.BytesToHash(ctHash)
-	key := types.PendingDecryption{
-		Hash: hash,
-		Type: functionName,
-	}
+	key := genSealedKey(ctHash, pk, functionName)
 	record, exists := State.DecryptResults.Get(key)
 	if value, ok := record.Value.(string); exists && ok {
 		logger.Debug("found existing sealoutput result, returning..", "value", value)
