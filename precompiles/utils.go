@@ -2,6 +2,9 @@ package precompiles
 
 import (
 	"errors"
+	"math"
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
@@ -9,8 +12,6 @@ import (
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	"github.com/fhenixprotocol/fheos/storage"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
-	"math"
-	"math/big"
 )
 
 type TxParams struct {
@@ -19,6 +20,7 @@ type TxParams struct {
 	EthCall         bool
 	CiphertextDb    *memorydb.Database
 	ContractAddress common.Address
+	ParallelTxHooks types.ParallelTxProcessingHook
 }
 
 type GasBurner interface {
@@ -34,6 +36,13 @@ func TxParamsFromEVM(evm *vm.EVM, callerContract common.Address) TxParams {
 
 	tp.CiphertextDb = evm.CiphertextDb
 	tp.ContractAddress = callerContract
+
+	// If this is running in a sequencer, this should not be nil
+	if parallelHook, ok := evm.ProcessingHook.(types.ParallelTxProcessingHook); ok {
+		tp.ParallelTxHooks = parallelHook
+	} else {
+		tp.ParallelTxHooks = nil
+	}
 
 	return tp
 }
