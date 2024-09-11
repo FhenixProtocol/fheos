@@ -3,7 +3,7 @@ pragma solidity ^0.8.19;
 
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { FHE, euint32, inEuint32 } from "../../FHE.sol";
-import { Permissioned, Permission } from "@fhenixprotocol/contracts/access/Permission.sol";
+import { Permissioned, Permission } from "@fhenixprotocol/contracts/access/Permissioned.sol";
 
 error ErrorInsufficientFunds();
 
@@ -81,13 +81,13 @@ contract WrappingERC20 is ERC20, Permissioned {
 
     function balanceOfEncrypted(
         Permission calldata permission
-    ) public view onlySignedPublicKey(permission) returns (string memory) {
+    ) public view onlySender(permission) returns (string memory) {
         return FHE.sealoutput(_encBalances[msg.sender], permission.publicKey);
     }
 
     function getEncryptedTotalSupply(
         Permission calldata permission
-    ) public view onlySignedPublicKey(permission) returns (string memory) {
+    ) public view onlySenderz(permission) returns (string memory) {
         return FHE.sealoutput(totalEncryptedSupply, permission.publicKey);
     }
 }
