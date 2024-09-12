@@ -353,6 +353,10 @@ export function testContract1Arg(name: string) {
     name,
     EInputType.indexOf("euint256")
   );
+  const isEboolAllowed = IsOperationAllowed(
+      name,
+      EInputType.indexOf("ebool")
+  );
   let func = `function ${name}(string calldata test, uint256 a, int32 securityZone) public pure returns (uint256 output) {
         if (Utils.cmp(test, "${name}(euint8)")) {
             return FHE.decrypt(FHE.${name}(FHE.asEuint8(a, securityZone)));
@@ -376,7 +380,8 @@ export function testContract1Arg(name: string) {
             return FHE.decrypt(FHE.${name}(FHE.asEuint256(a, securityZone)));
         }`;
   }
-  func += ` else if (Utils.cmp(test, "${name}(ebool)")) {
+  if(isEboolAllowed) {
+    func += ` else if (Utils.cmp(test, "${name}(ebool)")) {
             bool aBool = true;
             if (a == 0) {
                 aBool = false;
@@ -387,7 +392,9 @@ export function testContract1Arg(name: string) {
             }
 
             return 0;
-        }
+        }`;
+  }
+  func += `
         
         revert TestNotFound(test);
     }`;

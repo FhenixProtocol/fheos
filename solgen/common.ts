@@ -19,7 +19,7 @@ const patternAllowedOperationsEuint16 = [".*"];
 const patternAllowedOperationsEuint32 = [".*"];
 
 const patternAllowedOperationsEuint64 = ["^(?!div)", "^(?!rem)"];
-const patternAllowedOperationsEuint128 = ["^(?!div)", "^(?!rem)", "^(?!mul)"];
+const patternAllowedOperationsEuint128 = ["^(?!div)", "^(?!rem)", "^(?!mul)", "^(?!square)"];
 
 const patternAllowedOperationsEuint256 =   ["ne|eq|sealoutput|select|seal|decrypt|random"];
 const patternAllowedOperationsEaddress =   ["ne|^eq$|sealoutput|select|seal|decrypt"];
@@ -230,6 +230,12 @@ export const ShorthandOperations: OperatorMap[] = [
     unary: false,
     returnsBool: false,
   },
+  // {
+  //   func: "square",
+  //   operator: null,
+  //   unary: true,
+  //   returnsBool: false,
+  // },
 ];
 
 export const BindMathOperators = [

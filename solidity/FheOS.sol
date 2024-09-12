@@ -37,4 +37,5 @@ interface FheOps {
     function not(uint8 utype, bytes memory value) external pure returns (bytes memory);
     function random(uint8 utype, uint64 seed, int32 securityZone) external pure returns (bytes memory);
     function getNetworkPublicKey(int32 securityZone) external pure returns (bytes memory);
+    function square(uint8 utype, bytes memory value) external pure returns (bytes memory);
 }

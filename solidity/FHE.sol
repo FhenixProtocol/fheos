@@ -2598,6 +2598,58 @@ library FHE {
         uint256 result = Impl.getValue(b);
         return euint128.wrap(result);
     }
+    /// @notice Performs the square operation on a ciphertext
+    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @param input1 the input ciphertext
+    function square(euint8 input1) internal pure returns (euint8) {
+        if (!isInitialized(input1)) {
+            input1 = asEuint8(0);
+        }
+        uint256 unwrappedInput1 = euint8.unwrap(input1);
+        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
+        bytes memory b = FheOps(Precompiles.Fheos).square(Common.EUINT8_TFHE, inputAsBytes);
+        uint256 result = Impl.getValue(b);
+        return euint8.wrap(result);
+    }
+    /// @notice Performs the square operation on a ciphertext
+    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @param input1 the input ciphertext
+    function square(euint16 input1) internal pure returns (euint16) {
+        if (!isInitialized(input1)) {
+            input1 = asEuint16(0);
+        }
+        uint256 unwrappedInput1 = euint16.unwrap(input1);
+        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
+        bytes memory b = FheOps(Precompiles.Fheos).square(Common.EUINT16_TFHE, inputAsBytes);
+        uint256 result = Impl.getValue(b);
+        return euint16.wrap(result);
+    }
+    /// @notice Performs the square operation on a ciphertext
+    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @param input1 the input ciphertext
+    function square(euint32 input1) internal pure returns (euint32) {
+        if (!isInitialized(input1)) {
+            input1 = asEuint32(0);
+        }
+        uint256 unwrappedInput1 = euint32.unwrap(input1);
+        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
+        bytes memory b = FheOps(Precompiles.Fheos).square(Common.EUINT32_TFHE, inputAsBytes);
+        uint256 result = Impl.getValue(b);
+        return euint32.wrap(result);
+    }
+    /// @notice Performs the square operation on a ciphertext
+    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @param input1 the input ciphertext
+    function square(euint64 input1) internal pure returns (euint64) {
+        if (!isInitialized(input1)) {
+            input1 = asEuint64(0);
+        }
+        uint256 unwrappedInput1 = euint64.unwrap(input1);
+        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
+        bytes memory b = FheOps(Precompiles.Fheos).square(Common.EUINT64_TFHE, inputAsBytes);
+        uint256 result = Impl.getValue(b);
+        return euint64.wrap(result);
+    }
     /// @notice Generates a random value of a given type with the given seed, for the provided securityZone
     /// @dev Calls the desired precompile and returns the hash of the ciphertext
     /// @param uintType the type of the random value to generate
