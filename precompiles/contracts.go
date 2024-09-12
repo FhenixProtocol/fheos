@@ -1583,3 +1583,9 @@ func GetNetworkPublicKey(securityZone int32, tp *TxParams) ([]byte, error) {
 
 	return pk, nil
 }
+
+func Square(utype byte, value []byte, tp *TxParams) ([]byte, uint64, error) {
+	return Mul(utype, value, value, tp)
+	// Please don't delete the below comment, this is intentionally left here for code generation.
+	//ct := getCiphertext(storage, fhe.BytesToHash(value), tp.ContractAddress)
+}

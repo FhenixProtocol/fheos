@@ -71,6 +71,7 @@ const (
 	Random
 	Rol
 	Ror
+	Square
 )
 
 var precompileNameToString = map[PrecompileName]string{
@@ -104,6 +105,7 @@ var precompileNameToString = map[PrecompileName]string{
 	TrivialEncrypt: "trivialEncrypt",
 	Rol:            "rol",
 	Ror:            "ror",
+	Square:         "square",
 }
 
 var stringToPrecompileName = map[string]PrecompileName{
@@ -137,6 +139,7 @@ var stringToPrecompileName = map[string]PrecompileName{
 	"trivialEncrypt": TrivialEncrypt,
 	"rol":            Rol,
 	"ror":            Ror,
+	"square":         Square,
 }
 
 func (pn PrecompileName) String() string {
