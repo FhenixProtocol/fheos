@@ -69,7 +69,7 @@ func (dr *DecryptionResults) SetValue(key PendingDecryption, value any) error {
 	return nil
 }
 
-func (dr *DecryptionResults) Get(key PendingDecryption) (DecryptionRecord, bool) { //(any, bool, time.Time, error) {
+func (dr *DecryptionResults) Get(key PendingDecryption) (DecryptionRecord, bool) {
 	dr.mu.RLock()
 	defer dr.mu.RUnlock()
 
