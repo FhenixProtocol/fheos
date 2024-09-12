@@ -33,7 +33,8 @@ import {
   AsEuint256TestType,
   AsEaddressTestType,
   RolTestType,
-  RorTestType
+  RorTestType,
+  SquareTestType,
 } from "./abis";
 
 const getFheContract = async (contractAddress: string) => {
@@ -1629,10 +1630,10 @@ describe("Test Ror", () => {
             BigInt(testCase.a),
             BigInt(testCase.b)
           );
-          
+
           expect(decryptedResult).toBe(BigInt(testCase.expectedResult));
         });
-      } 
+      }
     }
   });
 });
@@ -2650,3 +2651,83 @@ describe("Test AsEaddress", () => {
     expect(decimal).toBe(value);
   });
 });
+
+describe("Test Square", () => {
+  const overflow8 = 2 ** 4;
+  const overflow16 = 2 ** 8;
+  const overflow32 = 2 ** 16;
+  const overflow64 = 2 ** 32;
+  let contract;
+
+  // We don't really need it as test but it is a test since it is async
+  it(`Test Contract Deployment`, async () => {
+    contract = (await deployContract("SquareTest")) as SquareTestType;
+    expect(contract).toBeTruthy();
+  });
+
+  const testCases = [
+    {
+      function: ["square(euint8)", "euint8.square()"],
+      cases: [
+        { a: 2, expectedResult: 4, name: "" },
+        {
+          a: overflow8,
+          expectedResult: Number(BigInt.asUintN(8, BigInt(overflow8 * overflow8))),
+          name: " as overflow",
+        },
+      ],
+    },
+    {
+      function: ["square(euint16)", "euint16.square()"],
+      cases: [
+        { a: 2, expectedResult: 4, name: "" },
+        {
+          a: overflow16,
+          expectedResult: Number(BigInt.asUintN(16, BigInt(overflow16 * overflow16))),
+          name: " as overflow",
+        },
+      ],
+    },
+    {
+      function: ["square(euint32)", "euint32.square()"],
+      cases: [
+        { a: 2, expectedResult: 4, name: "" },
+        {
+          a: overflow32,
+          b: 2,
+          expectedResult: Number(BigInt.asUintN(32, BigInt(overflow32 * overflow32))),
+          name: " as overflow",
+        },
+      ],
+    },
+    {
+      function: ["square(euint64)", "euint64.square()"],
+      cases: [
+        { a: 3, expectedResult: 9, name: "" },
+        {
+          a: overflow64,
+          expectedResult: Number(BigInt.asUintN(64, BigInt(overflow64 * overflow64))),
+          name: " with large number",
+        },
+      ],
+    },
+  ];
+
+  for (const test of testCases) {
+    for (const securityZone of [0]) {
+      for (const testFunc of test.function) {
+        for (const testCase of test.cases) {
+          it(`Test ${testFunc}${testCase.name} - security zone ${securityZone}`, async () => {
+            const decryptedResult = await contract.square(
+              testFunc,
+              BigInt(testCase.a),
+              securityZone
+            );
+            expect(decryptedResult).toBe(BigInt(testCase.expectedResult));
+          });
+        }
+      }
+    }
+  }
+});
+
