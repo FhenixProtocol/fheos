@@ -762,7 +762,6 @@ func (s *Sequencer) makeSequencingHooks() *arbos.SequencingHooks {
 		PostTxFilter:            s.postTxFilter,
 		NotifyCt:                s.notifyCt,
 		NotifyDecryptRes:        s.notifyDecryptRes,
-		OnTxSuccess:             s.onTxSuccess,
 		SerializeTxDecryptRes:   s.SerializeTxDecryptRes,
 		DiscardInvalidTxsEarly:  true,
 		TxErrors:                []error{},
