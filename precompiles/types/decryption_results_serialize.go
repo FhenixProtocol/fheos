@@ -92,7 +92,7 @@ func (d *DecryptionRecord) Serialize(resultType PrecompileName) ([]byte, error) 
 	//    encoded_result = result | timestamp
 	// where result is:
 	// if resultType == SealOutput:
-	//    len(result) | result (byte slice)
+	//    len(result) | result (string)
 	// if resultType == Require:
 	//    result (bool)
 	// if resultType == Decrypt:
@@ -102,15 +102,18 @@ func (d *DecryptionRecord) Serialize(resultType PrecompileName) ([]byte, error) 
 	// Serialize the Value based on resultType
 	switch resultType {
 	case SealOutput:
-		value, ok := d.Value.([]byte)
+		value, ok := d.Value.(string)
 		if !ok {
-			return nil, fmt.Errorf("expected []byte for SealOutput")
+			return nil, fmt.Errorf("expected string for SealOutput")
 		}
+		// Convert the string to a byte slice
+		valueBytes := []byte(value)
+
 		// Write the length of the byte slice, then the slice itself
-		if err := binary.Write(buf, binary.LittleEndian, int32(len(value))); err != nil {
+		if err := binary.Write(buf, binary.LittleEndian, int32(len(valueBytes))); err != nil {
 			return nil, err
 		}
-		if err := binary.Write(buf, binary.LittleEndian, value); err != nil {
+		if err := binary.Write(buf, binary.LittleEndian, valueBytes); err != nil {
 			return nil, err
 		}
 	case Require:
@@ -161,7 +164,7 @@ func (d *DecryptionRecord) Deserialize(reader io.Reader, resultType PrecompileNa
 		if err := binary.Read(reader, binary.LittleEndian, &byteSlice); err != nil {
 			return err
 		}
-		d.Value = byteSlice
+		d.Value = string(byteSlice)
 	case Require:
 		var value bool
 		if err := binary.Read(reader, binary.LittleEndian, &value); err != nil {
