@@ -859,6 +859,42 @@ func (con FheOps) Shr(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 	return ret, err
 }
 
+func (con FheOps) Square(c ctx, evm mech, utype byte, value []byte) ([]byte, error) {
+	tp := fheos.TxParamsFromEVM(evm, c.caller)
+	if metrics.Enabled {
+		h := fmt.Sprintf("%s/%s/%s", "fheos", "Square", fheos.UtypeToString(utype))
+		defer func(start time.Time) {
+			sampler := func() metrics.Sample {
+				return metrics.NewBoundedHistogramSample()
+			}
+			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+		}(time.Now())
+	}
+
+	ret, gas, err := fheos.Square(utype, value, &tp)
+
+	if err != nil {
+		if metrics.Enabled {
+			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Square", fheos.UtypeToString(utype), "error/fhe_failure")
+			metrics.GetOrRegisterCounter(c, nil).Inc(1)
+		}
+		return ret, err
+	}
+
+	err = c.Burn(gas)
+
+	if metrics.Enabled {
+		metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Square", fheos.UtypeToString(utype), "success/total")
+		if err != nil {
+			metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "Square", fheos.UtypeToString(utype), "error/fhe_gas_failure")
+		}
+
+		metrics.GetOrRegisterCounter(metricPath, nil).Inc(1)
+	}
+
+	return ret, err
+}
+
 func (con FheOps) Sub(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte) ([]byte, error) {
 	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	if metrics.Enabled {

@@ -1479,3 +1479,41 @@ func GetNetworkPublicKey(securityZone int32, tp *TxParams) ([]byte, error) {
 
 	return pk, nil
 }
+
+func Square(utype byte, value []byte, tp *TxParams) ([]byte, uint64, error) {
+	functionName := types.Square
+
+	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
+	uintType := fhe.EncryptionType(utype)
+	if !types.IsValidType(uintType) {
+		logger.Error("invalid ciphertext", "type", utype)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+	gas := getGasForPrecompile(functionName, uintType)
+	if tp.GasEstimation {
+		randomHash := State.GetRandomForGasEstimation()
+		return randomHash[:], gas, nil
+	}
+	if shouldPrintPrecompileInfo(tp) {
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
+	}
+	ct := getCiphertext(storage, fhe.BytesToHash(value), tp.ContractAddress)
+	if ct == nil {
+		msg := "unverified ciphertext handle"
+		logger.Error(msg, "input", hex.EncodeToString(value))
+		return nil, 0, vm.ErrExecutionReverted
+	}
+	result, err := ct.Square()
+	if err != nil {
+		logger.Error("square failed", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+	err = storeCipherText(storage, result, tp.ContractAddress)
+	if err != nil {
+		logger.Error(functionName.String()+" failed", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+	resultHash := result.Hash()
+	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "input", ct.Hash().Hex(), "result", resultHash.Hex())
+	return resultHash[:], gas, nil
+}

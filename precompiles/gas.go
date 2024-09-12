@@ -57,7 +57,7 @@ func getRawPrecompileGas(precompileName types.PrecompileName, uintType fhe.Encry
 		case fhe.Uint128:
 			return 290000
 		}
-	case types.Mul:
+	case types.Mul, types.Square:
 		switch uintType {
 		case fhe.Uint8:
 			return 40000

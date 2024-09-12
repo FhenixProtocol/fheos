@@ -69,6 +69,7 @@ const (
 	Ne
 	TrivialEncrypt
 	Random
+	Square
 	// Rol  // Commented out if not used
 	// Ror  // Commented out if not used
 )
@@ -102,6 +103,7 @@ var precompileNameToString = map[PrecompileName]string{
 	Ne:             "ne",
 	Random:         "random",
 	TrivialEncrypt: "trivialEncrypt",
+	Square:         "square",
 	// Rol:          "rol",
 	// Ror:          "ror",
 }
@@ -135,6 +137,7 @@ var stringToPrecompileName = map[string]PrecompileName{
 	"ne":             Ne,
 	"random":         Random,
 	"trivialEncrypt": TrivialEncrypt,
+	"square":         Square,
 	// "rol":          Rol,
 	// "ror":          Ror,
 }
