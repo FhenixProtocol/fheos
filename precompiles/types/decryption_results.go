@@ -50,8 +50,8 @@ func (dr *DecryptionResults) SetValue(key PendingDecryption, value any) error {
 
 	switch key.Type {
 	case SealOutput:
-		if _, ok := value.([]byte); !ok {
-			return fmt.Errorf("value for SealOutput must be []byte")
+		if _, ok := value.(string); !ok {
+			return fmt.Errorf("value for SealOutput must be string")
 		}
 	case Require:
 		if _, ok := value.(bool); !ok {
@@ -67,6 +67,18 @@ func (dr *DecryptionResults) SetValue(key PendingDecryption, value any) error {
 
 	dr.data[key] = DecryptionRecord{Value: value, Timestamp: time.Now()}
 	return nil
+}
+
+func (dr *DecryptionResults) Get(key PendingDecryption) (DecryptionRecord, bool) { //(any, bool, time.Time, error) {
+	dr.mu.RLock()
+	defer dr.mu.RUnlock()
+
+	record, exists := dr.data[key]
+	if !exists {
+		return DecryptionRecord{}, false
+	}
+
+	return record, true
 }
 
 // SetRecord is just like SetValue but sets the complete record, including timestamp
@@ -94,18 +106,6 @@ func (dr *DecryptionResults) SetRecord(key PendingDecryption, record DecryptionR
 
 	dr.data[key] = record
 	return nil
-}
-
-func (dr *DecryptionResults) Get(key PendingDecryption) (DecryptionRecord, bool) { //(any, bool, time.Time, error) {
-	dr.mu.RLock()
-	defer dr.mu.RUnlock()
-
-	record, exists := dr.data[key]
-	if !exists {
-		return DecryptionRecord{}, false
-	}
-
-	return record, true
 }
 
 func (dr *DecryptionResults) Remove(key PendingDecryption) {

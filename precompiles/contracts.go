@@ -201,6 +201,9 @@ func Verify(utype byte, input []byte, securityZone int32, tp *TxParams) ([]byte,
 func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) (string, uint64, error) {
 	//solgen: bool math
 	functionName := types.SealOutput
+	if shouldPrintPrecompileInfo(tp) {
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
+	}
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 
 	uintType := fhe.EncryptionType(utype)
@@ -210,13 +213,6 @@ func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) (string, uin
 	}
 
 	gas := getGasForPrecompile(functionName, uintType)
-	if tp.GasEstimation {
-		return "0x" + strings.Repeat("00", 370), gas, nil
-	}
-
-	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function: " + functionName.String())
-	}
 
 	if len(ctHash) != 32 {
 		msg := functionName.String() + " ciphertext's hashes need to be 32 bytes long"
@@ -230,22 +226,70 @@ func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) (string, uin
 		return "", 0, vm.ErrExecutionReverted
 	}
 
-	ct := getCiphertext(storage, fhe.BytesToHash(ctHash), tp.ContractAddress)
-	if ct == nil {
-		msg := functionName.String() + " unverified ciphertext handle"
-		logger.Error(msg, "ciphertext-hash", hex.EncodeToString(ctHash))
-		return "", 0, vm.ErrExecutionReverted
+	// The rest of the function performs the following steps:
+	// 1. If a result exists, we don't care about mode of execution, just return it.
+	// 2. If gas estimation, return default value.
+	// 3. If query, try to do sync.
+	// 4. Otherwise, we're in a tx, so we are:
+	//    a. Trying to asynchronously evaluate the ct.
+	//    b. Required to have ParallelTxHooks.
+	//    c. Return default value while async evaluation is in progress.
+	hash := fhe.BytesToHash(ctHash)
+	key := genSealedKey(ctHash, pk, functionName)
+	record, exists := State.DecryptResults.Get(key)
+	if value, ok := record.Value.(string); exists && ok {
+		logger.Debug("found existing sealoutput result, returning..", "value", value)
+		return value, gas, nil
+	} else if tp.GasEstimation {
+		return "0x" + strings.Repeat("00", 370), gas, nil
+	} else {
+		ct := getCiphertext(storage, hash, tp.ContractAddress)
+		if ct == nil {
+			msg := functionName.String() + " unverified ciphertext handle"
+			logger.Error(msg, "ciphertext-hash", hex.EncodeToString(ctHash))
+			return "", 0, vm.ErrExecutionReverted
+		}
+
+		if tp.EthCall {
+			reencryptedValue, err := fhe.SealOutput(*ct, pk)
+			if err != nil {
+				logger.Error("failed to seal output", "err", err)
+				return "", 0, vm.ErrExecutionReverted
+			}
+			return string(reencryptedValue), gas, nil
+		} else if tp.ParallelTxHooks == nil {
+			logger.Error("no decryption result found and no parallel tx hooks were set")
+			return "", 0, vm.ErrExecutionReverted
+		}
+
+		tp.ParallelTxHooks.NotifyCt(&key)
+
+		if !exists {
+			State.DecryptResults.CreateEmptyRecord(key)
+		}
+
+		userPk := make([]byte, len(pk))
+		copy(userPk, pk)
+		go func() {
+			logger.Debug("sealing output", "hash", hash)
+			reencryptedValue, err := fhe.SealOutput(*ct, userPk)
+			if err != nil {
+				logger.Error("failed to seal output", "err", err)
+				return
+			}
+
+			logger.Debug("sealed output", "hash", hash, "value", reencryptedValue)
+			err = State.DecryptResults.SetValue(key, string(reencryptedValue))
+			if err != nil {
+				logger.Error("failed setting sealoutput result", "error", err)
+				return
+			}
+			tp.ParallelTxHooks.NotifyDecryptRes(&key)
+		}()
+
+		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "ciphertext-hash ", hex.EncodeToString(ctHash), "public-key", hex.EncodeToString(pk))
+		return "0x" + strings.Repeat("00", 370), gas, nil
 	}
-
-	reencryptedValue, err := fhe.SealOutput(*ct, pk)
-	if err != nil {
-		logger.Error(functionName.String()+" failed to encrypt to user key", "err", err)
-		return "", 0, vm.ErrExecutionReverted
-	}
-
-	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "ciphertext-hash ", hex.EncodeToString(ctHash), "public-key", hex.EncodeToString(pk))
-
-	return string(reencryptedValue), gas, nil
 }
 
 func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
@@ -269,7 +313,14 @@ func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	// even if gas simulation, we can return the actual decryption if we have it
+	// The rest of the function performs the following steps:
+	// 1. If a result exists, we don't care about mode of execution, just return it.
+	// 2. If gas estimation, return default value.
+	// 3. If query, try to do sync.
+	// 4. Otherwise, we're in a tx, so we are:
+	//    a. Trying to asynchronously evaluate the ct.
+	//    b. Required to have ParallelTxHooks.
+	//    c. Return default value while async evaluation is in progress.
 	ctHash := fhe.BytesToHash(input)
 	key := types.PendingDecryption{
 		Hash: ctHash,
@@ -279,13 +330,25 @@ func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
 	if value, ok := record.Value.(*big.Int); exists && ok {
 		logger.Debug("found existing decryption result, returning..", "value", value)
 		return value, gas, nil
-	}
-
-	if !tp.GasEstimation {
+	} else if tp.GasEstimation {
+		return FakeDecryptionResult(uintType), gas, nil
+	} else {
 		ct := getCiphertext(storage, ctHash, tp.ContractAddress)
 		if ct == nil {
 			msg := functionName.String() + " unverified ciphertext handle"
 			logger.Error(msg, " input ", hex.EncodeToString(input))
+			return nil, 0, vm.ErrExecutionReverted
+		}
+
+		if tp.EthCall {
+			decryptedValue, err := fhe.Decrypt(*ct)
+			if err != nil {
+				logger.Error("failed decrypting ciphertext", "error", err)
+				return nil, 0, vm.ErrExecutionReverted
+			}
+			return decryptedValue, gas, nil
+		} else if tp.ParallelTxHooks == nil {
+			logger.Error("no decryption result found and no parallel tx hooks were set")
 			return nil, 0, vm.ErrExecutionReverted
 		}
 
@@ -303,7 +366,7 @@ func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
 				return
 			}
 
-			logger.Debug("decrypted value", "value", decryptedValue)
+			logger.Debug("decrypted value", "hash", ctHash, "value", decryptedValue)
 			err = State.DecryptResults.SetValue(key, decryptedValue)
 			if err != nil {
 				logger.Error("failed setting decryption result", "error", err)
@@ -313,9 +376,8 @@ func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
 		}()
 
 		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "input", hex.EncodeToString(input))
+		return FakeDecryptionResult(uintType), gas, nil
 	}
-
-	return FakeDecryptionResult(uintType), gas, nil
 }
 
 func Lte(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
@@ -569,7 +631,9 @@ func Req(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 	//solgen: input encrypted
 	//solgen: return none
 	functionName := types.Require
-
+	if shouldPrintPrecompileInfo(tp) {
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
+	}
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 	uintType := fhe.EncryptionType(utype)
 	if !types.IsValidType(uintType) {
@@ -578,36 +642,77 @@ func Req(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 	}
 
 	gas := getGasForPrecompile(functionName, uintType)
-	if tp.GasEstimation {
-		return nil, gas, nil
-	}
-
-	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function: " + functionName.String())
-	}
 
 	if len(input) != 32 {
 		msg := functionName.String() + " input len must be 32 bytes"
-		logger.Error(msg, " input ", hex.EncodeToString(input), " len ", len(input))
-		return nil, gas, vm.ErrExecutionReverted
+		logger.Error(msg, "input", hex.EncodeToString(input), "len", len(input))
+		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	ct := getCiphertext(storage, fhe.BytesToHash(input), tp.ContractAddress)
-	if ct == nil {
-		msg := functionName.String() + " unverified handle"
-		logger.Error(msg, " input ", hex.EncodeToString(input))
-		return nil, gas, vm.ErrExecutionReverted
+	// The rest of the function performs the following steps:
+	// 1. If a result exists, we don't care about mode of execution, just return it.
+	// 2. If gas estimation, return default value.
+	// 3. If query, try to do sync.
+	// 4. Otherwise, we're in a tx, so we are:
+	//    a. Trying to asynchronously evaluate the ct.
+	//    b. Required to have ParallelTxHooks.
+	//    c. Return default value while async evaluation is in progress.
+	ctHash := fhe.BytesToHash(input)
+	key := types.PendingDecryption{
+		Hash: ctHash,
+		Type: functionName,
 	}
+	record, exists := State.DecryptResults.Get(key)
+	if value, ok := record.Value.(bool); exists && ok {
+		logger.Debug("found existing decryption result, returning..", "value", value)
+		if !value {
+			return nil, gas, vm.ErrExecutionReverted
+		}
+		return nil, gas, nil
+	} else if tp.GasEstimation {
+		return nil, gas, nil
+	} else {
+		ct := getCiphertext(storage, ctHash, tp.ContractAddress)
+		if ct == nil {
+			msg := functionName.String() + " unverified ciphertext handle"
+			logger.Error(msg, "input", hex.EncodeToString(input))
+			return nil, 0, vm.ErrExecutionReverted
+		}
 
-	ev := evaluateRequire(ct)
+		if tp.EthCall {
+			result := evaluateRequire(ct)
+			if !result {
+				return nil, gas, vm.ErrExecutionReverted
+			}
+			return nil, gas, nil
+		} else if tp.ParallelTxHooks == nil {
+			logger.Error("no decryption result found and no parallel tx hooks were set")
+			return nil, 0, vm.ErrExecutionReverted
+		}
 
-	if !ev {
-		msg := functionName.String() + " condition not met"
-		logger.Error(msg)
-		return nil, gas, vm.ErrExecutionReverted
+		tp.ParallelTxHooks.NotifyCt(&key)
+
+		if !exists {
+			State.DecryptResults.CreateEmptyRecord(key)
+		}
+
+		go func() {
+			logger.Debug("evaluating require condition", "hash", ctHash)
+			result := evaluateRequire(ct)
+
+			logger.Debug("require condition result", "hash", ctHash, "value", result)
+			err := State.DecryptResults.SetValue(key, result)
+			if err != nil {
+				logger.Error("failed setting require result", "error", err)
+				return
+			}
+			tp.ParallelTxHooks.NotifyDecryptRes(&key)
+		}()
+
+		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "input", hex.EncodeToString(input))
+
+		return nil, gas, nil
 	}
-
-	return nil, gas, nil
 }
 
 func Cast(utype byte, input []byte, toType byte, tp *TxParams) ([]byte, uint64, error) {
