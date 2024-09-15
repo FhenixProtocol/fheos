@@ -86,8 +86,8 @@ func (dr *DecryptionResults) Get(key PendingDecryption) (DecryptionRecord, bool)
 func (dr *DecryptionResults) SetRecord(key PendingDecryption, record DecryptionRecord) error {
 	switch key.Type {
 	case SealOutput:
-		if _, ok := record.Value.([]byte); !ok {
-			return fmt.Errorf("value for SealOutput must be []byte")
+		if _, ok := record.Value.(string); !ok {
+			return fmt.Errorf("value for SealOutput must be string")
 		}
 	case Require:
 		if _, ok := record.Value.(bool); !ok {
