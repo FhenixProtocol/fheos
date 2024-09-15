@@ -81,7 +81,14 @@ func (bg *TxOpsGraph) SetTxQueueItem(queueItem txQueueItem) {
 		return
 	}
 	tx.QueueItem = &queueItem
-	close(tx.QueueItemReady) // Signal that the field has been set
+
+	// Signal that the field has been set
+	select {
+	case <-tx.QueueItemReady:
+		// Channel already closed, do nothing
+	default:
+		close(tx.QueueItemReady)
+	}
 }
 
 // Private helper methods
