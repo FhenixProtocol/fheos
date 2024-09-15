@@ -70,6 +70,7 @@ RUN ./gen.sh
 WORKDIR /workspace
 
 COPY nitro-overrides/precompiles/FheOps.go precompiles/FheOps.go
+COPY nitro-overrides/precompiles/precompile.go precompiles/precompile.go
 COPY nitro-overrides/arbos/block_processor.go arbos/block_processor.go
 COPY nitro-overrides/arbos/parallel_tx_processor.go arbos/parallel_tx_processor.go
 COPY nitro-overrides/gethhook/geth-hook.go gethhook/geth-hook.go
