@@ -721,15 +721,22 @@ func (s *Sequencer) makeSequencingHooks(queueItems []txQueueItem) *arbos.Sequenc
 			if transactionIndex > len(queueItems)-1 {
 				log.Error("tried to use queueItem in out-of-bound index", "queue items", len(queueItems), "index", transactionIndex)
 				return errors.New("tried to use queueItem in out-of-bound index")
-			} else {
-				s.txOps.SetTxQueueItem(queueItems[transactionIndex])
 			}
 
 			if tx.Hash() != queueItems[transactionIndex].tx.Hash() {
 				log.Error("tx does not match queueItem", "tx hash", tx.Hash(), "queueItem tx hash", queueItems[transactionIndex].tx.Hash())
 				return errors.New("tx does not match queueItem")
 			}
-			return s.notifyCt(tx, options, decryptKey)
+
+			err := s.notifyCt(tx, options, decryptKey)
+			if err != nil {
+				log.Error("failed to notify Ct", "err", err)
+				return err
+			}
+
+			s.txOps.SetTxQueueItem(queueItems[transactionIndex])
+
+			return nil
 		},
 		NotifyDecryptRes:        s.notifyDecryptRes,
 		OnTxSuccess:             s.onTxSuccess,
