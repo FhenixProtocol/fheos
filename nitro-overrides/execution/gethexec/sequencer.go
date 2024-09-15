@@ -719,18 +719,17 @@ func (s *Sequencer) makeSequencingHooks(queueItems []txQueueItem) *arbos.Sequenc
 		PostTxFilter: s.postTxFilter,
 		NotifyCt: func(tx *types.Transaction, options *arbitrum_types.ConditionalOptions, decryptKey *fheos.PendingDecryption, transactionIndex int) error {
 			if transactionIndex > len(queueItems)-1 {
-				s.txOps.SetTxQueueItem(queueItems[transactionIndex])
-			} else {
 				log.Error("tried to use queueItem in out-of-bound index", "queue items", len(queueItems), "index", transactionIndex)
 				return errors.New("tried to use queueItem in out-of-bound index")
+			} else {
+				s.txOps.SetTxQueueItem(queueItems[transactionIndex])
 			}
 
 			if tx.Hash() != queueItems[transactionIndex].tx.Hash() {
 				log.Error("tx does not match queueItem", "tx hash", tx.Hash(), "queueItem tx hash", queueItems[transactionIndex].tx.Hash())
 				return errors.New("tx does not match queueItem")
 			}
-			s.notifyCt(tx, options, decryptKey)
-			return nil
+			return s.notifyCt(tx, options, decryptKey)
 		},
 		NotifyDecryptRes:        s.notifyDecryptRes,
 		OnTxSuccess:             s.onTxSuccess,
