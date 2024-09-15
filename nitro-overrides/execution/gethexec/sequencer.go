@@ -565,7 +565,12 @@ func (s *Sequencer) notifyDecryptRes(decryptKey *fheos.PendingDecryption) error 
 		tx.LastRun = time.Now()
 
 		queueItem := tx.QueueItem
-		if queueItem == nil || queueItem.ctx.Err() != nil {
+		if queueItem == nil {
+			queueItem = tx.WaitForQueueItem()
+		}
+
+		if queueItem.ctx.Err() != nil {
+			// NOTE: This may be problematic for clients waiting for this transaction. They may not receive a response.
 			log.Warn("transaction has no queue item or is cancelled", "tx hash", tx.Tx.Hash())
 			err := s.PublishTransaction(s.GetContext(), tx.Tx, tx.TxOptions)
 			if err != nil {
