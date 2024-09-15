@@ -10,14 +10,20 @@ import (
 )
 
 type transaction struct {
-	Tx        *geth.Transaction
-	TxOptions *arbitrum_types.ConditionalOptions
-	QueueItem *txQueueItem
-	Retries   uint
-	LastRun   time.Time
+	Tx             *geth.Transaction
+	TxOptions      *arbitrum_types.ConditionalOptions
+	QueueItem      *txQueueItem
+	QueueItemReady chan struct{} // Channel to signal when the "QueueItem" field is set
+	Retries        uint
+	LastRun        time.Time
 
 	pendingDecryptions  map[fheos.PendingDecryption]*decryption
 	resolvedDecryptions map[fheos.PendingDecryption]*decryption
+}
+
+func (tx *transaction) WaitForQueueItem() *txQueueItem {
+	<-tx.QueueItemReady // Wait until "QueueItem" field is set
+	return tx.QueueItem
 }
 
 type decryption struct {
@@ -75,6 +81,7 @@ func (bg *TxOpsGraph) SetTxQueueItem(queueItem txQueueItem) {
 		return
 	}
 	tx.QueueItem = &queueItem
+	close(tx.QueueItemReady) // Signal that the field has been set
 }
 
 // Private helper methods
@@ -89,6 +96,7 @@ func (bg *TxOpsGraph) addTransaction(gethtx *geth.Transaction, txOptions *arbitr
 		TxOptions:           txOptions,
 		pendingDecryptions:  make(map[fheos.PendingDecryption]*decryption),
 		resolvedDecryptions: make(map[fheos.PendingDecryption]*decryption),
+		QueueItemReady:      make(chan struct{}),
 	}
 	bg.transactions[txHash] = tx
 	return tx
