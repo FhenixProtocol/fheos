@@ -125,7 +125,7 @@ type SequencingHooks struct {
 	ConditionalOptionsForTx []*arbitrum_types.ConditionalOptions
 
 	// Fhenix specific
-	NotifyCt              func(*types.Transaction, *arbitrum_types.ConditionalOptions, *fheos.PendingDecryption)
+	NotifyCt              func(*types.Transaction, *arbitrum_types.ConditionalOptions, *fheos.PendingDecryption, int) error
 	NotifyDecryptRes      func(*fheos.PendingDecryption) error
 	SerializeTxDecryptRes func(*types.Transaction) ([]byte, error)
 }
@@ -141,7 +141,9 @@ func NoopSequencingHooks() *SequencingHooks {
 			return nil
 		},
 		nil,
-		func(*types.Transaction, *arbitrum_types.ConditionalOptions, *fheos.PendingDecryption) {},
+		func(*types.Transaction, *arbitrum_types.ConditionalOptions, *fheos.PendingDecryption, int) error {
+			return nil
+		},
 		func(*fheos.PendingDecryption) error { return nil },
 		func(*types.Transaction) ([]byte, error) { return nil, nil },
 	}
@@ -351,8 +353,8 @@ func ProduceBlockAdvanced(
 				},
 				NewParallelTxProcessor(
 					vm.DefaultTxProcessor{},
-					func(decrypt *fheos.PendingDecryption) {
-						hooks.NotifyCt(tx, options, decrypt)
+					func(decrypt *fheos.PendingDecryption) error {
+						return hooks.NotifyCt(tx, options, decrypt, len(hooks.TxErrors))
 					},
 					hooks.NotifyDecryptRes,
 				),

@@ -549,9 +549,10 @@ func (s *Sequencer) postTxFilter(header *types.Header, _ *arbosState.ArbosState,
 	return nil
 }
 
-func (s *Sequencer) notifyCt(tx *types.Transaction, options *arbitrum_types.ConditionalOptions, decryptKey *fheos.PendingDecryption) {
+func (s *Sequencer) notifyCt(tx *types.Transaction, options *arbitrum_types.ConditionalOptions, decryptKey *fheos.PendingDecryption) error {
 	s.txIsPending = true
 	s.txOps.AddEdge(tx, options, *decryptKey)
+	return nil
 }
 
 func (s *Sequencer) notifyDecryptRes(decryptKey *fheos.PendingDecryption) error {
@@ -565,13 +566,8 @@ func (s *Sequencer) notifyDecryptRes(decryptKey *fheos.PendingDecryption) error 
 		tx.LastRun = time.Now()
 
 		queueItem := tx.QueueItem
-		if queueItem == nil {
-			queueItem = tx.WaitForQueueItem()
-		}
-
-		if queueItem.ctx.Err() != nil {
-			// NOTE: This may be problematic for clients waiting for this transaction. They may not receive a response.
-			log.Warn("transaction has no queue item or is cancelled", "tx hash", tx.Tx.Hash())
+		if queueItem == nil || queueItem.ctx.Err() != nil {
+			log.Warn("transaction has no queue item or is cancelled", "tx hash", tx.Tx.Hash(), "queueItem", queueItem)
 			err := s.PublishTransaction(s.GetContext(), tx.Tx, tx.TxOptions)
 			if err != nil {
 				log.Warn("failed to re-publish transaction", "err", err, "tx hash", tx.Tx.Hash(), "retries", tx.Retries, "last run", tx.LastRun)
@@ -761,11 +757,31 @@ func (s *Sequencer) handleInactive(ctx context.Context, queueItems []txQueueItem
 
 var sequencerInternalError = errors.New("sequencer internal error")
 
-func (s *Sequencer) makeSequencingHooks() *arbos.SequencingHooks {
+func (s *Sequencer) makeSequencingHooks(queueItems []txQueueItem) *arbos.SequencingHooks {
 	return &arbos.SequencingHooks{
-		PreTxFilter:             s.preTxFilter,
-		PostTxFilter:            s.postTxFilter,
-		NotifyCt:                s.notifyCt,
+		PreTxFilter:  s.preTxFilter,
+		PostTxFilter: s.postTxFilter,
+		NotifyCt: func(tx *types.Transaction, options *arbitrum_types.ConditionalOptions, decryptKey *fheos.PendingDecryption, transactionIndex int) error {
+			if transactionIndex > len(queueItems)-1 {
+				log.Error("tried to use queueItem in out-of-bound index", "queue items", len(queueItems), "index", transactionIndex)
+				return errors.New("tried to use queueItem in out-of-bound index")
+			}
+
+			if tx.Hash() != queueItems[transactionIndex].tx.Hash() {
+				log.Error("tx does not match queueItem", "tx hash", tx.Hash(), "queueItem tx hash", queueItems[transactionIndex].tx.Hash())
+				return errors.New("tx does not match queueItem")
+			}
+
+			err := s.notifyCt(tx, options, decryptKey)
+			if err != nil {
+				log.Error("failed to notify Ct", "err", err)
+				return err
+			}
+
+			s.txOps.SetTxQueueItem(queueItems[transactionIndex])
+
+			return nil
+		},
 		NotifyDecryptRes:        s.notifyDecryptRes,
 		SerializeTxDecryptRes:   s.SerializeTxDecryptRes,
 		DiscardInvalidTxsEarly:  true,
@@ -974,7 +990,7 @@ func (s *Sequencer) createBlock(ctx context.Context) (returnValue bool) {
 	s.nonceCache.BeginNewBlock()
 	queueItems = s.precheckNonces(queueItems, totalBlockSize)
 	txes := make([]*types.Transaction, len(queueItems))
-	hooks := s.makeSequencingHooks()
+	hooks := s.makeSequencingHooks(queueItems)
 	hooks.ConditionalOptionsForTx = make([]*arbitrum_types.ConditionalOptions, len(queueItems))
 	totalBlockSize = 0 // recompute the totalBlockSize to double check it
 	for i, queueItem := range queueItems {
@@ -1107,7 +1123,6 @@ func (s *Sequencer) createBlock(ctx context.Context) (returnValue bool) {
 			continue
 		}
 		if errors.Is(err, vm.ErrParallel) {
-			s.txOps.SetTxQueueItem(queueItem)
 			continue
 		}
 		queueItem.returnResult(err)
