@@ -1,6 +1,7 @@
 package gethexec
 
 import (
+	"github.com/ethereum/go-ethereum/log"
 	"time"
 
 	"github.com/ethereum/go-ethereum/arbitrum_types"
@@ -72,6 +73,7 @@ func (bg *TxOpsGraph) SetTxQueueItem(queueItem txQueueItem) {
 	txHash := queueItem.tx.Hash()
 	tx, exists := bg.transactions[txHash]
 	if !exists {
+		log.Warn("tried to set queue item to transaction not present in graph")
 		return
 	}
 	tx.QueueItem = &queueItem
