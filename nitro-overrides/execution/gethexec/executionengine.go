@@ -282,8 +282,6 @@ func (s *ExecutionEngine) NextDelayedMessageNumber() (uint64, error) {
 }
 
 func MessageFromTxes(header *arbostypes.L1IncomingMessageHeader, txes types.Transactions, hooks *arbos.SequencingHooks) (*arbostypes.L1IncomingMessage, error) {
-	// Todo (eshel): Find a way to skip txs that are pending,
-	//  we skip them when applying them to state, but they are still part of the txes array
 	var l2Message []byte
 	txErrors := hooks.TxErrors
 
