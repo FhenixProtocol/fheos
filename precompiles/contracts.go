@@ -262,7 +262,11 @@ func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) (string, uin
 			return "", 0, vm.ErrExecutionReverted
 		}
 
-		tp.ParallelTxHooks.NotifyCt(&key)
+		err := tp.ParallelTxHooks.NotifyCt(&key)
+		if err != nil {
+			logger.Error("failed notifying parallel tx hooks", "error", err)
+			return "", 0, vm.ErrExecutionReverted
+		}
 
 		if !exists {
 			State.DecryptResults.CreateEmptyRecord(key)
@@ -352,7 +356,11 @@ func Decrypt(utype byte, input []byte, tp *TxParams) (*big.Int, uint64, error) {
 			return nil, 0, vm.ErrExecutionReverted
 		}
 
-		tp.ParallelTxHooks.NotifyCt(&key)
+		err := tp.ParallelTxHooks.NotifyCt(&key)
+		if err != nil {
+			logger.Error("failed notifying parallel tx hooks", "error", err)
+			return nil, 0, vm.ErrExecutionReverted
+		}
 
 		if !exists {
 			State.DecryptResults.CreateEmptyRecord(key)
@@ -690,7 +698,11 @@ func Req(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 			return nil, 0, vm.ErrExecutionReverted
 		}
 
-		tp.ParallelTxHooks.NotifyCt(&key)
+		err := tp.ParallelTxHooks.NotifyCt(&key)
+		if err != nil {
+			logger.Error("failed notifying parallel tx hooks", "error", err)
+			return nil, 0, vm.ErrExecutionReverted
+		}
 
 		if !exists {
 			State.DecryptResults.CreateEmptyRecord(key)
