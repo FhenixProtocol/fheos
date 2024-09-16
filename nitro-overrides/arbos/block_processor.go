@@ -127,6 +127,7 @@ type SequencingHooks struct {
 	// Fhenix specific
 	NotifyCt         func(*types.Transaction, *arbitrum_types.ConditionalOptions, *fheos.PendingDecryption)
 	NotifyDecryptRes func(*fheos.PendingDecryption) error
+	OnTxSuccess      func(*types.Transaction)
 }
 
 func NoopSequencingHooks() *SequencingHooks {
@@ -142,6 +143,7 @@ func NoopSequencingHooks() *SequencingHooks {
 		nil,
 		func(*types.Transaction, *arbitrum_types.ConditionalOptions, *fheos.PendingDecryption) {},
 		func(*fheos.PendingDecryption) error { return nil },
+		func(*types.Transaction) {},
 	}
 }
 
@@ -352,9 +354,7 @@ func ProduceBlockAdvanced(
 					func(decrypt *fheos.PendingDecryption) {
 						hooks.NotifyCt(tx, options, decrypt)
 					},
-					func(decrypt *fheos.PendingDecryption) error {
-						return hooks.NotifyDecryptRes(decrypt)
-					},
+					hooks.NotifyDecryptRes,
 				),
 			)
 			if err != nil {
@@ -403,6 +403,8 @@ func ProduceBlockAdvanced(
 				}
 			}
 			continue
+		} else {
+			hooks.OnTxSuccess(tx)
 		}
 
 		if tx.Type() == types.ArbitrumInternalTxType && result.Err != nil {
