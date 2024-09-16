@@ -43,6 +43,7 @@ async function analyzeGoFile(
   const solgenOutputPlaintextComment = /output plaintext/;
   const solgenInput2Comment = /input2 /;
   const solgenBooleanMathOp = /bool math/;
+  const solgenVerifiedOperands = /(\d+)\s*verified operands/;
   const specificFunctionAnalysis: FunctionAnalysis[] = [];
 
   let isInsideHighLevelFunction = false;
@@ -83,6 +84,21 @@ async function analyzeGoFile(
       if (braceDepth === 0) {
         isInsideHighLevelFunction = false;
         continue;
+      }
+
+      // Support for shoretened util-based functions with "solgen: 2 verified operands"
+      const match = trimmedLine.match(solgenVerifiedOperands);
+      if (match) {
+        const operandCount = parseInt(match[1], 10);
+        const analysis: FunctionAnalysis = {
+          name: funcName,
+          paramsCount: operandCount,
+          needsSameType: true,
+          returnType: returnType,
+          inputTypes: Array(operandCount).fill('encrypted'),
+          isBooleanMathOp: isBooleanMathOp,
+        };
+        specificFunctionAnalysis.push(analysis);
       }
 
       // Look for specific functions within a high-level function

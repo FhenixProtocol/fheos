@@ -32,6 +32,8 @@ import {
   AsEuint128TestType,
   AsEuint256TestType,
   AsEaddressTestType,
+  RolTestType,
+  RorTestType
 } from "./abis";
 
 const getFheContract = async (contractAddress: string) => {
@@ -1542,6 +1544,99 @@ describe("Test Shr", () => {
     }
   }
 });
+
+describe("Test Rol", () => {
+  let contract;
+
+  beforeAll(async () => {
+    contract = (await deployContract("RolTest")) as RolTestType;
+  });
+
+  const generateTestCases = (bitSize: number) => {
+    const basePattern = BigInt(`0b${'11100000'.repeat(bitSize / 8)}`);
+    const mask = (1n << BigInt(bitSize)) - 1n;
+
+    return [1, 2, 3, 4, 5].map(rotateAmount => {
+      const rotated = ((basePattern << BigInt(rotateAmount)) | (basePattern >> BigInt(bitSize - rotateAmount))) & mask;
+      return {
+        a: basePattern,
+        b: rotateAmount,
+        expectedResult: rotated,
+        name: ` rol ${rotateAmount}`
+      };
+    });
+  };
+
+  const bitSizes = [8, 16, 32, 64, 128];
+
+  const funcsToTest = bitSizes.map(size => [`rol(euint${size},euint${size})`, `euint${size}.rol(euint${size})`]);
+
+  funcsToTest.forEach((test, index) => {
+    const bitSize = bitSizes[index];
+    const testCases = generateTestCases(bitSize);
+
+    for (const testCase of testCases) {
+      for (const funcName of test) {
+        it(`Test ${funcName}${testCase.name}`, async () => {
+          const decryptedResult = await contract.rol(
+            funcName,
+            BigInt(testCase.a),
+            BigInt(testCase.b)
+          );
+
+          expect(decryptedResult).toBe(BigInt(testCase.expectedResult));
+        });
+      }
+    }
+  });
+});
+
+describe("Test Ror", () => {
+  let contract;
+
+  beforeAll(async () => {
+    contract = (await deployContract("RorTest")) as RorTestType;
+  });
+
+  const generateTestCases = (bitSize: number) => {
+    const basePattern = BigInt(`0b${'11100000'.repeat(bitSize / 8)}`);
+    const mask = (1n << BigInt(bitSize)) - 1n;
+
+    return [1, 2, 3, 4, 5].map(rotateAmount => {
+      const rotated = ((basePattern >> BigInt(rotateAmount)) | (basePattern << BigInt(bitSize - rotateAmount))) & mask;
+      return {
+        a: basePattern,
+        b: rotateAmount,
+        expectedResult: rotated,
+        name: ` ror ${rotateAmount}`
+      };
+    });
+  };
+
+  const bitSizes = [8, 16, 32, 64, 128];
+
+  const funcsToTest = bitSizes.map(size => [`ror(euint${size},euint${size})`, `euint${size}.ror(euint${size})`]);
+
+  funcsToTest.forEach((test, index) => {
+    const bitSize = bitSizes[index];
+    const testCases = generateTestCases(bitSize);
+
+    for (const testCase of testCases) {
+      for (const funcName of test) {
+        it(`Test ${funcName}${testCase.name}`, async () => {
+          const decryptedResult = await contract.ror(
+            funcName,
+            BigInt(testCase.a),
+            BigInt(testCase.b)
+          );
+          
+          expect(decryptedResult).toBe(BigInt(testCase.expectedResult));
+        });
+      } 
+    }
+  });
+});
+
 
 describe("Test Not", () => {
   let contract;

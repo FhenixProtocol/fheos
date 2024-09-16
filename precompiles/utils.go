@@ -4,6 +4,8 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
@@ -12,7 +14,6 @@ import (
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	"github.com/fhenixprotocol/fheos/storage"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
-	"math/big"
 )
 
 type TxParams struct {
@@ -132,4 +133,57 @@ func GenerateSeedFromEntropy(contractAddress common.Address, prevBlockHash commo
 	result := binary.LittleEndian.Uint64(hashResult[:])
 	logger.Debug(fmt.Sprintf("generated seed for random: %d", result))
 	return result
+}
+
+func genericBinaryOperation(
+	functionName types.PrecompileName,
+	utype byte,
+	lhsHash []byte,
+	rhsHash []byte,
+	tp *TxParams,
+	operation func(*fhe.FheEncrypted, *fhe.FheEncrypted) (*fhe.FheEncrypted, error)) ([]byte, uint64, error) {
+	storage := storage.NewMultiStore(tp.CiphertextDb, &State.Storage)
+	uintType := fhe.EncryptionType(utype)
+	if !types.IsValidType(uintType) {
+		logger.Error("invalid ciphertext", "type", utype)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	gas := getGasForPrecompile(functionName, uintType)
+	if tp.GasEstimation {
+		randomHash := State.GetRandomForGasEstimation()
+		return randomHash[:], gas, nil
+	}
+
+	if shouldPrintPrecompileInfo(tp) {
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
+	}
+
+	lhs, rhs, err := get2VerifiedOperands(storage, lhsHash, rhsHash, tp.ContractAddress)
+	if err != nil {
+		logger.Error(functionName.String()+" inputs not verified", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	if lhs.UintType != rhs.UintType || rhs.UintType != uintType {
+		msg := functionName.String() + " operand type mismatch"
+		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	result, err := operation(lhs, rhs)
+	if err != nil {
+		logger.Error(functionName.String()+" failed", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+	err = storeCipherText(storage, result, tp.ContractAddress)
+	if err != nil {
+		logger.Error(functionName.String()+" failed", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	ctHash := result.Hash()
+
+	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.Hash().Hex(), "rhs", rhs.Hash().Hex(), "result", ctHash.Hex())
+	return ctHash[:], gas, nil
 }
