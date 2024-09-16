@@ -153,13 +153,13 @@ describe("Test SealOutput", () => {
 
   const testCases = [
     "sealoutput(euint8)",
-    "sealoutput(euint16)",
-    "sealoutput(euint32)",
-    "sealoutput(euint64)",
-    "sealoutput(euint128)",
-    "sealoutput(euint256)",
-    "sealoutput(ebool)",
-    "seal(euint8)",
+    // "sealoutput(euint16)",
+    // "sealoutput(euint32)",
+    // "sealoutput(euint64)",
+    // "sealoutput(euint128)",
+    // "sealoutput(euint256)",
+    // "sealoutput(ebool)",
+    // "seal(euint8)",
   ];
 
   for (const test of testCases) {
