@@ -23,7 +23,7 @@ COPY warp-drive/fhe-engine/Cargo.lock warp-drive/fhe-engine/Cargo.lock
 COPY warp-drive/renault-server/Cargo.toml warp-drive/renault-server/Cargo.toml
 COPY warp-drive/renault-server/Cargo.lock warp-drive/renault-server/Cargo.lock
 COPY warp-drive/fhe-bridge warp-drive/fhe-bridge
-COPY warp-drive/tools warp-drive/tools
+COPY warp-drive/sealing warp-drive/sealing
 
 # Update rust version & install packages
 RUN cd warp-drive/fhe-engine && cargo update
