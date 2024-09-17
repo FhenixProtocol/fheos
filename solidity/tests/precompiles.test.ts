@@ -2559,10 +2559,10 @@ describe("Test AsEaddress", () => {
 });
 
 describe("Test Square", () => {
-  const overflow8 = 2 ** 4 / 2 + 1;
-  const overflow16 = 2 ** 8 / 2 + 1;
-  const overflow32 = 2 ** 16 / 2 + 1;
-  const overflow64 = 3000300000;
+  const overflow8 = 2 ** 4;
+  const overflow16 = 2 ** 8;
+  const overflow32 = 2 ** 16;
+  const overflow64 = 2 ** 32;
   let contract;
 
   // We don't really need it as test but it is a test since it is async
@@ -2598,12 +2598,12 @@ describe("Test Square", () => {
       function: ["square(euint32)"],
       cases: [
         { a: 2, expectedResult: 4, name: "" },
-        // {
-        //   a: overflow32,
-        //   b: 2,
-        //   expectedResult: Number(BigInt.asUintN(32, BigInt(overflow32 * overflow32))),
-        //   name: " as overflow",
-        // },
+        {
+          a: overflow32,
+          b: 2,
+          expectedResult: Number(BigInt.asUintN(32, BigInt(overflow32 * overflow32))),
+          name: " as overflow",
+        },
       ],
     },
     {

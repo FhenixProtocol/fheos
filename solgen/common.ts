@@ -230,12 +230,6 @@ export const ShorthandOperations: OperatorMap[] = [
     unary: false,
     returnsBool: false,
   },
-  // {
-  //   func: "square",
-  //   operator: null,
-  //   unary: true,
-  //   returnsBool: false,
-  // },
 ];
 
 export const BindMathOperators = [
