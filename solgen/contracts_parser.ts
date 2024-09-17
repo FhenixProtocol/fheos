@@ -43,7 +43,6 @@ async function analyzeGoFile(
   const solgenOutputPlaintextComment = /output plaintext/;
   const solgenInput2Comment = /input2 /;
   const solgenBooleanMathOp = /bool math/;
-  const solgenVerifiedOperands = /(\d+)\s*verified operands/;
   const specificFunctionAnalysis: FunctionAnalysis[] = [];
 
   let isInsideHighLevelFunction = false;
@@ -52,7 +51,6 @@ async function analyzeGoFile(
   let funcName = "";
   let returnType = undefined;
   let inputs: ParamTypes[] = [];
-  let verifiedOperandsCount: number | null = null;
 
   for (const line of lines) {
     const trimmedLine = line.trim();
@@ -76,33 +74,14 @@ async function analyzeGoFile(
         if (solgenBooleanMathOp.test(trimmedLine)) {
           isBooleanMathOp = true;
         }
-        const match = trimmedLine.match(solgenVerifiedOperands);
-        if (match) {
-          verifiedOperandsCount = parseInt(match[1], 10);
-        }
       }
 
       braceDepth += (trimmedLine.match(/\{/g) || []).length;
       braceDepth -= (trimmedLine.match(/}/g) || []).length;
-
       //console.log(`brace depth: ${braceDepth}`)
       // Check if we've exited the high-level function
       if (braceDepth === 0) {
         isInsideHighLevelFunction = false;
-        
-        if (verifiedOperandsCount !== null) {
-          const analysis: FunctionAnalysis = {
-            name: funcName,
-            paramsCount: verifiedOperandsCount,
-            needsSameType: true,
-            returnType: returnType,
-            inputTypes: Array(verifiedOperandsCount).fill('encrypted'),
-            isBooleanMathOp: isBooleanMathOp,
-          };
-          specificFunctionAnalysis.push(analysis);
-        }
-        
-        verifiedOperandsCount = null;
         continue;
       }
 

@@ -1599,7 +1599,7 @@ describe("Test Ror", () => {
   });
 
   const generateTestCases = (bitSize: number) => {
-    const basePattern = BigInt(`0b${'11100000'.repeat(bitSize / 8)}`);
+    const basePattern = BigInt(`0b${'10000001'.repeat(bitSize / 8)}`);
     const mask = (1n << BigInt(bitSize)) - 1n;
 
     return [1, 2, 3, 4, 5].map(rotateAmount => {
@@ -1636,7 +1636,6 @@ describe("Test Ror", () => {
     }
   });
 });
-
 
 describe("Test Not", () => {
   let contract;
