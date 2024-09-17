@@ -76,7 +76,6 @@ async function analyzeGoFile(
         if (solgenBooleanMathOp.test(trimmedLine)) {
           isBooleanMathOp = true;
         }
-      
         const match = trimmedLine.match(solgenVerifiedOperands);
         if (match) {
           verifiedOperandsCount = parseInt(match[1], 10);
@@ -86,6 +85,8 @@ async function analyzeGoFile(
       braceDepth += (trimmedLine.match(/\{/g) || []).length;
       braceDepth -= (trimmedLine.match(/}/g) || []).length;
 
+      //console.log(`brace depth: ${braceDepth}`)
+      // Check if we've exited the high-level function
       if (braceDepth === 0) {
         isInsideHighLevelFunction = false;
         
