@@ -610,7 +610,7 @@ describe("Test Req", () => {
         } catch (e) {
           hadEvaluationFailure = true;
           err = `${e}`;
-          console.log(`err: ${err}`);
+          !testCase.shouldCrash && console.log(`err: ${err}`);
         }
         expect(hadEvaluationFailure).toBe(testCase.shouldCrash);
         if (hadEvaluationFailure) {
@@ -702,7 +702,7 @@ describe("Test Decrypt", () => {
       } catch (e) {
         hadEvaluationFailure = true;
         err = `${e}`;
-        console.log(`err: ${err}`);
+        test.shouldPass && console.log(`err: ${err}`);
       }
       expect(hadEvaluationFailure).toBe(!test.shouldPass);
       if (hadEvaluationFailure) {
