@@ -1,13 +1,15 @@
 package precompiles
 
 import (
+	"encoding/binary"
 	"errors"
-	"math"
+	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethdb/memorydb"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	"github.com/fhenixprotocol/fheos/storage"
@@ -20,6 +22,8 @@ type TxParams struct {
 	EthCall         bool
 	CiphertextDb    *memorydb.Database
 	ContractAddress common.Address
+	GetBlockHash    vm.GetHashFunc
+	BlockNumber     *big.Int
 	ParallelTxHooks types.ParallelTxProcessingHook
 }
 
@@ -36,6 +40,8 @@ func TxParamsFromEVM(evm *vm.EVM, callerContract common.Address) TxParams {
 
 	tp.CiphertextDb = evm.CiphertextDb
 	tp.ContractAddress = callerContract
+	tp.BlockNumber = evm.Context.BlockNumber
+	tp.GetBlockHash = evm.Context.GetHash
 
 	// If this is running in a sequencer, this should not be nil
 	if parallelHook, ok := evm.ProcessingHook.(types.ParallelTxProcessingHook); ok {
@@ -120,32 +126,21 @@ func evaluateRequire(ct *fhe.FheEncrypted) bool {
 	return fhe.Require(ct)
 }
 
-func FakeDecryptionResult(encType fhe.EncryptionType) *big.Int {
+func GenerateSeedFromEntropy(contractAddress common.Address, prevBlockHash common.Hash, randomCounter uint64) uint64 {
+	data := make([]byte, 0, len(contractAddress)+len(prevBlockHash)+8) // 8 bytes for uint64
 
-	switch encType {
-	case fhe.Uint8:
-		return big.NewInt(math.MaxUint8 / 2)
-	case fhe.Uint16:
-		return big.NewInt(math.MaxInt16 / 2)
-	case fhe.Uint32:
-		return big.NewInt(math.MaxUint32 / 2)
-	case fhe.Uint64:
-		return big.NewInt(math.MaxUint64 / 2)
-	case fhe.Uint128:
-		value := &big.Int{}
-		value.SetString("2222222222222222222222222222222", 16)
-		return value
-	case fhe.Uint256:
-		value := &big.Int{}
-		value.SetString("2222222222222222222222222222222222222222222222222", 16)
-		return value
-	case fhe.Address:
-		value := &big.Int{}
-		value.SetString("Dd4BEac65bad064932FB21aE7Ba2aa6e8fbc41A4", 16)
-		return value
-	default:
-		return big.NewInt(0)
-	}
+	data = append(data, contractAddress[:]...)
+	data = append(data, prevBlockHash[:]...)
+
+	uint64Bytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(uint64Bytes, randomCounter)
+	data = append(data, uint64Bytes...)
+
+	hashResult := crypto.Keccak256Hash(data)
+
+	result := binary.LittleEndian.Uint64(hashResult[:])
+	logger.Debug(fmt.Sprintf("generated seed for random: %d", result))
+	return result
 }
 
 // SAFETY NOTE: this function assumes input length validity (i.e. that ctHash and pk are 32 bytes long)

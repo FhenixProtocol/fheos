@@ -1,4 +1,4 @@
-import {createFheInstance, deployContract, fromHexString} from "./utils";
+import { createFheInstance, deployContract, fromHexString } from "./utils";
 import {
   AddTestType,
   LteTestType,
@@ -21,14 +21,17 @@ import {
   ShlTestType,
   ShrTestType,
   NotTestType,
+  RandomTestType,
   AsEboolTestType,
   AsEuint8TestType,
   AsEuint16TestType,
   AsEuint32TestType,
   SealoutputTestType,
+  DecryptTestType,
   AsEuint64TestType,
   AsEuint128TestType,
-  AsEuint256TestType, AsEaddressTestType,
+  AsEuint256TestType,
+  AsEaddressTestType,
 } from "./abis";
 
 const getFheContract = async (contractAddress: string) => {
@@ -604,7 +607,7 @@ describe("Test Req", () => {
         } catch (e) {
           hadEvaluationFailure = true;
           err = `${e}`;
-          console.log(`err: ${err}`)
+          console.log(`err: ${err}`);
         }
         expect(hadEvaluationFailure).toBe(testCase.shouldCrash);
         if (hadEvaluationFailure) {
@@ -615,6 +618,97 @@ describe("Test Req", () => {
         }
       });
     }
+  }
+});
+
+describe("Test Decrypt", () => {
+  let contract;
+
+  // We don't really need it as test but it is a test since it is async
+  it(`Test Contract Deployment`, async () => {
+    contract = (await deployContract("DecryptTest")) as DecryptTestType;
+    expect(contract).toBeTruthy();
+  });
+
+  const testCases = [
+    {
+      function: "decrypt(euint8)",
+      shouldPass: true,
+    },
+    {
+      function: "decrypt(euint16)",
+      shouldPass: true,
+    },
+    {
+      function: "decrypt(euint32)",
+      shouldPass: true,
+    },
+    {
+      function: "decrypt(euint64)",
+      shouldPass: true,
+    },
+    {
+      function: "decrypt(euint128)",
+      shouldPass: true,
+    },
+    {
+      function: "decrypt(euint256)",
+      shouldPass: true,
+    },
+    {
+      function: "decrypt(ebool)",
+      shouldPass: true,
+    },
+    {
+      function: "decrypt(euint8) fail",
+      shouldPass: false,
+    },
+    {
+      function: "decrypt(euint16) fail",
+      shouldPass: false,
+    },
+    {
+      function: "decrypt(euint32) fail",
+      shouldPass: false,
+    },
+    {
+      function: "decrypt(euint64) fail",
+      shouldPass: false,
+    },
+    {
+      function: "decrypt(euint128) fail",
+      shouldPass: false,
+    },
+    {
+      function: "decrypt(euint256) fail",
+      shouldPass: false,
+    },
+    {
+      function: "decrypt(ebool) fail",
+      shouldPass: false,
+    },
+  ];
+
+  for (const test of testCases) {
+    it(`Test ${test.function}`, async () => {
+      let hadEvaluationFailure = false;
+      let err = "";
+      try {
+        let tx = await contract.decrypt(test.function);
+        let result = await tx.wait();
+      } catch (e) {
+        hadEvaluationFailure = true;
+        err = `${e}`;
+        console.log(`err: ${err}`);
+      }
+      expect(hadEvaluationFailure).toBe(!test.shouldPass);
+      if (hadEvaluationFailure) {
+        expect(err.includes("execution reverted")).toBe(true);
+        if (test.shouldPass) {
+          console.log(`crashed in req even though it shouldn't have: ${err}`);
+        }
+      }
+    });
   }
 });
 
@@ -1463,26 +1557,26 @@ describe("Test Not", () => {
       function: "not(ebool)",
       bits: 1,
     },
-    // {
-    //   function: "not(euint8)",
-    //   bits: 8,
-    // },
-    // {
-    //   function: "not(euint16)",
-    //   bits: 16,
-    // },
-    // {
-    //   function: "not(euint32)",
-    //   bits: 32,
-    // },
-    // {
-    //   function: "not(euint64)",
-    //   bits: 64,
-    // },
-    // {
-    //   function: "not(euint128)",
-    //   bits: 128,
-    // },
+    {
+      function: "not(euint8)",
+      bits: 8,
+    },
+    {
+      function: "not(euint16)",
+      bits: 16,
+    },
+    {
+      function: "not(euint32)",
+      bits: 32,
+    },
+    {
+      function: "not(euint64)",
+      bits: 64,
+    },
+    {
+      function: "not(euint128)",
+      bits: 128,
+    },
   ];
 
   for (const test of testCases) {
@@ -1490,19 +1584,87 @@ describe("Test Not", () => {
       for (const input of [true, false]) {
         it(`Test ${test.function} !${input} - security zone ${securityZone}`, async () => {
           let val = BigInt(+input);
-          let expectedResult = BigInt(+(!input));
+          let expectedResult = BigInt(+!input);
           if (test.bits !== 1) {
             val = BigInt.asUintN(test.bits, BigInt(+input));
-            expectedResult = (1n << BigInt(test.bits)) - BigInt(1 + (+input));
+            expectedResult = (1n << BigInt(test.bits)) - BigInt(1 + +input);
           }
 
-          const decryptedResult = await contract.not(test.function, val, securityZone);
+          const decryptedResult = await contract.not(
+            test.function,
+            val,
+            securityZone
+          );
 
           expect(decryptedResult).toBe(expectedResult);
         });
       }
     }
   }
+});
+
+describe("Test Random", () => {
+  let contract;
+
+  // We don't really need it as test but it is a test since it is async
+  it(`Test Contract Deployment`, async () => {
+    contract = (await deployContract("RandomTest")) as RandomTestType;
+    expect(contract).toBeTruthy();
+  });
+
+  const testCases = [
+    {
+      function: "randomEuint8()",
+      bits: 8,
+    },
+    {
+      function: "randomEuint16()",
+      bits: 16,
+    },
+    {
+      function: "randomEuint32()",
+      bits: 32,
+    },
+    {
+      function: "randomEuint64()",
+      bits: 64,
+    },
+    {
+      function: "randomEuint128()",
+      bits: 128,
+    },
+    {
+      function: "randomEuint256()",
+      bits: 256,
+    },
+  ];
+
+  for (const test of testCases) {
+    it(`Test ${test.function}`, async () => {
+      const decryptedResult = await contract.random(test.function);
+
+      expect(decryptedResult).toBeLessThan(2 ** test.bits);
+    });
+  }
+});
+
+describe("Test Random with seed", () => {
+  let contract;
+
+  // We don't really need it as test but it is a test since it is async
+  it(`Test Contract Deployment`, async () => {
+    contract = (await deployContract("RandomSeedTest")) as RandomTestType;
+    expect(contract).toBeTruthy();
+  });
+
+  it(`Test Random With Seed`, async () => {
+    const firstResult = await contract.randomSeed(1337);
+    const secondResult = await contract.randomSeed(87654);
+    const thirdResult = await contract.randomSeed(1337);
+
+    expect(firstResult).toBe(thirdResult);
+    expect(firstResult).not.toBe(secondResult);
+  });
 });
 
 describe("Test AsEbool", () => {
@@ -1617,7 +1779,9 @@ describe("Test AsEbool", () => {
       const encInput = await fheContract.instance.encrypt_bool(
         !!Number(testCase.input)
       );
-      let decryptedResult = await contract.castFromPreEncryptedToEbool(encInput);
+      let decryptedResult = await contract.castFromPreEncryptedToEbool(
+        encInput
+      );
       expect(decryptedResult).toBe(testCase.output);
     }
   });
@@ -1633,7 +1797,9 @@ describe("Test AsEbool", () => {
         !!Number(testCase.input),
         1 // non-default security zone
       );
-      let decryptedResult = await contract.castFromPreEncryptedToEbool(encInput);
+      let decryptedResult = await contract.castFromPreEncryptedToEbool(
+        encInput
+      );
       expect(decryptedResult).toBe(testCase.output);
     }
   });
@@ -1754,9 +1920,7 @@ describe("Test AsEuint8", () => {
 
   it(`From pre encrypted - Security Zone 1`, async () => {
     const encInput = await fheContract.instance.encrypt_uint8(Number(value), 1);
-    let decryptedResult = await contract.castFromPreEncryptedToEuint8(
-      encInput
-    );
+    let decryptedResult = await contract.castFromPreEncryptedToEuint8(encInput);
     expect(decryptedResult).toBe(value);
   });
 });
@@ -1847,18 +2011,28 @@ describe("Test AsEuint16", () => {
 
   it(`From pre encrypted`, async () => {
     const encInput = await fheContract.instance.encrypt_uint16(Number(value));
-    let decryptedResult = await contract.castFromPreEncryptedToEuint16(encInput);
+    let decryptedResult = await contract.castFromPreEncryptedToEuint16(
+      encInput
+    );
     expect(decryptedResult).toBe(value);
   });
 
   it(`From pre encrypted - Security Zone 1`, async () => {
-    const encInput = await fheContract.instance.encrypt_uint16(Number(value), 1);
-    let decryptedResult = await contract.castFromPreEncryptedToEuint16(encInput);
+    const encInput = await fheContract.instance.encrypt_uint16(
+      Number(value),
+      1
+    );
+    let decryptedResult = await contract.castFromPreEncryptedToEuint16(
+      encInput
+    );
     expect(decryptedResult).toBe(value);
   });
 
   it(`From pre encrypted - Security Zone 1`, async () => {
-    const encInput = await fheContract.instance.encrypt_uint16(Number(value), 1);
+    const encInput = await fheContract.instance.encrypt_uint16(
+      Number(value),
+      1
+    );
     let decryptedResult = await contract.castFromPreEncryptedToEuint16(
       encInput
     );
@@ -1952,18 +2126,28 @@ describe("Test AsEuint32", () => {
 
   it(`From pre encrypted`, async () => {
     const encInput = await fheContract.instance.encrypt_uint32(Number(value));
-    let decryptedResult = await contract.castFromPreEncryptedToEuint32(encInput);
+    let decryptedResult = await contract.castFromPreEncryptedToEuint32(
+      encInput
+    );
     expect(decryptedResult).toBe(value);
   });
 
   it(`From pre encrypted - Security Zone 1`, async () => {
-    const encInput = await fheContract.instance.encrypt_uint32(Number(value), 1);
-    let decryptedResult = await contract.castFromPreEncryptedToEuint32(encInput);
+    const encInput = await fheContract.instance.encrypt_uint32(
+      Number(value),
+      1
+    );
+    let decryptedResult = await contract.castFromPreEncryptedToEuint32(
+      encInput
+    );
     expect(decryptedResult).toBe(value);
   });
 
   it(`From pre encrypted - Security Zone 1`, async () => {
-    const encInput = await fheContract.instance.encrypt_uint32(Number(value), 1);
+    const encInput = await fheContract.instance.encrypt_uint32(
+      Number(value),
+      1
+    );
     let decryptedResult = await contract.castFromPreEncryptedToEuint32(
       encInput
     );
@@ -2057,13 +2241,17 @@ describe("Test AsEuint64", () => {
 
   it(`From pre encrypted`, async () => {
     const encInput = await fheContract.instance.encrypt_uint64(value);
-    let decryptedResult = await contract.castFromPreEncryptedToEuint64(encInput);
+    let decryptedResult = await contract.castFromPreEncryptedToEuint64(
+      encInput
+    );
     expect(decryptedResult).toBe(value);
   });
 
   it(`From pre encrypted - Security Zone 1`, async () => {
     const encInput = await fheContract.instance.encrypt_uint64(value, 1);
-    let decryptedResult = await contract.castFromPreEncryptedToEuint64(encInput);
+    let decryptedResult = await contract.castFromPreEncryptedToEuint64(
+      encInput
+    );
     expect(decryptedResult).toBe(value);
   });
 
@@ -2161,13 +2349,17 @@ describe("Test AsEuint128", () => {
 
   it(`From pre encrypted`, async () => {
     const encInput = await fheContract.instance.encrypt_uint128(value);
-    let decryptedResult = await contract.castFromPreEncryptedToEuint128(encInput);
+    let decryptedResult = await contract.castFromPreEncryptedToEuint128(
+      encInput
+    );
     expect(decryptedResult).toBe(value);
   });
 
   it(`From pre encrypted - Security Zone 1`, async () => {
     const encInput = await fheContract.instance.encrypt_uint128(value, 1);
-    let decryptedResult = await contract.castFromPreEncryptedToEuint128(encInput);
+    let decryptedResult = await contract.castFromPreEncryptedToEuint128(
+      encInput
+    );
     expect(decryptedResult).toBe(value);
   });
 
@@ -2276,13 +2468,17 @@ describe("Test AsEuint256", () => {
 
   it(`From pre encrypted`, async () => {
     const encInput = await fheContract.instance.encrypt_uint256(value);
-    let decryptedResult = await contract.castFromPreEncryptedToEuint256(encInput);
+    let decryptedResult = await contract.castFromPreEncryptedToEuint256(
+      encInput
+    );
     expect(decryptedResult).toBe(value);
   });
 
   it(`From pre encrypted - Security Zone 1`, async () => {
     const encInput = await fheContract.instance.encrypt_uint256(value, 1);
-    let decryptedResult = await contract.castFromPreEncryptedToEuint256(encInput);
+    let decryptedResult = await contract.castFromPreEncryptedToEuint256(
+      encInput
+    );
     expect(decryptedResult).toBe(value);
   });
 });
@@ -2308,8 +2504,8 @@ describe("Test AsEaddress", () => {
   for (const funcType of funcTypes) {
     it(`From euint256 - ${funcType}`, async () => {
       let decryptedResult = await contract.castFromEuint256ToEaddress(
-          value,
-          funcType
+        value,
+        funcType
       );
       let decimal = BigInt(decryptedResult);
       expect(decimal).toBe(value);
@@ -2335,21 +2531,27 @@ describe("Test AsEaddress", () => {
   });
 
   it(`From plaintext address`, async () => {
-    let decryptedResult = await contract.castFromPlaintextAddressToEaddress("0x4fB7FF4e004FcADbff708d8d873592B2044d5E8f");
+    let decryptedResult = await contract.castFromPlaintextAddressToEaddress(
+      "0x4fB7FF4e004FcADbff708d8d873592B2044d5E8f"
+    );
     let decimal = BigInt(decryptedResult);
     expect(decimal).toBe(value);
   });
 
   it(`From pre encrypted`, async () => {
     const encInput = await fheContract.instance.encrypt_address(value);
-    let decryptedResult = await contract.castFromPreEncryptedToEaddress(encInput);
+    let decryptedResult = await contract.castFromPreEncryptedToEaddress(
+      encInput
+    );
     let decimal = BigInt(decryptedResult);
     expect(decimal).toBe(value);
   });
 
   it(`From pre encrypted - Security Zone 1`, async () => {
     const encInput = await fheContract.instance.encrypt_address(value, 1);
-    let decryptedResult = await contract.castFromPreEncryptedToEaddress(encInput);
+    let decryptedResult = await contract.castFromPreEncryptedToEaddress(
+      encInput
+    );
     let decimal = BigInt(decryptedResult);
     expect(decimal).toBe(value);
   });

@@ -12,7 +12,7 @@ interface FheOps {
     function add(uint8 utype, bytes memory lhsHash, bytes memory rhsHash) external pure returns (bytes memory);
     function verify(uint8 utype, bytes memory input, int32 securityZone) external pure returns (bytes memory);
     function sealOutput(uint8 utype, bytes memory ctHash, bytes memory pk) external pure returns (string memory);
-    function decrypt(uint8 utype, bytes memory input) external pure returns (uint256);
+    function decrypt(uint8 utype, bytes memory input, uint256 defaultValue) external pure returns (uint256);
     function lte(uint8 utype, bytes memory lhsHash, bytes memory rhsHash) external pure returns (bytes memory);
     function sub(uint8 utype, bytes memory lhsHash, bytes memory rhsHash) external pure returns (bytes memory);
     function mul(uint8 utype, bytes memory lhsHash, bytes memory rhsHash) external pure returns (bytes memory);
@@ -35,5 +35,6 @@ interface FheOps {
     function shl(uint8 utype, bytes memory lhsHash, bytes memory rhsHash) external pure returns (bytes memory);
     function shr(uint8 utype, bytes memory lhsHash, bytes memory rhsHash) external pure returns (bytes memory);
     function not(uint8 utype, bytes memory value) external pure returns (bytes memory);
+    function random(uint8 utype, uint64 seed, int32 securityZone) external pure returns (bytes memory);
     function getNetworkPublicKey(int32 securityZone) external pure returns (bytes memory);
 }

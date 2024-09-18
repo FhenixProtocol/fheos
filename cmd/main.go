@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/fhenixprotocol/fheos/precompiles"
 	fhedriver "github.com/fhenixprotocol/warp-drive/fhe-driver"
 	"github.com/spf13/cobra"
@@ -103,7 +104,15 @@ func initFheos() (*precompiles.TxParams, error) {
 		return nil, err
 	}
 
-	tp := precompiles.TxParams{false, false, true, nil, common.HexToAddress("0x0000000000000000000000000000000000000000"), nil}
+	tp := precompiles.TxParams{
+		Commit:          false,
+		GasEstimation:   false,
+		EthCall:         true,
+		CiphertextDb:    nil,
+		ContractAddress: common.HexToAddress("0x0000000000000000000000000000000000000000"),
+		GetBlockHash:    vm.GetHashFunc(nil),
+		BlockNumber:     nil,
+		ParallelTxHooks: nil}
 
 	return &tp, err
 }
@@ -126,7 +135,7 @@ func encrypt(val uint32, t uint8, securityZone int32, tp *precompiles.TxParams) 
 }
 
 func decrypt(utype byte, val []byte, tp *precompiles.TxParams) (uint64, error) {
-	decrypted, _, err := precompiles.Decrypt(utype, val, tp)
+	decrypted, _, err := precompiles.Decrypt(utype, val, big.NewInt(0), tp)
 	if err != nil {
 		return 0, err
 	}
