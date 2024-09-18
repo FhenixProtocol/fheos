@@ -28,7 +28,7 @@ else
     echo "Starting in debug mode"
 fi
 
-renault-server -c /home/user/fhenix/renault-server.toml &
+# renault-server -c /home/user/fhenix/renault-server.toml &
 # Start the FHE engine server
 fhe-engine-server -c /home/user/fhenix/fhe_engine.toml &
 
