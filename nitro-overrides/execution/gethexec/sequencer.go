@@ -619,8 +619,6 @@ func (s *Sequencer) SerializeTxDecryptRes(tx *types.Transaction) ([]byte, error)
 			serializedData = append(serializedData, resultSerialized...)
 		}
 
-		s.txOps.ResolveTransaction(txHash)
-
 		return serializedData, nil
 	}
 
@@ -1081,6 +1079,9 @@ func (s *Sequencer) createBlock(ctx context.Context) (returnValue bool) {
 	madeBlock := false
 	for i, err := range hooks.TxErrors {
 		if err == nil {
+			// If we're here, transactions with parallel decryptions were already fully dealt with and broadcast.
+			s.txOps.ResolveTransaction(txes[i].Hash())
+
 			madeBlock = true
 		}
 		queueItem := queueItems[i]
