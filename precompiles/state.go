@@ -119,6 +119,8 @@ func LoadMultipleResolvedDecryptions(reader io.Reader) error {
 		return err
 	}
 
+	logger.Debug("Loading resolved decryptions", "numDecryptions", numDecryptions)
+
 	for i := int32(0); i < numDecryptions; i++ {
 		err = LoadResolvedDecryption(reader)
 		if err != nil {
