@@ -301,19 +301,19 @@ describe("Test Transactions Scenarios", () => {
   });
 
   it("Random sanity check", async () => {
-    let result;
+    let rand1, rand2;
     try {
       const tx = await contractCaller.randomSanity();
       await tx.wait();
-      const filter = contractCaller.filters.RandomSanityEvent
-      const events = await contractCaller.queryFilter(filter, -1)
-      result = events[0].args;
+
+      [rand1, rand2] = await contractCaller.getRandoms();
+      console.log("rand1", rand1, "rand2", rand2);
     } catch (e) {
-      console.error("failed sstore sanity check");
+      console.error("failed random sanity check: ", e);
       fail("Should not have reverted");
     }
 
-    expect(result[0] === result[1]).toBeFalsy();
+    expect(rand1 === rand2).toBeFalsy();
   });
 
   // function addDelegate(inEuint32 calldata value, bytes32 publicKey) public returns (bytes memory) {

@@ -17,6 +17,8 @@ contract AddCaller {
     euint32 private counter = FHE.asEuint32(0);
     uint64 private counterPublic = 0;
     AddCallee public addContract;
+    euint32 public rand1;
+    euint32 public rand2;
     error DelegateCallFailed();
     event RandomSanityEvent(uint32 a, uint32 b);
 
@@ -127,9 +129,12 @@ contract AddCaller {
 
     function randomSanity() public {
         counterPublic = counterPublic + 1;
-        uint32 a = FHE.decrypt(FHE.randomEuint32());
-        uint32 b = FHE.decrypt(FHE.randomEuint32());
-        emit RandomSanityEvent(a, b);
+        rand1 = FHE.randomEuint32();
+        rand2 = FHE.randomEuint32();
+    }
+
+    function getRandoms() public view returns (uint32, uint32) {
+        return (FHE.decrypt(rand1), FHE.decrypt(rand2));
     }
 }
 
