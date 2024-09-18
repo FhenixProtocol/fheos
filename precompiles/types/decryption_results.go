@@ -48,21 +48,9 @@ func (dr *DecryptionResults) SetValue(key PendingDecryption, value any) error {
 	dr.mu.Lock()
 	defer dr.mu.Unlock()
 
-	switch key.Type {
-	case SealOutput:
-		if _, ok := value.(string); !ok {
-			return fmt.Errorf("value for SealOutput must be string")
-		}
-	case Require:
-		if _, ok := value.(bool); !ok {
-			return fmt.Errorf("value for Require must be bool")
-		}
-	case Decrypt:
-		if _, ok := value.(*big.Int); !ok {
-			return fmt.Errorf("value for Decrypt must be *big.Int")
-		}
-	default:
-		return fmt.Errorf("unknown PrecompileName")
+	err := assertCorrectValueType(key.Type, value)
+	if err != nil {
+		return err
 	}
 
 	dr.data[key] = DecryptionRecord{Value: value, Timestamp: time.Now()}
@@ -84,27 +72,35 @@ func (dr *DecryptionResults) Get(key PendingDecryption) (DecryptionRecord, bool)
 // SetRecord is just like SetValue but sets the complete record, including timestamp
 // This way timestamps could be synchronized between different nodes
 func (dr *DecryptionResults) SetRecord(key PendingDecryption, record DecryptionRecord) error {
-	switch key.Type {
-	case SealOutput:
-		if _, ok := record.Value.(string); !ok {
-			return fmt.Errorf("value for SealOutput must be string")
-		}
-	case Require:
-		if _, ok := record.Value.(bool); !ok {
-			return fmt.Errorf("value for Require must be bool")
-		}
-	case Decrypt:
-		if _, ok := record.Value.(*big.Int); !ok {
-			return fmt.Errorf("value for Decrypt must be *big.Int")
-		}
-	default:
-		return fmt.Errorf("unknown PrecompileName")
+	err := assertCorrectValueType(key.Type, record.Value)
+	if err != nil {
+		return err
 	}
 
 	dr.mu.Lock()
 	defer dr.mu.Unlock()
 
 	dr.data[key] = record
+	return nil
+}
+
+func assertCorrectValueType(decryptionType PrecompileName, value any) error {
+	switch decryptionType {
+	case SealOutput:
+		if _, ok := value.(string); !ok {
+			return fmt.Errorf("value for SealOutput must be string")
+		}
+	case Require:
+		if _, ok := value.(bool); !ok {
+			return fmt.Errorf("value for Require must be bool")
+		}
+	case Decrypt:
+		if _, ok := value.(*big.Int); !ok {
+			return fmt.Errorf("value for Decrypt must be *big.Int")
+		}
+	default:
+		return fmt.Errorf("unknown PrecompileName")
+	}
 	return nil
 }
 
