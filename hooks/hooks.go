@@ -2,6 +2,7 @@ package hooks
 
 import (
 	"encoding/hex"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/log"
@@ -153,6 +154,8 @@ func (h FheOSHooksImpl) EvmCallEnd(evmSuccess bool) {
 			log.Info("Deleted ciphertext", "hash", hex.EncodeToString(hash[:]))
 		}
 	}
+
+	fheos.State.RandomCounter = 0
 }
 
 func shouldIgnoreContract(caller common.Address, addr common.Address) bool {

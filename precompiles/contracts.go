@@ -7,7 +7,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
@@ -1556,29 +1555,16 @@ func Random(utype byte, seed uint64, securityZone int32, tp *TxParams) ([]byte, 
 	if seed != 0 {
 		finalSeed = seed
 	} else {
-		// Seed generation
-		// The current block hash is not yet calculated, se we use the previous block hash
-		var prevBlockHash = common.Hash{}
-
-		if tp.BlockNumber != nil {
-			prevBlockNumber := tp.BlockNumber.Uint64() - 1
-			prevBlockHash = tp.GetBlockHash(prevBlockNumber)
-		} else {
-			logger.Warn("missing BlockNumber inside precompile")
-		}
-
 		var randomCounter uint64
 		if tp.Commit {
-			// We're incrementing nonce regardless of whether the transaction is successful or not,
-			// so that even after a revert, the random is different.
-			// Secondly, we're incrementing before the request for the random number, so that queries
+			// We're incrementing before the request for the random number, so that queries
 			// that came before this Tx would have received a different seed.
-			randomCounter = State.IncRandomCounter(prevBlockHash)
+			randomCounter = State.IncRandomCounter()
 		} else {
-			randomCounter = State.GetRandomCounter(prevBlockHash)
+			randomCounter = State.GetRandomCounter()
 		}
 
-		finalSeed = GenerateSeedFromEntropy(tp.ContractAddress, prevBlockHash, randomCounter)
+		finalSeed = GenerateSeedFromEntropy(tp.ContractAddress, tp.TxContext.Hash, randomCounter)
 	}
 
 	result, err := fhe.FheRandom(securityZone, uintType, finalSeed)

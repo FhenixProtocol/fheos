@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/metrics"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
@@ -74,28 +73,12 @@ func (fs *FheosState) SetCiphertext(ct *types.CipherTextRepresentation) error {
 	return result
 }
 
-func (fs *FheosState) GetRandomCounter(latestHash common.Hash) uint64 {
-	if fs.LastSavedHash == nil || *fs.LastSavedHash != latestHash {
-		return 0
-	} else if *fs.LastSavedHash == latestHash {
-		return fs.RandomCounter
-	}
-
-	logger.Warn("unexpected error in GetRandomCounter")
-	return 0
+func (fs *FheosState) GetRandomCounter() uint64 {
+	return fs.RandomCounter
 }
 
-func (fs *FheosState) IncRandomCounter(latestHash common.Hash) uint64 {
-	if fs.LastSavedHash == nil || *fs.LastSavedHash != latestHash {
-		fs.LastSavedHash = &latestHash
-		fs.RandomCounter = 1
-		log.Debug("new block, counter reset on increment", "counter", fs.RandomCounter)
-	} else if *fs.LastSavedHash == latestHash {
-		fs.RandomCounter += 1
-		log.Debug("counter incremented", "counter", fs.RandomCounter)
-	} else {
-		logger.Warn("unexpected error in IncRandomCounter")
-	}
+func (fs *FheosState) IncRandomCounter() uint64 {
+	fs.RandomCounter += 1
 
 	return fs.RandomCounter
 }

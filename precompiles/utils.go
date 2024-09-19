@@ -129,11 +129,11 @@ func evaluateRequire(ct *fhe.FheEncrypted) bool {
 	return fhe.Require(ct)
 }
 
-func GenerateSeedFromEntropy(contractAddress common.Address, prevBlockHash common.Hash, randomCounter uint64) uint64 {
-	data := make([]byte, 0, len(contractAddress)+len(prevBlockHash)+8) // 8 bytes for uint64
+func GenerateSeedFromEntropy(contractAddress common.Address, txHash common.Hash, randomCounter uint64) uint64 {
+	data := make([]byte, 0, len(contractAddress)+len(txHash)+8) // 8 bytes for uint64
 
 	data = append(data, contractAddress[:]...)
-	data = append(data, prevBlockHash[:]...)
+	data = append(data, txHash[:]...)
 
 	uint64Bytes := make([]byte, 8)
 	binary.BigEndian.PutUint64(uint64Bytes, randomCounter)
