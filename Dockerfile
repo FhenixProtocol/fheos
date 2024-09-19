@@ -120,6 +120,8 @@ COPY --from=warp-drive-builder /workspace/warp-drive/fhe-engine/config/fhe_engin
 COPY --from=winning /workspace/target/bin/nitro /usr/local/bin/
 COPY --from=winning /workspace/fheos/build/main /usr/local/bin/fheos
 
+COPY --from=ghcr.io/fhenixprotocol/renault-chain-builder:v0.2.2 /source-files/target/release/fhe-engine-keys /home/user/keys/
+
 # **************** setup scripts and configs
 
 COPY deployment/run.sh run.sh
