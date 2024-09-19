@@ -2,14 +2,15 @@ package main
 
 import (
 	"fmt"
+	"math/big"
+	"os"
+	"strconv"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/fhenixprotocol/fheos/precompiles"
 	fhedriver "github.com/fhenixprotocol/warp-drive/fhe-driver"
 	"github.com/spf13/cobra"
-	"math/big"
-	"os"
-	"strconv"
 )
 
 func removeDb() error {
@@ -249,8 +250,10 @@ func main() {
 	var max = setupOperationCommand("max", "max two numbers", precompiles.Max)
 	var shl = setupOperationCommand("shl", "shl two numbers", precompiles.Shl)
 	var shr = setupOperationCommand("shr", "shr two numbers", precompiles.Shr)
+	var rol = setupOperationCommand("rol", "ror two numbers", precompiles.Rol)
+	var ror = setupOperationCommand("ror", "rol two numbers", precompiles.Rol)
 
-	rootCmd.AddCommand(initDb, initState, add, sub, lte, sub, mul, lt, div, gt, gte, rem, and, or, xor, eq, ne, min, max, shl, shr)
+	rootCmd.AddCommand(initDb, initState, add, sub, lte, sub, mul, lt, div, gt, gte, rem, and, or, xor, eq, ne, min, max, shl, shr, rol, ror)
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
