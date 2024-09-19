@@ -113,7 +113,7 @@ func minInt(a int, b int) int {
 	return b
 }
 
-func evaluateRequire(ct *fhe.FheEncrypted) bool {
+func evaluateRequire(ct *fhe.FheEncrypted) (bool, error) {
 	return fhe.Require(ct)
 }
 
