@@ -25,6 +25,7 @@ type TxParams struct {
 	GetBlockHash    vm.GetHashFunc
 	BlockNumber     *big.Int
 	ParallelTxHooks types.ParallelTxProcessingHook
+	vm.TxContext
 }
 
 type GasBurner interface {
@@ -49,6 +50,8 @@ func TxParamsFromEVM(evm *vm.EVM, callerContract common.Address) TxParams {
 	} else {
 		tp.ParallelTxHooks = nil
 	}
+
+	tp.TxContext = evm.TxContext
 
 	return tp
 }
