@@ -69,8 +69,8 @@ const (
 	Ne
 	TrivialEncrypt
 	Random
-	// Rol  // Commented out if not used
-	// Ror  // Commented out if not used
+	Rol
+	Ror
 )
 
 var precompileNameToString = map[PrecompileName]string{
@@ -102,8 +102,8 @@ var precompileNameToString = map[PrecompileName]string{
 	Ne:             "ne",
 	Random:         "random",
 	TrivialEncrypt: "trivialEncrypt",
-	// Rol:          "rol",
-	// Ror:          "ror",
+	Rol:            "rol",
+	Ror:            "ror",
 }
 
 var stringToPrecompileName = map[string]PrecompileName{
@@ -135,8 +135,8 @@ var stringToPrecompileName = map[string]PrecompileName{
 	"ne":             Ne,
 	"random":         Random,
 	"trivialEncrypt": TrivialEncrypt,
-	// "rol":          Rol,
-	// "ror":          Ror,
+	"rol":            Rol,
+	"ror":            Ror,
 }
 
 func (pn PrecompileName) String() string {

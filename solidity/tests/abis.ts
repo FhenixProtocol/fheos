@@ -71,6 +71,12 @@ export interface ShlTestType extends BaseContract {
 export interface ShrTestType extends BaseContract {
     shr: (test: string, a: bigint, b: bigint) => Promise<bigint>;
 }
+export interface RolTestType extends BaseContract {
+    rol: (test: string, a: bigint, b: bigint) => Promise<bigint>;
+}
+export interface RorTestType extends BaseContract {
+    ror: (test: string, a: bigint, b: bigint) => Promise<bigint>;
+}
 export interface NotTestType extends BaseContract {
     not: (test: string, a: bigint) => Promise<bigint>;
 }
