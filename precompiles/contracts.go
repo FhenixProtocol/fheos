@@ -11,6 +11,7 @@ import (
 	storage2 "github.com/fhenixprotocol/fheos/storage"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/log"
 )
@@ -1556,15 +1557,18 @@ func Random(utype byte, seed uint64, securityZone int32, tp *TxParams) ([]byte, 
 		finalSeed = seed
 	} else {
 		var randomCounter uint64
+		var hash common.Hash
 		if tp.Commit {
 			// We're incrementing before the request for the random number, so that queries
 			// that came before this Tx would have received a different seed.
 			randomCounter = State.IncRandomCounter()
+			hash = tp.TxContext.Hash
 		} else {
 			randomCounter = State.GetRandomCounter()
+			hash = tp.GetBlockHash(tp.BlockNumber.Uint64() - 1) // If no tx hash - use block hash
 		}
 
-		finalSeed = GenerateSeedFromEntropy(tp.ContractAddress, tp.TxContext.Hash, randomCounter)
+		finalSeed = GenerateSeedFromEntropy(tp.ContractAddress, hash, randomCounter)
 	}
 
 	result, err := fhe.FheRandom(securityZone, uintType, finalSeed)
