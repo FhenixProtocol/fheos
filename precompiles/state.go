@@ -6,7 +6,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/metrics"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
@@ -17,7 +16,6 @@ type FheosState struct {
 	FheosVersion   uint64
 	Storage        storage2.FheosStorage
 	RandomCounter  uint64
-	LastSavedHash  *common.Hash
 	DecryptResults *types.DecryptionResults
 	//MaxUintValue *big.Int // This should contain the max value of the supported uint type
 }
@@ -79,7 +77,6 @@ func (fs *FheosState) GetRandomCounter() uint64 {
 
 func (fs *FheosState) IncRandomCounter() uint64 {
 	fs.RandomCounter += 1
-
 	return fs.RandomCounter
 }
 
@@ -88,7 +85,6 @@ func createFheosState(storage storage2.FheosStorage, version uint64) {
 		version,
 		storage,
 		0,
-		nil,
 		types.NewDecryptionResultsMap(),
 	}
 }
