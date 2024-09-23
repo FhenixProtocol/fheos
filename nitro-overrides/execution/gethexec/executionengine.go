@@ -300,7 +300,7 @@ func MessageFromTxes(header *arbostypes.L1IncomingMessageHeader, txes types.Tran
 			}
 
 			txBytes, err := MessageFromSignedTx(tx, hooks)
-			if err != nil || txBytes == nil {
+			if err != nil {
 				return nil, err
 			}
 
@@ -336,6 +336,7 @@ func MessageFromSignedTx(tx *types.Transaction, hooks *arbos.SequencingHooks) ([
 	}
 
 	if decryptResults != nil {
+		log.Debug("decryption results found! adding to message", "tx", tx.Hash().Hex())
 		data = append(data, arbos.L2MessageKind_SignedDecryptionTx)
 		data = append(data, decryptResults...)
 	}
