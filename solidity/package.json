@@ -6,7 +6,7 @@
     "@nomicfoundation/hardhat-network-helpers": "^1.0.6",
     "@nomicfoundation/hardhat-toolbox": "^3.0.0",
     "@nomicfoundation/hardhat-verify": "^1.0.0",
-    "@fhenixprotocol/contracts": "^0.1.0-beta.2",
+    "@fhenixprotocol/contracts": "^0.1.2",
     "@openzeppelin/contracts": "^4.9.2",
     "@trivago/prettier-plugin-sort-imports": "^4.0.0",
     "@typechain/ethers-v6": "^0.4.0",
