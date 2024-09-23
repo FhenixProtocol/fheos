@@ -25,6 +25,7 @@ type TxParams struct {
 	GetBlockHash    vm.GetHashFunc
 	BlockNumber     *big.Int
 	ParallelTxHooks types.ParallelTxProcessingHook
+	vm.TxContext
 }
 
 type GasBurner interface {
@@ -49,6 +50,8 @@ func TxParamsFromEVM(evm *vm.EVM, callerContract common.Address) TxParams {
 	} else {
 		tp.ParallelTxHooks = nil
 	}
+
+	tp.TxContext = evm.TxContext
 
 	return tp
 }
@@ -126,11 +129,11 @@ func evaluateRequire(ct *fhe.FheEncrypted) bool {
 	return fhe.Require(ct)
 }
 
-func GenerateSeedFromEntropy(contractAddress common.Address, prevBlockHash common.Hash, randomCounter uint64) uint64 {
-	data := make([]byte, 0, len(contractAddress)+len(prevBlockHash)+8) // 8 bytes for uint64
+func GenerateSeedFromEntropy(contractAddress common.Address, hash common.Hash, randomCounter uint64) uint64 {
+	data := make([]byte, 0, len(contractAddress)+len(hash)+8) // 8 bytes for uint64
 
 	data = append(data, contractAddress[:]...)
-	data = append(data, prevBlockHash[:]...)
+	data = append(data, hash[:]...)
 
 	uint64Bytes := make([]byte, 8)
 	binary.BigEndian.PutUint64(uint64Bytes, randomCounter)
