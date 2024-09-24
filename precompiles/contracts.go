@@ -3,6 +3,7 @@ package precompiles
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/fhenixprotocol/fheos/conf"
 	"math/big"
 	"os"
 	"strings"
@@ -56,11 +57,13 @@ func InitFheConfig(fheConfig *fhe.Config) error {
 	return nil
 }
 
-func InitFheos(tfheConfig *fhe.Config) error {
+func InitFheos(tfheConfig *fhe.Config, fheosConfig *conf.FheosConfig) error {
 	err := InitFheConfig(tfheConfig)
 	if err != nil {
 		return err
 	}
+
+	conf.SetConfig(*fheosConfig)
 
 	err = InitializeFheosState()
 	if err != nil {

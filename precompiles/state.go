@@ -4,13 +4,14 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 	"io"
 	"time"
 
 	"github.com/ethereum/go-ethereum/metrics"
+	"github.com/fhenixprotocol/fheos/conf"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
+	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 )
 
 type FheosState struct {
@@ -82,8 +83,7 @@ func createFheosState(storage storage2.FheosStorage, version uint64) {
 }
 
 func InitializeFheosState() error {
-	config := api.GetConfig()
-	store, err := storage2.InitStorage(config.FheosDbPath)
+	store, err := storage2.InitStorage(conf.GetConfig().FheosDbPath)
 
 	if err != nil {
 		logger.Error("failed to open storage for fheos State")

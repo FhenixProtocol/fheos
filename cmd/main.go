@@ -8,6 +8,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/fhenixprotocol/fheos/conf"
 	"github.com/fhenixprotocol/fheos/precompiles"
 	fhedriver "github.com/fhenixprotocol/warp-drive/fhe-driver"
 	"github.com/spf13/cobra"
@@ -64,7 +65,12 @@ func generateKeys(securityZones int32) error {
 }
 
 func initDbOnly() error {
-	err := precompiles.InitFheos(&fhedriver.ConfigDefault)
+	configFheos := conf.ConfigDefault
+	if path := os.Getenv("FHEOS_DB_PATH"); path != "" {
+		configFheos.FheosDbPath = path
+	}
+
+	err := precompiles.InitFheos(&fhedriver.ConfigDefault, &configFheos)
 	if err != nil {
 		return err
 	}
@@ -73,13 +79,7 @@ func initDbOnly() error {
 }
 
 func initFheos() (*precompiles.TxParams, error) {
-	config := fhedriver.ConfigDefault
-
-	if path := os.Getenv("FHEOS_DB_PATH"); path != "" {
-		config.FheosDbPath = path
-	}
-
-	err := precompiles.InitFheConfig(&config)
+	err := initDbOnly()
 	if err != nil {
 		return nil, err
 	}
@@ -89,16 +89,6 @@ func initFheos() (*precompiles.TxParams, error) {
 		return nil, err
 	}
 	err = generateKeys(int32(securityZones))
-	if err != nil {
-		return nil, err
-	}
-
-	err = precompiles.InitializeFheosState()
-	if err != nil {
-		return nil, err
-	}
-
-	err = os.Setenv("FHEOS_DB_PATH", "")
 	if err != nil {
 		return nil, err
 	}

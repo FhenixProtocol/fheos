@@ -1,6 +1,8 @@
 package conf
 
 import (
+	"fmt"
+	"github.com/ethereum/go-ethereum/log"
 	flag "github.com/spf13/pflag"
 )
 
@@ -14,4 +16,15 @@ type FheosConfig struct {
 
 var ConfigDefault = FheosConfig{
 	FheosDbPath: "/tmp/fheos",
+}
+
+var loadedConfig FheosConfig
+
+func GetConfig() *FheosConfig {
+	return &loadedConfig
+}
+
+func SetConfig(config FheosConfig) {
+	log.Info(fmt.Sprintf("Setting Fheos config: %+v", config))
+	loadedConfig = config
 }
