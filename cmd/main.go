@@ -212,7 +212,16 @@ func main() {
 		Use:   "init-state",
 		Short: "Initialize fheos state",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			err := initKeys()
+			confWd, confFheos, err := initConfigs()
+			if err != nil {
+				return err
+			}
+			err = precompiles.InitFheos(confWd, confFheos)
+			if err != nil {
+				return err
+			}
+
+			err = initKeys()
 			return err
 		},
 	}
