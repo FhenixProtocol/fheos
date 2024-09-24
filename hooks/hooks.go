@@ -155,7 +155,9 @@ func (h FheOSHooksImpl) EvmCallEnd(evmSuccess bool) {
 		}
 	}
 
-	fheos.State.RandomCounter = 0
+	if fheos.State != nil {
+		fheos.State.RandomCounter = 0
+	}
 }
 
 func shouldIgnoreContract(caller common.Address, addr common.Address) bool {
