@@ -73,14 +73,13 @@ func initDbOnly() error {
 }
 
 func initFheos() (*precompiles.TxParams, error) {
-	if os.Getenv("FHEOS_DB_PATH") == "" {
-		err := os.Setenv("FHEOS_DB_PATH", "./fheosdb")
-		if err != nil {
-			return nil, err
-		}
+	config := fhedriver.ConfigDefault
+
+	if path := os.Getenv("FHEOS_DB_PATH"); path != "" {
+		config.FheosDbPath = path
 	}
 
-	err := precompiles.InitFheConfig(&fhedriver.ConfigDefault)
+	err := precompiles.InitFheConfig(&config)
 	if err != nil {
 		return nil, err
 	}
