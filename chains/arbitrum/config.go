@@ -12,6 +12,7 @@ func FhenixConfigAddOptions(prefix string, f *flag.FlagSet) {
 	f.String(prefix+".fallback-fhe-engine-address", fhe.ConfigDefault.FallbackFheEngineAddress, "FHE engine fallback address")
 	f.String(prefix+".home-dir", fhe.ConfigDefault.HomeDir, "FHE home directory")
 	f.Int(prefix+".log-level", fhe.ConfigDefault.LogLevel, "Minimum log level to display (0-5)")
+	f.String(prefix+".fheos-db-path", fhe.ConfigDefault.FheosDbPath, "Path for FheOs database")
 }
 
 type FhenixConfig = fhe.Config
