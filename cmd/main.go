@@ -250,8 +250,10 @@ func main() {
 	var max = setupOperationCommand("max", "max two numbers", precompiles.Max)
 	var shl = setupOperationCommand("shl", "shl two numbers", precompiles.Shl)
 	var shr = setupOperationCommand("shr", "shr two numbers", precompiles.Shr)
+	var rol = setupOperationCommand("rol", "ror two numbers", precompiles.Rol)
+	var ror = setupOperationCommand("ror", "rol two numbers", precompiles.Rol)
 
-	rootCmd.AddCommand(initDb, initState, add, sub, lte, sub, mul, lt, div, gt, gte, rem, and, or, xor, eq, ne, min, max, shl, shr)
+	rootCmd.AddCommand(initDb, initState, add, sub, lte, sub, mul, lt, div, gt, gte, rem, and, or, xor, eq, ne, min, max, shl, shr, rol, ror)
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)

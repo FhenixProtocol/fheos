@@ -32,6 +32,16 @@ contract NotTest {
             }
 
             return 0;
+        } else if (Utils.cmp(test, "euint8.not()")) {
+            return FHE.decrypt(FHE.asEuint8(a, securityZone).not());
+        } else if (Utils.cmp(test, "euint16.not()")) {
+            return FHE.decrypt(FHE.asEuint16(a, securityZone).not());
+        } else if (Utils.cmp(test, "euint32.not()")) {
+            return FHE.decrypt(FHE.asEuint32(a, securityZone).not());
+        } else if (Utils.cmp(test, "euint64.not()")) {
+            return FHE.decrypt(FHE.asEuint64(a, securityZone).not());
+        } else if (Utils.cmp(test, "euint128.not()")) {
+            return FHE.decrypt(FHE.asEuint128(a, securityZone).not());
         }
         
         revert TestNotFound(test);

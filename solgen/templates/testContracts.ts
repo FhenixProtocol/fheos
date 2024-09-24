@@ -353,6 +353,10 @@ export function testContract1Arg(name: string) {
     name,
     EInputType.indexOf("euint256")
   );
+  const isEboolAllowed = IsOperationAllowed(
+      name,
+      EInputType.indexOf("ebool")
+  );
   let func = `function ${name}(string calldata test, uint256 a, int32 securityZone) public pure returns (uint256 output) {
         if (Utils.cmp(test, "${name}(euint8)")) {
             return FHE.decrypt(FHE.${name}(FHE.asEuint8(a, securityZone)));
@@ -376,7 +380,8 @@ export function testContract1Arg(name: string) {
             return FHE.decrypt(FHE.${name}(FHE.asEuint256(a, securityZone)));
         }`;
   }
-  func += ` else if (Utils.cmp(test, "${name}(ebool)")) {
+  if(isEboolAllowed) {
+    func += ` else if (Utils.cmp(test, "${name}(ebool)")) {
             bool aBool = true;
             if (a == 0) {
                 aBool = false;
@@ -387,7 +392,31 @@ export function testContract1Arg(name: string) {
             }
 
             return 0;
-        }
+        }`;
+  }
+  func += ` else if (Utils.cmp(test, "euint8.${name}()")) {
+            return FHE.decrypt(FHE.asEuint8(a, securityZone).${name}());
+        } else if (Utils.cmp(test, "euint16.${name}()")) {
+            return FHE.decrypt(FHE.asEuint16(a, securityZone).${name}());
+        } else if (Utils.cmp(test, "euint32.${name}()")) {
+            return FHE.decrypt(FHE.asEuint32(a, securityZone).${name}());
+        }`;
+  if (isEuint64Allowed) {
+    func += ` else if (Utils.cmp(test, "euint64.${name}()")) {
+            return FHE.decrypt(FHE.asEuint64(a, securityZone).${name}());
+        }`;
+  }
+  if (isEuint128Allowed) {
+    func += ` else if (Utils.cmp(test, "euint128.${name}()")) {
+            return FHE.decrypt(FHE.asEuint128(a, securityZone).${name}());
+        }`;
+  }
+  if (isEuint256Allowed) {
+    func += ` else if (Utils.cmp(test, "euint256.${name}()")) {
+            return FHE.decrypt(FHE.asEuint256(a, securityZone).${name}());
+        }`;
+  }
+  func += `
         
         revert TestNotFound(test);
     }`;

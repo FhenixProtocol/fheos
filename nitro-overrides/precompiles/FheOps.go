@@ -715,6 +715,78 @@ func (con FheOps) Req(c ctx, evm mech, utype byte, input []byte) ([]byte, error)
 	return ret, err
 }
 
+func (con FheOps) Rol(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte) ([]byte, error) {
+	tp := fheos.TxParamsFromEVM(evm, c.caller)
+	if metrics.Enabled {
+		h := fmt.Sprintf("%s/%s/%s", "fheos", "Rol", fheos.UtypeToString(utype))
+		defer func(start time.Time) {
+			sampler := func() metrics.Sample {
+				return metrics.NewBoundedHistogramSample()
+			}
+			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+		}(time.Now())
+	}
+
+	ret, gas, err := fheos.Rol(utype, lhsHash, rhsHash, &tp)
+
+	if err != nil {
+		if metrics.Enabled {
+			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Rol", fheos.UtypeToString(utype), "error/fhe_failure")
+			metrics.GetOrRegisterCounter(c, nil).Inc(1)
+		}
+		return ret, err
+	}
+
+	err = c.Burn(gas)
+
+	if metrics.Enabled {
+		metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Rol", fheos.UtypeToString(utype), "success/total")
+		if err != nil {
+			metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "Rol", fheos.UtypeToString(utype), "error/fhe_gas_failure")
+		}
+
+		metrics.GetOrRegisterCounter(metricPath, nil).Inc(1)
+	}
+
+	return ret, err
+}
+
+func (con FheOps) Ror(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte) ([]byte, error) {
+	tp := fheos.TxParamsFromEVM(evm, c.caller)
+	if metrics.Enabled {
+		h := fmt.Sprintf("%s/%s/%s", "fheos", "Ror", fheos.UtypeToString(utype))
+		defer func(start time.Time) {
+			sampler := func() metrics.Sample {
+				return metrics.NewBoundedHistogramSample()
+			}
+			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+		}(time.Now())
+	}
+
+	ret, gas, err := fheos.Ror(utype, lhsHash, rhsHash, &tp)
+
+	if err != nil {
+		if metrics.Enabled {
+			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Ror", fheos.UtypeToString(utype), "error/fhe_failure")
+			metrics.GetOrRegisterCounter(c, nil).Inc(1)
+		}
+		return ret, err
+	}
+
+	err = c.Burn(gas)
+
+	if metrics.Enabled {
+		metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Ror", fheos.UtypeToString(utype), "success/total")
+		if err != nil {
+			metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "Ror", fheos.UtypeToString(utype), "error/fhe_gas_failure")
+		}
+
+		metrics.GetOrRegisterCounter(metricPath, nil).Inc(1)
+	}
+
+	return ret, err
+}
+
 func (con FheOps) SealOutput(c ctx, evm mech, utype byte, ctHash []byte, pk []byte) (string, error) {
 	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	if metrics.Enabled {
@@ -851,6 +923,42 @@ func (con FheOps) Shr(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 		metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Shr", fheos.UtypeToString(utype), "success/total")
 		if err != nil {
 			metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "Shr", fheos.UtypeToString(utype), "error/fhe_gas_failure")
+		}
+
+		metrics.GetOrRegisterCounter(metricPath, nil).Inc(1)
+	}
+
+	return ret, err
+}
+
+func (con FheOps) Square(c ctx, evm mech, utype byte, value []byte) ([]byte, error) {
+	tp := fheos.TxParamsFromEVM(evm, c.caller)
+	if metrics.Enabled {
+		h := fmt.Sprintf("%s/%s/%s", "fheos", "Square", fheos.UtypeToString(utype))
+		defer func(start time.Time) {
+			sampler := func() metrics.Sample {
+				return metrics.NewBoundedHistogramSample()
+			}
+			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
+		}(time.Now())
+	}
+
+	ret, gas, err := fheos.Square(utype, value, &tp)
+
+	if err != nil {
+		if metrics.Enabled {
+			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Square", fheos.UtypeToString(utype), "error/fhe_failure")
+			metrics.GetOrRegisterCounter(c, nil).Inc(1)
+		}
+		return ret, err
+	}
+
+	err = c.Burn(gas)
+
+	if metrics.Enabled {
+		metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Square", fheos.UtypeToString(utype), "success/total")
+		if err != nil {
+			metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "Square", fheos.UtypeToString(utype), "error/fhe_gas_failure")
 		}
 
 		metrics.GetOrRegisterCounter(metricPath, nil).Inc(1)

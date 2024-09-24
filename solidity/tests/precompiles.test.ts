@@ -32,6 +32,9 @@ import {
   AsEuint128TestType,
   AsEuint256TestType,
   AsEaddressTestType,
+  RolTestType,
+  RorTestType,
+  SquareTestType,
 } from "./abis";
 
 const getFheContract = async (contractAddress: string) => {
@@ -607,7 +610,7 @@ describe("Test Req", () => {
         } catch (e) {
           hadEvaluationFailure = true;
           err = `${e}`;
-          console.log(`err: ${err}`);
+          !testCase.shouldCrash && console.log(`err: ${err}`);
         }
         expect(hadEvaluationFailure).toBe(testCase.shouldCrash);
         if (hadEvaluationFailure) {
@@ -699,7 +702,7 @@ describe("Test Decrypt", () => {
       } catch (e) {
         hadEvaluationFailure = true;
         err = `${e}`;
-        console.log(`err: ${err}`);
+        test.shouldPass && console.log(`err: ${err}`);
       }
       expect(hadEvaluationFailure).toBe(!test.shouldPass);
       if (hadEvaluationFailure) {
@@ -1541,6 +1544,98 @@ describe("Test Shr", () => {
       }
     }
   }
+});
+
+describe("Test Rol", () => {
+  let contract;
+
+  beforeAll(async () => {
+    contract = (await deployContract("RolTest")) as RolTestType;
+  });
+
+  const generateTestCases = (bitSize: number) => {
+    const basePattern = BigInt(`0b${'11100000'.repeat(bitSize / 8)}`);
+    const mask = (1n << BigInt(bitSize)) - 1n;
+
+    return [1, 2, 3, 4, 5].map(rotateAmount => {
+      const rotated = ((basePattern << BigInt(rotateAmount)) | (basePattern >> BigInt(bitSize - rotateAmount))) & mask;
+      return {
+        a: basePattern,
+        b: rotateAmount,
+        expectedResult: rotated,
+        name: ` rol ${rotateAmount}`
+      };
+    });
+  };
+
+  const bitSizes = [8, 16, 32, 64, 128];
+
+  const funcsToTest = bitSizes.map(size => [`rol(euint${size},euint${size})`, `euint${size}.rol(euint${size})`]);
+
+  funcsToTest.forEach((test, index) => {
+    const bitSize = bitSizes[index];
+    const testCases = generateTestCases(bitSize);
+
+    for (const testCase of testCases) {
+      for (const funcName of test) {
+        it(`Test ${funcName}${testCase.name}`, async () => {
+          const decryptedResult = await contract.rol(
+            funcName,
+            BigInt(testCase.a),
+            BigInt(testCase.b)
+          );
+
+          expect(decryptedResult).toBe(BigInt(testCase.expectedResult));
+        });
+      }
+    }
+  });
+});
+
+describe("Test Ror", () => {
+  let contract;
+
+  beforeAll(async () => {
+    contract = (await deployContract("RorTest")) as RorTestType;
+  });
+
+  const generateTestCases = (bitSize: number) => {
+    const basePattern = BigInt(`0b${'10000001'.repeat(bitSize / 8)}`);
+    const mask = (1n << BigInt(bitSize)) - 1n;
+
+    return [1, 2, 3, 4, 5].map(rotateAmount => {
+      const rotated = ((basePattern >> BigInt(rotateAmount)) | (basePattern << BigInt(bitSize - rotateAmount))) & mask;
+      return {
+        a: basePattern,
+        b: rotateAmount,
+        expectedResult: rotated,
+        name: ` ror ${rotateAmount}`
+      };
+    });
+  };
+
+  const bitSizes = [8, 16, 32, 64, 128];
+
+  const funcsToTest = bitSizes.map(size => [`ror(euint${size},euint${size})`, `euint${size}.ror(euint${size})`]);
+
+  funcsToTest.forEach((test, index) => {
+    const bitSize = bitSizes[index];
+    const testCases = generateTestCases(bitSize);
+
+    for (const testCase of testCases) {
+      for (const funcName of test) {
+        it(`Test ${funcName}${testCase.name}`, async () => {
+          const decryptedResult = await contract.ror(
+            funcName,
+            BigInt(testCase.a),
+            BigInt(testCase.b)
+          );
+
+          expect(decryptedResult).toBe(BigInt(testCase.expectedResult));
+        });
+      }
+    }
+  });
 });
 
 describe("Test Not", () => {
@@ -2556,3 +2651,83 @@ describe("Test AsEaddress", () => {
     expect(decimal).toBe(value);
   });
 });
+
+describe("Test Square", () => {
+  const overflow8 = 2 ** 4;
+  const overflow16 = 2 ** 8;
+  const overflow32 = 2 ** 16;
+  const overflow64 = 2 ** 32;
+  let contract;
+
+  // We don't really need it as test but it is a test since it is async
+  it(`Test Contract Deployment`, async () => {
+    contract = (await deployContract("SquareTest")) as SquareTestType;
+    expect(contract).toBeTruthy();
+  });
+
+  const testCases = [
+    {
+      function: ["square(euint8)", "euint8.square()"],
+      cases: [
+        { a: 2, expectedResult: 4, name: "" },
+        {
+          a: overflow8,
+          expectedResult: Number(BigInt.asUintN(8, BigInt(overflow8 * overflow8))),
+          name: " as overflow",
+        },
+      ],
+    },
+    {
+      function: ["square(euint16)", "euint16.square()"],
+      cases: [
+        { a: 2, expectedResult: 4, name: "" },
+        {
+          a: overflow16,
+          expectedResult: Number(BigInt.asUintN(16, BigInt(overflow16 * overflow16))),
+          name: " as overflow",
+        },
+      ],
+    },
+    {
+      function: ["square(euint32)", "euint32.square()"],
+      cases: [
+        { a: 2, expectedResult: 4, name: "" },
+        {
+          a: overflow32,
+          b: 2,
+          expectedResult: Number(BigInt.asUintN(32, BigInt(overflow32 * overflow32))),
+          name: " as overflow",
+        },
+      ],
+    },
+    {
+      function: ["square(euint64)", "euint64.square()"],
+      cases: [
+        { a: 3, expectedResult: 9, name: "" },
+        {
+          a: overflow64,
+          expectedResult: Number(BigInt.asUintN(64, BigInt(overflow64 * overflow64))),
+          name: " with large number",
+        },
+      ],
+    },
+  ];
+
+  for (const test of testCases) {
+    for (const securityZone of [0]) {
+      for (const testFunc of test.function) {
+        for (const testCase of test.cases) {
+          it(`Test ${testFunc}${testCase.name} - security zone ${securityZone}`, async () => {
+            const decryptedResult = await contract.square(
+              testFunc,
+              BigInt(testCase.a),
+              securityZone
+            );
+            expect(decryptedResult).toBe(BigInt(testCase.expectedResult));
+          });
+        }
+      }
+    }
+  }
+});
+

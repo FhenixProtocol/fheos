@@ -748,7 +748,7 @@ export const OperatorBinding = (
     /// @param lhs input of type ${forType}
     `;
 
-  if (unary) {
+  if (!unary) {
     docString += `/// @param rhs second input of type ${forType}\n`;
   }
 

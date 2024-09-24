@@ -71,11 +71,20 @@ export interface ShlTestType extends BaseContract {
 export interface ShrTestType extends BaseContract {
     shr: (test: string, a: bigint, b: bigint) => Promise<bigint>;
 }
+export interface RolTestType extends BaseContract {
+    rol: (test: string, a: bigint, b: bigint) => Promise<bigint>;
+}
+export interface RorTestType extends BaseContract {
+    ror: (test: string, a: bigint, b: bigint) => Promise<bigint>;
+}
 export interface NotTestType extends BaseContract {
     not: (test: string, a: bigint) => Promise<bigint>;
 }
 export interface RandomTestType extends BaseContract {
     random: (test: string) => Promise<bigint>;
+}
+export interface SquareTestType extends BaseContract {
+    square: (test: string, a: bigint) => Promise<bigint>;
 }
 export interface AsEboolTestType extends BaseContract {
     castFromEuint8ToEbool: (val: bigint, test: string) => Promise<boolean>;
