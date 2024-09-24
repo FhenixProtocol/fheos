@@ -79,7 +79,7 @@ func initConfigs() (*fhedriver.Config, *conf.FheosConfig, error) {
 }
 
 func initKeys() error {
-	err = generateKeys(int32(securityZones))
+	err := generateKeys(conf.GetConfig().SecurityZones)
 	if err != nil {
 		return err
 	}
