@@ -58,26 +58,17 @@ func generateKeys(securityZones int32) error {
 	return nil
 }
 
-func initDbOnly() error {
+func initConfigs() (*fhedriver.Config, *conf.FheosConfig) {
 	configFheos := conf.ConfigDefault
 	if path := os.Getenv("FHEOS_DB_PATH"); path != "" {
 		configFheos.FheosDbPath = path
 	}
 
-	err := precompiles.InitFheos(&fhedriver.ConfigDefault, &configFheos)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	configWd := fhedriver.ConfigDefault
+	return &configWd, &configFheos
 }
 
-func initFheos() (*precompiles.TxParams, error) {
-	err := initDbOnly()
-	if err != nil {
-		return nil, err
-	}
-
+func initKeys() (*precompiles.TxParams, error) {
 	securityZones, err := getenvInt("FHEOS_SECURITY_ZONES", 1)
 	if err != nil {
 		return nil, err
@@ -144,8 +135,13 @@ func setupOperationCommand(use, short string, op operationFunc) *cobra.Command {
 		Use:   use,
 		Short: short,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			txParams, err := initFheos()
+			err := precompiles.InitFheos(initConfigs())
+			if err != nil {
+				return err
+			}
 			defer removeDb()
+
+			txParams, err := initKeys()
 			if err != nil {
 				return err
 			}
@@ -201,16 +197,16 @@ func main() {
 		Use:   "init-state",
 		Short: "Initialize fheos state",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			_, err := initFheos()
+			_, err := initKeys()
 			return err
 		},
 	}
 
-	var initDb = &cobra.Command{
+	var initDbCommand = &cobra.Command{
 		Use:   "init-db",
 		Short: "Initialize fheos db only (no keys)",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			err := initDbOnly()
+			err := precompiles.InitFheos(initConfigs())
 			return err
 		},
 	}
@@ -236,7 +232,7 @@ func main() {
 	var rol = setupOperationCommand("rol", "ror two numbers", precompiles.Rol)
 	var ror = setupOperationCommand("ror", "rol two numbers", precompiles.Rol)
 
-	rootCmd.AddCommand(initDb, initState, add, sub, lte, sub, mul, lt, div, gt, gte, rem, and, or, xor, eq, ne, min, max, shl, shr, rol, ror)
+	rootCmd.AddCommand(initDbCommand, initState, add, sub, lte, sub, mul, lt, div, gt, gte, rem, and, or, xor, eq, ne, min, max, shl, shr, rol, ror)
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
