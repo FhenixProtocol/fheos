@@ -15,17 +15,11 @@ import (
 )
 
 func removeDb() error {
-	env := os.Getenv("FHEOS_DB_PATH")
-	if env == "" {
-		return nil
-	}
-
-	err := os.Remove(env)
+	err := os.Remove(conf.GetConfig().FheosDbPath)
 	if err != nil {
 		return err
 	}
-
-	return os.Setenv("FHEOS_DB_PATH", "")
+	return nil
 }
 
 func getenvInt(key string, defaultValue int) (int, error) {
