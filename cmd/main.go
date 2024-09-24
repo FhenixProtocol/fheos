@@ -212,7 +212,7 @@ func main() {
 		Use:   "init-state",
 		Short: "Initialize fheos state",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			_, err := initKeys()
+			err := initKeys()
 			return err
 		},
 	}
