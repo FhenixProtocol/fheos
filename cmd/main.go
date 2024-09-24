@@ -68,17 +68,21 @@ func initConfigs() (*fhedriver.Config, *conf.FheosConfig) {
 	return &configWd, &configFheos
 }
 
-func initKeys() (*precompiles.TxParams, error) {
+func initKeys() error {
 	securityZones, err := getenvInt("FHEOS_SECURITY_ZONES", 1)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	err = generateKeys(int32(securityZones))
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	tp := precompiles.TxParams{
+	return err
+}
+
+func mockTxParams() *precompiles.TxParams {
+	return &precompiles.TxParams{
 		false,
 		false,
 		true,
@@ -87,8 +91,6 @@ func initKeys() (*precompiles.TxParams, error) {
 		vm.GetHashFunc(nil),
 		nil,
 	}
-
-	return &tp, err
 }
 
 func getValue(a []byte) *big.Int {
@@ -141,11 +143,12 @@ func setupOperationCommand(use, short string, op operationFunc) *cobra.Command {
 			}
 			defer removeDb()
 
-			txParams, err := initKeys()
+			err = initKeys()
 			if err != nil {
 				return err
 			}
 
+			txParams := mockTxParams()
 			elhs, err := encrypt(lhs, t, securityZone, txParams)
 			if err != nil {
 				return err
