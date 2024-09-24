@@ -22,16 +22,18 @@ func removeDb() error {
 	return nil
 }
 
-func getenvInt(key string, defaultValue int) (int, error) {
+// Returns the value of the environment variable key as an int. The second return value will be false
+// if the environment variable was empty.
+func getenvInt(key string) (int, bool, error) {
 	s := os.Getenv(key)
 	if s == "" {
-		return defaultValue, nil
+		return 0, false, nil
 	}
 	v, err := strconv.Atoi(s)
 	if err != nil {
-		return 0, err
+		return 0, false, err
 	}
-	return v, nil
+	return v, true, nil
 }
 
 func generateKeys(securityZones int32) error {
@@ -58,21 +60,25 @@ func generateKeys(securityZones int32) error {
 	return nil
 }
 
-func initConfigs() (*fhedriver.Config, *conf.FheosConfig) {
+func initConfigs() (*fhedriver.Config, *conf.FheosConfig, error) {
 	configFheos := conf.ConfigDefault
 	if path := os.Getenv("FHEOS_DB_PATH"); path != "" {
 		configFheos.FheosDbPath = path
 	}
 
+	securityZones, wasSet, err := getenvInt("FHEOS_SECURITY_ZONES")
+	if err != nil {
+		return nil, nil, fmt.Errorf("wrong integer for security zones parameter")
+	}
+	if wasSet {
+		configFheos.SecurityZones = int32(securityZones)
+	}
+
 	configWd := fhedriver.ConfigDefault
-	return &configWd, &configFheos
+	return &configWd, &configFheos, nil
 }
 
 func initKeys() error {
-	securityZones, err := getenvInt("FHEOS_SECURITY_ZONES", 1)
-	if err != nil {
-		return err
-	}
 	err = generateKeys(int32(securityZones))
 	if err != nil {
 		return err
@@ -137,7 +143,12 @@ func setupOperationCommand(use, short string, op operationFunc) *cobra.Command {
 		Use:   use,
 		Short: short,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			err := precompiles.InitFheos(initConfigs())
+			confWd, confFheos, err := initConfigs()
+			if err != nil {
+				return err
+			}
+
+			err = precompiles.InitFheos(confWd, confFheos)
 			if err != nil {
 				return err
 			}
@@ -209,7 +220,11 @@ func main() {
 		Use:   "init-db",
 		Short: "Initialize fheos db only (no keys)",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			err := precompiles.InitFheos(initConfigs())
+			confWd, confFheos, err := initConfigs()
+			if err != nil {
+				return err
+			}
+			err = precompiles.InitFheos(confWd, confFheos)
 			return err
 		},
 	}
