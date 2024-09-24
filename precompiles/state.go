@@ -1,15 +1,17 @@
 package precompiles
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
+	"github.com/fhenixprotocol/warp-drive/fhe-driver"
+	"io"
 	"os"
 	"time"
 
 	"github.com/ethereum/go-ethereum/metrics"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
-	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 )
 
 type FheosState struct {
@@ -106,4 +108,48 @@ func InitializeFheosState() error {
 	createFheosState(*store, FheosVersion)
 
 	return nil
+}
+
+func GetSerializedDecryptionResult(key types.PendingDecryption) ([]byte, error) {
+	if State == nil {
+		return nil, errors.New("fheos state is not initialized")
+	}
+
+	if State.DecryptResults == nil {
+		return nil, errors.New("DecryptionResults is not initialized in fheos state")
+	}
+
+	return State.DecryptResults.GetSerializedDecryptionResult(key)
+}
+
+func LoadMultipleResolvedDecryptions(reader io.Reader) error {
+	// parse the number of resolved decryptions
+	var numDecryptions int32
+	err := binary.Read(reader, binary.LittleEndian, &numDecryptions)
+	if err != nil {
+		return err
+	}
+
+	logger.Debug("Loading resolved decryptions", "numDecryptions", numDecryptions)
+
+	for i := int32(0); i < numDecryptions; i++ {
+		err = LoadResolvedDecryption(reader)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func LoadResolvedDecryption(reader io.Reader) error {
+	if State == nil {
+		return errors.New("fheos state is not initialized")
+	}
+
+	if State.DecryptResults == nil {
+		return errors.New("fheos state is not initialized")
+	}
+
+	return State.DecryptResults.LoadResolvedDecryption(reader)
 }

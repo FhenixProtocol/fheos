@@ -4,7 +4,9 @@
 package gethexec
 
 import (
+	"bytes"
 	"context"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"math"
@@ -16,7 +18,9 @@ import (
 	"sync/atomic"
 	"time"
 
+	fheos_state "github.com/fhenixprotocol/fheos/precompiles"
 	fheos "github.com/fhenixprotocol/fheos/precompiles/types"
+
 	"github.com/offchainlabs/nitro/arbutil"
 	"github.com/offchainlabs/nitro/execution"
 	"github.com/offchainlabs/nitro/util/arbmath"
@@ -576,11 +580,49 @@ func (s *Sequencer) notifyDecryptRes(decryptKey *fheos.PendingDecryption) error 
 	return nil
 }
 
-func (s *Sequencer) onTxSuccess(tx *types.Transaction) {
+// SerializeTxDecryptRes returns a byte-serialization of all the decryption results associated with a transaction.
+func (s *Sequencer) SerializeTxDecryptRes(tx *types.Transaction) ([]byte, error) {
+	// The structure the encoded message is:
+	// if there are decryption results associated with the transaction:
+	//	encoded_results = results_count | result1 | result2 | ...
+	// See GetSerializedDecryptionResult for the serialization of each result
+
 	txHash := tx.Hash()
-	if _, ok := s.txOps.transactions[txHash]; ok {
-		s.txOps.ResolveTransaction(txHash)
+	if tx, ok := s.txOps.transactions[txHash]; ok {
+		if len(tx.pendingDecryptions) != 0 {
+			log.Error("attempted to serialize a tx with pending decryptions", "txhash", txHash)
+			return nil, errors.New("attempted serialization of tx with pending decryptions")
+		}
+
+		if len(tx.resolvedDecryptions) <= 0 {
+			log.Warn("attempted to serialize the decryption results of a tx with no resolved decryptions", "txhash", txHash)
+			return nil, errors.New("attempted decryption results serialization of tx with no resolved decryptions")
+		}
+
+		var serializedData []byte
+
+		// Serialize the count of elements as int32
+		buf := new(bytes.Buffer)
+		elementCount := int32(len(tx.resolvedDecryptions))
+		if err := binary.Write(buf, binary.LittleEndian, elementCount); err != nil {
+			return nil, err
+		}
+		serializedData = append(serializedData, buf.Bytes()...)
+
+		// serialize each decryption result
+		for decrypt := range tx.resolvedDecryptions {
+			resultSerialized, err := fheos_state.GetSerializedDecryptionResult(decrypt)
+			if err != nil {
+				return nil, err
+			}
+
+			serializedData = append(serializedData, resultSerialized...)
+		}
+
+		return serializedData, nil
 	}
+
+	return nil, nil
 }
 
 func (s *Sequencer) CheckHealth(ctx context.Context) error {
@@ -718,7 +760,7 @@ func (s *Sequencer) makeSequencingHooks() *arbos.SequencingHooks {
 		PostTxFilter:            s.postTxFilter,
 		NotifyCt:                s.notifyCt,
 		NotifyDecryptRes:        s.notifyDecryptRes,
-		OnTxSuccess:             s.onTxSuccess,
+		SerializeTxDecryptRes:   s.SerializeTxDecryptRes,
 		DiscardInvalidTxsEarly:  true,
 		TxErrors:                []error{},
 		ConditionalOptionsForTx: nil,
@@ -1037,6 +1079,9 @@ func (s *Sequencer) createBlock(ctx context.Context) (returnValue bool) {
 	madeBlock := false
 	for i, err := range hooks.TxErrors {
 		if err == nil {
+			// If we're here, transactions with parallel decryptions were already fully dealt with and broadcast.
+			s.txOps.ResolveTransaction(txes[i].Hash())
+
 			madeBlock = true
 		}
 		queueItem := queueItems[i]
