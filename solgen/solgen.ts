@@ -15,16 +15,21 @@ import {
   SealFromType,
   DecryptBinding,
   IsOperationAllowed,
+  RandomGenericFunction,
+  RandomFunctions,
+  SolTemplateDecrypt,
 } from "./templates/library";
 
 import {
-  testContract2Arg,
+  testContract0Args,
   testContract1Arg,
+  testContract2Arg,
   testContract3Arg,
   testContract2ArgBoolRes,
   testContractReencrypt,
   testContractReq,
   AsTypeTestingContract,
+  testContractDecrypt,
 } from "./templates/testContracts";
 
 import {
@@ -185,8 +190,24 @@ const generateSolidityTestContract = (metadata: FunctionMetadata): string[] => {
     return testContractReq();
   }
 
+  if (functionName === "decrypt") {
+    return testContractDecrypt();
+  }
+
   if (functionName === SEALING_FUNCTION_NAME) {
     return testContractReencrypt();
+  }
+
+  if (inputCount === 0) {
+    return testContract0Args(functionName);
+  }
+
+  if (
+    inputCount === 1 &&
+    inputs[0] === "encrypted" &&
+    returnValueType === "encrypted"
+  ) {
+    return testContract1Arg(functionName);
   }
 
   if (
@@ -204,14 +225,6 @@ const generateSolidityTestContract = (metadata: FunctionMetadata): string[] => {
     );
   }
 
-  if (
-    inputCount === 1 &&
-    inputs[0] === "encrypted" &&
-    returnValueType === "encrypted"
-  ) {
-    return testContract1Arg(functionName);
-  }
-
   if (inputCount === 3) {
     return testContract3Arg(functionName);
   }
@@ -225,11 +238,12 @@ const generateSolidityTestContract = (metadata: FunctionMetadata): string[] => {
 
 /** Generates a Solidity bench contract based on the provided metadata */
 const generateSolidityBenchContract = (metadata: FunctionMetadata): string => {
-  const {
-    functionName,
-    inputCount,
-    inputs,
-  } = metadata;
+  const { functionName, inputCount, inputs } = metadata;
+
+  if (functionName === "random" || functionName === "decrypt") {
+    // todo: bench random/decrypt function
+    return "";
+  }
 
   if (functionName === SEALING_FUNCTION_NAME) {
     return benchContractReencrypt();
@@ -243,9 +257,7 @@ const generateSolidityBenchContract = (metadata: FunctionMetadata): string => {
     return benchContract2Arg(functionName);
   }
 
-  if (
-    inputCount === 1
-  ) {
+  if (inputCount === 1) {
     return benchContract1Arg(functionName);
   }
 
@@ -362,10 +374,11 @@ const generateSolidityFunction = (parsedFunction: ParsedFunction): string => {
   const { funcName, inputs, returnType } = parsedFunction;
   switch (inputs.length) {
     case 1:
+      if (funcName === "decrypt") {
+        return SolTemplateDecrypt(inputs[0], returnType);
+      }
       return SolTemplate1Arg(funcName, inputs[0], returnType);
     case 2:
-      if (funcName === "div") {
-      }
       return SolTemplate2Arg(funcName, inputs[0], inputs[1], returnType);
     case 3:
       return SolTemplate3Arg(
@@ -387,18 +400,20 @@ const main = async () => {
   const benchContracts: Record<string, string> = {};
   let testContractsAbis = "";
   let importLineHelper: string = "import { ";
+
   for (let func of metadata) {
-    // Decrypt is already tested in every test contract
-    if (func.functionName !== "decrypt") {
-      // this generates test contract for every function
-      const testContract = generateSolidityTestContract(func);
-      const benchContract = generateSolidityBenchContract(func);
-      if (testContract[0] !== "") {
-        testContracts[capitalize(func.functionName)] = testContract[0];
-        benchContracts[capitalize(func.functionName)] = benchContract;
-        testContractsAbis += testContract[1];
-        importLineHelper += `${capitalize(func.functionName)}TestType,\n`;
-      }
+    // this generates test contract for every function
+    const testContract = generateSolidityTestContract(func);
+    const benchContract = generateSolidityBenchContract(func);
+
+    if (testContract[0] !== "") {
+      testContracts[capitalize(func.functionName)] = testContract[0];
+      testContractsAbis += testContract[1];
+      importLineHelper += `${capitalize(func.functionName)}TestType,\n`;
+    }
+
+    if (benchContract !== "") {
+      benchContracts[capitalize(func.functionName)] = benchContract;
     }
     // this generates solidity header functions for all the different possible types
     solidityHeaders = solidityHeaders.concat(genSolidityFunctionHeaders(func));
@@ -413,12 +428,14 @@ const main = async () => {
     );
     outputFile += funcDefinition;
   }
+  outputFile += RandomGenericFunction();
+  outputFile += RandomFunctions();
   outputFile += `\n\n    // ********** TYPE CASTING ************* //`;
 
   // generate casting functions
   for (let fromType of EInputType.concat("uint256", "bytes memory")) {
     for (let toType of EInputType) {
-      if (fromType === toType) { 
+      if (fromType === toType) {
         // todo: this is a bit weird, but I'm using this place to create asXXX functions for the cast from the input types (inXXX)
         const inputTypeName = `in${capitalize(fromType)}`;
         outputFile += AsTypeFunction(inputTypeName, toType);
@@ -429,8 +446,8 @@ const main = async () => {
     }
   }
   // For a better UX, allow casting from address to eaddress:
-  outputFile += AsTypeFunction('address', 'eaddress')
-  
+  outputFile += AsTypeFunction("address", "eaddress");
+
   for (let type of EInputType) {
     const functionName = `as${capitalize(type)}`;
     const testContract = AsTypeTestingContract(type);

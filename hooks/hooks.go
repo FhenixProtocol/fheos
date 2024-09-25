@@ -70,7 +70,7 @@ func (h FheOSHooksImpl) updateCiphertextReferences(original common.Hash, newHash
 	}
 
 	originalHash := types.Hash(original)
-	if (original != common.Hash{}) && !fhe.IsTriviallyEncryptedCtHash(originalHash) {
+	if fhe.IsCtHash(originalHash) && !fhe.IsTriviallyEncryptedCtHash(originalHash) {
 		// if the original hash is not empty, we are updating a value
 		// we need to dereference the old value from the storage
 		wasDeleted, err := multiStore.DereferenceCiphertext(originalHash)

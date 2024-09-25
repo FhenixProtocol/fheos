@@ -20,10 +20,14 @@ ENV EXTRA_RUSTFLAGS=$EXTRA_RUSTFLAGS
 COPY warp-drive/fhe-engine/rust-toolchain warp-drive/fhe-engine/rust-toolchain
 COPY warp-drive/fhe-engine/Cargo.toml warp-drive/fhe-engine/Cargo.toml
 COPY warp-drive/fhe-engine/Cargo.lock warp-drive/fhe-engine/Cargo.lock
+#COPY warp-drive/renault-server/Cargo.toml warp-drive/renault-server/Cargo.toml
+#COPY warp-drive/renault-server/Cargo.lock warp-drive/renault-server/Cargo.lock
 COPY warp-drive/fhe-bridge warp-drive/fhe-bridge
+COPY warp-drive/sealing warp-drive/sealing
 
 # Update rust version & install packages
 RUN cd warp-drive/fhe-engine && cargo update
+#RUN cd warp-drive/renault-server && cargo update
 
 # Copy the rest of the stuff so we can actually build it
 COPY warp-drive/ warp-drive/
@@ -32,6 +36,10 @@ WORKDIR /workspace/warp-drive/fhe-engine
 
 # Todo: fix arm support
 RUN RUSTFLAGS=$EXTRA_RUSTFLAGS cargo build --profile=release-lto
+
+#WORKDIR /workspace/warp-drive/renault-server
+# Todo: fix arm support
+#RUN RUSTFLAGS=$EXTRA_RUSTFLAGS cargo build --profile=release-lto
 
 FROM $DOCKER_NAME as winning
 
@@ -106,6 +114,8 @@ RUN mkdir -p /home/user/fhenix/fheosdb
 
 COPY --from=warp-drive-builder /workspace/warp-drive/fhe-engine/target/release-lto/fhe-engine-server /usr/bin/fhe-engine-server
 COPY --from=warp-drive-builder /workspace/warp-drive/fhe-engine/config/fhe_engine.toml /home/user/fhenix/fhe_engine.toml
+#COPY --from=warp-drive-builder /workspace/warp-drive/renault-server/target/release-lto/renault-server /usr/bin/renault-server
+#COPY --from=warp-drive-builder /workspace/warp-drive/renault-server/config/renault-server.toml /home/user/fhenix/renault-server.toml
 
 COPY --from=winning /workspace/target/bin/nitro /usr/local/bin/
 COPY --from=winning /workspace/fheos/build/main /usr/local/bin/fheos
@@ -117,6 +127,7 @@ COPY deployment/run.sh run.sh
 RUN sudo chmod +x ./run.sh
 RUN sudo chown -R user:user /home/user/keys
 RUN sed -i '/^keys_folder *=.*/s//keys_folder = "\/home\/user\/keys" /' /home/user/fhenix/fhe_engine.toml
+#RUN sed -i '/^keys_folder *=.*/s//keys_folder = "\/home\/user\/keys" /' /home/user/fhenix/renault-server.toml
 #RUN #sudo jq '.conf |= (.fhenix = .tfhe | del(.tfhe))' /config/sequencer_config.json > temp.json && sudo mv temp.json /config/sequencer_config.json
 COPY deployment/sequencer_config.json /config/sequencer_config.json
 

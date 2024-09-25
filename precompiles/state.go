@@ -3,6 +3,8 @@ package precompiles
 import (
 	"errors"
 	"fmt"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/metrics"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
@@ -12,8 +14,10 @@ import (
 )
 
 type FheosState struct {
-	FheosVersion uint64
-	Storage      storage2.FheosStorage
+	FheosVersion  uint64
+	Storage       storage2.FheosStorage
+	RandomCounter uint64
+	LastSavedHash *common.Hash
 	//MaxUintValue *big.Int // This should contain the max value of the supported uint type
 }
 
@@ -68,10 +72,38 @@ func (fs *FheosState) SetCiphertext(ct *types.CipherTextRepresentation) error {
 	return result
 }
 
+func (fs *FheosState) GetRandomCounter(latestHash common.Hash) uint64 {
+	if fs.LastSavedHash == nil || *fs.LastSavedHash != latestHash {
+		return 0
+	} else if *fs.LastSavedHash == latestHash {
+		return fs.RandomCounter
+	}
+
+	logger.Warn("unexpected error in GetRandomCounter")
+	return 0
+}
+
+func (fs *FheosState) IncRandomCounter(latestHash common.Hash) uint64 {
+	if fs.LastSavedHash == nil || *fs.LastSavedHash != latestHash {
+		fs.LastSavedHash = &latestHash
+		fs.RandomCounter = 1
+		log.Debug("new block, counter reset on increment", "counter", fs.RandomCounter)
+	} else if *fs.LastSavedHash == latestHash {
+		fs.RandomCounter += 1
+		log.Debug("counter incremented", "counter", fs.RandomCounter)
+	} else {
+		logger.Warn("unexpected error in IncRandomCounter")
+	}
+
+	return fs.RandomCounter
+}
+
 func createFheosState(storage storage2.FheosStorage, version uint64) {
 	State = &FheosState{
 		version,
 		storage,
+		0,
+		nil,
 	}
 }
 

@@ -16,6 +16,7 @@ gen-fheops:
 
 .PHONY: compile
 compile:
+	cp solidity/.env.example solidity/.env
 	cd solidity && pnpm compile
 
 .PHONY: gencompile
@@ -24,7 +25,7 @@ gencompile: gen compile
 .PHONY: lint
 lint:
 	# cd solidity && pnpm solhint FHE.sol FheOS.sol tests/contracts/*.sol tests/contracts/utils/*.sol
-	cd solidity && pnpm solhint FheOS.sol tests/contracts/*.sol tests/contracts/utils/*.sol
+	cd solidity && pnpm solhint --ignore-path .solhintignore FheOS.sol tests/contracts/*.sol tests/contracts/utils/*.sol
 
 check_network_is_running:
 	@echo "Checking connection to 127.0.0.1:8547..."
@@ -33,7 +34,6 @@ check_network_is_running:
 
 .PHONY: test
 test: check_network_is_running gen compile
-	cp solidity/.env.example solidity/.env
 	cd solidity && pnpm install
 	cd solidity && pnpm test
 
@@ -41,6 +41,11 @@ test: check_network_is_running gen compile
 test-precomp: check_network_is_running
 	cp solidity/.env.example solidity/.env
 	cd solidity && pnpm test -- precompiles.test.ts
+
+.PHONY: test-tx
+test-tx: check_network_is_running
+	cp solidity/.env.example solidity/.env
+	cd solidity && pnpm test -- transaction.test.ts
 
 .PHONY: build
 build:
