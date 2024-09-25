@@ -201,14 +201,14 @@ interface FheOps {
 					param.Type = "uint256"
 				}
 
-				if param.Type == "*TxParams" {
+				if param.Type == "*TxParams" || param.Type == "*CallbackFunc" {
 					continue
 				}
 
 				outLine += param.Type + " " + param.Name
 
 				// Is it the last (Ignoring the TxParams)
-				if count < len(params)-2 {
+				if (count < len(params)-2) && (param.Name != "rhsHash") && (param.Name != "value") {
 					outLine += ", "
 				}
 			}
@@ -371,7 +371,7 @@ func Gen(parent string, output string) {
 				t = "*big.Int"
 			}
 
-			if t == "*TxParams" {
+			if t == "*TxParams" || t == "*CallbackFunc" {
 				continue
 			}
 
@@ -532,7 +532,7 @@ func (con FheOps) {{.Name}}(c ctx, evm mech{{.Inputs}}) ({{.ReturnType}}, error)
 		}(time.Now())
 	}
 
-	ret, gas, err := fheos.{{.Name}}({{.InnerInputs}}&tp)
+	ret, gas, err := fheos.{{.Name}}({{.InnerInputs}}&tp, nil)
 
 	if err != nil {
 		if metrics.Enabled {

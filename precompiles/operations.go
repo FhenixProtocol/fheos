@@ -8,6 +8,11 @@ import (
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 )
 
+type TwoOperationFunc func(lhs *fhe.FheEncrypted, rhs *fhe.FheEncrypted) (*fhe.FheEncrypted, error)
+type CallbackFunc struct {
+	Callback func(ctKey []byte, newCtKey []byte)
+}
+
 func ProcessOperation1(functionName types.PrecompileName, utype byte, input []byte, tp *TxParams) (*fhe.FheEncrypted, uint64, error) {
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 	uintType := fhe.EncryptionType(utype)
@@ -41,7 +46,7 @@ func ProcessOperation1(functionName types.PrecompileName, utype byte, input []by
 	return ct, gas, nil
 }
 
-func ProcessOperation2(functionName types.PrecompileName, mathOp func(lhs *fhe.FheEncrypted, rhs *fhe.FheEncrypted) (*fhe.FheEncrypted, error), utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint64, error) {
+func ProcessOperation2(functionName types.PrecompileName, mathOp TwoOperationFunc, utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 
 	placeholderCt := fhe.CreateFheEncryptedWithData(CreatePlaceHolderData(), fhe.EncryptionType(utype), true)
@@ -120,7 +125,9 @@ func ProcessOperation2(functionName types.PrecompileName, mathOp func(lhs *fhe.F
 		}
 
 		_ = storage.SetAsyncCtDone(types.Hash(resultHash))
-
+		if callback != nil {
+			(*callback).Callback(placeholderKeyCopy, resultHash)
+		}
 		logger.Info(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.GetHash().Hex(), "rhs", rhs.GetHash().Hex(), "result", result.GetHash().Hex())
 	}(lhsHashCopy, rhsHashCopy, placeholderKeyCopy)
 
