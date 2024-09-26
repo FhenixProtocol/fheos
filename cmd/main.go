@@ -207,9 +207,30 @@ func setupOperationCommand(use, short string, op operationFunc) *cobra.Command {
 func main() {
 	var rootCmd = &cobra.Command{Use: "fheos"}
 
+	var initKeysCmd = &cobra.Command{
+		Use:   "init-keys",
+		Short: "Initialize fheos keys (create them and send them to the engine)",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			confWd, confFheos, err := initConfigs()
+			if err != nil {
+				return err
+			}
+
+			err = precompiles.InitFheConfig(confWd)
+			if err != nil {
+				return err
+			}
+
+			conf.SetConfig(*confFheos)
+
+			err = initKeys()
+			return err
+		},
+	}
+
 	var initState = &cobra.Command{
 		Use:   "init-state",
-		Short: "Initialize fheos state",
+		Short: "Initialize fheos state (keys + db)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			confWd, confFheos, err := initConfigs()
 			if err != nil {
@@ -225,7 +246,7 @@ func main() {
 		},
 	}
 
-	var initDbCommand = &cobra.Command{
+	var initDbCmd = &cobra.Command{
 		Use:   "init-db",
 		Short: "Initialize fheos db only (no keys)",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -259,7 +280,7 @@ func main() {
 	var rol = setupOperationCommand("rol", "ror two numbers", precompiles.Rol)
 	var ror = setupOperationCommand("ror", "rol two numbers", precompiles.Rol)
 
-	rootCmd.AddCommand(initDbCommand, initState, add, sub, lte, sub, mul, lt, div, gt, gte, rem, and, or, xor, eq, ne, min, max, shl, shr, rol, ror)
+	rootCmd.AddCommand(initDbCmd, initState, initKeysCmd, add, sub, lte, sub, mul, lt, div, gt, gte, rem, and, or, xor, eq, ne, min, max, shl, shr, rol, ror)
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
