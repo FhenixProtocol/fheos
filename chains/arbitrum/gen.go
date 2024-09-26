@@ -7,13 +7,12 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"text/template"
-
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 )
 
 type HardHatArtifact struct {
@@ -88,6 +87,15 @@ func uncapitalizeFirstLetter(input string) string {
 type Param struct {
 	Name string
 	Type string
+}
+
+func StringInList(s string, list []string) bool {
+	for _, v := range list {
+		if v == s {
+			return true
+		}
+	}
+	return false
 }
 
 func CreateTemplate(dirPath string) {
@@ -208,7 +216,7 @@ interface FheOps {
 				outLine += param.Type + " " + param.Name
 
 				// Is it the last (Ignoring the TxParams)
-				if (count < len(params)-2) && (param.Name != "rhsHash") && (param.Name != "value") {
+				if count < len(params)-3 {
 					outLine += ", "
 				}
 			}
@@ -427,7 +435,30 @@ type FheOps struct {
 	Address addr // 0x80
 }
 `)
+	handlers, err := os.Create("http/handlers.auto.go")
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	defer file.Close()
+	defer handlers.Close()
+
+	handlers.WriteString(`package http
+import (
+	"github.com/fhenixprotocol/fheos/precompiles"
+	"net/http"
+)
+
+type HandlerDef struct {
+	Name    string
+	Handler func(w http.ResponseWriter, r *http.Request)
+}
+
+`)
+
+	getHandlersFunc := `func getHandlers() []HandlerDef {
+		return []HandlerDef{
+`
 
 	logTemplate := GenerateLogTemplate()
 	_, err = file.WriteString(logTemplate)
@@ -441,7 +472,11 @@ type FheOps struct {
 			continue
 		}
 
-		var template *template.Template
+		var (
+			template     *template.Template
+			funcTemplate string
+			callTemplate string
+		)
 		if strings.Contains(op.Name, "GetNetworkPublicKey") {
 			template = GenerateFHEOperationNoGasTemplate()
 		} else {
@@ -451,13 +486,24 @@ type FheOps struct {
 			}
 
 			template = GenerateFHEOperationTemplate()
+			if len(op.Inputs) == 44 {
+				funcTemplate, callTemplate = GenerateHandlerFunction(op.Name)
+			}
+
 		}
 		err = template.Execute(file, op)
 		if err != nil {
 			fmt.Println("Error writing")
 			return
 		}
+
+		handlers.WriteString(funcTemplate)
+		getHandlersFunc += callTemplate
 	}
+
+	getHandlersFunc += `}
+}`
+	handlers.WriteString(getHandlersFunc)
 }
 
 type Operation struct {
@@ -564,4 +610,23 @@ func (con FheOps) {{.Name}}(c ctx, evm mech{{.Inputs}}) ({{.ReturnType}}, error)
 	}
 
 	return tmpl
+}
+
+func CapitalizeFirstLetter(s string) string {
+	if len(s) == 0 {
+		return s
+	}
+	return strings.ToUpper(s[:1]) + s[1:]
+}
+
+func GenerateHandlerFunction(name string) (string, string) {
+	capitalized := CapitalizeFirstLetter(name)
+	templateText := fmt.Sprintf(`
+func %sHandler(w http.ResponseWriter, r *http.Request) {
+	handleRequest(w, r, precompiles.%s)
+}
+`, capitalized, capitalized)
+	templateText2 := fmt.Sprintf(`{"/%s", %sHandler},`, name, capitalized)
+
+	return templateText, templateText2
 }

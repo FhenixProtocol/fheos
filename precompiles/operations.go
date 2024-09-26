@@ -10,7 +10,8 @@ import (
 
 type TwoOperationFunc func(lhs *fhe.FheEncrypted, rhs *fhe.FheEncrypted) (*fhe.FheEncrypted, error)
 type CallbackFunc struct {
-	Callback func(ctKey []byte, newCtKey []byte)
+	CallbackUrl string
+	Callback    func(url string, ctKey []byte, newCtKey []byte)
 }
 
 func ProcessOperation1(functionName types.PrecompileName, utype byte, input []byte, tp *TxParams) (*fhe.FheEncrypted, uint64, error) {
@@ -126,7 +127,8 @@ func ProcessOperation2(functionName types.PrecompileName, mathOp TwoOperationFun
 
 		_ = storage.SetAsyncCtDone(types.Hash(resultHash))
 		if callback != nil {
-			(*callback).Callback(placeholderKeyCopy, resultHash)
+			url := (*callback).CallbackUrl
+			(*callback).Callback(url, placeholderKeyCopy, resultHash)
 		}
 		logger.Info(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.GetHash().Hex(), "rhs", rhs.GetHash().Hex(), "result", result.GetHash().Hex())
 	}(lhsHashCopy, rhsHashCopy, placeholderKeyCopy)
