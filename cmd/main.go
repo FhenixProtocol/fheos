@@ -8,35 +8,32 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/fhenixprotocol/fheos/conf"
 	"github.com/fhenixprotocol/fheos/precompiles"
 	fhedriver "github.com/fhenixprotocol/warp-drive/fhe-driver"
 	"github.com/spf13/cobra"
 )
 
 func removeDb() error {
-	env := os.Getenv("FHEOS_DB_PATH")
-	if env == "" {
-		return nil
-	}
-
-	err := os.Remove(env)
+	err := os.Remove(conf.GetConfig().FheosDbPath)
 	if err != nil {
 		return err
 	}
-
-	return os.Setenv("FHEOS_DB_PATH", "")
+	return nil
 }
 
-func getenvInt(key string, defaultValue int) (int, error) {
+// Returns the value of the environment variable key as an int. The second return value will be false
+// if the environment variable was empty.
+func getenvInt(key string) (int, bool, error) {
 	s := os.Getenv(key)
 	if s == "" {
-		return defaultValue, nil
+		return 0, false, nil
 	}
 	v, err := strconv.Atoi(s)
 	if err != nil {
-		return 0, err
+		return 0, false, err
 	}
-	return v, nil
+	return v, true, nil
 }
 
 func generateKeys(securityZones int32) error {
@@ -63,48 +60,35 @@ func generateKeys(securityZones int32) error {
 	return nil
 }
 
-func initDbOnly() error {
-	err := precompiles.InitFheos(&fhedriver.ConfigDefault)
+func initConfigs() (*fhedriver.Config, *conf.FheosConfig, error) {
+	configFheos := conf.ConfigDefault
+	if path := os.Getenv("FHEOS_DB_PATH"); path != "" {
+		configFheos.FheosDbPath = path
+	}
+
+	securityZones, wasSet, err := getenvInt("FHEOS_SECURITY_ZONES")
+	if err != nil {
+		return nil, nil, fmt.Errorf("wrong integer for security zones parameter")
+	}
+	if wasSet {
+		configFheos.SecurityZones = int32(securityZones)
+	}
+
+	configWd := fhedriver.ConfigDefault
+	return &configWd, &configFheos, nil
+}
+
+func initKeys() error {
+	err := generateKeys(conf.GetConfig().SecurityZones)
 	if err != nil {
 		return err
 	}
 
-	return nil
+	return err
 }
 
-func initFheos() (*precompiles.TxParams, error) {
-	if os.Getenv("FHEOS_DB_PATH") == "" {
-		err := os.Setenv("FHEOS_DB_PATH", "./fheosdb")
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	err := precompiles.InitFheConfig(&fhedriver.ConfigDefault)
-	if err != nil {
-		return nil, err
-	}
-
-	securityZones, err := getenvInt("FHEOS_SECURITY_ZONES", 1)
-	if err != nil {
-		return nil, err
-	}
-	err = generateKeys(int32(securityZones))
-	if err != nil {
-		return nil, err
-	}
-
-	err = precompiles.InitializeFheosState()
-	if err != nil {
-		return nil, err
-	}
-
-	err = os.Setenv("FHEOS_DB_PATH", "")
-	if err != nil {
-		return nil, err
-	}
-
-	tp := precompiles.TxParams{
+func mockTxParams() *precompiles.TxParams {
+	return &precompiles.TxParams{
 		false,
 		false,
 		true,
@@ -113,8 +97,6 @@ func initFheos() (*precompiles.TxParams, error) {
 		vm.GetHashFunc(nil),
 		nil,
 	}
-
-	return &tp, err
 }
 
 func getValue(a []byte) *big.Int {
@@ -161,12 +143,23 @@ func setupOperationCommand(use, short string, op operationFunc) *cobra.Command {
 		Use:   use,
 		Short: short,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			txParams, err := initFheos()
-			defer removeDb()
+			confWd, confFheos, err := initConfigs()
 			if err != nil {
 				return err
 			}
 
+			err = precompiles.InitFheos(confWd, confFheos)
+			if err != nil {
+				return err
+			}
+			defer removeDb()
+
+			err = initKeys()
+			if err != nil {
+				return err
+			}
+
+			txParams := mockTxParams()
 			elhs, err := encrypt(lhs, t, securityZone, txParams)
 			if err != nil {
 				return err
@@ -214,20 +207,54 @@ func setupOperationCommand(use, short string, op operationFunc) *cobra.Command {
 func main() {
 	var rootCmd = &cobra.Command{Use: "fheos"}
 
-	var initState = &cobra.Command{
-		Use:   "init-state",
-		Short: "Initialize fheos state",
+	var initKeysCmd = &cobra.Command{
+		Use:   "init-keys",
+		Short: "Initialize fheos keys (create them and send them to the engine)",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			_, err := initFheos()
+			confWd, confFheos, err := initConfigs()
+			if err != nil {
+				return err
+			}
+
+			err = precompiles.InitFheConfig(confWd)
+			if err != nil {
+				return err
+			}
+
+			conf.SetConfig(*confFheos)
+
+			err = initKeys()
 			return err
 		},
 	}
 
-	var initDb = &cobra.Command{
+	var initState = &cobra.Command{
+		Use:   "init-state",
+		Short: "Initialize fheos state (keys + db)",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			confWd, confFheos, err := initConfigs()
+			if err != nil {
+				return err
+			}
+			err = precompiles.InitFheos(confWd, confFheos)
+			if err != nil {
+				return err
+			}
+
+			err = initKeys()
+			return err
+		},
+	}
+
+	var initDbCmd = &cobra.Command{
 		Use:   "init-db",
 		Short: "Initialize fheos db only (no keys)",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			err := initDbOnly()
+			confWd, confFheos, err := initConfigs()
+			if err != nil {
+				return err
+			}
+			err = precompiles.InitFheos(confWd, confFheos)
 			return err
 		},
 	}
@@ -253,7 +280,7 @@ func main() {
 	var rol = setupOperationCommand("rol", "ror two numbers", precompiles.Rol)
 	var ror = setupOperationCommand("ror", "rol two numbers", precompiles.Rol)
 
-	rootCmd.AddCommand(initDb, initState, add, sub, lte, sub, mul, lt, div, gt, gte, rem, and, or, xor, eq, ne, min, max, shl, shr, rol, ror)
+	rootCmd.AddCommand(initDbCmd, initState, initKeysCmd, add, sub, lte, sub, mul, lt, div, gt, gte, rem, and, or, xor, eq, ne, min, max, shl, shr, rol, ror)
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
