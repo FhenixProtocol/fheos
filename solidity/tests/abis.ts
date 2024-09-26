@@ -83,9 +83,6 @@ export interface NotTestType extends BaseContract {
 export interface RandomTestType extends BaseContract {
     random: (test: string) => Promise<bigint>;
 }
-export interface SquareTestType extends BaseContract {
-    square: (test: string, a: bigint) => Promise<bigint>;
-}
 export interface AsEboolTestType extends BaseContract {
     castFromEuint8ToEbool: (val: bigint, test: string) => Promise<boolean>;
     castFromEuint16ToEbool: (val: bigint, test: string) => Promise<boolean>;

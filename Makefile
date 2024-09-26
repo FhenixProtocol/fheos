@@ -51,6 +51,10 @@ test-tx: check_network_is_running
 build:
 	go build -o build/main ./cmd/
 
+.PHONY: build-coprocessor
+build-coprocessor:
+	go build -o build/main ./http/
+
 .PHONY: clean
 clean:
 	rm -r build/*

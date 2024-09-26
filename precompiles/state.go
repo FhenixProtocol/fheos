@@ -67,7 +67,7 @@ func (fs *FheosState) SetCiphertext(ct *types.CipherTextRepresentation) error {
 		}(time.Now())
 	}
 
-	result := fs.Storage.PutCt(types.Hash((*fhe.FheEncrypted)(ct.Data).Hash()), ct)
+	result := fs.Storage.PutCt(types.Hash((*fhe.FheEncrypted)(ct.Data).GetHash()), ct)
 
 	return result
 }

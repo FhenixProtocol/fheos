@@ -112,6 +112,7 @@ func initFheos() (*precompiles.TxParams, error) {
 		common.HexToAddress("0x0000000000000000000000000000000000000000"),
 		vm.GetHashFunc(nil),
 		nil,
+		make(chan error, 1),
 	}
 
 	return &tp, err
