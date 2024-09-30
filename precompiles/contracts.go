@@ -31,11 +31,14 @@ func InitLogger() {
 
 func InitFheConfig(fheConfig *fhe.Config) error {
 	// Itzik: I'm not sure if this is the right way to initialize the logger
+	fmt.Println("using legacy level", fheConfig.LogLevel)
+	fmt.Println("using slog level", log.FromLegacyLevel(fheConfig.LogLevel))
+
 	handler := log.NewTerminalHandlerWithLevel(os.Stderr, log.FromLegacyLevel(fheConfig.LogLevel), true)
 	glogger := log.NewGlogHandler(handler)
 
-	logger = log.NewLogger(glogger)
-	fhe.SetLogger(log.NewLogger(glogger))
+	logger = log.NewLogger(glogger).New("module", "fheos")
+	fhe.SetLogger(log.NewLogger(glogger).New("module", "warp-drive"))
 
 	err := fhe.Init(fheConfig)
 
@@ -93,6 +96,8 @@ func UtypeToString(utype byte) string {
 // ============================================================
 
 func Log(s string, tp *TxParams) (uint64, error) {
+	logger.Debug(fmt.Sprintf("Debug: Contract Log: %s", s))
+	logger.Info(fmt.Sprintf("Info: Contract Log: %s", s))
 	if tp.GasEstimation {
 		return 1, nil
 	}
