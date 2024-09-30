@@ -1,23 +1,24 @@
 package precompiles
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/log"
+	"github.com/fhenixprotocol/warp-drive/fhe-driver"
+	"io"
+	"os"
+	"time"
+
 	"github.com/ethereum/go-ethereum/metrics"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
-	"github.com/fhenixprotocol/warp-drive/fhe-driver"
-	"os"
-	"time"
 )
 
 type FheosState struct {
-	FheosVersion  uint64
-	Storage       storage2.FheosStorage
-	RandomCounter uint64
-	LastSavedHash *common.Hash
+	FheosVersion   uint64
+	Storage        storage2.FheosStorage
+	RandomCounter  uint64
+	DecryptResults *types.DecryptionResults
 	//MaxUintValue *big.Int // This should contain the max value of the supported uint type
 }
 
@@ -72,29 +73,12 @@ func (fs *FheosState) SetCiphertext(ct *types.CipherTextRepresentation) error {
 	return result
 }
 
-func (fs *FheosState) GetRandomCounter(latestHash common.Hash) uint64 {
-	if fs.LastSavedHash == nil || *fs.LastSavedHash != latestHash {
-		return 0
-	} else if *fs.LastSavedHash == latestHash {
-		return fs.RandomCounter
-	}
-
-	logger.Warn("unexpected error in GetRandomCounter")
-	return 0
+func (fs *FheosState) GetRandomCounter() uint64 {
+	return fs.RandomCounter
 }
 
-func (fs *FheosState) IncRandomCounter(latestHash common.Hash) uint64 {
-	if fs.LastSavedHash == nil || *fs.LastSavedHash != latestHash {
-		fs.LastSavedHash = &latestHash
-		fs.RandomCounter = 1
-		log.Debug("new block, counter reset on increment", "counter", fs.RandomCounter)
-	} else if *fs.LastSavedHash == latestHash {
-		fs.RandomCounter += 1
-		log.Debug("counter incremented", "counter", fs.RandomCounter)
-	} else {
-		logger.Warn("unexpected error in IncRandomCounter")
-	}
-
+func (fs *FheosState) IncRandomCounter() uint64 {
+	fs.RandomCounter += 1
 	return fs.RandomCounter
 }
 
@@ -103,7 +87,7 @@ func createFheosState(storage storage2.FheosStorage, version uint64) {
 		version,
 		storage,
 		0,
-		nil,
+		types.NewDecryptionResultsMap(),
 	}
 }
 
@@ -124,4 +108,48 @@ func InitializeFheosState() error {
 	createFheosState(*store, FheosVersion)
 
 	return nil
+}
+
+func GetSerializedDecryptionResult(key types.PendingDecryption) ([]byte, error) {
+	if State == nil {
+		return nil, errors.New("fheos state is not initialized")
+	}
+
+	if State.DecryptResults == nil {
+		return nil, errors.New("DecryptionResults is not initialized in fheos state")
+	}
+
+	return State.DecryptResults.GetSerializedDecryptionResult(key)
+}
+
+func LoadMultipleResolvedDecryptions(reader io.Reader) error {
+	// parse the number of resolved decryptions
+	var numDecryptions int32
+	err := binary.Read(reader, binary.LittleEndian, &numDecryptions)
+	if err != nil {
+		return err
+	}
+
+	logger.Debug("Loading resolved decryptions", "numDecryptions", numDecryptions)
+
+	for i := int32(0); i < numDecryptions; i++ {
+		err = LoadResolvedDecryption(reader)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func LoadResolvedDecryption(reader io.Reader) error {
+	if State == nil {
+		return errors.New("fheos state is not initialized")
+	}
+
+	if State.DecryptResults == nil {
+		return errors.New("fheos state is not initialized")
+	}
+
+	return State.DecryptResults.LoadResolvedDecryption(reader)
 }

@@ -150,3 +150,8 @@ func PrecompileNameFromString(s string) (PrecompileName, bool) {
 	pn, ok := stringToPrecompileName[s]
 	return pn, ok
 }
+
+type ParallelTxProcessingHook interface {
+	NotifyCt(*PendingDecryption)
+	NotifyDecryptRes(*PendingDecryption) error
+}
