@@ -17,25 +17,32 @@ import (
 )
 
 var logger log.Logger
-var warpDriveLogger log.Logger
 
 func init() {
 	InitLogger()
 }
 
+// InitLogger initializes a logger which will only be used just before fheos is initialized.
+// currently there are no such logs.
 func InitLogger() {
-	logger = log.Root().New("module", "fheos")
-	warpDriveLogger = log.Root().New("module", "warp-drive")
-	fhe.SetLogger(warpDriveLogger)
+	// default log level "debug", we don't have access to args here
+	logLevel := 4
+
+	handler := log.NewTerminalHandlerWithLevel(os.Stderr, log.FromLegacyLevel(logLevel), true)
+	glogger := log.NewGlogHandler(handler)
+	glogger.Verbosity(log.FromLegacyLevel(logLevel))
+
+	logger = log.NewLogger(glogger).New("module", "fheos")
+	fhe.SetLogger(log.NewLogger(glogger).New("module", "warp-drive"))
 }
 
 func InitFheConfig(fheConfig *fhe.Config) error {
-	// Itzik: I'm not sure if this is the right way to initialize the logger
 	handler := log.NewTerminalHandlerWithLevel(os.Stderr, log.FromLegacyLevel(fheConfig.LogLevel), true)
 	glogger := log.NewGlogHandler(handler)
+	glogger.Verbosity(log.FromLegacyLevel(fheConfig.LogLevel))
 
-	logger = log.NewLogger(glogger)
-	fhe.SetLogger(log.NewLogger(glogger))
+	logger = log.NewLogger(glogger).New("module", "fheos")
+	fhe.SetLogger(log.NewLogger(glogger).New("module", "warp-drive"))
 
 	err := fhe.Init(fheConfig)
 
