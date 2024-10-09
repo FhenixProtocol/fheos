@@ -123,21 +123,21 @@ func CreatePlaceHolderData() []byte {
 	return make([]byte, 32)[:]
 }
 
-func blockUntilBinaryOperandsAvailable(storage *storage.MultiStore, lhsHash, rhsHash []byte, tp *TxParams) (*fhe.FheEncrypted, *fhe.FheEncrypted) {
-	var lhsValue *fhe.FheEncrypted
-	var rhsValue *fhe.FheEncrypted
-
-	if !fhe.IsCtHash([32]byte(lhsHash)) || !fhe.IsCtHash([32]byte(rhsHash)) {
-		// return error
-		return nil, nil
-	}
-
-	// can speed this up to be concurrent, but for now this is fine I guess?
-	lhsValue = awaitCtResult(storage, lhsHash, tp)
-	rhsValue = awaitCtResult(storage, rhsHash, tp)
-
-	return lhsValue, rhsValue
-}
+//func blockUntilBinaryOperandsAvailable(storage *storage.MultiStore, lhsHash, rhsHash []byte, tp *TxParams) (*fhe.FheEncrypted, *fhe.FheEncrypted) {
+//	var lhsValue *fhe.FheEncrypted
+//	var rhsValue *fhe.FheEncrypted
+//
+//	if !fhe.IsCtHash([32]byte(lhsHash)) || !fhe.IsCtHash([32]byte(rhsHash)) {
+//		// return error
+//		return nil, nil
+//	}
+//
+//	// can speed this up to be concurrent, but for now this is fine I guess?
+//	lhsValue = awaitCtResult(storage, lhsHash, tp)
+//	rhsValue = awaitCtResult(storage, rhsHash, tp)
+//
+//	return lhsValue, rhsValue
+//}
 
 func awaitCtResult(storage *storage.MultiStore, lhsHash []byte, tp *TxParams) *fhe.FheEncrypted {
 	lhsValue := getCiphertext(storage, fhe.Hash(lhsHash), tp.ContractAddress)
