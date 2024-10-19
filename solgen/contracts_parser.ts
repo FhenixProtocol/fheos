@@ -43,6 +43,7 @@ async function analyzeGoFile(
   const solgenOutputPlaintextComment = /output plaintext/;
   const solgenInput2Comment = /input2 /;
   const solgenBooleanMathOp = /bool math/;
+  const solgenSkipWrapper = /skip wrapper/;
   const specificFunctionAnalysis: FunctionAnalysis[] = [];
 
   let isInsideHighLevelFunction = false;
@@ -56,6 +57,9 @@ async function analyzeGoFile(
     const trimmedLine = line.trim();
     if (isInsideHighLevelFunction) {
       if (solgenCommentRegex.test(trimmedLine)) {
+        if (solgenSkipWrapper.test(trimmedLine)) {
+          continue;
+        }
         if (solgenReturnsComment.test(trimmedLine)) {
           returnType = trimmedLine.split("return")[1].trim();
         }
