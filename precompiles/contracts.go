@@ -1720,6 +1720,18 @@ func GetNetworkPublicKey(securityZone int32, tp *TxParams) ([]byte, error) {
 	return pk, nil
 }
 
+func GetCiphertextData(value []byte, tp *TxParams) ([]byte, error) {
+	functionName := types.GetCiphertext
+
+	if shouldPrintPrecompileInfo(tp) {
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
+	}
+
+	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
+	ct := getCiphertext(storage, fhe.BytesToHash(value), tp.ContractAddress)
+	return ct.Data, nil
+}
+
 func Square(utype byte, value []byte, tp *TxParams) ([]byte, uint64, error) {
 	return Mul(utype, value, value, tp)
 	// Please don't delete the below comment, this is intentionally left here for code generation.

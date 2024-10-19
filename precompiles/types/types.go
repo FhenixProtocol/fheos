@@ -72,6 +72,7 @@ const (
 	Rol
 	Ror
 	Square
+	GetCiphertext
 )
 
 var precompileNameToString = map[PrecompileName]string{

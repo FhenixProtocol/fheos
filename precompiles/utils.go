@@ -64,13 +64,13 @@ type Precompile struct {
 func getCiphertext(state *storage.MultiStore, ciphertextHash fhe.Hash, caller common.Address) *fhe.FheEncrypted {
 	ct, err := state.GetCt(types.Hash(ciphertextHash), caller)
 	if err != nil {
-
 		logger.Error("reading ciphertext from State resulted with error", "hash", ciphertextHash.Hex(), "error", err.Error())
 		return nil
 	}
 
 	return (*fhe.FheEncrypted)(ct)
 }
+
 func get2VerifiedOperands(storage *storage.MultiStore, lhsHash []byte, rhsHash []byte, caller common.Address) (lhs *fhe.FheEncrypted, rhs *fhe.FheEncrypted, err error) {
 	if len(lhsHash) != 32 || len(rhsHash) != 32 {
 		return nil, nil, errors.New("ciphertext's hashes need to be 32 bytes long")
