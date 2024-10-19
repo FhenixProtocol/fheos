@@ -1721,6 +1721,7 @@ func GetNetworkPublicKey(securityZone int32, tp *TxParams) ([]byte, error) {
 }
 
 func GetCiphertextData(value []byte, tp *TxParams) ([]byte, error) {
+	//solgen: skip wrapper
 	functionName := types.GetCiphertext
 
 	if shouldPrintPrecompileInfo(tp) {
