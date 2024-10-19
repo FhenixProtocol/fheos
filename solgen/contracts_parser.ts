@@ -47,6 +47,7 @@ async function analyzeGoFile(
   const specificFunctionAnalysis: FunctionAnalysis[] = [];
 
   let isInsideHighLevelFunction = false;
+  let isFunctionSkipped = false;
   let isBooleanMathOp = false;
   let braceDepth = 0;
   let funcName = "";
@@ -56,8 +57,22 @@ async function analyzeGoFile(
   for (const line of lines) {
     const trimmedLine = line.trim();
     if (isInsideHighLevelFunction) {
+      braceDepth += (trimmedLine.match(/\{/g) || []).length;
+      braceDepth -= (trimmedLine.match(/}/g) || []).length;
+      //console.log(`brace depth: ${braceDepth}`)
+      // Check if we've exited the high-level function
+      if (braceDepth === 0) {
+        isInsideHighLevelFunction = false;
+        continue;
+      }
+
+      if (isFunctionSkipped) {
+        continue;
+      }
+
       if (solgenCommentRegex.test(trimmedLine)) {
         if (solgenSkipWrapper.test(trimmedLine)) {
+          isFunctionSkipped = true;
           continue;
         }
         if (solgenReturnsComment.test(trimmedLine)) {
@@ -78,15 +93,6 @@ async function analyzeGoFile(
         if (solgenBooleanMathOp.test(trimmedLine)) {
           isBooleanMathOp = true;
         }
-      }
-
-      braceDepth += (trimmedLine.match(/\{/g) || []).length;
-      braceDepth -= (trimmedLine.match(/}/g) || []).length;
-      //console.log(`brace depth: ${braceDepth}`)
-      // Check if we've exited the high-level function
-      if (braceDepth === 0) {
-        isInsideHighLevelFunction = false;
-        continue;
       }
 
       // Look for specific functions within a high-level function
@@ -135,6 +141,7 @@ async function analyzeGoFile(
       funcName = trimmedLine.split(" ")[1].split("(")[0].toLowerCase();
       // If we match the high-level function, set the flag and initialize brace counting
       isInsideHighLevelFunction = true;
+      isFunctionSkipped = false;
       isBooleanMathOp = false;
       braceDepth = 1; // starts with the opening brace of the function
     }
