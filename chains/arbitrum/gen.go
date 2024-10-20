@@ -486,7 +486,6 @@ type Argument struct {
 func GenerateFHEOperationNoGasTemplate() *template.Template {
 	templateText := `
 func (con FheOps) {{.Name}}(c ctx, evm mech{{.Inputs}}) ({{.ReturnType}}, error) {
-
 	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	return fheos.{{.Name}}({{.InnerInputs}}&tp)
 }
