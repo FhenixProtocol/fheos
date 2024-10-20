@@ -1730,6 +1730,12 @@ func GetCiphertextData(value []byte, tp *TxParams) ([]byte, error) {
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 	ct := getCiphertext(storage, fhe.BytesToHash(value), tp.ContractAddress)
+	if ct == nil {
+		msg := "the requested ciphertext does not exist"
+		logger.Error(msg, "input", hex.EncodeToString(value))
+		return nil, vm.ErrExecutionReverted
+	}
+
 	return ct.Data, nil
 }
 
