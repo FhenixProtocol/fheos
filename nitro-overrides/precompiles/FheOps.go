@@ -242,39 +242,9 @@ func (con FheOps) Eq(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 }
 
 func (con FheOps) GetCiphertextData(c ctx, evm mech, value []byte) ([]byte, error) {
+
 	tp := fheos.TxParamsFromEVM(evm, c.caller)
-	if metrics.Enabled {
-		h := fmt.Sprintf("%s/%s/%s", "fheos", "GetCiphertextData", fheos.UtypeToString(toType))
-		defer func(start time.Time) {
-			sampler := func() metrics.Sample {
-				return metrics.NewBoundedHistogramSample()
-			}
-			metrics.GetOrRegisterHistogramLazy(h, nil, sampler).Update(time.Since(start).Microseconds())
-		}(time.Now())
-	}
-
-	ret, gas, err := fheos.GetCiphertextData(value, &tp)
-
-	if err != nil {
-		if metrics.Enabled {
-			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "GetCiphertextData", fheos.UtypeToString(toType), "error/fhe_failure")
-			metrics.GetOrRegisterCounter(c, nil).Inc(1)
-		}
-		return ret, err
-	}
-
-	err = c.Burn(gas)
-
-	if metrics.Enabled {
-		metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "GetCiphertextData", fheos.UtypeToString(toType), "success/total")
-		if err != nil {
-			metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "GetCiphertextData", fheos.UtypeToString(toType), "error/fhe_gas_failure")
-		}
-
-		metrics.GetOrRegisterCounter(metricPath, nil).Inc(1)
-	}
-
-	return ret, err
+	return fheos.GetCiphertextData(value, &tp)
 }
 
 func (con FheOps) GetNetworkPublicKey(c ctx, evm mech, securityZone int32) ([]byte, error) {
