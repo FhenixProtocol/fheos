@@ -442,7 +442,7 @@ type FheOps struct {
 		}
 
 		var template *template.Template
-		if strings.Contains(op.Name, "GetNetworkPublicKey") {
+		if strings.Contains(op.Name, "GetNetworkPublicKey") || strings.Contains(op.Name, "GetCiphertextData") {
 			template = GenerateFHEOperationNoGasTemplate()
 		} else {
 			op.OperationTypeName = "toType"
