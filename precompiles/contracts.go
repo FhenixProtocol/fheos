@@ -1721,10 +1721,10 @@ func GetNetworkPublicKey(securityZone int32, tp *TxParams) ([]byte, error) {
 }
 
 // GetCiphertextData
-// Note (Eshel): This function will stumble into an ownership error, as most probably the hash is not owned by the
-// precompiled contract. This is expected. We can solve it by a) adding an exception on the fheos hooks, only for this
-// function and only if not called by another contract (otherwise the other contract can get bytes of ciphertext), or
-// b) implementing rpc response not in the evm
+// Note (Eshel): This function will stumble into an ownership error, as (almost certainly) the ciphertext is not owned by the
+// calling contract. This is expected. We can probably solve it by:
+// a) adding an exception on the fheos hooks, only for this function and only if not called by another contract, or
+// b) implementing the rpc response not within the evm
 func GetCiphertextData(value []byte, tp *TxParams) ([]byte, error) {
 	//solgen: skip wrapper
 	functionName := types.GetCiphertext
