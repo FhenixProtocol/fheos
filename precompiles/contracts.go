@@ -1720,6 +1720,28 @@ func GetNetworkPublicKey(securityZone int32, tp *TxParams) ([]byte, error) {
 	return pk, nil
 }
 
+// GetCiphertextData
+// Note (Eshel): This function will stumble into an ownership error, as (almost certainly) the ciphertext is not owned by the
+// calling contract. This is expected. We can probably solve it by:
+// a) adding an exception on the fheos hooks, only for this function and only if not called by another contract, or
+// b) implementing the rpc response not within the evm
+func GetCiphertextData(value []byte, tp *TxParams) ([]byte, error) {
+	//solgen: skip wrapper
+	functionName := types.GetCiphertext
+
+	if shouldPrintPrecompileInfo(tp) {
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
+	}
+
+	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
+	ct := getCiphertext(storage, fhe.BytesToHash(value), tp.ContractAddress)
+	if ct == nil {
+		return nil, vm.ErrExecutionReverted
+	}
+
+	return ct.Data, nil
+}
+
 func Square(utype byte, value []byte, tp *TxParams) ([]byte, uint64, error) {
 	return Mul(utype, value, value, tp)
 	// Please don't delete the below comment, this is intentionally left here for code generation.
