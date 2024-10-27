@@ -1,4 +1,4 @@
-package http
+package main
 
 import (
 	"bytes"
@@ -144,36 +144,36 @@ func generateKeys(securityZones int32) error {
 	return nil
 }
 
-func initFheos() (*precompiles.TxParams, error) {
+func initFheos() (*precompiles.TxParams, []byte, error) {
 	if os.Getenv("FHEOS_DB_PATH") == "" {
 		err := os.Setenv("FHEOS_DB_PATH", "./fheosdb")
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
 
 	err := precompiles.InitFheConfig(&fhedriver.ConfigDefault)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	securityZones, err := getenvInt("FHEOS_SECURITY_ZONES", 1)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	err = generateKeys(int32(securityZones))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	err = precompiles.InitializeFheosState()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	err = os.Setenv("FHEOS_DB_PATH", "")
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	tp = precompiles.TxParams{
@@ -187,11 +187,21 @@ func initFheos() (*precompiles.TxParams, error) {
 		make(chan error, 1),
 	}
 
-	return &tp, err
+	trivialHash, _, err := precompiles.TrivialEncrypt([]byte{}, 2, 0, &tp, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	return &tp, trivialHash, nil
 }
 
 func main() {
-	initFheos()
+	_, trivialHash, err := initFheos()
+	if err != nil {
+		log.Fatalf("Failed to initialize FHEOS: %v", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("Trivial hash: %x\n", trivialHash)
 
 	handlers := getHandlers()
 	// iterate handlers

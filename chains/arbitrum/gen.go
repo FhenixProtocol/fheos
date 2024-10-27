@@ -435,7 +435,7 @@ type FheOps struct {
 	Address addr // 0x80
 }
 `)
-	handlers, err := os.Create("http/handlers.auto.go")
+	handlers, err := os.Create("http/handlers_gen.go")
 	if err != nil {
 		log.Fatal(err)
 	}

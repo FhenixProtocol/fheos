@@ -53,7 +53,8 @@ build:
 
 .PHONY: build-coprocessor
 build-coprocessor:
-	go build -o build/main ./http/
+	go build -o build/coprocessor ./http/
+	chmod 0777 build/coprocessor
 
 .PHONY: clean
 clean:
