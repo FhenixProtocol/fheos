@@ -116,6 +116,13 @@ func ProcessOperation2(functionName types.PrecompileName, mathOp TwoOperationFun
 			return
 		}
 
+		realResultHash, err3 := hex.DecodeString(result.GetHash().Hex())
+		if err3 != nil {
+			logger.Error(functionName.String()+" failed", "err", err3)
+			tp.ErrChannel <- vm.ErrExecutionReverted
+			return
+		}
+
 		result.SetHash(resultHash)
 
 		err2 = storeCipherText(storage, result, tp.ContractAddress)
@@ -128,7 +135,7 @@ func ProcessOperation2(functionName types.PrecompileName, mathOp TwoOperationFun
 		_ = storage.SetAsyncCtDone(types.Hash(resultHash))
 		if callback != nil {
 			url := (*callback).CallbackUrl
-			(*callback).Callback(url, placeholderKeyCopy, resultHash)
+			(*callback).Callback(url, placeholderKeyCopy, realResultHash)
 		}
 		logger.Info(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.GetHash().Hex(), "rhs", rhs.GetHash().Hex(), "result", result.GetHash().Hex())
 	}(lhsHashCopy, rhsHashCopy, placeholderKeyCopy)

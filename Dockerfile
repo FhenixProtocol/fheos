@@ -32,6 +32,8 @@ RUN cd warp-drive/fhe-engine && cargo update
 # Copy the rest of the stuff so we can actually build it
 COPY warp-drive/ warp-drive/
 
+COPY http/ http/
+
 WORKDIR /workspace/warp-drive/fhe-engine
 
 # Todo: fix arm support
@@ -55,6 +57,7 @@ RUN rm -rf fheos/
 RUN mkdir fheos/
 
 COPY warp-drive fheos/warp-drive
+COPY http fheos/http
 COPY go-ethereum fheos/go-ethereum
 COPY chains fheos/chains
 COPY cmd fheos/cmd
@@ -87,7 +90,7 @@ RUN go build -gcflags "all=-N -l" -ldflags="-X github.com/offchainlabs/nitro/cmd
 
 COPY Makefile fheos/
 
-RUN cd fheos && make build
+RUN cd fheos && make build && make build-coprocessor
 
 FROM ghcr.io/fhenixprotocol/localfhenix:v0.1.0-beta5
 
@@ -119,6 +122,7 @@ COPY --from=warp-drive-builder /workspace/warp-drive/fhe-engine/config/fhe_engin
 
 COPY --from=winning /workspace/target/bin/nitro /usr/local/bin/
 COPY --from=winning /workspace/fheos/build/main /usr/local/bin/fheos
+COPY --from=winning /workspace/fheos/build/coprocessor /usr/local/bin/coprocessor
 
 # **************** setup scripts and configs
 
@@ -133,5 +137,8 @@ COPY deployment/sequencer_config.json /config/sequencer_config.json
 
 # **************** Run
 
-CMD ["./run.sh"]
+#CMD ["./run.sh"]
+#CMD ["./run.sh", "--coprocessor"]
 #CMD ["./run.sh", "--debug"]
+RUN echo "LIORRRRR YAMANIAK ANI PO"
+ENTRYPOINT ["/bin/bash"]

@@ -2,13 +2,16 @@
 
 # Function to display usage
 usage() {
-    echo "Usage: $0 [--debug]"
+    echo "Usage: $0 [--debug] [--coprocessor]"
     echo "  --debug    Run in debug mode"
     exit 1
 }
 
+
+echo "$@"
 # Check for the --debug flag
 DEBUG_MODE=${DEBUG_MODE:-0}
+COPROCESSOR_MODE=${COPROCESSOR_MODE:-1}
 for arg in "$@"
 do
     case $arg in
@@ -20,12 +23,27 @@ do
         usage
         ;;
     esac
+    case $arg in
+        --coprocessor)
+        COPROCESSOR_MODE=1
+        shift # Remove --coprocessor from processing
+        ;;
+        *)
+        usage
+        ;;
+    esac
 done
 
 if [[ "${DEBUG_MODE}" -eq 0 ]]; then
     echo "Starting in normal mode"
 else
     echo "Starting in debug mode"
+fi
+
+if [[ "${COPROCESSOR_MODE}" -eq 0 ]]; then
+    echo "Starting in fheos mode"
+else
+    echo "Starting in coprocessor mode"
 fi
 
 # renault-server -c /home/user/fhenix/renault-server.toml &
@@ -51,28 +69,58 @@ else
     # Command to initialize state goes here
 fi
 
-# Start the faucet server
-node faucet/server.js &
+if [[ "${COPROCESSOR_MODE}" -eq 1 ]]; then
+    echo "Starting in coprocessor mode"
+    coprocessor
+else
+  # Start the faucet server
+  node faucet/server.js &
 
-# Nitro service is started only in "normal mode"
-if [[ "${DEBUG_MODE}" -eq 0 ]]; then
-    echo "Starting Nitro service in normal mode"
-    nitro --conf.file /config/sequencer_config.json \
-          --metrics \
-          --node.feed.output.enable \
-          --node.feed.output.port 9642 \
-          --http.api net,web3,eth,txpool,debug \
-          --node.seq-coordinator.my-url ws://sequencer:8548 \
-          --graphql.enable \
-          --graphql.vhosts "*" \
-          --graphql.corsdomain "*" \
-          --conf.env-prefix "NITRO" \
-          --conf.fhenix.log-level 4 \
-          --conf.fhenix.oracle-type "${ORACLE_TYPE}"
-fi
+  # Nitro service is started only in "normal mode"
+  if [[ "${DEBUG_MODE}" -eq 0 && "" ]]; then
+      echo "Starting Nitro service in normal mode"
+      nitro --conf.file /config/sequencer_config.json \
+            --metrics \
+            --node.feed.output.enable \
+            --node.feed.output.port 9642 \
+            --http.api net,web3,eth,txpool,debug \
+            --node.seq-coordinator.my-url ws://sequencer:8548 \
+            --graphql.enable \
+            --graphql.vhosts "*" \
+            --graphql.corsdomain "*" \
+            --conf.env-prefix "NITRO" \
+            --conf.fhenix.log-level 4 \
+            --conf.fhenix.oracle-type "${ORACLE_TYPE}"
+  fi
 
-# Start in debug mode if requested
-if [[ "${DEBUG_MODE}" -eq 1 ]]; then
-    echo "Starting in debug mode"
-    /go/bin/dlv --listen=:4001 --headless=true --log=true --accept-multiclient --api-version=2 exec /usr/local/bin/nitro -- --conf.file /config/sequencer_config.json --node.dangerous.no-l1-listener --node.feed.output.enable --conf.fhenix.log-level 4 --conf.fhenix.oracle-type "${ORACLE_TYPE}" --node.feed.output.port 9642 --http.api net,web3,eth,txpool,debug --node.seq-coordinator.my-url ws://sequencer:8548 --graphql.enable --graphql.vhosts "*" --graphql.corsdomain "*"
+  # Start in debug mode if requested
+  if [[ "${DEBUG_MODE}" -eq 1 ]]; then
+      echo "Starting in debug mode"
+      /go/bin/dlv --listen=:4001 --headless=true --log=true --accept-multiclient --api-version=2 exec /usr/local/bin/nitro -- --conf.file /config/sequencer_config.json --node.dangerous.no-l1-listener --node.feed.output.enable --conf.fhenix.log-level 4 --conf.fhenix.oracle-type "${ORACLE_TYPE}" --node.feed.output.port 9642 --http.api net,web3,eth,txpool,debug --node.seq-coordinator.my-url ws://sequencer:8548 --graphql.enable --graphql.vhosts "*" --graphql.corsdomain "*"
+  fi
+  # Start the faucet server
+  node faucet/server.js &
+
+  # Nitro service is started only in "normal mode"
+  if [[ "${DEBUG_MODE}" -eq 0 && "" ]]; then
+      echo "Starting Nitro service in normal mode"
+      nitro --conf.file /config/sequencer_config.json \
+            --metrics \
+            --node.feed.output.enable \
+            --node.feed.output.port 9642 \
+            --http.api net,web3,eth,txpool,debug \
+            --node.seq-coordinator.my-url ws://sequencer:8548 \
+            --graphql.enable \
+            --graphql.vhosts "*" \
+            --graphql.corsdomain "*" \
+            --conf.env-prefix "NITRO" \
+            --conf.fhenix.log-level 4 \
+            --conf.fhenix.oracle-type "${ORACLE_TYPE}"
+  fi
+
+  # Start in debug mode if requested
+  if [[ "${DEBUG_MODE}" -eq 1 ]]; then
+      echo "Starting in debug mode"
+      /go/bin/dlv --listen=:4001 --headless=true --log=true --accept-multiclient --api-version=2 exec /usr/local/bin/nitro -- --conf.file /config/sequencer_config.json --node.dangerous.no-l1-listener --node.feed.output.enable --conf.fhenix.log-level 4 --conf.fhenix.oracle-type "${ORACLE_TYPE}" --node.feed.output.port 9642 --http.api net,web3,eth,txpool,debug --node.seq-coordinator.my-url ws://sequencer:8548 --graphql.enable --graphql.vhosts "*" --graphql.corsdomain "*"
+  fi
 fi

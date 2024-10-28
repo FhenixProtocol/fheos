@@ -443,7 +443,7 @@ type FheOps struct {
 	defer file.Close()
 	defer handlers.Close()
 
-	handlers.WriteString(`package http
+	handlers.WriteString(`package main
 import (
 	"github.com/fhenixprotocol/fheos/precompiles"
 	"net/http"

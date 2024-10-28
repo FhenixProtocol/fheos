@@ -33,6 +33,7 @@ type HashUpdate struct {
 var tp precompiles.TxParams
 
 func handleResult(url string, tempKey []byte, actualHash []byte) {
+	fmt.Printf("Got result for %s : %s\n", hex.EncodeToString(tempKey), hex.EncodeToString(actualHash))
 	// JSON data to be sent in the request body
 	jsonData, err := json.Marshal(HashUpdate{TempKey: tempKey, ActualHash: actualHash})
 	if err != nil {
@@ -67,6 +68,7 @@ func handleResult(url string, tempKey []byte, actualHash []byte) {
 
 // Helper function to handle decoding the request and calling the respective function
 func handleRequest(w http.ResponseWriter, r *http.Request, handler func(byte, []byte, []byte, *precompiles.TxParams, *precompiles.CallbackFunc) ([]byte, uint64, error)) {
+	fmt.Printf("Got a request from %s\n", r.RemoteAddr)
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -82,13 +84,17 @@ func handleRequest(w http.ResponseWriter, r *http.Request, handler func(byte, []
 	// Convert the hash strings to byte arrays
 	lhsHash, err := hex.DecodeString(req.LhsHash)
 	if err != nil {
-		http.Error(w, "Invalid lhsHash", http.StatusBadRequest)
+		e := fmt.Sprintf("Invalid lhsHash: %s %+v", req.LhsHash, err)
+		fmt.Println(e)
+		http.Error(w, e, http.StatusBadRequest)
 		return
 	}
 
 	rhsHash, err := hex.DecodeString(req.RhsHash)
 	if err != nil {
-		http.Error(w, "Invalid rhsHash", http.StatusBadRequest)
+		e := fmt.Sprintf("Invalid lhsHash: %s %+v", req.LhsHash, err)
+		fmt.Println(e)
+		http.Error(w, e, http.StatusBadRequest)
 		return
 	}
 
@@ -100,12 +106,16 @@ func handleRequest(w http.ResponseWriter, r *http.Request, handler func(byte, []
 	result, _, err := handler(req.UType, lhsHash, rhsHash, &tp, &callback)
 
 	if err != nil {
-		http.Error(w, "Operation failed", http.StatusBadRequest)
+		e := fmt.Sprintf("Operation failed: %s %+v", req.LhsHash, err)
+		fmt.Println(e)
+		http.Error(w, e, http.StatusBadRequest)
 		return
 	}
 
+	res := []byte(hex.EncodeToString(result))
 	// Respond with the result
-	w.Write(result)
+	w.Write(res)
+	fmt.Printf("Started processing the request for tempkey %s\n", hex.EncodeToString(result))
 }
 
 func getenvInt(key string, defaultValue int) (int, error) {
@@ -144,36 +154,36 @@ func generateKeys(securityZones int32) error {
 	return nil
 }
 
-func initFheos() (*precompiles.TxParams, []byte, error) {
+func initFheos() (*precompiles.TxParams, error) {
 	if os.Getenv("FHEOS_DB_PATH") == "" {
 		err := os.Setenv("FHEOS_DB_PATH", "./fheosdb")
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 	}
 
 	err := precompiles.InitFheConfig(&fhedriver.ConfigDefault)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	securityZones, err := getenvInt("FHEOS_SECURITY_ZONES", 1)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	err = generateKeys(int32(securityZones))
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	err = precompiles.InitializeFheosState()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	err = os.Setenv("FHEOS_DB_PATH", "")
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	tp = precompiles.TxParams{
@@ -187,21 +197,29 @@ func initFheos() (*precompiles.TxParams, []byte, error) {
 		make(chan error, 1),
 	}
 
-	trivialHash, _, err := precompiles.TrivialEncrypt([]byte{}, 2, 0, &tp, nil)
-	if err != nil {
-		return nil, nil, err
+	var trivialHash []byte
+	for i := 0; i <= 50; i++ {
+
+		// Create a byte slice of size 32
+		toEncrypt := make([]byte, 32)
+
+		// Convert the integer to bytes and store it in the byte slice
+		toEncrypt[31] = uint8(i)
+		trivialHash, _, err = precompiles.TrivialEncrypt(toEncrypt, 2, 0, &tp, nil)
+		if err != nil {
+			return nil, err
+		}
+		fmt.Printf("Trivial hash for %d: %x\n", i, trivialHash)
 	}
-	return &tp, trivialHash, nil
+	return &tp, nil
 }
 
 func main() {
-	_, trivialHash, err := initFheos()
+	_, err := initFheos()
 	if err != nil {
 		log.Fatalf("Failed to initialize FHEOS: %v", err)
 		os.Exit(1)
 	}
-
-	fmt.Printf("Trivial hash: %x\n", trivialHash)
 
 	handlers := getHandlers()
 	// iterate handlers
