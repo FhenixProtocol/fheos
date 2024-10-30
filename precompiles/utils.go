@@ -133,19 +133,23 @@ func blockUntilBinaryOperandsAvailable(storage *storage.MultiStore, lhsHash, rhs
 	}
 
 	// can speed this up to be concurrent, but for now this is fine I guess?
-	lhsValue = awaitCtResult(storage, lhsHash, tp)
-	rhsValue = awaitCtResult(storage, rhsHash, tp)
+	lhsValue = awaitCtResult(storage, lhsHash, tp, false)
+	rhsValue = awaitCtResult(storage, rhsHash, tp, false)
 
 	return lhsValue, rhsValue
 }
 
-func awaitCtResult(storage *storage.MultiStore, lhsHash []byte, tp *TxParams) *fhe.FheEncrypted {
+func awaitCtResult(storage *storage.MultiStore, lhsHash []byte, tp *TxParams, shouldExpectPrecalculatedCt bool) *fhe.FheEncrypted {
 	lhsValue := getCiphertext(storage, fhe.Hash(lhsHash), tp.ContractAddress)
 	if lhsValue == nil {
 		return nil
 	}
 
 	for lhsValue.IsPlaceholderValue() {
+		if shouldExpectPrecalculatedCt {
+			return nil
+		}
+
 		lhsValue = getCiphertext(storage, fhe.Hash(lhsHash), tp.ContractAddress)
 		time.Sleep(1 * time.Millisecond)
 	}
@@ -184,15 +188,15 @@ func get3VerifiedOperands(storage *storage.MultiStore, controlHash []byte, ifTru
 		return nil, nil, nil, errors.New("ciphertext's hashes need to be 32 bytes long")
 	}
 
-	control = awaitCtResult(storage, controlHash, tp)
+	control = awaitCtResult(storage, controlHash, tp, false)
 	if control == nil {
 		return nil, nil, nil, errors.New("unverified ciphertext handle")
 	}
-	ifTrue = awaitCtResult(storage, ifTrueHash, tp)
+	ifTrue = awaitCtResult(storage, ifTrueHash, tp, false)
 	if ifTrue == nil {
 		return nil, nil, nil, errors.New("unverified ciphertext handle")
 	}
-	ifFalse = awaitCtResult(storage, ifFalseHash, tp)
+	ifFalse = awaitCtResult(storage, ifFalseHash, tp, false)
 	if ifFalse == nil {
 		return nil, nil, nil, errors.New("unverified ciphertext handle")
 	}

@@ -88,7 +88,7 @@ func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams, _ *CallbackF
 	//solgen: bool math
 	functionName := types.SealOutput
 
-	ct, gas, err := ProcessOperation1(functionName, utype, ctHash, tp)
+	ct, gas, err := ProcessOperation1(functionName, utype, ctHash, tp, false)
 	if err != nil {
 		return "", gas, vm.ErrExecutionReverted
 	}
@@ -118,7 +118,7 @@ func Decrypt(utype byte, input []byte, defaultValue *big.Int, tp *TxParams, _ *C
 	//solgen: output plaintext
 	functionName := types.Decrypt
 
-	ct, gas, err := ProcessOperation1(functionName, utype, input, tp)
+	ct, gas, err := ProcessOperation1(functionName, utype, input, tp, true)
 	if err != nil {
 		return nil, gas, vm.ErrExecutionReverted
 	}
@@ -213,7 +213,7 @@ func Req(utype byte, input []byte, tp *TxParams, _ *CallbackFunc) ([]byte, uint6
 	//solgen: return none
 	functionName := types.Require
 
-	ct, gas, err := ProcessOperation1(functionName, utype, input, tp)
+	ct, gas, err := ProcessOperation1(functionName, utype, input, tp, false)
 	if err != nil {
 		return nil, gas, vm.ErrExecutionReverted
 	}
@@ -250,7 +250,7 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams, _ *CallbackFunc) 
 	}
 	castToType := fhe.EncryptionType(toType)
 
-	ct, gas, err := ProcessOperation1(functionName, utype, input, tp)
+	ct, gas, err := ProcessOperation1(functionName, utype, input, tp, false)
 	if err != nil {
 		return nil, gas, vm.ErrExecutionReverted
 	}
@@ -436,7 +436,7 @@ func Not(utype byte, value []byte, tp *TxParams, _ *CallbackFunc) ([]byte, uint6
 	functionName := types.Not
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 
-	ct, gas, err := ProcessOperation1(functionName, utype, value, tp)
+	ct, gas, err := ProcessOperation1(functionName, utype, value, tp, false)
 	if err != nil {
 		return nil, gas, vm.ErrExecutionReverted
 	}

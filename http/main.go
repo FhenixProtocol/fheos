@@ -25,6 +25,11 @@ type HashRequest struct {
 	RequesterUrl string `json:"requesterUrl"`
 }
 
+type DecryptRequest struct {
+	UType byte   `json:"utype"`
+	Hash  string `json:"hash"`
+}
+
 type HashUpdate struct {
 	TempKey    []byte `json:"tempKey"`
 	ActualHash []byte `json:"actualHash"`
@@ -214,6 +219,43 @@ func initFheos() (*precompiles.TxParams, error) {
 	return &tp, nil
 }
 
+func DecryptHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("Got a request from %s\n", r.RemoteAddr)
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var req DecryptRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Convert the hash strings to byte arrays
+	hash, err := hex.DecodeString(req.Hash)
+	if err != nil {
+		e := fmt.Sprintf("Invalid hash: %s %+v", req.Hash, err)
+		fmt.Println(e)
+		http.Error(w, e, http.StatusBadRequest)
+		return
+	}
+
+	result, _, err := precompiles.Decrypt(req.UType, hash, nil, &tp, nil)
+
+	if err != nil {
+		e := fmt.Sprintf("Operation failed: %+v", err)
+		fmt.Println(e)
+		http.Error(w, e, http.StatusBadRequest)
+		return
+	}
+
+	// Respond with the result
+	w.Write(result.Bytes())
+	fmt.Printf("Done processing decrypt request %+v (%+v)\n", result, result.Bytes())
+}
+
 func main() {
 	_, err := initFheos()
 	if err != nil {
@@ -226,6 +268,8 @@ func main() {
 	for _, handler := range handlers {
 		http.HandleFunc(handler.Name, handler.Handler)
 	}
+
+	http.HandleFunc("/Decrypt", DecryptHandler)
 
 	// Start the server
 	log.Println("Server listening on port 8448...")

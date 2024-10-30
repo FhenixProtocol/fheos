@@ -14,7 +14,7 @@ type CallbackFunc struct {
 	Callback    func(url string, ctKey []byte, newCtKey []byte)
 }
 
-func ProcessOperation1(functionName types.PrecompileName, utype byte, input []byte, tp *TxParams) (*fhe.FheEncrypted, uint64, error) {
+func ProcessOperation1(functionName types.PrecompileName, utype byte, input []byte, tp *TxParams, shouldExpectPrecalculatedCt bool) (*fhe.FheEncrypted, uint64, error) {
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 	uintType := fhe.EncryptionType(utype)
 
@@ -38,7 +38,7 @@ func ProcessOperation1(functionName types.PrecompileName, utype byte, input []by
 		return nil, gas, vm.ErrExecutionReverted
 	}
 
-	ct := awaitCtResult(storage, input, tp)
+	ct := awaitCtResult(storage, input, tp, shouldExpectPrecalculatedCt)
 	if ct == nil {
 		msg := functionName.String() + " unverified ciphertext handle"
 		logger.Error(msg, " input ", hex.EncodeToString(ct.GetHashBytes()))
