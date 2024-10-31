@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"errors"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethdb/memorydb"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
@@ -110,11 +111,6 @@ func (es *EphemeralStorageImpl) DeleteCt(h types.Hash) error {
 }
 
 func (es *EphemeralStorageImpl) MarkForDeletion(h types.Hash) error {
-	err := es.DeleteCt(h)
-	if err != nil {
-		return err
-	}
-
 	key := es.getDeletionKey()
 
 	var parsedDeletion []types.Hash
