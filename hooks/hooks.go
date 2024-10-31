@@ -144,7 +144,7 @@ func (h FheOSHooksImpl) EvmCallEnd(evmSuccess bool) {
 			}
 		}
 
-		for _, hash := range toDelete {
+		for hash, _ := range toDelete {
 			err := fheos.State.Storage.DeleteCt(hash)
 			if err != nil {
 				// Deletion failure, bummer but nothing to be worried about
