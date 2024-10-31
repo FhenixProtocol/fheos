@@ -39,15 +39,15 @@ describe("Test Transactions Scenarios", () => {
 
   it("Basic Add Tx", async () => {
     const { instance, permit } = await createFheInstance(contractAddr);
-    const encInput = await instance.encrypt_uint8(103);
+    const encInput = await instance.encrypt_uint32(8);
 
     // 1 - static call
-    // const encCounter = await contractCaller.addTx.staticCall(
-    //   encInput,
-    //   permit.publicKey
-    // );
-    // const counterStatic = instance.unseal(contractAddr, encCounter);
-    // expect(Number(counterStatic)).toEqual(99);
+    const encCounter = await contractCaller.addTx.staticCall(
+      encInput,
+      permit.publicKey
+    );
+    const counterStatic = instance.unseal(contractAddr, encCounter);
+    expect(Number(counterStatic)).toEqual(8);
 
     // 2 - real call + query
     const encCounterReceipt = await contractCaller.addTx(
@@ -60,7 +60,7 @@ describe("Test Transactions Scenarios", () => {
       permit.publicKey
     );
     const counter = instance.unseal(contractAddr, getCounterResponse);
-    expect(Number(counter)).toEqual(103);
+    expect(Number(counter)).toEqual(8);
   });
 
   it("Sub via contract call as Plaintext", async () => {
