@@ -15,8 +15,8 @@ type EphemeralStorage interface {
 
 	MarkForPersistence(common.Address, types.Hash) error
 	MarkForDeletion(types.Hash) error
-	GetAllToPersist() []ContractCiphertext
-	GetAllToDelete() []types.Hash
+	GetAllToPersist() map[types.Hash]ContractCiphertext
+	GetAllToDelete() map[types.Hash]uint8 // uint8 here is just to have minimum size map
 }
 
 type ContractCiphertext struct {
@@ -37,7 +37,7 @@ func (es *EphemeralStorageImpl) getDeletionKey() []byte {
 	return []byte("DEL")
 }
 
-func (es *EphemeralStorageImpl) encodePersistingCiphertexts(lts []ContractCiphertext) ([]byte, error) {
+func (es *EphemeralStorageImpl) encodePersistingCiphertexts(lts map[types.Hash]ContractCiphertext) ([]byte, error) {
 	var buf bytes.Buffer
 	err := gob.NewEncoder(&buf).Encode(lts)
 	if err != nil {
@@ -47,7 +47,7 @@ func (es *EphemeralStorageImpl) encodePersistingCiphertexts(lts []ContractCipher
 	return buf.Bytes(), nil
 }
 
-func (es *EphemeralStorageImpl) encodeDeletionCiphertexts(deletion []types.Hash) ([]byte, error) {
+func (es *EphemeralStorageImpl) encodeDeletionCiphertexts(deletion map[types.Hash]uint8) ([]byte, error) {
 	var buf bytes.Buffer
 	err := gob.NewEncoder(&buf).Encode(deletion)
 	if err != nil {
@@ -57,8 +57,8 @@ func (es *EphemeralStorageImpl) encodeDeletionCiphertexts(deletion []types.Hash)
 	return buf.Bytes(), nil
 }
 
-func (es *EphemeralStorageImpl) DecodePersistingCiphertexts(raw []byte) ([]ContractCiphertext, error) {
-	var lts []ContractCiphertext
+func (es *EphemeralStorageImpl) DecodePersistingCiphertexts(raw []byte) (map[types.Hash]ContractCiphertext, error) {
+	var lts map[types.Hash]ContractCiphertext
 	err := gob.NewDecoder(bytes.NewBuffer(raw)).Decode(&lts)
 	if err != nil {
 		return nil, err
@@ -67,8 +67,8 @@ func (es *EphemeralStorageImpl) DecodePersistingCiphertexts(raw []byte) ([]Contr
 	return lts, nil
 }
 
-func (es *EphemeralStorageImpl) DecodeDeletionCiphertexts(raw []byte) ([]types.Hash, error) {
-	var deletion []types.Hash
+func (es *EphemeralStorageImpl) DecodeDeletionCiphertexts(raw []byte) (map[types.Hash]uint8, error) {
+	var deletion map[types.Hash]uint8
 	err := gob.NewDecoder(bytes.NewBuffer(raw)).Decode(&deletion)
 	if err != nil {
 		return nil, err
@@ -78,9 +78,12 @@ func (es *EphemeralStorageImpl) DecodeDeletionCiphertexts(raw []byte) ([]types.H
 }
 
 func (es *EphemeralStorageImpl) MarkForPersistence(contract common.Address, h types.Hash) error {
+	// We might have marked this ciphertext for deletion before
+	es.unmarkForDeletion(h)
+
 	key := es.getPersistKey()
 
-	var parsedLts []ContractCiphertext
+	var parsedLts map[types.Hash]ContractCiphertext
 	rawLts, err := es.memstore.Get(key)
 	if err != nil {
 		if err.Error() != "not found" {
@@ -93,17 +96,21 @@ func (es *EphemeralStorageImpl) MarkForPersistence(contract common.Address, h ty
 		}
 	}
 
-	parsedLts = append(parsedLts, ContractCiphertext{
-		ContractAddress: contract,
-		CipherTextHash:  h,
-	})
+	if _, ok := parsedLts[h]; !ok {
+		parsedLts[h] = ContractCiphertext{
+			ContractAddress: contract,
+			CipherTextHash:  h,
+		}
 
-	encodedLts, err := es.encodePersistingCiphertexts(parsedLts)
-	if err != nil {
-		return err
+		encodedLts, err := es.encodePersistingCiphertexts(parsedLts)
+		if err != nil {
+			return err
+		}
+
+		return es.memstore.Put(key, encodedLts)
 	}
 
-	return es.memstore.Put(key, encodedLts)
+	return nil
 }
 
 func (es *EphemeralStorageImpl) DeleteCt(h types.Hash) error {
@@ -111,9 +118,11 @@ func (es *EphemeralStorageImpl) DeleteCt(h types.Hash) error {
 }
 
 func (es *EphemeralStorageImpl) MarkForDeletion(h types.Hash) error {
-	key := es.getDeletionKey()
+	// We might have marked this ciphertext for persistence before
+	es.unmarkForPersistence(h)
 
-	var parsedDeletion []types.Hash
+	key := es.getDeletionKey()
+	var parsedDeletion map[types.Hash]uint8
 	rawDeletion, err := es.memstore.Get(key)
 	if err != nil {
 		if err.Error() != "not found" {
@@ -126,14 +135,18 @@ func (es *EphemeralStorageImpl) MarkForDeletion(h types.Hash) error {
 		}
 	}
 
-	parsedDeletion = append(parsedDeletion, h)
+	if _, ok := parsedDeletion[h]; !ok {
+		parsedDeletion[h] = 1 // Arbitrary value
 
-	encodedDeletion, err := es.encodeDeletionCiphertexts(parsedDeletion)
-	if err != nil {
-		return err
+		encodedDeletion, err := es.encodeDeletionCiphertexts(parsedDeletion)
+		if err != nil {
+			return err
+		}
+
+		return es.memstore.Put(key, encodedDeletion)
 	}
 
-	return es.memstore.Put(key, encodedDeletion)
+	return nil
 }
 
 func (es *EphemeralStorageImpl) PutCt(h types.Hash, cipher *types.CipherTextRepresentation) error {
@@ -184,13 +197,13 @@ func (es *EphemeralStorageImpl) HasCt(h types.Hash) bool {
 	return ok
 }
 
-func (es *EphemeralStorageImpl) GetAllToPersist() []ContractCiphertext {
+func (es *EphemeralStorageImpl) GetAllToPersist() map[types.Hash]ContractCiphertext {
 	key := es.getPersistKey()
 
 	rawLts, err := es.memstore.Get(key)
 	if err != nil {
 		if err.Error() == "not found" {
-			return []ContractCiphertext{}
+			return map[types.Hash]ContractCiphertext{}
 		}
 
 		return nil
@@ -204,13 +217,13 @@ func (es *EphemeralStorageImpl) GetAllToPersist() []ContractCiphertext {
 	return parsedLts
 }
 
-func (es *EphemeralStorageImpl) GetAllToDelete() []types.Hash {
+func (es *EphemeralStorageImpl) GetAllToDelete() map[types.Hash]uint8 {
 	key := es.getDeletionKey()
 
 	rawDeletion, err := es.memstore.Get(key)
 	if err != nil {
 		if err.Error() == "not found" {
-			return []types.Hash{}
+			return map[types.Hash]uint8{}
 		}
 
 		return nil
@@ -222,6 +235,58 @@ func (es *EphemeralStorageImpl) GetAllToDelete() []types.Hash {
 	}
 
 	return parsedDeletions
+}
+
+func (es *EphemeralStorageImpl) unmarkForDeletion(h types.Hash) error {
+	key := es.getDeletionKey()
+
+	rawDeletion, err := es.memstore.Get(key)
+	if err != nil {
+		if err.Error() == "not found" {
+			return nil
+		}
+		return err
+	}
+
+	deletions, err := es.DecodeDeletionCiphertexts(rawDeletion)
+	if err != nil {
+		return err
+	}
+
+	delete(deletions, h)
+
+	encoded, err := es.encodeDeletionCiphertexts(deletions)
+	if err != nil {
+		return err
+	}
+
+	return es.memstore.Put(key, encoded)
+}
+
+func (es *EphemeralStorageImpl) unmarkForPersistence(h types.Hash) error {
+	key := es.getPersistKey()
+
+	rawLts, err := es.memstore.Get(key)
+	if err != nil {
+		if err.Error() == "not found" {
+			return nil
+		}
+		return err
+	}
+
+	lts, err := es.DecodePersistingCiphertexts(rawLts)
+	if err != nil {
+		return err
+	}
+
+	delete(lts, h)
+
+	encoded, err := es.encodePersistingCiphertexts(lts)
+	if err != nil {
+		return err
+	}
+
+	return es.memstore.Put(key, encoded)
 }
 
 func NewEphemeralStorage(db *memorydb.Database) EphemeralStorage {
