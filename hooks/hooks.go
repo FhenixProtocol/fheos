@@ -135,7 +135,7 @@ func (h FheOSHooksImpl) EvmCallEnd(evmSuccess bool) {
 				// ciphertext as LTS without it being in memory
 				// right now the hook gets called after the evm execution, so I'm not sure that reverting is possible - but we can also probably move this to be
 				// inside the evm
-				log.Crit("Error getting ciphertext from storage when trying to store in lts - state corruption detected", "hash", hex.EncodeToString(contractCiphertext.CipherTextHash[:]), "err", err)
+				log.Error("Error getting ciphertext from storage when trying to store in lts - state corruption detected", "hash", hex.EncodeToString(contractCiphertext.CipherTextHash[:]), "err", err)
 				continue
 			}
 			err = fheos.State.SetCiphertext(cipherText)
