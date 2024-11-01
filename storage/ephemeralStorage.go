@@ -83,7 +83,7 @@ func (es *EphemeralStorageImpl) MarkForPersistence(contract common.Address, h ty
 
 	key := es.getPersistKey()
 
-	var parsedLts map[types.Hash]ContractCiphertext
+	var parsedLts = map[types.Hash]ContractCiphertext{}
 	rawLts, err := es.memstore.Get(key)
 	if err != nil {
 		if err.Error() != "not found" {
@@ -122,7 +122,7 @@ func (es *EphemeralStorageImpl) MarkForDeletion(h types.Hash) error {
 	es.unmarkForPersistence(h)
 
 	key := es.getDeletionKey()
-	var parsedDeletion map[types.Hash]uint8
+	var parsedDeletion = map[types.Hash]uint8{}
 	rawDeletion, err := es.memstore.Get(key)
 	if err != nil {
 		if err.Error() != "not found" {
