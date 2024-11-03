@@ -41,7 +41,7 @@ func ProcessOperation1(functionName types.PrecompileName, utype byte, input []by
 	ct := awaitCtResult(storage, input, tp, shouldExpectPrecalculatedCt)
 	if ct == nil {
 		msg := functionName.String() + " unverified ciphertext handle"
-		logger.Error(msg, " input ", hex.EncodeToString(ct.GetHashBytes()))
+		logger.Error(msg, " input ", input)
 		return nil, gas, vm.ErrExecutionReverted
 	}
 	return ct, gas, nil

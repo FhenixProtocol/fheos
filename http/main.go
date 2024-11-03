@@ -251,9 +251,10 @@ func DecryptHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	resultString := result.Text(16)
 	// Respond with the result
-	w.Write(result.Bytes())
-	fmt.Printf("Done processing decrypt request %+v (%+v)\n", result, result.Bytes())
+	w.Write([]byte(resultString))
+	fmt.Printf("Done processing decrypt request %+v (%s: %+v)\n", result, resultString, []byte(resultString))
 }
 
 func main() {
