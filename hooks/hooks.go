@@ -26,7 +26,7 @@ type FheOSHooksImpl struct {
 	evm *vm.EVM
 }
 
-func (h FheOSHooksImpl) updateCiphertextReferences(original common.Hash, newHash types.Hash) (bool, error) {
+func (h FheOSHooksImpl) updateCiphertextReferences(original common.Hash, newHash types.Hash, contract common.Address) (bool, error) {
 	if fheos.State == nil {
 		return false, nil
 	}
@@ -45,13 +45,13 @@ func (h FheOSHooksImpl) updateCiphertextReferences(original common.Hash, newHash
 	if fhe.IsCtHash(originalHash) && !fhe.IsTriviallyEncryptedCtHash(originalHash) {
 		// if the original hash is not empty, we are updating a value
 		// we need to dereference the old value from the storage
-		wasDeleted, err := multiStore.DereferenceCiphertext(originalHash)
+		wasDeleted, err := multiStore.DereferenceCiphertext(originalHash, contract)
 		if err != nil {
 			log.Error("Failed to dereference old ciphertext", "err", err)
 			return false, err
 		}
 
-		log.Info("Dereferenced old ciphertext", "hash", hex.EncodeToString(originalHash[:]))
+		log.Info("Dereferenced old ciphertext", "hash", hex.EncodeToString(originalHash[:]), "deleted", wasDeleted)
 		// We want to mark the previously commited ct for persistence only if it wasn't deleted (RefCount == 0)
 		return !wasDeleted, nil
 	}
@@ -72,12 +72,13 @@ func (h FheOSHooksImpl) StoreCiphertextHook(contract common.Address, loc [32]byt
 	// Skip for non-ciphertext
 	ctHash := types.Hash(val)
 
-	wasDereferenced, err := h.updateCiphertextReferences(commited, ctHash)
+	wasDereferenced, err := h.updateCiphertextReferences(commited, ctHash, contract)
 	if err != nil {
 		return err
 	}
 
 	if wasDereferenced {
+		// todo (eshel): is this not needed? seems it is already in long term storage...
 		err = storage.MarkForPersistence(contract, types.Hash(commited))
 		if err != nil {
 			log.Crit("Error marking dereferenced ciphertext as LTS", "err", err)

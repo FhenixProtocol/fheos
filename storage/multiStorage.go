@@ -89,6 +89,7 @@ func (ms *MultiStore) GetCtRepresentation(h types.Hash, caller common.Address) (
 
 	return ct, nil
 }
+
 func (ms *MultiStore) GetCt(h types.Hash, caller common.Address) (*types.FheEncrypted, error) {
 	ct, err := ms.GetCtRepresentation(h, caller)
 	if (err != nil) || (ct == nil) {
@@ -97,6 +98,7 @@ func (ms *MultiStore) GetCt(h types.Hash, caller common.Address) (*types.FheEncr
 
 	return ct.Data, nil
 }
+
 func (ms *MultiStore) isOwner(h types.Hash, ct *types.CipherTextRepresentation, owner common.Address) (bool, error) {
 	if ct == nil {
 		return false, fmt.Errorf("ciphertext not found")
@@ -108,20 +110,22 @@ func (ms *MultiStore) isOwner(h types.Hash, ct *types.CipherTextRepresentation, 
 
 	return slices.Contains(ct.Owners, owner), nil
 }
-func (ms *MultiStore) DereferenceCiphertext(hash types.Hash) (bool, error) {
+
+func (ms *MultiStore) DereferenceCiphertext(hash types.Hash, contract common.Address) (bool, error) {
 	ct, _ := ms.getCtHelper(hash)
 	if ct == nil {
 		return false, nil
 	}
 
 	if ct.RefCount <= 1 {
-		return true, ms.ephemeral.MarkForDeletion(hash)
+		return true, ms.ephemeral.MarkForDeletion(contract, hash)
 	}
 
 	ct.RefCount--
 
 	return false, ms.PutCt(hash, ct)
 }
+
 func (ms *MultiStore) ReferenceCiphertext(hash types.Hash) error {
 	ct, err := ms.getCtHelper(hash)
 	if ct == nil {
