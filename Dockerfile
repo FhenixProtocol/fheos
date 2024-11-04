@@ -137,8 +137,4 @@ COPY deployment/sequencer_config.json /config/sequencer_config.json
 
 # **************** Run
 
-#CMD ["./run.sh"]
-#CMD ["./run.sh", "--coprocessor"]
-#CMD ["./run.sh", "--debug"]
-RUN echo "LIORRRRR YAMANIAK ANI PO"
-ENTRYPOINT ["/bin/bash"]
+CMD ["./run.sh"]

@@ -11,7 +11,7 @@ usage() {
 echo "$@"
 # Check for the --debug flag
 DEBUG_MODE=${DEBUG_MODE:-0}
-COPROCESSOR_MODE=${COPROCESSOR_MODE:-1}
+COPROCESSOR_MODE=${COPROCESSOR_MODE:-0}
 for arg in "$@"
 do
     case $arg in
