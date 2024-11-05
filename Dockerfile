@@ -1,4 +1,4 @@
-ARG BRANCH=latest
+ARG BRANCH=v0.0.0-alpha.10
 ARG DOCKER_NAME=ghcr.io/fhenixprotocol/nitro/fhenix-node-builder:$BRANCH
 
 FROM rust:1.74-slim-bullseye as warp-drive-builder
@@ -79,8 +79,6 @@ WORKDIR fheos
 RUN ./gen.sh
 
 WORKDIR /workspace
-
-COPY nitro-overrides/precompiles/FheOps.go precompiles/FheOps.go
 
 RUN go mod tidy
 

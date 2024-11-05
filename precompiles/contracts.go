@@ -3,19 +3,20 @@ package precompiles
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/ethereum/go-ethereum/common"
+	"math/big"
+	"os"
+	"strings"
+
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
-	"math/big"
-	"strings"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/log"
 )
 
 var logger log.Logger
-var warpDriveLogger log.Logger
 
 func init() {
 	InitLogger()
@@ -103,15 +104,46 @@ func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams, _ *CallbackF
 		return "0x" + strings.Repeat("00", 370), gas, nil
 	}
 
-	reencryptedValue, err := fhe.SealOutput(*ct, pk)
-	if err != nil {
-		logger.Error(functionName.String()+" failed to encrypt to user key", "err", err)
-		return "", 0, vm.ErrExecutionReverted
+		if tp.EthCall {
+			reencryptedValue, err := fhe.SealOutput(*ct, pk)
+			if err != nil {
+				logger.Error("failed to seal output", "err", err)
+				return "", 0, vm.ErrExecutionReverted
+			}
+			return string(reencryptedValue), gas, nil
+		} else if tp.ParallelTxHooks == nil {
+			logger.Error("no decryption result found and no parallel tx hooks were set")
+			return "", 0, vm.ErrExecutionReverted
+		}
+
+		tp.ParallelTxHooks.NotifyCt(&key)
+
+		if !exists {
+			State.DecryptResults.CreateEmptyRecord(key)
+		}
+
+		userPk := make([]byte, len(pk))
+		copy(userPk, pk)
+		go func() {
+			logger.Debug("sealing output", "hash", hash)
+			reencryptedValue, err := fhe.SealOutput(*ct, userPk)
+			if err != nil {
+				logger.Error("failed to seal output", "err", err)
+				return
+			}
+
+			logger.Debug("sealed output", "hash", hash, "value", reencryptedValue)
+			err = State.DecryptResults.SetValue(key, string(reencryptedValue))
+			if err != nil {
+				logger.Error("failed setting sealoutput result", "error", err)
+				return
+			}
+			tp.ParallelTxHooks.NotifyDecryptRes(&key)
+		}()
+
+		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "ciphertext-hash ", hex.EncodeToString(ctHash), "public-key", hex.EncodeToString(pk))
+		return "0x" + strings.Repeat("00", 370), gas, nil
 	}
-
-	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "ciphertext-hash ", hex.EncodeToString(ctHash), "public-key", hex.EncodeToString(pk))
-
-	return string(reencryptedValue), gas, nil
 }
 
 func Decrypt(utype byte, input []byte, defaultValue *big.Int, tp *TxParams, _ *CallbackFunc) (*big.Int, uint64, error) {
@@ -229,11 +261,40 @@ func Req(utype byte, input []byte, tp *TxParams, _ *CallbackFunc) ([]byte, uint6
 		return nil, gas, vm.ErrExecutionReverted
 	}
 
-	if !ev {
-		msg := functionName.String() + " condition not met"
-		logger.Error(msg)
-		return nil, gas, vm.ErrExecutionReverted
-	}
+			if !result {
+				return nil, gas, vm.ErrExecutionReverted
+			}
+			return nil, gas, nil
+		} else if tp.ParallelTxHooks == nil {
+			logger.Error("no decryption result found and no parallel tx hooks were set")
+			return nil, 0, vm.ErrExecutionReverted
+		}
+
+		tp.ParallelTxHooks.NotifyCt(&key)
+
+		if !exists {
+			State.DecryptResults.CreateEmptyRecord(key)
+		}
+
+		go func() {
+			logger.Debug("evaluating require condition", "hash", ctHash)
+			result, err := evaluateRequire(ct)
+			if err != nil {
+				msg := functionName.String() + " error on evaluation"
+				logger.Error(msg, " err ", err)
+				return
+			}
+
+			logger.Debug("require condition result", "hash", ctHash, "value", result)
+			err = State.DecryptResults.SetValue(key, result)
+			if err != nil {
+				logger.Error("failed setting require result", "error", err)
+				return
+			}
+			tp.ParallelTxHooks.NotifyDecryptRes(&key)
+		}()
+
+		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "input", hex.EncodeToString(input))
 
 	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "input", hex.EncodeToString(input))
 
@@ -486,29 +547,19 @@ func Random(utype byte, seed uint64, securityZone int32, tp *TxParams, _ *Callba
 	if seed != 0 {
 		finalSeed = seed
 	} else {
-		// Seed generation
-		// The current block hash is not yet calculated, se we use the previous block hash
-		var prevBlockHash = common.Hash{}
-
-		if tp.BlockNumber != nil {
-			prevBlockNumber := tp.BlockNumber.Uint64() - 1
-			prevBlockHash = tp.GetBlockHash(prevBlockNumber)
-		} else {
-			logger.Warn("missing BlockNumber inside precompile")
-		}
-
 		var randomCounter uint64
+		var hash common.Hash
 		if tp.Commit {
-			// We're incrementing nonce regardless of whether the transaction is successful or not,
-			// so that even after a revert, the random is different.
-			// Secondly, we're incrementing before the request for the random number, so that queries
+			// We're incrementing before the request for the random number, so that queries
 			// that came before this Tx would have received a different seed.
-			randomCounter = State.IncRandomCounter(prevBlockHash)
+			randomCounter = State.IncRandomCounter()
+			hash = tp.TxContext.Hash
 		} else {
-			randomCounter = State.GetRandomCounter(prevBlockHash)
+			randomCounter = State.GetRandomCounter()
+			hash = tp.GetBlockHash(tp.BlockNumber.Uint64() - 1) // If no tx hash - use block hash
 		}
 
-		finalSeed = GenerateSeedFromEntropy(tp.ContractAddress, prevBlockHash, randomCounter)
+		finalSeed = GenerateSeedFromEntropy(tp.ContractAddress, hash, randomCounter)
 	}
 
 	result, err := fhe.FheRandom(securityZone, uintType, finalSeed)

@@ -3,7 +3,10 @@ package precompiles
 import (
 	"encoding/binary"
 	"errors"
-	"fmt"
+	"math/big"
+	"os"
+	"time"
+
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
@@ -13,9 +16,6 @@ import (
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	"github.com/fhenixprotocol/fheos/storage"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
-	"math/big"
-	"os"
-	"time"
 )
 
 func UtypeToString(utype byte) string {
@@ -50,6 +50,8 @@ type TxParams struct {
 	GetBlockHash    vm.GetHashFunc
 	BlockNumber     *big.Int
 	ErrChannel      chan error
+	ParallelTxHooks types.ParallelTxProcessingHook
+	vm.TxContext
 }
 
 func shouldPrintPrecompileInfo(tp *TxParams) bool {
@@ -71,6 +73,16 @@ func TxParamsFromEVM(evm *vm.EVM, callerContract common.Address) TxParams {
 	tp.BlockNumber = evm.Context.BlockNumber
 	tp.GetBlockHash = evm.Context.GetHash
 	tp.ErrChannel = evm.ErrorChannel
+
+	// If this is running in a sequencer, this should not be nil
+	if parallelHook, ok := evm.ProcessingHook.(types.ParallelTxProcessingHook); ok {
+		tp.ParallelTxHooks = parallelHook
+	} else {
+		tp.ParallelTxHooks = nil
+	}
+
+	tp.TxContext = evm.TxContext
+
 	return tp
 }
 
@@ -224,11 +236,11 @@ func evaluateRequire(ct *fhe.FheEncrypted) (bool, error) {
 	return fhe.Require(ct)
 }
 
-func GenerateSeedFromEntropy(contractAddress common.Address, prevBlockHash common.Hash, randomCounter uint64) uint64 {
-	data := make([]byte, 0, len(contractAddress)+len(prevBlockHash)+8) // 8 bytes for uint64
+func GenerateSeedFromEntropy(contractAddress common.Address, hash common.Hash, randomCounter uint64) uint64 {
+	data := make([]byte, 0, len(contractAddress)+len(hash)+8) // 8 bytes for uint64
 
 	data = append(data, contractAddress[:]...)
-	data = append(data, prevBlockHash[:]...)
+	data = append(data, hash[:]...)
 
 	uint64Bytes := make([]byte, 8)
 	binary.BigEndian.PutUint64(uint64Bytes, randomCounter)
@@ -244,4 +256,20 @@ func CopySlice(original []byte) []byte {
 	copied := make([]byte, len(original))
 	copy(copied, original)
 	return copied
+}
+
+// SAFETY NOTE: this function assumes input length validity (i.e. that ctHash and pk are 32 bytes long)
+// since the SealOutput precompile is doing these checks before calling this function. Be extra careful
+// when using this function in other places.
+func genSealedKey(ctHash, pk []byte, functionName types.PrecompileName) types.PendingDecryption {
+	var hash [32]byte
+	for i := 0; i < 32; i++ {
+		// Assumes input length validity
+		hash[i] = ctHash[i] ^ pk[i]
+	}
+
+	return types.PendingDecryption{
+		Hash: hash,
+		Type: functionName,
+	}
 }

@@ -2,6 +2,7 @@ package hooks
 
 import (
 	"encoding/hex"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/log"
@@ -105,7 +106,7 @@ func (h FheOSHooksImpl) StoreCiphertextHook(contract common.Address, loc [32]byt
 	if wasDereferenced {
 		err = storage.MarkForPersistence(contract, types.Hash(commited))
 		if err != nil {
-			log.Crit("Error marking dereferenced ciphertext as LTS", "err", err)
+			log.Error("Error marking dereferenced ciphertext as LTS", "err", err)
 			return err
 		}
 	}
@@ -121,7 +122,7 @@ func (h FheOSHooksImpl) StoreCiphertextHook(contract common.Address, loc [32]byt
 
 	err = storage.MarkForPersistence(contract, val)
 	if err != nil {
-		log.Crit("Error marking ciphertext as LTS", "err", err)
+		log.Error("Error marking ciphertext as LTS", "err", err)
 		return err
 	}
 
@@ -166,7 +167,7 @@ func (h FheOSHooksImpl) EvmCallEnd(evmSuccess bool) {
 			}
 			err = fheos.State.SetCiphertext(cipherText)
 			if err != nil {
-				log.Crit("Error storing ciphertext in LTS - state corruption detected", "err", err)
+				log.Error("Error storing ciphertext in LTS - state corruption detected", "err", err)
 			}
 
 			log.Info("Added ct to store", "hash", (*fhe.FheEncrypted)(cipherText.Data).GetHash().Hex())
@@ -181,6 +182,10 @@ func (h FheOSHooksImpl) EvmCallEnd(evmSuccess bool) {
 
 			log.Info("Deleted ciphertext", "hash", hex.EncodeToString(hash[:]))
 		}
+	}
+
+	if fheos.State != nil {
+		fheos.State.RandomCounter = 0
 	}
 }
 
