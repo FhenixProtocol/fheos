@@ -112,8 +112,8 @@ func initFheos() (*precompiles.TxParams, error) {
 		ContractAddress: common.HexToAddress("0x0000000000000000000000000000000000000000"),
 		GetBlockHash:    vm.GetHashFunc(nil),
 		BlockNumber:     nil,
-		ErrChannel: make(chan error, 1),
-		ParallelTxHooks: nil
+		ErrChannel:      make(chan error, 1),
+		ParallelTxHooks: nil,
 	}
 
 	return &tp, err

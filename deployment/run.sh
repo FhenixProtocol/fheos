@@ -77,7 +77,7 @@ else
   node faucet/server.js &
 
   # Nitro service is started only in "normal mode"
-  if [[ "${DEBUG_MODE}" -eq 0 && "" ]]; then
+  if [[ "${DEBUG_MODE}" -eq 0 ]]; then
       echo "Starting Nitro service in normal mode"
       nitro --conf.file /config/sequencer_config.json \
             --metrics \

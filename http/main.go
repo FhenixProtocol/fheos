@@ -192,14 +192,15 @@ func initFheos() (*precompiles.TxParams, error) {
 	}
 
 	tp = precompiles.TxParams{
-		true,
-		false,
-		false,
-		memorydb.New(),
-		common.HexToAddress("0x0000000000000000000000000000000000000000"),
-		vm.GetHashFunc(nil),
-		nil,
-		make(chan error, 1),
+		Commit:          true,
+		GasEstimation:   false,
+		EthCall:         false,
+		CiphertextDb:    memorydb.New(),
+		ContractAddress: common.HexToAddress("0x0000000000000000000000000000000000000000"),
+		GetBlockHash:    vm.GetHashFunc(nil),
+		BlockNumber:     nil,
+		ErrChannel:      make(chan error, 1),
+		ParallelTxHooks: nil,
 	}
 
 	var trivialHash []byte
