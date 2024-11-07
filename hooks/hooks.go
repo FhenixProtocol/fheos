@@ -13,6 +13,8 @@ import (
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 )
 
+var lock sync.RWMutex
+
 type FheOSHooks interface {
 	StoreCiphertextHook(contract common.Address, loc [32]byte, original common.Hash, val [32]byte) error
 	StoreGasHook(contract common.Address, loc [32]byte, val [32]byte) (uint64, uint64)
@@ -24,8 +26,7 @@ type FheOSHooks interface {
 }
 
 type FheOSHooksImpl struct {
-	evm  *vm.EVM
-	lock sync.RWMutex
+	evm *vm.EVM
 }
 
 func (h FheOSHooksImpl) updateCiphertextReferences(original common.Hash, newHash types.Hash) (bool, error) {
@@ -123,9 +124,9 @@ func (h FheOSHooksImpl) EvmCallStart() {
 	// But how do we know how to keep the context thread safe? Ugh, do we need 2 dbs now?
 
 	if h.evm.Commit {
-		h.lock.Lock()
+		lock.Lock()
 	} else {
-		h.lock.RLock()
+		lock.RLock()
 	}
 }
 
@@ -169,9 +170,9 @@ func (h FheOSHooksImpl) EvmCallEnd(evmSuccess bool) {
 	}
 
 	if h.evm.Commit {
-		h.lock.Unlock()
+		lock.Unlock()
 	} else {
-		h.lock.RUnlock()
+		lock.RUnlock()
 	}
 }
 
