@@ -25,10 +25,10 @@ type FheOSHooks interface {
 
 type FheOSHooksImpl struct {
 	evm  *vm.EVM
-	lock *sync.RWMutex
+	lock sync.RWMutex
 }
 
-func (h FheOSHooksImpl) updateCiphertextReferences(original common.Hash, newHash types.Hash) (bool, error) {
+func (h *FheOSHooksImpl) updateCiphertextReferences(original common.Hash, newHash types.Hash) (bool, error) {
 	if fheos.State == nil {
 		return false, nil
 	}
@@ -66,7 +66,7 @@ func (h FheOSHooksImpl) updateCiphertextReferences(original common.Hash, newHash
 // loc - the location (starting from 0) in the storage of the contract
 // commited - The previous value (ct hash) that was present in the said location
 // val - The new value that is being stored
-func (h FheOSHooksImpl) StoreCiphertextHook(contract common.Address, loc [32]byte, commited common.Hash, val [32]byte) error {
+func (h *FheOSHooksImpl) StoreCiphertextHook(contract common.Address, loc [32]byte, commited common.Hash, val [32]byte) error {
 	// marks the ciphertext as lts - should be stored in long term storage when/if the tx is successful
 	// option - better to flush all at the end of the tx from memdb, or define a memdb in fheos that is flushed at the end of the tx?
 	storage := storage2.NewEphemeralStorage(h.evm.CiphertextDb)
@@ -107,18 +107,18 @@ func (h FheOSHooksImpl) StoreCiphertextHook(contract common.Address, loc [32]byt
 
 const ExtraGasCost = 0
 
-func (h FheOSHooksImpl) StoreGasHook(contract common.Address, loc [32]byte, val [32]byte) (uint64, uint64) {
+func (h *FheOSHooksImpl) StoreGasHook(contract common.Address, loc [32]byte, val [32]byte) (uint64, uint64) {
 	return ExtraGasCost, 0
 }
 
-func (h FheOSHooksImpl) LoadCiphertextHook() [32]byte {
+func (h *FheOSHooksImpl) LoadCiphertextHook() [32]byte {
 	//storage := storage2.NewMultiStore(h.evm.CiphertextDb, &fheos.State.Storage)
 	// checks if ciphertext hash is already known (should be in either memory storage or long term storage)
 	// doesn't do anything right now
 	return [32]byte{}
 }
 
-func (h FheOSHooksImpl) EvmCallStart() {
+func (h *FheOSHooksImpl) EvmCallStart() {
 	// don't really need this? Or maybe to start a new ephemeral storage?
 	// But how do we know how to keep the context thread safe? Ugh, do we need 2 dbs now?
 
@@ -129,7 +129,7 @@ func (h FheOSHooksImpl) EvmCallStart() {
 	}
 }
 
-func (h FheOSHooksImpl) EvmCallEnd(evmSuccess bool) {
+func (h *FheOSHooksImpl) EvmCallEnd(evmSuccess bool) {
 	if evmSuccess && h.evm.Commit {
 		storage := storage2.NewEphemeralStorage(h.evm.CiphertextDb)
 		toStore := storage.GetAllToPersist()
@@ -194,7 +194,7 @@ func shouldIgnoreContract(caller common.Address, addr common.Address) bool {
 	return false
 }
 
-func (h FheOSHooksImpl) iterateHashes(data []byte, dataType string, owner common.Address, newOwner common.Address) {
+func (h *FheOSHooksImpl) iterateHashes(data []byte, dataType string, owner common.Address, newOwner common.Address) {
 	// iterate through the data and check if the hash is a ciphertext hash
 	// if it is, add the owner to the ciphertext
 	// if not, continue
@@ -243,7 +243,7 @@ func (h FheOSHooksImpl) iterateHashes(data []byte, dataType string, owner common
 
 // ContractCall The purpose of this hook is to be able to pass ownership for a ciphertext to the contract that has been called if the caller is an owner
 // The function parses the input for ciphertexts and pass ownership for each ciphertext
-func (h FheOSHooksImpl) ContractCall(isSimulation bool, callType int, caller common.Address, addr common.Address, input []byte) {
+func (h *FheOSHooksImpl) ContractCall(isSimulation bool, callType int, caller common.Address, addr common.Address, input []byte) {
 	// Input is built as the following:
 	//  first 4 bytes are indicating what is the function that is being called
 	// 	from now on every param is a 32 byte value
@@ -273,7 +273,7 @@ func (h FheOSHooksImpl) ContractCall(isSimulation bool, callType int, caller com
 	h.iterateHashes(input[4:], "input", caller, addr)
 }
 
-func (h FheOSHooksImpl) ContractCallReturn(isSimulation bool, callType int, caller common.Address, addr common.Address, output []byte) {
+func (h *FheOSHooksImpl) ContractCallReturn(isSimulation bool, callType int, caller common.Address, addr common.Address, output []byte) {
 	// If a contract returns a value, we should check if it contains any ciphertexts
 	// If so, we should pass ownership of the ciphertexts to the caller
 
@@ -290,8 +290,8 @@ func (h FheOSHooksImpl) ContractCallReturn(isSimulation bool, callType int, call
 	h.iterateHashes(output, "input", addr, caller)
 }
 
-func NewFheOSHooks(evm *vm.EVM) FheOSHooksImpl {
-	return FheOSHooksImpl{
+func NewFheOSHooks(evm *vm.EVM) *FheOSHooksImpl {
+	return &FheOSHooksImpl{
 		evm: evm,
 	}
 }
