@@ -145,11 +145,12 @@ func (h FheOSHooksImpl) EvmCallEnd(evmSuccess bool) {
 		}
 
 		for hash, _ := range toDelete {
-			err := fheos.State.Storage.DeleteCt(hash)
-			if err != nil {
-				// Deletion failure, bummer but nothing to be worried about
-				log.Error("Failed to delete ciphertext", "hash", hex.EncodeToString(hash[:]))
-			}
+			// TODO: temporarily disabling ct deletion
+			// err := fheos.State.Storage.DeleteCt(hash)
+			// if err != nil {
+			// 	// Deletion failure, bummer but nothing to be worried about
+			// 	log.Error("Failed to delete ciphertext", "hash", hex.EncodeToString(hash[:]))
+			// }
 
 			log.Info("Deleted ciphertext", "hash", hex.EncodeToString(hash[:]))
 		}
