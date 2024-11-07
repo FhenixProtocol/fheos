@@ -2,6 +2,7 @@ package hooks
 
 import (
 	"encoding/hex"
+	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
@@ -23,7 +24,8 @@ type FheOSHooks interface {
 }
 
 type FheOSHooksImpl struct {
-	evm *vm.EVM
+	evm  *vm.EVM
+	lock sync.RWMutex
 }
 
 func (h FheOSHooksImpl) updateCiphertextReferences(original common.Hash, newHash types.Hash) (bool, error) {
@@ -119,6 +121,12 @@ func (h FheOSHooksImpl) LoadCiphertextHook() [32]byte {
 func (h FheOSHooksImpl) EvmCallStart() {
 	// don't really need this? Or maybe to start a new ephemeral storage?
 	// But how do we know how to keep the context thread safe? Ugh, do we need 2 dbs now?
+
+	if h.evm.Commit {
+		h.lock.Lock()
+	} else {
+		h.lock.RLock()
+	}
 }
 
 func (h FheOSHooksImpl) EvmCallEnd(evmSuccess bool) {
@@ -158,6 +166,12 @@ func (h FheOSHooksImpl) EvmCallEnd(evmSuccess bool) {
 
 	if fheos.State != nil {
 		fheos.State.RandomCounter = 0
+	}
+
+	if h.evm.Commit {
+		h.lock.Unlock()
+	} else {
+		h.lock.RUnlock()
 	}
 }
 
