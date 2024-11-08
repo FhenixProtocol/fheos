@@ -12,6 +12,7 @@ import (
 	fhedriver "github.com/fhenixprotocol/warp-drive/fhe-driver"
 	"io/ioutil"
 	"log"
+	"math/big"
 	"net/http"
 	"os"
 	"strconv"
@@ -26,27 +27,26 @@ type HashRequest struct {
 }
 
 type DecryptRequest struct {
-	UType byte   `json:"utype"`
-	Hash  string `json:"hash"`
+	UType        byte   `json:"utype"`
+	Hash         string `json:"hash"`
+	RequesterUrl string `json:"requesterUrl"`
 }
 
-type HashUpdate struct {
+type HashResultUpdate struct {
 	TempKey    []byte `json:"tempKey"`
 	ActualHash []byte `json:"actualHash"`
 }
 
+type DecryptResultUpdate struct {
+	CtKey     []byte   `json:"ctKey"`
+	Plaintext *big.Int `json:"plaintext"`
+}
+
 var tp precompiles.TxParams
 
-func handleResult(url string, tempKey []byte, actualHash []byte) {
-	fmt.Printf("Got result for %s : %s\n", hex.EncodeToString(tempKey), hex.EncodeToString(actualHash))
-	// JSON data to be sent in the request body
-	jsonData, err := json.Marshal(HashUpdate{TempKey: tempKey, ActualHash: actualHash})
-	if err != nil {
-		log.Fatalf("Failed to update requester %s with the result of %+v", url, tempKey)
-	}
-
+func responseToServer(url string, tempKey []byte, json []byte) {
 	// Create a new request using http.NewRequest
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(json))
 	if err != nil {
 		log.Fatalf("Error creating request: %v", err)
 	}
@@ -69,6 +69,27 @@ func handleResult(url string, tempKey []byte, actualHash []byte) {
 	}
 
 	fmt.Printf("Update requester %s with the result of %+v\n", url, tempKey)
+}
+
+func handleResult(url string, tempKey []byte, actualHash []byte) {
+	fmt.Printf("Got result for %s : %s\n", hex.EncodeToString(tempKey), hex.EncodeToString(actualHash))
+	// JSON data to be sent in the request body
+	jsonData, err := json.Marshal(HashResultUpdate{TempKey: tempKey, ActualHash: actualHash})
+	if err != nil {
+		log.Fatalf("Failed to update requester %s with the result of %+v", url, tempKey)
+	}
+
+	responseToServer(url, tempKey, jsonData)
+}
+
+func handleDecryptResult(url string, ctKey []byte, plaintext *big.Int) {
+	fmt.Printf("Got result for %s : %s\n", hex.EncodeToString(ctKey), plaintext)
+	jsonData, err := json.Marshal(DecryptResultUpdate{CtKey: ctKey, Plaintext: plaintext})
+	if err != nil {
+		log.Fatalf("Failed to update requester %s with the result of %+v", url, ctKey)
+	}
+
+	responseToServer(url, ctKey, jsonData)
 }
 
 // Helper function to handle decoding the request and calling the respective function
@@ -199,7 +220,6 @@ func initFheos() (*precompiles.TxParams, error) {
 		ContractAddress: common.HexToAddress("0x0000000000000000000000000000000000000000"),
 		GetBlockHash:    vm.GetHashFunc(nil),
 		BlockNumber:     nil,
-		ErrChannel:      make(chan error, 1),
 		ParallelTxHooks: nil,
 	}
 
@@ -244,7 +264,12 @@ func DecryptHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, _, err := precompiles.Decrypt(req.UType, hash, nil, &tp, nil)
+	callback := precompiles.DecryptCallbackFunc{
+		CallbackUrl: req.RequesterUrl,
+		Callback:    handleDecryptResult,
+	}
+
+	result, _, err := precompiles.Decrypt(req.UType, hash, nil, &tp, &callback)
 	if err != nil {
 		e := fmt.Sprintf("Operation failed: %+v", err)
 		fmt.Println(e)

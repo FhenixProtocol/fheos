@@ -209,7 +209,7 @@ interface FheOps {
 					param.Type = "uint256"
 				}
 
-				if param.Type == "*TxParams" || param.Type == "*CallbackFunc" {
+				if param.Type == "*TxParams" || param.Type == "*CallbackFunc" || param.Type == "*DecryptCallbackFunc" {
 					continue
 				}
 
@@ -379,7 +379,7 @@ func Gen(parent string, output string) {
 				t = "*big.Int"
 			}
 
-			if t == "*TxParams" || t == "*CallbackFunc" {
+			if t == "*TxParams" || t == "*CallbackFunc" || t == "*DecryptCallbackFunc" {
 				continue
 			}
 

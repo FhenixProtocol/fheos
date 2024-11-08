@@ -6,6 +6,7 @@ import (
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
+	"math/big"
 )
 
 type TwoOperationFunc func(lhs *fhe.FheEncrypted, rhs *fhe.FheEncrypted) (*fhe.FheEncrypted, error)
@@ -14,18 +15,22 @@ type CallbackFunc struct {
 	Callback    func(url string, ctKey []byte, newCtKey []byte)
 }
 
-func ProcessOperation1(functionName types.PrecompileName, utype byte, input []byte, tp *TxParams, shouldExpectPrecalculatedCt bool) (*fhe.FheEncrypted, uint64, error) {
-	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
+type DecryptCallbackFunc struct {
+	CallbackUrl string
+	Callback    func(url string, ctKey []byte, plaintext *big.Int)
+}
+
+func PreProcessOperation1(functionName types.PrecompileName, utype byte, input []byte, tp *TxParams) (uint64, error) {
 	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
-		return nil, gas, nil
+		return gas, nil
 	}
 
 	if !types.IsValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
-		return nil, gas, vm.ErrExecutionReverted
+		return gas, vm.ErrExecutionReverted
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
@@ -35,10 +40,19 @@ func ProcessOperation1(functionName types.PrecompileName, utype byte, input []by
 	if len(input) != 32 {
 		msg := functionName.String() + " input len must be 32 bytes"
 		logger.Error(msg, "input", hex.EncodeToString(input), "len", len(input))
-		return nil, gas, vm.ErrExecutionReverted
+		return gas, vm.ErrExecutionReverted
 	}
 
-	ct := awaitCtResult(storage, input, tp, shouldExpectPrecalculatedCt)
+	return gas, nil
+}
+func ProcessOperation1(functionName types.PrecompileName, utype byte, input []byte, tp *TxParams) (*fhe.FheEncrypted, uint64, error) {
+	gas, err := PreProcessOperation1(functionName, utype, input, tp)
+	if err != nil {
+		return nil, gas, err
+	}
+
+	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
+	ct := awaitCtResult(storage, input, tp)
 	if ct == nil {
 		msg := functionName.String() + " unverified ciphertext handle"
 		logger.Error(msg, " input ", input)
@@ -52,7 +66,7 @@ func ProcessOperation2(functionName types.PrecompileName, mathOp TwoOperationFun
 
 	placeholderCt := fhe.CreateFheEncryptedWithData(CreatePlaceHolderData(), fhe.EncryptionType(utype), true)
 	placeholderKey := fhe.CalcBinaryPlaceholderValueHash(lhsHash, rhsHash, int(functionName))
-	placeholderCt.SetHash(placeholderKey)
+	placeholderCt.Hash = placeholderKey
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Debug(functionName.String(), "lhs", hex.EncodeToString(lhsHash), "rhs", hex.EncodeToString(rhsHash), "placeholderKey", hex.EncodeToString(placeholderKey))
@@ -98,37 +112,32 @@ func ProcessOperation2(functionName types.PrecompileName, mathOp TwoOperationFun
 
 		if lhs == nil || rhs == nil {
 			logger.Error(functionName.String() + ": inputs not verified")
-			tp.ErrChannel <- vm.ErrExecutionReverted
 			return
 		}
 
 		if lhs.UintType != rhs.UintType || lhs.UintType != uintType {
 			msg := functionName.String() + " operand type mismatch"
 			logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
-			tp.ErrChannel <- vm.ErrExecutionReverted
 			return
 		}
 
 		result, err2 := mathOp(lhs, rhs)
 		if err2 != nil {
 			logger.Error(functionName.String()+" failed", "err", err2)
-			tp.ErrChannel <- vm.ErrExecutionReverted
 			return
 		}
 
 		realResultHash, err3 := hex.DecodeString(result.GetHash().Hex())
 		if err3 != nil {
 			logger.Error(functionName.String()+" failed", "err", err3)
-			tp.ErrChannel <- vm.ErrExecutionReverted
 			return
 		}
 
-		result.SetHash(resultHash)
+		result.Hash = resultHash
 
 		err2 = storeCipherText(storage, result, tp.ContractAddress)
 		if err2 != nil {
 			logger.Error(functionName.String()+" failed", "err", err2)
-			tp.ErrChannel <- vm.ErrExecutionReverted
 			return
 		}
 
@@ -139,6 +148,5 @@ func ProcessOperation2(functionName types.PrecompileName, mathOp TwoOperationFun
 		}
 		logger.Info(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.GetHash().Hex(), "rhs", rhs.GetHash().Hex(), "result", result.GetHash().Hex())
 	}(lhsHashCopy, rhsHashCopy, placeholderKeyCopy)
-
 	return placeholderKey[:], gas, err
 }

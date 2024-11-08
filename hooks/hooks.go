@@ -10,13 +10,11 @@ import (
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
-	"time"
 )
 
 type FheOSHooks interface {
 	StoreCiphertextHook(contract common.Address, loc [32]byte, original common.Hash, val [32]byte) error
 	StoreGasHook(contract common.Address, loc [32]byte, val [32]byte) (uint64, uint64)
-	AwaitAsync() error
 	LoadCiphertextHook() [32]byte
 	EvmCallStart()
 	EvmCallEnd(evmSuccess bool)
@@ -26,33 +24,6 @@ type FheOSHooks interface {
 
 type FheOSHooksImpl struct {
 	evm *vm.EVM
-}
-
-func (h FheOSHooksImpl) AwaitAsync() error {
-	storage := storage2.NewEphemeralStorage(h.evm.CiphertextDb)
-
-	ctDone := false
-	timeout := time.After(5 * time.Second) // Adjust the duration as needed
-	for !ctDone {
-		select {
-		case err := <-h.evm.ErrorChannel:
-			log.Error("Error in async ct", "err", err)
-			return err
-		case <-timeout:
-			log.Error("Timeout waiting for async ct to complete")
-			return vm.ErrExecutionReverted
-		default:
-			ctDoneInner, err := storage.IsAsyncCtDone()
-			if err != nil {
-				log.Error("Error checking if async ct is done", "err", err)
-				return vm.ErrExecutionReverted
-			}
-			ctDone = ctDoneInner
-			time.Sleep(10 * time.Millisecond) // Adjust the duration as needed
-		}
-	}
-
-	return nil
 }
 
 func (h FheOSHooksImpl) updateCiphertextReferences(original common.Hash, newHash types.Hash) (bool, error) {

@@ -50,7 +50,6 @@ type TxParams struct {
 	ContractAddress common.Address
 	GetBlockHash    vm.GetHashFunc
 	BlockNumber     *big.Int
-	ErrChannel      chan error
 	ParallelTxHooks types.ParallelTxProcessingHook
 	vm.TxContext
 }
@@ -73,7 +72,6 @@ func TxParamsFromEVM(evm *vm.EVM, callerContract common.Address) TxParams {
 	tp.ContractAddress = callerContract
 	tp.BlockNumber = evm.Context.BlockNumber
 	tp.GetBlockHash = evm.Context.GetHash
-	tp.ErrChannel = evm.ErrorChannel
 
 	// If this is running in a sequencer, this should not be nil
 	if parallelHook, ok := evm.ProcessingHook.(types.ParallelTxProcessingHook); ok {
@@ -151,23 +149,19 @@ func blockUntilBinaryOperandsAvailable(storage *storage.MultiStore, lhsHash, rhs
 	}
 
 	// can speed this up to be concurrent, but for now this is fine I guess?
-	lhsValue = awaitCtResult(storage, lhsHash, tp, false)
-	rhsValue = awaitCtResult(storage, rhsHash, tp, false)
+	lhsValue = awaitCtResult(storage, lhsHash, tp)
+	rhsValue = awaitCtResult(storage, rhsHash, tp)
 
 	return lhsValue, rhsValue
 }
 
-func awaitCtResult(storage *storage.MultiStore, lhsHash []byte, tp *TxParams, shouldExpectPrecalculatedCt bool) *fhe.FheEncrypted {
+func awaitCtResult(storage *storage.MultiStore, lhsHash []byte, tp *TxParams) *fhe.FheEncrypted {
 	lhsValue := getCiphertext(storage, fhe.Hash(lhsHash), tp.ContractAddress)
 	if lhsValue == nil {
 		return nil
 	}
 
 	for lhsValue.IsPlaceholderValue() {
-		if shouldExpectPrecalculatedCt {
-			return nil
-		}
-
 		lhsValue = getCiphertext(storage, fhe.Hash(lhsHash), tp.ContractAddress)
 		time.Sleep(1 * time.Millisecond)
 	}
@@ -206,15 +200,15 @@ func get3VerifiedOperands(storage *storage.MultiStore, controlHash []byte, ifTru
 		return nil, nil, nil, errors.New("ciphertext's hashes need to be 32 bytes long")
 	}
 
-	control = awaitCtResult(storage, controlHash, tp, false)
+	control = awaitCtResult(storage, controlHash, tp)
 	if control == nil {
 		return nil, nil, nil, errors.New("unverified ciphertext handle")
 	}
-	ifTrue = awaitCtResult(storage, ifTrueHash, tp, false)
+	ifTrue = awaitCtResult(storage, ifTrueHash, tp)
 	if ifTrue == nil {
 		return nil, nil, nil, errors.New("unverified ciphertext handle")
 	}
-	ifFalse = awaitCtResult(storage, ifFalseHash, tp, false)
+	ifFalse = awaitCtResult(storage, ifFalseHash, tp)
 	if ifFalse == nil {
 		return nil, nil, nil, errors.New("unverified ciphertext handle")
 	}
