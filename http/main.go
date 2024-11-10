@@ -38,8 +38,8 @@ type HashResultUpdate struct {
 }
 
 type DecryptResultUpdate struct {
-	CtKey     []byte   `json:"ctKey"`
-	Plaintext *big.Int `json:"plaintext"`
+	CtKey     []byte `json:"ctKey"`
+	Plaintext string `json:"plaintext"`
 }
 
 var tp precompiles.TxParams
@@ -84,7 +84,8 @@ func handleResult(url string, tempKey []byte, actualHash []byte) {
 
 func handleDecryptResult(url string, ctKey []byte, plaintext *big.Int) {
 	fmt.Printf("Got result for %s : %s\n", hex.EncodeToString(ctKey), plaintext)
-	jsonData, err := json.Marshal(DecryptResultUpdate{CtKey: ctKey, Plaintext: plaintext})
+	plaintextString := plaintext.Text(16)
+	jsonData, err := json.Marshal(DecryptResultUpdate{CtKey: ctKey, Plaintext: plaintextString})
 	if err != nil {
 		log.Fatalf("Failed to update requester %s with the result of %+v", url, ctKey)
 	}
