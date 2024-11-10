@@ -270,17 +270,16 @@ func DecryptHandler(w http.ResponseWriter, r *http.Request) {
 		Callback:    handleDecryptResult,
 	}
 
-	result, _, err := precompiles.Decrypt(req.UType, hash, nil, &tp, &callback)
+	_, _, err = precompiles.Decrypt(req.UType, hash, nil, &tp, &callback)
 	if err != nil {
 		e := fmt.Sprintf("Operation failed: %+v", err)
 		fmt.Println(e)
 		http.Error(w, e, http.StatusBadRequest)
 		return
 	}
-	resultString := result.Text(16)
 	// Respond with the result
-	w.Write([]byte(resultString))
-	fmt.Printf("Done processing decrypt request %+v (%s: %+v)\n", result, resultString, []byte(resultString))
+	w.Write(hash)
+	fmt.Printf("Received decrypt request for %+v and type %+v\n", hash, req.UType)
 }
 
 func main() {
