@@ -2,6 +2,7 @@
 precompiles/cache/*
 precompiles/artifacts/*
 solgen/**/*.js
+solgen/**/*.js.map
 build/
 solidity/types/*
 fheosdb/
