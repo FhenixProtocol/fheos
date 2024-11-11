@@ -31,6 +31,7 @@ import {
   testContractReq,
   AsTypeTestingContract,
   testContractDecrypt,
+  testContractSealTyped,
 } from "./templates/testContracts";
 
 import {
@@ -53,6 +54,7 @@ import {
   isBitwiseOp,
   SEALING_FUNCTION_NAME,
   capitalize,
+  SEALING_TYPED_FUNCTION_NAME,
 } from "./common";
 
 interface FunctionMetadata {
@@ -223,6 +225,10 @@ const generateSolidityTestContract = (metadata: FunctionMetadata): string[] => {
     return testContractReencrypt();
   }
 
+  if (functionName === SEALING_TYPED_FUNCTION_NAME) {
+    return testContractSealTyped();
+  }
+
   if (inputCount === 0) {
     return testContract0Args(functionName);
   }
@@ -272,6 +278,12 @@ const generateSolidityBenchContract = (metadata: FunctionMetadata): string => {
 
   if (functionName === SEALING_FUNCTION_NAME) {
     return benchContractReencrypt();
+  }
+
+  if (functionName === SEALING_TYPED_FUNCTION_NAME) {
+    // `sealoutputTyped` is a wrapper around `sealoutput`, and does not need to be benchmarked directly
+    // @architect-dev 2024-11-11
+    return "";
   }
 
   if (

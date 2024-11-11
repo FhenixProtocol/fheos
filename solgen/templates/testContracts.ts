@@ -9,6 +9,8 @@ import {
   shortenType,
   toInType,
   toInTypeParam,
+  SEALING_TYPED_FUNCTION_NAME,
+  LOCAL_SEAL_TYPED_FUNCTION_NAME,
 } from "../common";
 
 function TypeCastTestingFunction(
@@ -581,6 +583,59 @@ export function testContractReencrypt() {
 }\n`;
   return [
     generateTestContract(SEALING_FUNCTION_NAME, func, ["ebool", "euint8"]),
+    abi,
+  ];
+}
+
+export function testContractSealTyped() {
+  const func = `function ${SEALING_TYPED_FUNCTION_NAME}Bool(string calldata test, bool a, bytes32 pubkey) public pure returns (SealedBool memory) {
+        if (Utils.cmp(test, "${SEALING_TYPED_FUNCTION_NAME}(ebool)")) {
+            return FHE.${SEALING_TYPED_FUNCTION_NAME}(FHE.asEbool(a), pubkey);
+        } else if (Utils.cmp(test, "${LOCAL_SEAL_TYPED_FUNCTION_NAME}(ebool)")) {
+            ebool aEnc = FHE.asEbool(a);
+            return aEnc.${LOCAL_SEAL_TYPED_FUNCTION_NAME}(pubkey);
+        }
+        revert TestNotFound(test);
+    }
+        
+    function ${SEALING_TYPED_FUNCTION_NAME}Uint(string calldata test, uint256 a, bytes32 pubkey) public pure returns (SealedUint memory) {
+        if (Utils.cmp(test, "${SEALING_TYPED_FUNCTION_NAME}(euint8)")) {
+            return FHE.${SEALING_TYPED_FUNCTION_NAME}(FHE.asEuint8(a), pubkey);
+        } else if (Utils.cmp(test, "${SEALING_TYPED_FUNCTION_NAME}(euint16)")) {
+            return FHE.${SEALING_TYPED_FUNCTION_NAME}(FHE.asEuint16(a), pubkey);
+        } else if (Utils.cmp(test, "${SEALING_TYPED_FUNCTION_NAME}(euint32)")) {
+            return FHE.${SEALING_TYPED_FUNCTION_NAME}(FHE.asEuint32(a), pubkey);
+        } else if (Utils.cmp(test, "${SEALING_TYPED_FUNCTION_NAME}(euint64)")) {
+            return FHE.${SEALING_TYPED_FUNCTION_NAME}(FHE.asEuint64(a), pubkey);
+        } else if (Utils.cmp(test, "${SEALING_TYPED_FUNCTION_NAME}(euint128)")) {
+            return FHE.${SEALING_TYPED_FUNCTION_NAME}(FHE.asEuint128(a), pubkey);
+        } else if (Utils.cmp(test, "${SEALING_TYPED_FUNCTION_NAME}(euint256)")) {
+            return FHE.${SEALING_TYPED_FUNCTION_NAME}(FHE.asEuint256(a), pubkey);
+        } else if (Utils.cmp(test, "${LOCAL_SEAL_TYPED_FUNCTION_NAME}(euint8)")) {
+            euint8 aEnc = FHE.asEuint8(a);
+            return aEnc.${LOCAL_SEAL_TYPED_FUNCTION_NAME}(pubkey);
+        }
+        revert TestNotFound(test);
+    }
+        
+    function ${SEALING_TYPED_FUNCTION_NAME}Address(string calldata test, address a, bytes32 pubkey) public pure returns (SealedAddress memory) {
+        if (Utils.cmp(test, "${SEALING_TYPED_FUNCTION_NAME}(eaddress)")) {
+            return FHE.${SEALING_TYPED_FUNCTION_NAME}(FHE.asEaddress(a), pubkey);
+        } else if (Utils.cmp(test, "${LOCAL_SEAL_TYPED_FUNCTION_NAME}(eaddress)")) {
+            eaddress aEnc = FHE.asEaddress(a);
+            return aEnc.${LOCAL_SEAL_TYPED_FUNCTION_NAME}(pubkey);
+        }
+        revert TestNotFound(test);
+    }`;
+
+  const abi = `export interface SealoutputTypedUintTestType extends BaseContract {
+    ${SEALING_TYPED_FUNCTION_NAME}Bool: (test: string, a: boolean, pubkey: Uint8Array) => Promise<{ data: string, utype: number }>;
+    ${SEALING_TYPED_FUNCTION_NAME}Uint: (test: string, a: bigint, pubkey: Uint8Array) => Promise<{ data: string, utype: number }>;
+    ${SEALING_TYPED_FUNCTION_NAME}Address: (test: string, a: string, pubkey: Uint8Array) => Promise<{ data: string, utype: number }>;
+}\n`;
+
+  return [
+    generateTestContract(SEALING_TYPED_FUNCTION_NAME, func, ["ebool", "eaddress", "euint8", "SealedUint", "SealedBool", "SealedAddress"]),
     abi,
   ];
 }
