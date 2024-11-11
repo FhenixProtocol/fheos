@@ -139,7 +139,6 @@ const getReturnType = (
   // `sealoutputTyped` determine output type based on input
   // @architect-dev 2024-11-11
   if (returnType && returnType === "SealedStruct memory") {
-    console.log({inputs, returnType})
     if (inputs[0] === 'input0 ebool') return returnType.replace("Struct", "Bool");
     if (inputs[0] === 'input0 eaddress') return returnType.replace("Struct", "Address");
     return returnType.replace("Struct", "Uint");

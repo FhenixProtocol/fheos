@@ -49,8 +49,6 @@ ${SealedOutputStructs.map((struct) => {
 /// @dev Utility structure providing clients with type context of a sealed output string.
 /// Return type of \`FHE.sealoutputTyped\` and \`sealTyped\` within the binding libraries.`
 
-  console.log(struct, struct === `SealedBool`)
-
   if (struct === `SealedBool`) {
     docstring +=  `
 /// \`utype\` representing Bool is 13. See \`FHE.sol\` for more.`;
