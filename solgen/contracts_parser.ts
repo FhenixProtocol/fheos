@@ -23,6 +23,7 @@ const specificFunctions = [
   {
     name: "ProcessOperation2(",
     amount: 2,
+    needSameInputTypes: true,
     paramTypes: ["encrypted", "uint8", "plaintext"],
   },
   { name: "ProcessOperation1(", amount: 1, paramTypes: ["encrypted"] },
@@ -94,7 +95,7 @@ async function analyzeGoFile(
         ) {
           let needsSameType = /lhs.UintType\s+!=\s+rhs.UintType/.test(
             trimmedLine
-          );
+          ) || !!keyfn.needSameInputTypes;
           let amount = keyfn.amount;
           if (funcName === SEALING_FUNCTION_NAME) {
             amount = 2;

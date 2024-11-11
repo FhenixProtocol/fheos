@@ -394,6 +394,7 @@ const generateSolidityFunction = (parsedFunction: ParsedFunction): string => {
 };
 
 const main = async () => {
+  debugger;
   let metadata = await generateMetadataPayload();
   let solidityHeaders: string[] = [];
   const testContracts: Record<string, string> = {};
@@ -545,7 +546,7 @@ const main = async () => {
     outputFile += PostFix();
   });
 
-  await fs.promises.writeFile("FHE.sol", outputFile);
+  await fs.promises.writeFile("AsyncFHE.sol", outputFile);
   for (const testContract of Object.entries(testContracts)) {
     fs.writeFileSync(
       `../solidity/tests/contracts/${testContract[0]}.sol`,

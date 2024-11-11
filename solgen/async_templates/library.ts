@@ -40,6 +40,11 @@ struct SealedArray {
   bytes[] data;
 }
 
+library TaskManager {
+	//solhint-disable const-name-snakecase
+	address public constant TaskManager = address(129);
+}
+
 library Common {
     // Values used to communicate types to the runtime.
     // Must match values defined in warp-drive protobufs for everything to 
@@ -89,6 +94,75 @@ library Common {
     function toBytes(uint256 x) internal pure returns (bytes memory b) {
         b = new bytes(32);
         assembly { mstore(add(b, 32), x) }
+    }
+    
+        function bytesToUint256(bytes memory b) internal pure returns (uint256) {
+        require(b.length == 32, string(abi.encodePacked("Input bytes length must be 32, but got ", Strings.toString(b.length))));
+
+        uint256 result;
+        assembly {
+            result := mload(add(b, 32))
+        }
+        return result;
+    }
+
+    function hexStringToUint(string memory hexString) internal pure returns (uint8) {
+        require(bytes(hexString).length == 2, "Invalid hex string length");
+
+        uint8 value = 0;
+        for (uint8 i = 0; i < 2; i++) {
+            value = value * 16 + hexCharToUint8(bytes(hexString)[i]);
+        }
+
+        return value;
+    }
+
+    function hexCharToUint8(bytes1 char) internal pure returns (uint8) {
+        if (char >= "0" && char <= "9") {
+            return uint8(char) - uint8(bytes1("0"));
+        } else if (char >= "a" && char <= "f") {
+            return uint8(char) - uint8(bytes1("a")) + 10;
+        } else if (char >= "A" && char <= "F") {
+            return uint8(char) - uint8(bytes1("A")) + 10;
+        } else {
+            revert("Invalid hex character");
+        }
+    }
+
+    function hexStringToBytes32(string memory hexString) internal pure returns (bytes memory) {
+        bytes memory hexBytes = bytes(hexString);
+        // Ensure the string has the correct length (64 characters for 32 bytes)
+        require(hexBytes.length == 64, "Invalid hex string length");
+
+        // Iterate every 2 bytes in string, consider them as 1 byte
+        bytes memory bb = new bytes(32);
+        string memory l = "";
+        for (uint i = 0; i < 32; i++) {
+            l = string(abi.encodePacked("", hexBytes[i * 2], hexBytes[i * 2 + 1]));
+            bb[i] = bytes1(hexStringToUint(l));
+        }
+
+        return bb;
+    }
+
+    function bytesArrayToString(bytes memory a) internal pure returns (string memory) {
+        string memory b = "[";
+        for (uint i = 0; i < a.length; i++) {
+            b = string(abi.encodePacked(b, Strings.toHexString(uint8(a[i])), " "));
+        }
+
+        b = string(abi.encodePacked(b, "]"));
+        return b;
+    }
+
+    function functionCodeToBytes1(string memory functionCode) internal pure returns (bytes memory) {
+        // Convert the hex string to bytes
+        bytes memory result = new bytes(1);
+        assembly {
+            result := mload(add(functionCode, 1)) // Load the bytes directly from memory
+        }
+
+        return result;
     }
 }
 
@@ -152,18 +226,68 @@ library AsyncFHE {
     euint8 public constant NIL8 = euint8.wrap(0);
     euint16 public constant NIL16 = euint16.wrap(0);
     euint32 public constant NIL32 = euint32.wrap(0);
+    
+    // Default value for temp hash calculation in unary operations
+    string private constant DEFAULT_VALUE = "0";
+
+    // Order is set as in fheos/precompiles/types/types.go
+    enum FunctionId {
+        _0,         // 0 - GetNetworkKey
+        _1,         // 1 - Verify
+        _2,         // 2 - Cast
+        _3,         // 3 - SealOutput
+        _4,         // 4 - Select
+        _5,         // 5 - Require
+        Decrypt,    // 6
+        Sub,        // 7
+        Add,        // 8
+        Xor,        // 9
+        And,        // 10
+        Or,         // 11
+        Not,        // 12
+        Div,        // 13
+        Rem,        // 14
+        Mul,        // 15
+        Shl,        // 16
+        Shr,        // 17
+        Gte,        // 18
+        Lte,        // 19
+        Lt,         // 20
+        Gt,         // 21
+        Min,        // 22
+        Max,        // 23
+        Eq,         // 24
+        Ne,         // 25
+        _26,        // 26 - TrivialEncrypt
+        Random,     // 27
+        Rol,        // 28
+        Ror,        // 29
+        Square      // 30
+    }
+
+    function getTempHash(string memory lhs, string memory rhs, FunctionId functionId) private pure returns (uint256) {
+        return uint256(bytes32(calcBinaryPlaceholderValueHash(
+            Common.hexStringToBytes32(lhs),
+            Common.hexStringToBytes32(rhs),
+            bytes1(uint8(functionId))
+        )));
+    }
 
     function calcBinaryPlaceholderValueHash(
         bytes memory lhsHash,
-        bytes memory rhsHash, 
-        uint functionId
-    ) internal pure returns (bytes32) {
-        bytes memory functionBytes = abi.encodePacked(functionId);
-        bytes memory combined = bytes.concat(lhsHash, rhsHash, functionBytes);
-        bytes32 hash = keccak256(combined);
+        bytes memory rhsHash,
+        bytes1 functionId
+    ) private pure returns (bytes memory) {
+        bytes memory combined = bytes.concat(lhsHash, rhsHash, functionId);
+
+        // Calculate Keccak256 hash
+        bytes memory hash = abi.encodePacked(keccak256(combined));
+
+        // Copy magic bytes to the first four bytes of the hash
         for (uint i = 0; i < 4; i++) {
-            hash |= bytes32(CT_HASH_MAGIC_BYTES[i] & 0xFF) >> (i * 8);
+            hash[i] = CT_HASH_MAGIC_BYTES[i];
         }
+
         return hash;
     }
 
@@ -459,6 +583,11 @@ export function SolTemplate2Arg(
         funcBody += `
         ${returnType} result = mathHelper(${UintTypes[input1]}, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).${name});
         return result;`;
+        funcBody += `
+        uint256 ctHash = getTempHash(lhs, rhs, FunctionId.${name});
+        ITaskManager(tm).createTask(ctHash, "${name}", lhs, rhs);
+        return ctHash;
+        }`;
       }
     } else if (input2 === "bytes32") {
       // **** Value 1 is encrypted, value 2 is bytes32 - this is basically reencrypt/wrapForUser
