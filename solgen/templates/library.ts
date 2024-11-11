@@ -8,7 +8,11 @@ import {
   UintTypes,
   valueIsEncrypted,
   valueIsPlaintext,
+  SealedOutputStructs,
+  SEALING_FUNCTION_NAME,
+  SEALING_TYPED_FUNCTION_NAME,
   LOCAL_SEAL_FUNCTION_NAME,
+  LOCAL_SEAL_TYPED_FUNCTION_NAME,
   LOCAL_DECRYPT_FUNCTION_NAME,
   AllowedOperations,
   AllowedTypesOnCastToEaddress,
@@ -37,8 +41,38 @@ ${EInputType.map((type) => {
 }).join("\n")}
 
 struct SealedArray {
-  bytes[] data;
+    bytes[] data;
 }
+
+${SealedOutputStructs.map((struct) => {
+  let docstring = `
+/// @dev Utility structure providing clients with type context of a sealed output string.
+/// Return type of \`FHE.sealoutputTyped\` and \`sealTyped\` within the binding libraries.`
+
+  console.log(struct, struct === `SealedBool`)
+
+  if (struct === `SealedBool`) {
+    docstring +=  `
+/// \`utype\` representing Bool is 13. See \`FHE.sol\` for more.`;
+  }
+  if (struct === `SealedUint`) {
+    docstring += `
+/// \`utype\` representing Uints is 0-5. See \`FHE.sol\` for more.`;
+    docstring += `
+/// \`utype\` map: {uint8: 0} {uint16: 1} {uint32: 2} {uint64: 3} {uint128: 4} {uint256: 5}.`;
+  }
+  if (struct === `SealedAddress`) {
+    docstring +=  `
+/// \`utype\` representing Address is 12. See \`FHE.sol\` for more.`;
+  }
+
+  return `${docstring}
+struct ${struct} {
+    string data;
+    uint8 utype;
+}`;
+}).join("\n")}
+
 
 library Common {
     // Values used to communicate types to the runtime.
@@ -83,7 +117,7 @@ library Common {
     }
 
     function bigIntToAddress(uint256 i) internal pure returns (address) {
-      return address(uint160(i));
+        return address(uint160(i));
     }
     
     function toBytes(uint256 x) internal pure returns (bytes memory b) {
@@ -297,11 +331,11 @@ export const AsTypeFunction = (
     /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
     /// @return A ciphertext representation of the input
     function asEbool(bool value, int32 securityZone) internal pure returns (ebool) {
-      uint256 sVal = 0;
-      if (value) {
-        sVal = 1;
-      }
-      return asEbool(sVal, securityZone);
+        uint256 sVal = 0;
+        if (value) {
+            sVal = 1;
+        }
+        return asEbool(sVal, securityZone);
     }`;
   } else if (fromType.startsWith("inE")) {
     docString = `
@@ -383,15 +417,27 @@ export function SolTemplate2Arg(
     /// @return The result of the operation
     `;
 
-  // reencrypt
-  if (variableName2 === "publicKey") {
+  // reencrypt (seal)
+  if (name === SEALING_FUNCTION_NAME || name === SEALING_TYPED_FUNCTION_NAME) {
     docString = `
     /// @notice performs the ${name} function on a ${input1} ciphertext. This operation returns the plaintext value, sealed for the public key provided 
     /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param value Ciphertext to decrypt and seal
     /// @param publicKey Public Key that will receive the sealed plaintext
-    /// @return Plaintext input, sealed for the owner of \`publicKey\`
     `;
+
+    // Diff return types of the sealing functions
+    if (name === SEALING_FUNCTION_NAME) {
+      docString += `/// @return Plaintext input, sealed for the owner of \`publicKey\`
+    `;
+    }
+    if (name === SEALING_TYPED_FUNCTION_NAME) {
+      // Example Output: "/// @return SealedBool({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Common.EBOOL_TFHE })"
+      // @architect-dev 2024-11-11
+      const returnTypeClean = returnType.replace(" memory", "");
+      docString += `/// @return ${returnTypeClean}({ data: Plaintext input, sealed for the owner of \`publicKey\`, utype: ${UintTypes[input1 as EUintType]} })
+    `;
+    }
   }
 
   let funcBody = docString;
@@ -439,7 +485,7 @@ export function SolTemplate2Arg(
         ${returnType} result = mathHelper(${UintTypes[input1]}, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).${name});
         return result;`;
       }
-    } else if (input2 === "bytes32") {
+    } else if (name === SEALING_FUNCTION_NAME) {
       // **** Value 1 is encrypted, value 2 is bytes32 - this is basically reencrypt/wrapForUser
       funcBody += `
         if (!isInitialized(${variableName1})) {
@@ -453,6 +499,10 @@ export function SolTemplate2Arg(
         return Impl.${name}(${
         UintTypes[input1]
       }, unwrapped, ${variableName2});`;
+    } else if (name === SEALING_TYPED_FUNCTION_NAME) {
+      const returnTypeClean = returnType.replace(" memory", "");
+      funcBody += `
+        return ${returnTypeClean}({ data: sealoutput(${variableName1}, ${variableName2}), utype: ${UintTypes[input1 as EUintType]} });`;
     }
   } else {
     // don't support input 1 is plaintext
@@ -524,19 +574,17 @@ export function SolTemplateDecrypt(input1: AllTypes, returnType: AllTypes) {
     if (returnType === "bool") {
       funcBody += `
         if (defaultValue) {
-           gasDefaultValue = 1;
+            gasDefaultValue = 1;
         } else {
-           gasDefaultValue = 0;
+            gasDefaultValue = 0;
         }
         `;
     } else if (returnType === "address") {
       funcBody += `
-        gasDefaultValue = uint256(uint160(defaultValue));
-      `;
+        gasDefaultValue = uint256(uint160(defaultValue));\n`;
     } else {
       funcBody += `
-        gasDefaultValue = uint256(defaultValue);
-      `;
+        gasDefaultValue = uint256(defaultValue);\n`;
     }
     let getResult = (inputName: string) =>
       `FheOps(Precompiles.Fheos).decrypt(${UintTypes[input1]}, ${inputName}, gasDefaultValue);`;
@@ -749,7 +797,8 @@ export const OperatorBinding = (
     `;
 
   if (!unary) {
-    docString += `/// @param rhs second input of type ${forType}\n`;
+    docString += `/// @param rhs second input of type ${forType}
+    `;
   }
 
   docString += `/// @return the result of the ${funcName}`;
@@ -781,6 +830,18 @@ export const SealFromType = (thisType: string) => {
   return `
     function ${LOCAL_SEAL_FUNCTION_NAME}(${thisType} value, bytes32 publicKey) internal pure returns (${SEAL_RETURN_TYPE} memory) {
         return FHE.sealoutput(value, publicKey);
+    }`;
+};
+
+export const SealTypedFromType = (thisType: string) => {
+  let returnType: string
+  if (thisType === 'ebool') returnType = 'SealedBool'
+  else if (thisType === 'eaddress') returnType = 'SealedAddress'
+  else returnType = 'SealedUint'
+
+  return `
+    function ${LOCAL_SEAL_TYPED_FUNCTION_NAME}(${thisType} value, bytes32 publicKey) internal pure returns (${returnType} memory) {
+        return FHE.sealoutputTyped(value, publicKey);
     }`;
 };
 

@@ -18,6 +18,7 @@ import {
   RandomGenericFunction,
   RandomFunctions,
   SolTemplateDecrypt,
+  SealTypedFromType,
 } from "./templates/library";
 
 import {
@@ -65,6 +66,22 @@ interface FunctionMetadata {
 
 const generateMetadataPayload = async (): Promise<FunctionMetadata[]> => {
   let result = await getFunctionsFromGo("../precompiles/contracts.go");
+
+  // Inject `sealoutputTyped` after the base `sealoutput`
+  // @architect-dev 2024-11-11
+  result = result.flatMap((fn) =>
+    fn.name === SEALING_FUNCTION_NAME
+      ? [fn, {
+        name: 'sealoutputTyped',
+        paramsCount: 2,
+        needsSameType: false,
+        // Is replaced in `getReturnType` with `SealedBool`/`SealedUint`/`SealedAddress` based on input0
+        returnType: 'SealedStruct memory',
+        inputTypes: [ 'encrypted', 'bytes32' ],
+        isBooleanMathOp: true
+      }]
+      : fn
+  )
 
   return result.map((value) => {
     return {
@@ -117,6 +134,15 @@ const getReturnType = (
     }
 
     return inputType.slice(1);
+  }
+
+  // `sealoutputTyped` determine output type based on input
+  // @architect-dev 2024-11-11
+  if (returnType && returnType === "SealedStruct memory") {
+    console.log({inputs, returnType})
+    if (inputs[0] === 'input0 ebool') return returnType.replace("Struct", "Bool");
+    if (inputs[0] === 'input0 eaddress') return returnType.replace("Struct", "Address");
+    return returnType.replace("Struct", "Uint");
   }
 
   if (returnType && returnType !== "encrypted") {
@@ -540,6 +566,7 @@ const main = async () => {
     );
 
     outputFile += SealFromType(encryptedType);
+    outputFile += SealTypedFromType(encryptedType);
     outputFile += DecryptBinding(encryptedType);
 
     outputFile += PostFix();
