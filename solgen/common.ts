@@ -113,6 +113,17 @@ export const UintTypes: Record<EUintType, string> = {
   eaddress: "Common.EADDRESS_TFHE",
 };
 
+export const UTypeSealedOutputMap: Record<EUintType, SealedOutputType> = {
+  ebool: "SealedBool",
+  euint8: "SealedUint",
+  euint16: "SealedUint",
+  euint32: "SealedUint",
+  euint64: "SealedUint",
+  euint128: "SealedUint",
+  euint256: "SealedUint",
+  eaddress: "SealedAddress",
+}
+
 interface OperatorMap {
   operator: string | null;
   func: string;
