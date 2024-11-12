@@ -70,7 +70,6 @@ const generateMetadataPayload = async (): Promise<FunctionMetadata[]> => {
   let result = await getFunctionsFromGo("../precompiles/contracts.go");
 
   // Inject `sealoutputTyped` after the base `sealoutput`
-  // @architect-dev 2024-11-11
   result = result.flatMap((fn) =>
     fn.name === SEALING_FUNCTION_NAME
       ? [fn, {
@@ -138,8 +137,7 @@ const getReturnType = (
     return inputType.slice(1);
   }
 
-  // `sealoutputTyped` determine output type based on input
-  // @architect-dev 2024-11-11
+  // `sealoutputTyped` determine and replace output type based on input0 type
   if (returnType && returnType === "SealedStruct memory") {
     if (inputs[0] === 'input0 ebool') return returnType.replace("Struct", "Bool");
     if (inputs[0] === 'input0 eaddress') return returnType.replace("Struct", "Address");
@@ -282,7 +280,6 @@ const generateSolidityBenchContract = (metadata: FunctionMetadata): string => {
 
   if (functionName === SEALING_TYPED_FUNCTION_NAME) {
     // `sealoutputTyped` is a wrapper around `sealoutput`, and does not need to be benchmarked directly
-    // @architect-dev 2024-11-11
     return "";
   }
 

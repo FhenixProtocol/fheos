@@ -237,7 +237,7 @@ describe.only("Test SealOutputTyped", () => {
 			let plaintextInput = Math.random() > 0.5 ? true : false
 
 			let encryptedOutput = await contract.sealoutputTypedBool(test, plaintextInput, fromHexString(fheContract.permit.sealingKey.publicKey))
-			expect(encryptedOutput.utype).toBe(EBOOL_TFHE)
+			expect(encryptedOutput.utype).toBe(BigInt(EBOOL_TFHE))
 
 			let decryptedOutput = fheContract.instance.unseal(contractAddress, encryptedOutput.data)
 			let decryptedOutputBool = Boolean(decryptedOutput).valueOf()
@@ -250,7 +250,7 @@ describe.only("Test SealOutputTyped", () => {
 			let plaintextInput = BigInt(Math.floor(Math.random() * 1000) % 256)
 
 			let encryptedOutput = await contract.sealoutputTypedUint(test, plaintextInput, fromHexString(fheContract.permit.sealingKey.publicKey))
-			expect(encryptedOutput.utype).toBe(utype)
+			expect(encryptedOutput.utype).toBe(BigInt(utype))
       
 			let decryptedOutput = fheContract.instance.unseal(contractAddress, encryptedOutput.data)
 			expect(decryptedOutput).toBe(plaintextInput)
@@ -262,7 +262,7 @@ describe.only("Test SealOutputTyped", () => {
 			let plaintextInput = '0x1BDB34f2cEA785317903eD9618F5282BD5Be5c75'
 
 			let encryptedOutput = await contract.sealoutputTypedAddress(test, plaintextInput, fromHexString(fheContract.permit.sealingKey.publicKey))
-			expect(encryptedOutput.utype).toBe(EADDRESS_TFHE)
+			expect(encryptedOutput.utype).toBe(BigInt(EADDRESS_TFHE))
 
 			let decryptedOutput = fheContract.instance.unseal(contractAddress, encryptedOutput.data)
 			let decryptedOutputAddress = bnToAddress(decryptedOutput)

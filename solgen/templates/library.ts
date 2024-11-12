@@ -431,7 +431,6 @@ export function SolTemplate2Arg(
     }
     if (name === SEALING_TYPED_FUNCTION_NAME) {
       // Example Output: "/// @return SealedBool({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Common.EBOOL_TFHE })"
-      // @architect-dev 2024-11-11
       const returnTypeClean = returnType.replace(" memory", "");
       docString += `/// @return ${returnTypeClean}({ data: Plaintext input, sealed for the owner of \`publicKey\`, utype: ${UintTypes[input1 as EUintType]} })
     `;
