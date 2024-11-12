@@ -628,7 +628,7 @@ export function testContractSealTyped() {
         revert TestNotFound(test);
     }`;
 
-  const abi = `export interface SealoutputTypedUintTestType extends BaseContract {
+  const abi = `export interface SealoutputTypedTestType extends BaseContract {
     ${SEALING_TYPED_FUNCTION_NAME}Bool: (test: string, a: boolean, pubkey: Uint8Array) => Promise<{ data: string, utype: number }>;
     ${SEALING_TYPED_FUNCTION_NAME}Uint: (test: string, a: bigint, pubkey: Uint8Array) => Promise<{ data: string, utype: number }>;
     ${SEALING_TYPED_FUNCTION_NAME}Address: (test: string, a: string, pubkey: Uint8Array) => Promise<{ data: string, utype: number }>;

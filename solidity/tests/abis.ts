@@ -11,7 +11,7 @@ export interface AddTestType extends BaseContract {
 export interface SealoutputTestType extends BaseContract {
     sealoutput: (test: string, a: bigint, pubkey: Uint8Array) => Promise<string>;
 }
-export interface SealoutputTypedUintTestType extends BaseContract {
+export interface SealoutputTypedTestType extends BaseContract {
     sealoutputTypedBool: (test: string, a: boolean, pubkey: Uint8Array) => Promise<{ data: string, utype: number }>;
     sealoutputTypedUint: (test: string, a: bigint, pubkey: Uint8Array) => Promise<{ data: string, utype: number }>;
     sealoutputTypedAddress: (test: string, a: string, pubkey: Uint8Array) => Promise<{ data: string, utype: number }>;

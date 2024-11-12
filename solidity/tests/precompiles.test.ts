@@ -1,4 +1,4 @@
-import { createFheInstance, deployContract, fromHexString } from "./utils";
+import { bnToAddress, createFheInstance, deployContract, fromHexString } from "./utils";
 import {
   AddTestType,
   LteTestType,
@@ -35,6 +35,7 @@ import {
   RolTestType,
   RorTestType,
   SquareTestType,
+  SealoutputTypedTestType,
 } from "./abis";
 
 const getFheContract = async (contractAddress: string) => {
@@ -182,6 +183,102 @@ describe("Test SealOutput", () => {
       } else {
         expect(decryptedOutput).toBe(BigInt(plaintextInput));
       }
+    });
+  }
+});
+
+
+describe.only("Test SealOutputTyped", () => {
+  let contract;
+  let fheContract;
+  let contractAddress;
+
+  // We don't really need it as test but it is a test since it is async
+  it(`Test Contract Deployment`, async () => {
+    const baseContract = await deployContract("SealoutputTypedTest");
+    contract = baseContract as SealoutputTypedTestType;
+    contractAddress = await baseContract.getAddress();
+    fheContract = await getFheContract(contractAddress);
+
+    expect(contract).toBeTruthy();
+    expect(fheContract).toBeTruthy();
+  });
+
+  const testCases = {
+    'Bool': [
+      "sealoutputTyped(ebool)",
+      "sealTyped(ebool)",
+    ],
+    'Uint': [
+      "sealoutputTyped(euint8)",
+      "sealoutputTyped(euint16)",
+      "sealoutputTyped(euint32)",
+      "sealoutputTyped(euint64)",
+      "sealoutputTyped(euint128)",
+      "sealoutputTyped(euint256)",
+      "sealTyped(euint8)",
+    ],
+    'Address': [
+      "sealoutputTyped(eaddress)",
+      "sealTyped(eaddress)",
+    ],
+  } as const;
+
+  for (const test of testCases.Bool) {
+    it(`Test SealedBool :: ${test}`, async () => {
+      let plaintextInput = Math.random() > 0.5 ? true : false
+      let encryptedOutput = await contract.sealoutput(
+        test,
+        plaintextInput,
+        fromHexString(fheContract.permit.sealingKey.publicKey)
+      );
+      let decryptedOutput = fheContract.instance.unseal(
+        contractAddress,
+        encryptedOutput
+      );
+      let decryptedOutputBool = Boolean(decryptedOutput).valueOf()
+      expect(decryptedOutputBool).toBe(plaintextInput);
+    });
+  }
+
+  for (const test of testCases.Uint) {
+    it(`Test SealedUint :: ${test}`, async () => {
+      let plaintextInput = Math.floor(Math.random() * 1000) % 256;
+      let encryptedOutput = await contract.sealoutput(
+        test,
+        plaintextInput,
+        fromHexString(fheContract.permit.sealingKey.publicKey)
+      );
+      let decryptedOutput = fheContract.instance.unseal(
+        contractAddress,
+        encryptedOutput
+      );
+      if (test.includes("ebool")) {
+        expect(decryptedOutput).toBe(BigInt(Math.min(1, plaintextInput)));
+      } else {
+        expect(decryptedOutput).toBe(BigInt(plaintextInput));
+      }
+    });
+  }
+
+
+
+  for (const test of testCases.Address) {
+    it(`Test SealedAddress :: ${test}`, async () => {
+      // Random address
+      let plaintextInput = '0x1BDB34f2cEA785317903eD9618F5282BD5Be5c75'
+      let encryptedOutput = await contract.sealoutput(
+        test,
+        plaintextInput,
+        fromHexString(fheContract.permit.sealingKey.publicKey)
+      );
+      let decryptedOutput = fheContract.instance.unseal(
+        contractAddress,
+        encryptedOutput
+      );
+
+      let decryptedOutputAddress = bnToAddress(decryptedOutput)
+      expect(decryptedOutputAddress).toBe(plaintextInput);
     });
   }
 });
