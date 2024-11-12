@@ -189,7 +189,7 @@ describe("Test SealOutput", () => {
 
 
 describe.only("Test SealOutputTyped", () => {
-  let contract;
+  let contract: SealoutputTypedTestType;
   let fheContract;
   let contractAddress;
 
@@ -227,7 +227,7 @@ describe.only("Test SealOutputTyped", () => {
   for (const test of testCases.Bool) {
     it(`Test SealedBool :: ${test}`, async () => {
       let plaintextInput = Math.random() > 0.5 ? true : false
-      let encryptedOutput = await contract.sealoutput(
+      let encryptedOutput = await contract.sealoutputTypedBool(
         test,
         plaintextInput,
         fromHexString(fheContract.permit.sealingKey.publicKey)
@@ -243,8 +243,8 @@ describe.only("Test SealOutputTyped", () => {
 
   for (const test of testCases.Uint) {
     it(`Test SealedUint :: ${test}`, async () => {
-      let plaintextInput = Math.floor(Math.random() * 1000) % 256;
-      let encryptedOutput = await contract.sealoutput(
+      let plaintextInput = BigInt(Math.floor(Math.random() * 1000) % 256);
+      let encryptedOutput = await contract.sealoutputTypedUint(
         test,
         plaintextInput,
         fromHexString(fheContract.permit.sealingKey.publicKey)
@@ -253,11 +253,7 @@ describe.only("Test SealOutputTyped", () => {
         contractAddress,
         encryptedOutput
       );
-      if (test.includes("ebool")) {
-        expect(decryptedOutput).toBe(BigInt(Math.min(1, plaintextInput)));
-      } else {
-        expect(decryptedOutput).toBe(BigInt(plaintextInput));
-      }
+      expect(decryptedOutput).toBe(plaintextInput);
     });
   }
 
@@ -267,7 +263,7 @@ describe.only("Test SealOutputTyped", () => {
     it(`Test SealedAddress :: ${test}`, async () => {
       // Random address
       let plaintextInput = '0x1BDB34f2cEA785317903eD9618F5282BD5Be5c75'
-      let encryptedOutput = await contract.sealoutput(
+      let encryptedOutput = await contract.sealoutputTypedAddress(
         test,
         plaintextInput,
         fromHexString(fheContract.permit.sealingKey.publicKey)
