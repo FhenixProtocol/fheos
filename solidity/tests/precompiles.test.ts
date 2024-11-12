@@ -193,7 +193,35 @@ describe.only("Test SealOutputTyped", () => {
   let fheContract;
   let contractAddress;
 
-  // We don't really need it as test but it is a test since it is async
+  const EUINT8_TFHE = 0;
+  const EUINT16_TFHE = 1;
+  const EUINT32_TFHE = 2;
+  const EUINT64_TFHE = 3;
+  const EUINT128_TFHE = 4;
+  const EUINT256_TFHE = 5;
+  const EADDRESS_TFHE = 12;
+  const EBOOL_TFHE = 13;
+
+  const testCases = {
+    'Bool': [
+      "sealoutputTyped(ebool)",
+      "sealTyped(ebool)",
+    ],
+    'Uint': [
+      { test: "sealoutputTyped(euint8)", utype: EUINT8_TFHE },
+      { test: "sealoutputTyped(euint16)", utype: EUINT16_TFHE },
+      { test: "sealoutputTyped(euint32)", utype: EUINT32_TFHE },
+      { test: "sealoutputTyped(euint64)", utype: EUINT64_TFHE },
+      { test: "sealoutputTyped(euint128)", utype: EUINT128_TFHE },
+      { test: "sealoutputTyped(euint256)", utype: EUINT256_TFHE },
+      { test: "sealTyped(euint8)", utype: EUINT8_TFHE },
+    ],
+    'Address': [
+      "sealoutputTyped(eaddress)",
+      "sealTyped(eaddress)",
+    ],
+  } as const;
+
   it(`Test Contract Deployment`, async () => {
     const baseContract = await deployContract("SealoutputTypedTest");
     contract = baseContract as SealoutputTypedTestType;
@@ -204,79 +232,43 @@ describe.only("Test SealOutputTyped", () => {
     expect(fheContract).toBeTruthy();
   });
 
-  const testCases = {
-    'Bool': [
-      "sealoutputTyped(ebool)",
-      "sealTyped(ebool)",
-    ],
-    'Uint': [
-      "sealoutputTyped(euint8)",
-      "sealoutputTyped(euint16)",
-      "sealoutputTyped(euint32)",
-      "sealoutputTyped(euint64)",
-      "sealoutputTyped(euint128)",
-      "sealoutputTyped(euint256)",
-      "sealTyped(euint8)",
-    ],
-    'Address': [
-      "sealoutputTyped(eaddress)",
-      "sealTyped(eaddress)",
-    ],
-  } as const;
+	for (const test of testCases.Bool) {
+		it(`Test SealedBool :: ${test}`, async () => {
+			let plaintextInput = Math.random() > 0.5 ? true : false
 
-  for (const test of testCases.Bool) {
-    it(`Test SealedBool :: ${test}`, async () => {
-      let plaintextInput = Math.random() > 0.5 ? true : false
-      let encryptedOutput = await contract.sealoutputTypedBool(
-        test,
-        plaintextInput,
-        fromHexString(fheContract.permit.sealingKey.publicKey)
-      );
-      let decryptedOutput = fheContract.instance.unseal(
-        contractAddress,
-        encryptedOutput
-      );
-      let decryptedOutputBool = Boolean(decryptedOutput).valueOf()
-      expect(decryptedOutputBool).toBe(plaintextInput);
-    });
-  }
+			let encryptedOutput = await contract.sealoutputTypedBool(test, plaintextInput, fromHexString(fheContract.permit.sealingKey.publicKey))
+			expect(encryptedOutput.utype).toBe(EBOOL_TFHE)
 
-  for (const test of testCases.Uint) {
-    it(`Test SealedUint :: ${test}`, async () => {
-      let plaintextInput = BigInt(Math.floor(Math.random() * 1000) % 256);
-      let encryptedOutput = await contract.sealoutputTypedUint(
-        test,
-        plaintextInput,
-        fromHexString(fheContract.permit.sealingKey.publicKey)
-      );
-      let decryptedOutput = fheContract.instance.unseal(
-        contractAddress,
-        encryptedOutput
-      );
-      expect(decryptedOutput).toBe(plaintextInput);
-    });
-  }
+			let decryptedOutput = fheContract.instance.unseal(encryptedOutput.data)
+			let decryptedOutputBool = Boolean(decryptedOutput).valueOf()
+			expect(decryptedOutputBool).toBe(plaintextInput)
+		})
+	}
 
+	for (const { test, utype } of testCases.Uint) {
+		it(`Test SealedUint :: ${test}`, async () => {
+			let plaintextInput = BigInt(Math.floor(Math.random() * 1000) % 256)
 
+			let encryptedOutput = await contract.sealoutputTypedUint(test, plaintextInput, fromHexString(fheContract.permit.sealingKey.publicKey))
+			expect(encryptedOutput.utype).toBe(utype)
+      
+			let decryptedOutput = fheContract.instance.unseal(encryptedOutput.data)
+			expect(decryptedOutput).toBe(plaintextInput)
+		})
+	}
 
-  for (const test of testCases.Address) {
-    it(`Test SealedAddress :: ${test}`, async () => {
-      // Random address
-      let plaintextInput = '0x1BDB34f2cEA785317903eD9618F5282BD5Be5c75'
-      let encryptedOutput = await contract.sealoutputTypedAddress(
-        test,
-        plaintextInput,
-        fromHexString(fheContract.permit.sealingKey.publicKey)
-      );
-      let decryptedOutput = fheContract.instance.unseal(
-        contractAddress,
-        encryptedOutput
-      );
+	for (const test of testCases.Address) {
+		it(`Test SealedAddress :: ${test}`, async () => {
+			let plaintextInput = '0x1BDB34f2cEA785317903eD9618F5282BD5Be5c75'
 
-      let decryptedOutputAddress = bnToAddress(decryptedOutput)
-      expect(decryptedOutputAddress).toBe(plaintextInput);
-    });
-  }
+			let encryptedOutput = await contract.sealoutputTypedAddress(test, plaintextInput, fromHexString(fheContract.permit.sealingKey.publicKey))
+			expect(encryptedOutput.utype).toBe(EADDRESS_TFHE)
+
+			let decryptedOutput = fheContract.instance.unseal(encryptedOutput.data)
+			let decryptedOutputAddress = bnToAddress(decryptedOutput)
+			expect(decryptedOutputAddress).toBe(plaintextInput)
+		})
+	}
 });
 
 describe("Test Lte", () => {
