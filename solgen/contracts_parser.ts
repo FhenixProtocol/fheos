@@ -4,7 +4,7 @@ import { SEAL_RETURN_TYPE, SEALING_FUNCTION_NAME } from "./common";
 
 type ParamTypes = "encrypted" | "uint8" | "plaintext" | "bytes32";
 
-interface FunctionAnalysis {
+export interface FunctionAnalysis {
   name: string;
   paramsCount: number;
   needsSameType: boolean;
