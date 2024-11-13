@@ -20,6 +20,11 @@ type DecryptCallbackFunc struct {
 	Callback    func(url string, ctKey []byte, plaintext *big.Int)
 }
 
+type SealOutputCallbackFunc struct {
+	CallbackUrl string
+	Callback    func(url string, ctKey []byte, value string)
+}
+
 func PreProcessOperation1(functionName types.PrecompileName, utype byte, input []byte, tp *TxParams) (uint64, error) {
 	uintType := fhe.EncryptionType(utype)
 
@@ -45,6 +50,36 @@ func PreProcessOperation1(functionName types.PrecompileName, utype byte, input [
 
 	return gas, nil
 }
+
+func PreProcessSealOutput(functionName types.PrecompileName, utype byte, ctHash []byte, pk []byte, onResultCallback *SealOutputCallbackFunc) (uint64, error) {
+	uintType := fhe.EncryptionType(utype)
+	if !types.IsValidType(uintType) {
+		logger.Error("invalid ciphertext", "type", utype)
+		return 0, vm.ErrExecutionReverted
+	}
+
+	if onResultCallback == nil {
+		msg := functionName.String() + " must set callback"
+		logger.Error(msg, "callback was not provided")
+		return 0, vm.ErrExecutionReverted
+	}
+
+	if len(ctHash) != 32 {
+		msg := functionName.String() + " ciphertext's hashes need to be 32 bytes long"
+		logger.Error(msg, "ciphertext-hash", hex.EncodeToString(ctHash), "hash-len", len(ctHash))
+		return 0, vm.ErrExecutionReverted
+	}
+
+	if len(pk) != 32 {
+		msg := functionName.String() + " public key need to be 32 bytes long"
+		logger.Error(msg, "public-key", hex.EncodeToString(pk), "len", len(pk))
+		return 0, vm.ErrExecutionReverted
+	}
+
+	gas := getGasForPrecompile(functionName, uintType)
+	return gas, nil
+}
+
 func ProcessOperation1(functionName types.PrecompileName, utype byte, input []byte, tp *TxParams) (*fhe.FheEncrypted, uint64, error) {
 	gas, err := PreProcessOperation1(functionName, utype, input, tp)
 	if err != nil {

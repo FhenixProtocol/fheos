@@ -83,32 +83,16 @@ func Verify(utype byte, input []byte, securityZone int32, tp *TxParams, _ *Callb
 	return ct.GetHashBytes(), gas, nil
 }
 
-func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams, _ *CallbackFunc) (string, uint64, error) {
+func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams, onResultCallback *SealOutputCallbackFunc) (string, uint64, error) {
 	//solgen: bool math
 	functionName := types.SealOutput
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
-	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 
-	uintType := fhe.EncryptionType(utype)
-	if !types.IsValidType(uintType) {
-		logger.Error("invalid ciphertext", "type", utype)
-		return "", 0, vm.ErrExecutionReverted
-	}
-
-	gas := getGasForPrecompile(functionName, uintType)
-
-	if len(ctHash) != 32 {
-		msg := functionName.String() + " ciphertext's hashes need to be 32 bytes long"
-		logger.Error(msg, "ciphertext-hash", hex.EncodeToString(ctHash), "hash-len", len(ctHash))
-		return "", 0, vm.ErrExecutionReverted
-	}
-
-	if len(pk) != 32 {
-		msg := functionName.String() + " public key need to be 32 bytes long"
-		logger.Error(msg, "public-key", hex.EncodeToString(pk), "len", len(pk))
-		return "", 0, vm.ErrExecutionReverted
+	gas, err := PreProcessSealOutput(functionName, utype, ctHash, pk, onResultCallback)
+	if err != nil {
+		return "0x" + strings.Repeat("00", 370), gas, vm.ErrExecutionReverted
 	}
 
 	// The rest of the function performs the following steps:
@@ -119,62 +103,73 @@ func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams, _ *CallbackF
 	//    a. Trying to asynchronously evaluate the ct.
 	//    b. Required to have ParallelTxHooks.
 	//    c. Return default value while async evaluation is in progress.
-	hash := fhe.BytesToHash(ctHash)
-	key := genSealedKey(ctHash, pk, functionName)
-	record, exists := State.DecryptResults.Get(key)
-	if value, ok := record.Value.(string); exists && ok {
-		logger.Debug("found existing sealoutput result, returning..", "value", value)
-		return value, gas, nil
-	} else if tp.GasEstimation {
-		return "0x" + strings.Repeat("00", 370), gas, nil
-	} else {
-		ct := awaitCtResult(storage, ctHash, tp)
-		if ct == nil {
-			msg := functionName.String() + " unverified ciphertext handle"
-			logger.Error(msg, "ciphertext-hash", hex.EncodeToString(ctHash))
-			return "", 0, vm.ErrExecutionReverted
-		}
+	go func(ctHash []byte) {
+		storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 
-		if tp.EthCall {
-			reencryptedValue, err := fhe.SealOutput(*ct, pk)
-			if err != nil {
-				logger.Error("failed to seal output", "err", err)
-				return "", 0, vm.ErrExecutionReverted
-			}
-			return string(reencryptedValue), gas, nil
-		} else if tp.ParallelTxHooks == nil {
-			logger.Error("no decryption result found and no parallel tx hooks were set")
-			return "", 0, vm.ErrExecutionReverted
-		}
-
-		tp.ParallelTxHooks.NotifyCt(&key)
-
-		if !exists {
-			State.DecryptResults.CreateEmptyRecord(key)
-		}
-
-		userPk := make([]byte, len(pk))
-		copy(userPk, pk)
-		go func() {
-			logger.Debug("sealing output", "hash", hash)
-			reencryptedValue, err := fhe.SealOutput(*ct, userPk)
-			if err != nil {
-				logger.Error("failed to seal output", "err", err)
+		hash := fhe.BytesToHash(ctHash)
+		key := genSealedKey(ctHash, pk, functionName)
+		record, exists := State.DecryptResults.Get(key)
+		url := (*onResultCallback).CallbackUrl
+		if value, ok := record.Value.(string); exists && ok {
+			logger.Debug("found existing sealoutput result, returning..", "value", value)
+			(*onResultCallback).Callback(url, ctHash, value)
+			return
+		} else if tp.GasEstimation {
+			(*onResultCallback).Callback(url, ctHash, "0x"+strings.Repeat("00", 370))
+			return
+		} else {
+			ct := awaitCtResult(storage, ctHash, tp)
+			if ct == nil {
+				msg := functionName.String() + " unverified ciphertext handle"
+				logger.Error(msg, "ciphertext-hash", hex.EncodeToString(ctHash))
 				return
 			}
 
-			logger.Debug("sealed output", "hash", hash, "value", reencryptedValue)
-			err = State.DecryptResults.SetValue(key, string(reencryptedValue))
-			if err != nil {
-				logger.Error("failed setting sealoutput result", "error", err)
+			if tp.EthCall {
+				reencryptedValue, err := fhe.SealOutput(*ct, pk)
+				if err != nil {
+					logger.Error("failed to seal output", "err", err)
+					return
+				}
+				(*onResultCallback).Callback(url, ctHash, string(reencryptedValue))
+				return
+			} else if tp.ParallelTxHooks == nil {
+			} else if tp.ParallelTxHooks == nil {
+				logger.Error("no decryption result found and no parallel tx hooks were set")
 				return
 			}
-			tp.ParallelTxHooks.NotifyDecryptRes(&key)
-		}()
 
-		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "ciphertext-hash ", hex.EncodeToString(ctHash), "public-key", hex.EncodeToString(pk))
-		return "0x" + strings.Repeat("00", 370), gas, nil
-	}
+			tp.ParallelTxHooks.NotifyCt(&key)
+
+			if !exists {
+				State.DecryptResults.CreateEmptyRecord(key)
+			}
+
+			userPk := make([]byte, len(pk))
+			copy(userPk, pk)
+			go func() {
+				logger.Debug("sealing output", "hash", hash)
+				reencryptedValue, err := fhe.SealOutput(*ct, userPk)
+				if err != nil {
+					logger.Error("failed to seal output", "err", err)
+					return
+				}
+
+				logger.Debug("sealed output", "hash", hash, "value", reencryptedValue)
+				err = State.DecryptResults.SetValue(key, string(reencryptedValue))
+				if err != nil {
+					logger.Error("failed setting sealoutput result", "error", err)
+					return
+				}
+				tp.ParallelTxHooks.NotifyDecryptRes(&key)
+			}()
+
+			logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "ciphertext-hash ", hex.EncodeToString(ctHash), "public-key", hex.EncodeToString(pk))
+			(*onResultCallback).Callback(url, ctHash, "0x"+strings.Repeat("00", 370))
+			return
+		}
+	}(ctHash)
+	return "0x" + strings.Repeat("00", 370), gas, nil
 }
 
 func Decrypt(utype byte, input []byte, defaultValue *big.Int, tp *TxParams, onResultCallback *DecryptCallbackFunc) (*big.Int, uint64, error) {

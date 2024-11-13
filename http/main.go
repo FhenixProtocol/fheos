@@ -32,6 +32,12 @@ type DecryptRequest struct {
 	RequesterUrl string `json:"requesterUrl"`
 }
 
+type SealOutputRequest struct {
+	UType        byte   `json:"utype"`
+	Hash         string `json:"hash"`
+	RequesterUrl string `json:"requesterUrl"`
+}
+
 type HashResultUpdate struct {
 	TempKey    []byte `json:"tempKey"`
 	ActualHash []byte `json:"actualHash"`
@@ -40,6 +46,11 @@ type HashResultUpdate struct {
 type DecryptResultUpdate struct {
 	CtKey     []byte `json:"ctKey"`
 	Plaintext string `json:"plaintext"`
+}
+
+type SealOutputResultUpdate struct {
+	CtKey []byte `json:"ctKey"`
+	Value string `json:"value"`
 }
 
 var tp precompiles.TxParams
@@ -86,6 +97,16 @@ func handleDecryptResult(url string, ctKey []byte, plaintext *big.Int) {
 	fmt.Printf("Got result for %s : %s\n", hex.EncodeToString(ctKey), plaintext)
 	plaintextString := plaintext.Text(16)
 	jsonData, err := json.Marshal(DecryptResultUpdate{CtKey: ctKey, Plaintext: plaintextString})
+	if err != nil {
+		log.Fatalf("Failed to update requester %s with the result of %+v", url, ctKey)
+	}
+
+	responseToServer(url, ctKey, jsonData)
+}
+
+func handleSealOutputResult(url string, ctKey []byte, value string) {
+	fmt.Printf("Got result for %s : %s\n", hex.EncodeToString(ctKey), value)
+	jsonData, err := json.Marshal(SealOutputResultUpdate{CtKey: ctKey, Value: value})
 	if err != nil {
 		log.Fatalf("Failed to update requester %s with the result of %+v", url, ctKey)
 	}
@@ -282,6 +303,48 @@ func DecryptHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Received decrypt request for %+v and type %+v\n", hash, req.UType)
 }
 
+func SealOutputHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("Got a request from %s\n", r.RemoteAddr)
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var req SealOutputRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		fmt.Printf("Failed unmarsheling request: %+v body is %+v\n", err, string(body))
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Convert the hash strings to byte arrays
+	hash, err := hex.DecodeString(req.Hash)
+	if err != nil {
+		e := fmt.Sprintf("Invalid hash: %s %+v", req.Hash, err)
+		fmt.Println(e)
+		http.Error(w, e, http.StatusBadRequest)
+		return
+	}
+
+	callback := precompiles.SealOutputCallbackFunc{
+		CallbackUrl: req.RequesterUrl,
+		Callback:    handleSealOutputResult,
+	}
+
+	_, _, err = precompiles.SealOutput(req.UType, hash, nil, &tp, &callback)
+	if err != nil {
+		e := fmt.Sprintf("Operation failed: %+v", err)
+		fmt.Println(e)
+		http.Error(w, e, http.StatusBadRequest)
+		return
+	}
+	// Respond with the result
+	w.Write(hash)
+	fmt.Printf("Received seal output request for %+v and type %+v\n", hash, req.UType)
+
+}
+
 func main() {
 	_, err := initFheos()
 	if err != nil {
@@ -296,6 +359,7 @@ func main() {
 	}
 
 	http.HandleFunc("/Decrypt", DecryptHandler)
+	http.HandleFunc("/SealOutput", SealOutputHandler)
 
 	// Start the server
 	log.Println("Server listening on port 8448...")
