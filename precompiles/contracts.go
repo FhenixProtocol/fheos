@@ -3,11 +3,11 @@ package precompiles
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/fhenixprotocol/fheos/conf"
 	"math/big"
 	"os"
 	"strings"
 
+	"github.com/fhenixprotocol/fheos/conf"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
