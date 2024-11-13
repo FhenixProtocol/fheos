@@ -96,7 +96,7 @@ func mockTxParams() *precompiles.TxParams {
 		ContractAddress: common.HexToAddress("0x0000000000000000000000000000000000000000"),
 		GetBlockHash:    vm.GetHashFunc(nil),
 		BlockNumber:     nil,
-		ParallelTxHooks: nil}
+		ParallelTxHooks: nil,
 	}
 }
 
