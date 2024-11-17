@@ -15,6 +15,10 @@ import {
   toPlaintextType,
   capitalize,
   shortenType,
+  SealedOutputStructs,
+  SEALING_FUNCTION_NAME,
+  SEALING_TYPED_FUNCTION_NAME,
+  LOCAL_SEAL_TYPED_FUNCTION_NAME,
 } from "../common";
 
 export const preamble = () => {
@@ -23,6 +27,8 @@ export const preamble = () => {
 
 pragma solidity >=0.8.19 <0.9.0;
 
+// import {Console} from "@fhenixprotocol/contracts/utils/debug/Console.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 import {Precompiles, FheOps} from "./FheOS.sol";
 
 ${EInputType.map((type) => {
@@ -39,10 +45,34 @@ ${EInputType.map((type) => {
 struct SealedArray {
   bytes[] data;
 }
+${SealedOutputStructs.map((struct) => {
+  let docstring = `
+/// @dev Utility structure providing clients with type context of a sealed output string.
+/// Return type of \`FHE.sealoutputTyped\` and \`sealTyped\` within the binding libraries.`
+  if (struct === `SealedBool`) {
+    docstring +=  `
+/// \`utype\` representing Bool is 13. See \`FHE.sol\` for more.`;
+  }
+  if (struct === `SealedUint`) {
+    docstring += `
+/// \`utype\` representing Uints is 0-5. See \`FHE.sol\` for more.`;
+    docstring += `
+/// \`utype\` map: {uint8: 0} {uint16: 1} {uint32: 2} {uint64: 3} {uint128: 4} {uint256: 5}.`;
+  }
+  if (struct === `SealedAddress`) {
+    docstring +=  `
+/// \`utype\` representing Address is 12. See \`FHE.sol\` for more.`;
+  }
+  return `${docstring}
+struct ${struct} {
+    string data;
+    uint8 utype;
+}`;
+}).join("\n")}
 
 library TaskManager {
 	//solhint-disable const-name-snakecase
-	address public constant TaskManager = address(129);
+	address public constant TASK_MANAGER_ADDRESS = address(129);
 }
 
 library Common {
@@ -88,7 +118,7 @@ library Common {
     }
 
     function bigIntToAddress(uint256 i) internal pure returns (address) {
-      return address(uint160(i));
+        return address(uint160(i));
     }
     
     function toBytes(uint256 x) internal pure returns (bytes memory b) {
@@ -96,7 +126,7 @@ library Common {
         assembly { mstore(add(b, 32), x) }
     }
     
-        function bytesToUint256(bytes memory b) internal pure returns (uint256) {
+    function bytesToUint256(bytes memory b) internal pure returns (uint256) {
         require(b.length == 32, string(abi.encodePacked("Input bytes length must be 32, but got ", Strings.toString(b.length))));
 
         uint256 result;
@@ -104,17 +134,6 @@ library Common {
             result := mload(add(b, 32))
         }
         return result;
-    }
-
-    function hexStringToUint(string memory hexString) internal pure returns (uint8) {
-        require(bytes(hexString).length == 2, "Invalid hex string length");
-
-        uint8 value = 0;
-        for (uint8 i = 0; i < 2; i++) {
-            value = value * 16 + hexCharToUint8(bytes(hexString)[i]);
-        }
-
-        return value;
     }
 
     function hexCharToUint8(bytes1 char) internal pure returns (uint8) {
@@ -127,6 +146,17 @@ library Common {
         } else {
             revert("Invalid hex character");
         }
+    }
+
+    function hexStringToUint(string memory hexString) internal pure returns (uint8) {
+        require(bytes(hexString).length == 2, "Invalid hex string length");
+
+        uint8 value = 0;
+        for (uint8 i = 0; i < 2; i++) {
+            value = value * 16 + hexCharToUint8(bytes(hexString)[i]);
+        }
+
+        return value;
     }
 
     function hexStringToBytes32(string memory hexString) internal pure returns (bytes memory) {
@@ -164,16 +194,47 @@ library Common {
 
         return result;
     }
+
+    function bytesToHexString(bytes memory buffer) internal pure returns (string memory) {
+        // Each byte takes 2 characters
+        bytes memory hexChars = new bytes(buffer.length * 2);
+        
+        for(uint i = 0; i < buffer.length; i++) {
+            uint8 value = uint8(buffer[i]);
+            hexChars[i * 2] = byteToChar(value / 16);
+            hexChars[i * 2 + 1] = byteToChar(value % 16);
+        }
+        
+        return string(hexChars);
+    }
+
+    // Helper function for bytesToHexString
+    function byteToChar(uint8 value) internal pure returns (bytes1) {
+        if (value < 10) {
+            return bytes1(uint8(48 + value)); // 0-9
+        } else {
+            return bytes1(uint8(87 + value)); // a-f
+        }
+    }
+
+    function uint256ToBytes32(uint256 value) internal pure returns (bytes memory) {
+        bytes memory result = new bytes(32);
+        assembly {
+            mstore(add(result, 32), value)
+        }
+        return result;
+    }
+
+    function euint32ToUint256(euint32 value) internal pure returns (uint256) {
+        return uint256(euint32.unwrap(value));
+    }
+
+    function euint32ToHexString(euint32 value) internal pure returns (string memory) {
+        return bytesToHexString(uint256ToBytes32(euint32ToUint256(value)));
+    }
 }
 
 library Impl {
-    function sealoutput(uint8 utype, uint256 ciphertext, bytes32 publicKey) internal pure returns (${SEAL_RETURN_TYPE} memory reencrypted) {
-        // Call the sealoutput precompile.
-        reencrypted = FheOps(Precompiles.Fheos).sealOutput(utype, Common.toBytes(ciphertext), bytes.concat(publicKey));
-
-        return reencrypted;
-    }
-
     function verify(bytes memory _ciphertextBytes, uint8 _toType, int32 securityZone) internal pure returns (uint256 result) {
         bytes memory output;
 
@@ -215,13 +276,21 @@ library Impl {
     }
 }
 
-interface ITaskManager {
-    function createTask(bytes memory ctHash, string memory operation, string memory input1, string memory input2) external;
-    function updateResult(bytes memory tempKey, bytes memory result) external;
-    function createDecryptTask(bytes memory ctHash) external;
+/// @title Interface for consumers that wanna receive result of decrypt tasks
+/// @notice Implement the callback function in your contract to handle the decrypt result
+interface IAsyncFHEReceiver {
+    function handleDecryptResult(bytes memory ctHash, uint256 result) external;
+    function handleSealOutputResult(bytes memory ctHash, ${SEAL_RETURN_TYPE} memory result) external;
 }
 
-library AsyncFHE {
+interface ITaskManager {
+    function createTask(uint256 ctHash, string memory operation, uint256 input1, uint256 input2) external;
+    function handleOpResult(bytes memory tempKey, bytes memory result) external;
+    function createDecryptTask(uint256 ctHash) external;
+    function createSealOutputTask(uint256 ctHash, bytes32 publicKey) external;
+}
+
+library FHE {
     bytes private constant CT_HASH_MAGIC_BYTES = hex"deedbeaf";
     euint8 public constant NIL8 = euint8.wrap(0);
     euint16 public constant NIL16 = euint16.wrap(0);
@@ -235,50 +304,59 @@ library AsyncFHE {
         _0,         // 0 - GetNetworkKey
         _1,         // 1 - Verify
         _2,         // 2 - Cast
-        _3,         // 3 - SealOutput
-        _4,         // 4 - Select
-        _5,         // 5 - Require
-        Decrypt,    // 6
-        Sub,        // 7
-        Add,        // 8
-        Xor,        // 9
-        And,        // 10
-        Or,         // 11
-        Not,        // 12
-        Div,        // 13
-        Rem,        // 14
-        Mul,        // 15
-        Shl,        // 16
-        Shr,        // 17
-        Gte,        // 18
-        Lte,        // 19
-        Lt,         // 20
-        Gt,         // 21
-        Min,        // 22
-        Max,        // 23
-        Eq,         // 24
-        Ne,         // 25
+        sealoutput, // 3
+        select,     // 4
+        req,        // 5
+        decrypt,    // 6
+        sub,        // 7
+        add,        // 8
+        xor,        // 9
+        and,        // 10
+        or,         // 11
+        not,        // 12
+        div,        // 13
+        rem,        // 14
+        mul,        // 15
+        shl,        // 16
+        shr,        // 17
+        gte,        // 18
+        lte,        // 19
+        lt,         // 20
+        gt,         // 21
+        min,        // 22
+        max,        // 23
+        eq,         // 24
+        ne,         // 25
         _26,        // 26 - TrivialEncrypt
-        Random,     // 27
-        Rol,        // 28
-        Ror,        // 29
-        Square      // 30
+        random,     // 27
+        rol,        // 28
+        ror,        // 29
+        square      // 30
     }
 
-    function getTempHash(string memory lhs, string memory rhs, FunctionId functionId) private pure returns (uint256) {
-        return uint256(bytes32(calcBinaryPlaceholderValueHash(
-            Common.hexStringToBytes32(lhs),
-            Common.hexStringToBytes32(rhs),
-            bytes1(uint8(functionId))
-        )));
+    /// @notice Calculates the temporary hash for unary operations
+    /// @param value - The value to hash
+    /// @param functionId - The function id
+    /// @return The calculated temporary hash
+    function calcUnaryPlaceholderValueHash(uint256 value, FunctionId functionId) private pure returns (uint256) {
+        return calcBinaryPlaceholderValueHash(0, value, functionId);
     }
 
+    /// @notice Calculates the temporary hash for async operations
+    /// @dev Must result the same temp hash as calculated by warp-drive/fhe-driver/CalcBinaryPlaceholderValueHash
+    /// @param lhsHash - Left hand side operand hash
+    /// @param rhsHash - Right hand side operand hash
+    /// @param functionId - The function id
+    /// @return The calculated temporary hash
     function calcBinaryPlaceholderValueHash(
-        bytes memory lhsHash,
-        bytes memory rhsHash,
-        bytes1 functionId
-    ) private pure returns (bytes memory) {
-        bytes memory combined = bytes.concat(lhsHash, rhsHash, functionId);
+        uint256 lhsHash,
+        uint256 rhsHash,
+        FunctionId functionId
+    ) private pure returns (uint256) {
+        bytes memory lhsBytes = Common.uint256ToBytes32(lhsHash);
+        bytes memory rhsBytes = Common.uint256ToBytes32(rhsHash);
+        bytes1 functionIdByte = bytes1(uint8(functionId));
+        bytes memory combined = bytes.concat(lhsBytes, rhsBytes, functionIdByte);
 
         // Calculate Keccak256 hash
         bytes memory hash = abi.encodePacked(keccak256(combined));
@@ -288,7 +366,7 @@ library AsyncFHE {
             hash[i] = CT_HASH_MAGIC_BYTES[i];
         }
 
-        return hash;
+        return uint256(bytes32(hash));
     }
 
     // Return true if the encrypted integer is initialized and false otherwise.
@@ -334,17 +412,6 @@ library AsyncFHE {
         assembly {
             value := mload(add(a, 0x20))
         }
-    }
-    
-    function mathHelper(
-        uint8 utype,
-        uint256 lhs,
-        uint256 rhs,
-        function(uint8, bytes memory, bytes memory) external pure returns (bytes memory) impl
-    ) internal pure returns (uint256 result) {
-        bytes memory output;
-        output = impl(utype, Common.toBytes(lhs), Common.toBytes(rhs));
-        result = getValue(output);
     }
     `;
 };
@@ -403,7 +470,7 @@ const castToEbool = (name: string, fromType: string): string => {
   // check if the precompiles support the EBOOL_TFHE constant as with the other casts
   return `
     \n    /// @notice Converts a ${fromType} to an ebool
-    function asEbool(${fromType} value) internal pure returns (ebool) {
+    function asEbool(${fromType} value) internal returns (ebool) {
         return ne(${name}, as${capitalize(fromType)}(0));
     }`;
 };
@@ -431,7 +498,7 @@ export const AsTypeFunction = (
     /// @notice Converts a plaintext boolean value to a ciphertext ebool
     /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
     /// @return A ciphertext representation of the input
-    function asEbool(bool value) internal pure returns (ebool) {
+    function asEbool(bool value) internal returns (ebool) {
         uint256 sVal = 0;
         if (value) {
             sVal = 1;
@@ -441,12 +508,12 @@ export const AsTypeFunction = (
     /// @notice Converts a plaintext boolean value to a ciphertext ebool, specifying security zone
     /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
     /// @return A ciphertext representation of the input
-    function asEbool(bool value, int32 securityZone) internal pure returns (ebool) {
-      uint256 sVal = 0;
-      if (value) {
-        sVal = 1;
-      }
-      return asEbool(sVal, securityZone);
+    function asEbool(bool value, int32 securityZone) internal returns (ebool) {
+        uint256 sVal = 0;
+        if (value) {
+          sVal = 1;
+        }
+        return asEbool(sVal, securityZone);
     }`;
   } else if (fromType.startsWith("inE")) {
     docString = `
@@ -458,7 +525,7 @@ export const AsTypeFunction = (
     return `${docString}
     function as${capitalize(
       toType
-    )}(${fromType} memory value) internal pure returns (${toType}) {
+    )}(${fromType} memory value) internal returns (${toType}) {
         return ${castString};
     }`;
   } else if (fromType === "bytes memory") {
@@ -495,7 +562,7 @@ export const AsTypeFunction = (
   let func = `${docString}
     function as${capitalize(toType)}(${fromType} value${
     addSecurityZone ? ", int32 securityZone" : ""
-  }) internal pure returns (${toType}) {
+  }) internal returns (${toType}) {
         return ${toType}.wrap(${castString});
     }`;
 
@@ -508,6 +575,8 @@ const wrapType = (resultType: EUintType, inputName: string): string =>
   `${resultType}.wrap(${inputName})`;
 const asEuintFuncName = (typeName: EUintType): string =>
   `as${capitalize(typeName)}`;
+const asDecryptedType = (typeName: EUintType): string =>
+  `${typeName.toLowerCase().slice(1, typeName.length)}`;
 
 export function SolTemplate2Arg(
   name: string,
@@ -522,26 +591,35 @@ export function SolTemplate2Arg(
   let docString = `
     /// @notice This function performs the ${name} async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
     `;
 
-  // reencrypt
-  if (variableName2 === "publicKey") {
+  // reencrypt (seal)
+  if (name === SEALING_FUNCTION_NAME || name === SEALING_TYPED_FUNCTION_NAME) {
     docString = `
-    /// @notice performs the ${name} async operation on a ${input1} ciphertext. This operation returns the plaintext value, sealed for the public key provided 
-    /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @notice performs the ${name} async function on a ${input1} ciphertext. This operation returns the plaintext value, sealed for the public key provided 
     /// @param value Ciphertext to decrypt and seal
     /// @param publicKey Public Key that will receive the sealed plaintext
-    /// @return Plaintext input, sealed for the owner of \`publicKey\`
     `;
+
+    // Diff return types of the sealing functions
+    if (name === SEALING_FUNCTION_NAME) {
+      docString += `/// @return Plaintext input, sealed for the owner of \`publicKey\`
+    `;
+    }
+    if (name === SEALING_TYPED_FUNCTION_NAME) {
+      // Example Output: "/// @return SealedBool({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Common.EBOOL_TFHE })"
+      const returnTypeClean = returnType.replace(" memory", "");
+      docString += `/// @return ${returnTypeClean}({ data: Plaintext input, sealed for the owner of \`publicKey\`, utype: ${UintTypes[input1 as EUintType]} })
+    `;
+    }
   }
 
   let funcBody = docString;
 
-  funcBody += `function ${name}(${input1} ${variableName1}, ${input2} ${variableName2}) internal pure returns (${returnType}) {`;
+  funcBody += `function ${name}(${input1} ${variableName1}, ${input2} ${variableName2}) internal returns (${returnType}) {`;
 
   if (valueIsEncrypted(input1)) {
     // both inputs encrypted - this is a generic math function. i.e. div, mul, eq, etc.
@@ -575,34 +653,30 @@ export function SolTemplate2Arg(
 `;
       if (valueIsEncrypted(returnType)) {
         funcBody += `
-        ${UnderlyingTypes[returnType]} result = mathHelper(${
-          UintTypes[input1]
-        }, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).${name});
+        ${UnderlyingTypes[returnType]} result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.${name});
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "${name}", unwrappedInput1, unwrappedInput2);
         return ${wrapType(returnType, "result")};`;
       } else {
+        // TODO : What's the use case for this? still not removing till I figure this out completely
         funcBody += `
-        ${returnType} result = mathHelper(${UintTypes[input1]}, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).${name});
-        return result;`;
-        funcBody += `
-        uint256 ctHash = getTempHash(lhs, rhs, FunctionId.${name});
-        ITaskManager(tm).createTask(ctHash, "${name}", lhs, rhs);
-        return ctHash;
+        ${returnType} result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.${name});
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "${name}", unwrappedInput1, unwrappedInput2);
+        return result;
         }`;
       }
-    } else if (input2 === "bytes32") {
+    } else if (name === SEALING_FUNCTION_NAME) {
       // **** Value 1 is encrypted, value 2 is bytes32 - this is basically reencrypt/wrapForUser
       funcBody += `
         if (!isInitialized(${variableName1})) {
             ${variableName1} = ${asEuintFuncName(input1)}(0);
         }
-        ${UnderlyingTypes[input1]} unwrapped = ${unwrapType(
-        input1,
-        variableName1
-      )};
-
-        return Impl.${name}(${
-        UintTypes[input1]
-      }, unwrapped, ${variableName2});`;
+        ${UnderlyingTypes[input1]} unwrapped = ${unwrapType(input1,variableName1)};
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createSealOutputTask(unwrapped, publicKey);
+        return "";`;
+    } else if (name === SEALING_TYPED_FUNCTION_NAME) {
+      const returnTypeClean = returnType.replace(" memory", "");
+      funcBody += `
+        return ${returnTypeClean}({ data: sealoutput(${variableName1}, ${variableName2}), utype: ${UintTypes[input1 as EUintType]} });`;
     }
   } else {
     // don't support input 1 is plaintext
@@ -641,85 +715,32 @@ ${abi}
 }
 
 export function SolTemplateDecrypt(input1: AllTypes, returnType: AllTypes) {
-  let docString = `
-    /// @notice Performs the decrypt operation on a ciphertext
-    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
-    /// @param input1 the input ciphertext
-    function decrypt(${input1} input1) internal pure returns (${returnType}) {
-        return FHE.decrypt(input1, ${getHalfValueFrom(returnType)});
-    }`;
+  // const decryptedType = asDecryptedType(returnType as EUintType);
 
-  docString += `
-    /// @notice Performs the decrypt operation on a ciphertext with default value for gas estimation
-    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+  // TODO : Consider returning default value with optional overloading of "${getHalfValueFrom(decryptedType)}"
+  // @param defaultValue default value to be returned on gas estimation
+  let funcBody = `
+    /// @notice Performs the async decrypt operation on a ciphertext
+    /// @dev The decrypted output should be asynchronously handled by the IAsyncFHEReceiver implementation
     /// @param input1 the input ciphertext
-    /// @param defaultValue default value to be returned on gas estimation
-    function decrypt(${input1} input1, ${returnType} defaultValue) internal pure returns (${returnType}) {`;
-
-  let funcBody = docString;
+    /// @return the input ciphertext
+    function decrypt(${input1} input1) internal returns (${returnType}) {`;
 
   if (valueIsEncrypted(input1)) {
     // Get the proper function
     funcBody += `
         if (!isInitialized(input1)) {
             input1 = ${asEuintFuncName(input1)}(0);
-        }`;
-    let unwrap = `${UnderlyingTypes[input1]} unwrappedInput1 = ${unwrapType(
-      input1,
-      "input1"
-    )};`;
-    funcBody += `
-        uint256 gasDefaultValue;
-    `;
-    if (returnType === "bool") {
-      funcBody += `
-        if (defaultValue) {
-           gasDefaultValue = 1;
-        } else {
-           gasDefaultValue = 0;
         }
-        `;
-    } else if (returnType === "address") {
-      funcBody += `
-        gasDefaultValue = uint256(uint160(defaultValue));
-      `;
-    } else {
-      funcBody += `
-        gasDefaultValue = uint256(defaultValue);
-      `;
-    }
-    let getResult = (inputName: string) =>
-      `FheOps(Precompiles.Fheos).decrypt(${UintTypes[input1]}, ${inputName}, gasDefaultValue);`;
-
-    if (valueIsEncrypted(returnType)) {
-      // input and return type are encrypted - not/neg other unary functions
-      funcBody += `
-        ${unwrap}
-        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        bytes memory b = ${getResult("inputAsBytes")}
-        uint256 result = Impl.getValue(b);
-        return ${wrapType(returnType, "result")};
+        ${UnderlyingTypes[input1]} unwrappedInput1 = ${unwrapType(
+          input1,
+          "input1"
+        )};
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createDecryptTask(unwrappedInput1);
+        return input1;
     }`;
-    } else if (returnType === "none") {
-      // this is essentially req
-      funcBody += `
-        ${unwrap}
-        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        ${getResult("inputAsBytes")}
-    }`;
-    } else if (valueIsPlaintext(returnType)) {
-      let returnTypeCamelCase =
-        returnType.charAt(0).toUpperCase() + returnType.slice(1);
-      let outputConvertor = `Common.bigIntTo${returnTypeCamelCase}(result);`;
-      funcBody += `
-        ${unwrap}
-        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        uint256 result = ${getResult("inputAsBytes")}
-        return ${outputConvertor}
-    }`;
-    }
   } else {
-    throw new Error("unsupported function of 1 input that is not encrypted");
+    throw new Error("unsupported decrypt function of 1 input that is not encrypted");
   }
   return funcBody;
 }
@@ -731,56 +752,35 @@ export function SolTemplate1Arg(
 ) {
   let docString = `
     /// @notice Performs the ${name} operation on a ciphertext
-    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @dev Verifies that the input value matches a valid ciphertext.
     /// @param input1 the input ciphertext
     `;
 
-  let returnStr = returnType === "none" ? `` : `returns (${returnType})`;
+  let returnStr = returnType === "none" ? `` : `returns (${returnType}) `;
 
   let funcBody = docString;
 
-  funcBody += `function ${name}(${input1} input1) internal pure ${returnStr} {`;
+  funcBody += `function ${name}(${input1} input1) internal ${returnStr}{`;
 
-  if (valueIsEncrypted(input1)) {
-    // Get the proper function
+  // TODO : Implement for FHE.req support
+  if (!valueIsEncrypted(returnType)) {
     funcBody += `
-        if (!isInitialized(input1)) {
-            input1 = ${asEuintFuncName(input1)}(0);
-        }`;
-    let unwrap = `${UnderlyingTypes[input1]} unwrappedInput1 = ${unwrapType(
-      input1,
-      "input1"
-    )};`;
-    let getResult = (inputName: string) =>
-      `FheOps(Precompiles.Fheos).${name}(${UintTypes[input1]}, ${inputName});`;
-
-    if (valueIsEncrypted(returnType)) {
-      // input and return type are encrypted - not/neg other unary functions
-      funcBody += `
-        ${unwrap}
-        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        bytes memory b = ${getResult("inputAsBytes")}
-        uint256 result = Impl.getValue(b);
-        return ${wrapType(returnType, "result")};
+      // TODO : Not Implemented
     }`;
-    } else if (returnType === "none") {
-      // this is essentially req
-      funcBody += `
-        ${unwrap}
-        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        ${getResult("inputAsBytes")}
+    return funcBody;
+  } else if (valueIsEncrypted(input1)) {
+    funcBody += `
+      if (!isInitialized(input1)) {
+          input1 = ${asEuintFuncName(input1)}(0);
+      }
+      ${UnderlyingTypes[input1]} unwrappedInput1 = ${unwrapType(
+        input1,
+        "input1"
+      )};
+      uint256 ctHash = calcUnaryPlaceholderValueHash(unwrappedInput1, FunctionId.${name});
+      ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(ctHash, "${name}", unwrappedInput1, 0);
+      return ${wrapType(returnType, "ctHash")};
     }`;
-    } else if (valueIsPlaintext(returnType)) {
-      let returnTypeCamelCase =
-        returnType.charAt(0).toUpperCase() + returnType.slice(1);
-      let outputConvertor = `Common.bigIntTo${returnTypeCamelCase}(result);`;
-      funcBody += `
-        ${unwrap}
-        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        uint256 result = ${getResult("inputAsBytes")}
-        return ${outputConvertor}
-    }`;
-    }
   } else {
     throw new Error("unsupported function of 1 input that is not encrypted");
   }
@@ -806,7 +806,7 @@ export function SolTemplate3Arg(
       }
 
       return `\n
-    function ${name}(${input1} input1, ${input2} input2, ${input3} input3) internal pure returns (${returnType}) {
+    function ${name}(${input1} input1, ${input2} input2, ${input3} input3) internal returns (${returnType}) {
         if (!isInitialized(input1)) {
             input1 = ${asEuintFuncName(input1)}(0);
         }
@@ -906,7 +906,7 @@ export const OperatorBinding = (
 
   return `
     ${docString}
-    function ${funcName}(${funcParams}) internal pure returns (${returnType}) {
+    function ${funcName}(${funcParams}) internal returns (${returnType}) {
         return FHE.${funcName}(${unaryParameters});
     }`;
 };
@@ -922,15 +922,26 @@ export const CastBinding = (thisType: string, targetType: string) => {
   return `
     function to${shortenType(
       targetType
-    )}(${thisType} value) internal pure returns (${targetType}) {
+    )}(${thisType} value) internal returns (${targetType}) {
         return FHE.as${capitalize(targetType)}(value);
     }`;
 };
 
 export const SealFromType = (thisType: string) => {
   return `
-    function ${LOCAL_SEAL_FUNCTION_NAME}(${thisType} value, bytes32 publicKey) internal pure returns (${SEAL_RETURN_TYPE} memory) {
+    function ${LOCAL_SEAL_FUNCTION_NAME}(${thisType} value, bytes32 publicKey) internal returns (${SEAL_RETURN_TYPE} memory) {
         return FHE.sealoutput(value, publicKey);
+    }`;
+};
+
+export const SealTypedFromType = (thisType: string) => {
+  let returnType: string
+  if (thisType === 'ebool') returnType = 'SealedBool'
+  else if (thisType === 'eaddress') returnType = 'SealedAddress'
+  else returnType = 'SealedUint'
+  return `
+    function ${LOCAL_SEAL_TYPED_FUNCTION_NAME}(${thisType} value, bytes32 publicKey) internal returns (${returnType} memory) {
+        return FHE.sealoutputTyped(value, publicKey);
     }`;
 };
 
@@ -951,18 +962,16 @@ export const getHalfValueFrom = (thisType: string) => {
 };
 
 export const DecryptBinding = (thisType: string) => {
-  let plaintextType = toPlaintextType(thisType);
   return `
-    function ${LOCAL_DECRYPT_FUNCTION_NAME}(${thisType} value) internal pure returns (${toPlaintextType(
-    thisType
-  )}) {
+    function ${LOCAL_DECRYPT_FUNCTION_NAME}(${thisType} value) internal returns (${thisType}) {
         return FHE.decrypt(value);
-    }
-    function ${LOCAL_DECRYPT_FUNCTION_NAME}(${thisType} value, ${plaintextType} defaultValue) internal pure returns (${toPlaintextType(
-    thisType
-  )}) {
-        return FHE.decrypt(value, defaultValue);
     }`;
+
+    // TODO : Consider returning the defaultValue here
+    // let plaintextType = toPlaintextType(thisType);
+    // `function ${LOCAL_DECRYPT_FUNCTION_NAME}(${thisType} value, ${plaintextType} defaultValue) internal pure returns (${thisType}) {
+        // return FHE.decrypt(value, defaultValue);
+    // }`;
 };
 
 

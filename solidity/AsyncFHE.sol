@@ -3,6 +3,8 @@
 
 pragma solidity >=0.8.19 <0.9.0;
 
+// import {Console} from "@fhenixprotocol/contracts/utils/debug/Console.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 import {Precompiles, FheOps} from "./FheOS.sol";
 
 type ebool is uint256;
@@ -51,6 +53,36 @@ struct SealedArray {
   bytes[] data;
 }
 
+/// @dev Utility structure providing clients with type context of a sealed output string.
+/// Return type of `FHE.sealoutputTyped` and `sealTyped` within the binding libraries.
+/// `utype` representing Bool is 13. See `FHE.sol` for more.
+struct SealedBool {
+    string data;
+    uint8 utype;
+}
+
+/// @dev Utility structure providing clients with type context of a sealed output string.
+/// Return type of `FHE.sealoutputTyped` and `sealTyped` within the binding libraries.
+/// `utype` representing Uints is 0-5. See `FHE.sol` for more.
+/// `utype` map: {uint8: 0} {uint16: 1} {uint32: 2} {uint64: 3} {uint128: 4} {uint256: 5}.
+struct SealedUint {
+    string data;
+    uint8 utype;
+}
+
+/// @dev Utility structure providing clients with type context of a sealed output string.
+/// Return type of `FHE.sealoutputTyped` and `sealTyped` within the binding libraries.
+/// `utype` representing Address is 12. See `FHE.sol` for more.
+struct SealedAddress {
+    string data;
+    uint8 utype;
+}
+
+library TaskManager {
+	//solhint-disable const-name-snakecase
+	address public constant TASK_MANAGER_ADDRESS = address(129);
+}
+
 library Common {
     // Values used to communicate types to the runtime.
     // Must match values defined in warp-drive protobufs for everything to 
@@ -94,23 +126,123 @@ library Common {
     }
 
     function bigIntToAddress(uint256 i) internal pure returns (address) {
-      return address(uint160(i));
+        return address(uint160(i));
     }
     
     function toBytes(uint256 x) internal pure returns (bytes memory b) {
         b = new bytes(32);
         assembly { mstore(add(b, 32), x) }
     }
+    
+    function bytesToUint256(bytes memory b) internal pure returns (uint256) {
+        require(b.length == 32, string(abi.encodePacked("Input bytes length must be 32, but got ", Strings.toString(b.length))));
+
+        uint256 result;
+        assembly {
+            result := mload(add(b, 32))
+        }
+        return result;
+    }
+
+    function hexCharToUint8(bytes1 char) internal pure returns (uint8) {
+        if (char >= "0" && char <= "9") {
+            return uint8(char) - uint8(bytes1("0"));
+        } else if (char >= "a" && char <= "f") {
+            return uint8(char) - uint8(bytes1("a")) + 10;
+        } else if (char >= "A" && char <= "F") {
+            return uint8(char) - uint8(bytes1("A")) + 10;
+        } else {
+            revert("Invalid hex character");
+        }
+    }
+
+    function hexStringToUint(string memory hexString) internal pure returns (uint8) {
+        require(bytes(hexString).length == 2, "Invalid hex string length");
+
+        uint8 value = 0;
+        for (uint8 i = 0; i < 2; i++) {
+            value = value * 16 + hexCharToUint8(bytes(hexString)[i]);
+        }
+
+        return value;
+    }
+
+    function hexStringToBytes32(string memory hexString) internal pure returns (bytes memory) {
+        bytes memory hexBytes = bytes(hexString);
+        // Ensure the string has the correct length (64 characters for 32 bytes)
+        require(hexBytes.length == 64, "Invalid hex string length");
+
+        // Iterate every 2 bytes in string, consider them as 1 byte
+        bytes memory bb = new bytes(32);
+        string memory l = "";
+        for (uint i = 0; i < 32; i++) {
+            l = string(abi.encodePacked("", hexBytes[i * 2], hexBytes[i * 2 + 1]));
+            bb[i] = bytes1(hexStringToUint(l));
+        }
+
+        return bb;
+    }
+
+    function bytesArrayToString(bytes memory a) internal pure returns (string memory) {
+        string memory b = "[";
+        for (uint i = 0; i < a.length; i++) {
+            b = string(abi.encodePacked(b, Strings.toHexString(uint8(a[i])), " "));
+        }
+
+        b = string(abi.encodePacked(b, "]"));
+        return b;
+    }
+
+    function functionCodeToBytes1(string memory functionCode) internal pure returns (bytes memory) {
+        // Convert the hex string to bytes
+        bytes memory result = new bytes(1);
+        assembly {
+            result := mload(add(functionCode, 1)) // Load the bytes directly from memory
+        }
+
+        return result;
+    }
+
+    function bytesToHexString(bytes memory buffer) internal pure returns (string memory) {
+        // Each byte takes 2 characters
+        bytes memory hexChars = new bytes(buffer.length * 2);
+        
+        for(uint i = 0; i < buffer.length; i++) {
+            uint8 value = uint8(buffer[i]);
+            hexChars[i * 2] = byteToChar(value / 16);
+            hexChars[i * 2 + 1] = byteToChar(value % 16);
+        }
+        
+        return string(hexChars);
+    }
+
+    // Helper function for bytesToHexString
+    function byteToChar(uint8 value) internal pure returns (bytes1) {
+        if (value < 10) {
+            return bytes1(uint8(48 + value)); // 0-9
+        } else {
+            return bytes1(uint8(87 + value)); // a-f
+        }
+    }
+
+    function uint256ToBytes32(uint256 value) internal pure returns (bytes memory) {
+        bytes memory result = new bytes(32);
+        assembly {
+            mstore(add(result, 32), value)
+        }
+        return result;
+    }
+
+    function euint32ToUint256(euint32 value) internal pure returns (uint256) {
+        return uint256(euint32.unwrap(value));
+    }
+
+    function euint32ToHexString(euint32 value) internal pure returns (string memory) {
+        return bytesToHexString(uint256ToBytes32(euint32ToUint256(value)));
+    }
 }
 
 library Impl {
-    function sealoutput(uint8 utype, uint256 ciphertext, bytes32 publicKey) internal pure returns (string memory reencrypted) {
-        // Call the sealoutput precompile.
-        reencrypted = FheOps(Precompiles.Fheos).sealOutput(utype, Common.toBytes(ciphertext), bytes.concat(publicKey));
-
-        return reencrypted;
-    }
-
     function verify(bytes memory _ciphertextBytes, uint8 _toType, int32 securityZone) internal pure returns (uint256 result) {
         bytes memory output;
 
@@ -152,30 +284,97 @@ library Impl {
     }
 }
 
-interface ITaskManager {
-    function createTask(bytes memory ctHash, string memory operation, string memory input1, string memory input2) external;
-    function updateResult(bytes memory tempKey, bytes memory result) external;
-    function createDecryptTask(bytes memory ctHash) external;
+/// @title Interface for consumers that wanna receive result of decrypt tasks
+/// @notice Implement the callback function in your contract to handle the decrypt result
+interface IAsyncFHEReceiver {
+    function handleDecryptResult(bytes memory ctHash, uint256 result) external;
+    function handleSealOutputResult(bytes memory ctHash, string memory result) external;
 }
 
-library AsyncFHE {
+interface ITaskManager {
+    function createTask(uint256 ctHash, string memory operation, uint256 input1, uint256 input2) external;
+    function handleOpResult(bytes memory tempKey, bytes memory result) external;
+    function createDecryptTask(uint256 ctHash) external;
+    function createSealOutputTask(uint256 ctHash, bytes32 publicKey) external;
+}
+
+library FHE {
     bytes private constant CT_HASH_MAGIC_BYTES = hex"deedbeaf";
     euint8 public constant NIL8 = euint8.wrap(0);
     euint16 public constant NIL16 = euint16.wrap(0);
     euint32 public constant NIL32 = euint32.wrap(0);
+    
+    // Default value for temp hash calculation in unary operations
+    string private constant DEFAULT_VALUE = "0";
 
+    // Order is set as in fheos/precompiles/types/types.go
+    enum FunctionId {
+        _0,         // 0 - GetNetworkKey
+        _1,         // 1 - Verify
+        _2,         // 2 - Cast
+        sealoutput, // 3
+        select,     // 4
+        req,        // 5
+        decrypt,    // 6
+        sub,        // 7
+        add,        // 8
+        xor,        // 9
+        and,        // 10
+        or,         // 11
+        not,        // 12
+        div,        // 13
+        rem,        // 14
+        mul,        // 15
+        shl,        // 16
+        shr,        // 17
+        gte,        // 18
+        lte,        // 19
+        lt,         // 20
+        gt,         // 21
+        min,        // 22
+        max,        // 23
+        eq,         // 24
+        ne,         // 25
+        _26,        // 26 - TrivialEncrypt
+        random,     // 27
+        rol,        // 28
+        ror,        // 29
+        square      // 30
+    }
+
+    /// @notice Calculates the temporary hash for unary operations
+    /// @param value - The value to hash
+    /// @param functionId - The function id
+    /// @return The calculated temporary hash
+    function calcUnaryPlaceholderValueHash(uint256 value, FunctionId functionId) private pure returns (uint256) {
+        return calcBinaryPlaceholderValueHash(0, value, functionId);
+    }
+
+    /// @notice Calculates the temporary hash for async operations
+    /// @dev Must result the same temp hash as calculated by warp-drive/fhe-driver/CalcBinaryPlaceholderValueHash
+    /// @param lhsHash - Left hand side operand hash
+    /// @param rhsHash - Right hand side operand hash
+    /// @param functionId - The function id
+    /// @return The calculated temporary hash
     function calcBinaryPlaceholderValueHash(
-        bytes memory lhsHash,
-        bytes memory rhsHash, 
-        uint functionId
-    ) internal pure returns (bytes32) {
-        bytes memory functionBytes = abi.encodePacked(functionId);
-        bytes memory combined = bytes.concat(lhsHash, rhsHash, functionBytes);
-        bytes32 hash = keccak256(combined);
+        uint256 lhsHash,
+        uint256 rhsHash,
+        FunctionId functionId
+    ) private pure returns (uint256) {
+        bytes memory lhsBytes = Common.uint256ToBytes32(lhsHash);
+        bytes memory rhsBytes = Common.uint256ToBytes32(rhsHash);
+        bytes1 functionIdByte = bytes1(uint8(functionId));
+        bytes memory combined = bytes.concat(lhsBytes, rhsBytes, functionIdByte);
+
+        // Calculate Keccak256 hash
+        bytes memory hash = abi.encodePacked(keccak256(combined));
+
+        // Copy magic bytes to the first four bytes of the hash
         for (uint i = 0; i < 4; i++) {
-            hash |= bytes32(CT_HASH_MAGIC_BYTES[i] & 0xFF) >> (i * 8);
+            hash[i] = CT_HASH_MAGIC_BYTES[i];
         }
-        return hash;
+
+        return uint256(bytes32(hash));
     }
 
     // Return true if the encrypted integer is initialized and false otherwise.
@@ -223,24 +422,12 @@ library AsyncFHE {
         }
     }
     
-    function mathHelper(
-        uint8 utype,
-        uint256 lhs,
-        uint256 rhs,
-        function(uint8, bytes memory, bytes memory) external pure returns (bytes memory) impl
-    ) internal pure returns (uint256 result) {
-        bytes memory output;
-        output = impl(utype, Common.toBytes(lhs), Common.toBytes(rhs));
-        result = getValue(output);
-    }
-    
     /// @notice This function performs the add async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function add(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
+    function add(euint8 lhs, euint8 rhs) internal returns (euint8) {
         if (!isInitialized(lhs)) {
             lhs = asEuint8(0);
         }
@@ -250,16 +437,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT8_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).add);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.add);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "add", unwrappedInput1, unwrappedInput2);
         return euint8.wrap(result);
     }
     /// @notice This function performs the add async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function add(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
+    function add(euint16 lhs, euint16 rhs) internal returns (euint16) {
         if (!isInitialized(lhs)) {
             lhs = asEuint16(0);
         }
@@ -269,16 +456,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT16_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).add);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.add);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "add", unwrappedInput1, unwrappedInput2);
         return euint16.wrap(result);
     }
     /// @notice This function performs the add async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function add(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
+    function add(euint32 lhs, euint32 rhs) internal returns (euint32) {
         if (!isInitialized(lhs)) {
             lhs = asEuint32(0);
         }
@@ -288,16 +475,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT32_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).add);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.add);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "add", unwrappedInput1, unwrappedInput2);
         return euint32.wrap(result);
     }
     /// @notice This function performs the add async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function add(euint64 lhs, euint64 rhs) internal pure returns (euint64) {
+    function add(euint64 lhs, euint64 rhs) internal returns (euint64) {
         if (!isInitialized(lhs)) {
             lhs = asEuint64(0);
         }
@@ -307,16 +494,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint64.unwrap(lhs);
         uint256 unwrappedInput2 = euint64.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT64_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).add);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.add);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "add", unwrappedInput1, unwrappedInput2);
         return euint64.wrap(result);
     }
     /// @notice This function performs the add async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function add(euint128 lhs, euint128 rhs) internal pure returns (euint128) {
+    function add(euint128 lhs, euint128 rhs) internal returns (euint128) {
         if (!isInitialized(lhs)) {
             lhs = asEuint128(0);
         }
@@ -326,308 +513,264 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint128.unwrap(lhs);
         uint256 unwrappedInput2 = euint128.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT128_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).add);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.add);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "add", unwrappedInput1, unwrappedInput2);
         return euint128.wrap(result);
     }
-    /// @notice performs the sealoutput async operation on a ebool ciphertext. This operation returns the plaintext value, sealed for the public key provided 
-    /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @notice performs the sealoutput async function on a ebool ciphertext. This operation returns the plaintext value, sealed for the public key provided 
     /// @param value Ciphertext to decrypt and seal
     /// @param publicKey Public Key that will receive the sealed plaintext
     /// @return Plaintext input, sealed for the owner of `publicKey`
-    function sealoutput(ebool value, bytes32 publicKey) internal pure returns (string memory) {
+    function sealoutput(ebool value, bytes32 publicKey) internal returns (string memory) {
         if (!isInitialized(value)) {
             value = asEbool(0);
         }
         uint256 unwrapped = ebool.unwrap(value);
-
-        return Impl.sealoutput(Common.EBOOL_TFHE, unwrapped, publicKey);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createSealOutputTask(unwrapped, publicKey);
+        return "";
     }
-    /// @notice performs the sealoutput async operation on a euint8 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
-    /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @notice performs the sealoutput async function on a euint8 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
     /// @param value Ciphertext to decrypt and seal
     /// @param publicKey Public Key that will receive the sealed plaintext
     /// @return Plaintext input, sealed for the owner of `publicKey`
-    function sealoutput(euint8 value, bytes32 publicKey) internal pure returns (string memory) {
+    function sealoutput(euint8 value, bytes32 publicKey) internal returns (string memory) {
         if (!isInitialized(value)) {
             value = asEuint8(0);
         }
         uint256 unwrapped = euint8.unwrap(value);
-
-        return Impl.sealoutput(Common.EUINT8_TFHE, unwrapped, publicKey);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createSealOutputTask(unwrapped, publicKey);
+        return "";
     }
-    /// @notice performs the sealoutput async operation on a euint16 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
-    /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @notice performs the sealoutput async function on a euint16 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
     /// @param value Ciphertext to decrypt and seal
     /// @param publicKey Public Key that will receive the sealed plaintext
     /// @return Plaintext input, sealed for the owner of `publicKey`
-    function sealoutput(euint16 value, bytes32 publicKey) internal pure returns (string memory) {
+    function sealoutput(euint16 value, bytes32 publicKey) internal returns (string memory) {
         if (!isInitialized(value)) {
             value = asEuint16(0);
         }
         uint256 unwrapped = euint16.unwrap(value);
-
-        return Impl.sealoutput(Common.EUINT16_TFHE, unwrapped, publicKey);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createSealOutputTask(unwrapped, publicKey);
+        return "";
     }
-    /// @notice performs the sealoutput async operation on a euint32 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
-    /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @notice performs the sealoutput async function on a euint32 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
     /// @param value Ciphertext to decrypt and seal
     /// @param publicKey Public Key that will receive the sealed plaintext
     /// @return Plaintext input, sealed for the owner of `publicKey`
-    function sealoutput(euint32 value, bytes32 publicKey) internal pure returns (string memory) {
+    function sealoutput(euint32 value, bytes32 publicKey) internal returns (string memory) {
         if (!isInitialized(value)) {
             value = asEuint32(0);
         }
         uint256 unwrapped = euint32.unwrap(value);
-
-        return Impl.sealoutput(Common.EUINT32_TFHE, unwrapped, publicKey);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createSealOutputTask(unwrapped, publicKey);
+        return "";
     }
-    /// @notice performs the sealoutput async operation on a euint64 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
-    /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @notice performs the sealoutput async function on a euint64 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
     /// @param value Ciphertext to decrypt and seal
     /// @param publicKey Public Key that will receive the sealed plaintext
     /// @return Plaintext input, sealed for the owner of `publicKey`
-    function sealoutput(euint64 value, bytes32 publicKey) internal pure returns (string memory) {
+    function sealoutput(euint64 value, bytes32 publicKey) internal returns (string memory) {
         if (!isInitialized(value)) {
             value = asEuint64(0);
         }
         uint256 unwrapped = euint64.unwrap(value);
-
-        return Impl.sealoutput(Common.EUINT64_TFHE, unwrapped, publicKey);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createSealOutputTask(unwrapped, publicKey);
+        return "";
     }
-    /// @notice performs the sealoutput async operation on a euint128 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
-    /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @notice performs the sealoutput async function on a euint128 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
     /// @param value Ciphertext to decrypt and seal
     /// @param publicKey Public Key that will receive the sealed plaintext
     /// @return Plaintext input, sealed for the owner of `publicKey`
-    function sealoutput(euint128 value, bytes32 publicKey) internal pure returns (string memory) {
+    function sealoutput(euint128 value, bytes32 publicKey) internal returns (string memory) {
         if (!isInitialized(value)) {
             value = asEuint128(0);
         }
         uint256 unwrapped = euint128.unwrap(value);
-
-        return Impl.sealoutput(Common.EUINT128_TFHE, unwrapped, publicKey);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createSealOutputTask(unwrapped, publicKey);
+        return "";
     }
-    /// @notice performs the sealoutput async operation on a euint256 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
-    /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @notice performs the sealoutput async function on a euint256 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
     /// @param value Ciphertext to decrypt and seal
     /// @param publicKey Public Key that will receive the sealed plaintext
     /// @return Plaintext input, sealed for the owner of `publicKey`
-    function sealoutput(euint256 value, bytes32 publicKey) internal pure returns (string memory) {
+    function sealoutput(euint256 value, bytes32 publicKey) internal returns (string memory) {
         if (!isInitialized(value)) {
             value = asEuint256(0);
         }
         uint256 unwrapped = euint256.unwrap(value);
-
-        return Impl.sealoutput(Common.EUINT256_TFHE, unwrapped, publicKey);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createSealOutputTask(unwrapped, publicKey);
+        return "";
     }
-    /// @notice performs the sealoutput async operation on a eaddress ciphertext. This operation returns the plaintext value, sealed for the public key provided 
-    /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @notice performs the sealoutput async function on a eaddress ciphertext. This operation returns the plaintext value, sealed for the public key provided 
     /// @param value Ciphertext to decrypt and seal
     /// @param publicKey Public Key that will receive the sealed plaintext
     /// @return Plaintext input, sealed for the owner of `publicKey`
-    function sealoutput(eaddress value, bytes32 publicKey) internal pure returns (string memory) {
+    function sealoutput(eaddress value, bytes32 publicKey) internal returns (string memory) {
         if (!isInitialized(value)) {
             value = asEaddress(0);
         }
         uint256 unwrapped = eaddress.unwrap(value);
-
-        return Impl.sealoutput(Common.EADDRESS_TFHE, unwrapped, publicKey);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createSealOutputTask(unwrapped, publicKey);
+        return "";
     }
-    /// @notice Performs the decrypt operation on a ciphertext
-    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
-    /// @param input1 the input ciphertext
-    function decrypt(ebool input1) internal pure returns (bool) {
-        return FHE.decrypt(input1, false);
+    /// @notice performs the sealoutputTyped async function on a ebool ciphertext. This operation returns the plaintext value, sealed for the public key provided 
+    /// @param value Ciphertext to decrypt and seal
+    /// @param publicKey Public Key that will receive the sealed plaintext
+    /// @return SealedBool({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Common.EBOOL_TFHE })
+    function sealoutputTyped(ebool value, bytes32 publicKey) internal returns (SealedBool memory) {
+        return SealedBool({ data: sealoutput(value, publicKey), utype: Common.EBOOL_TFHE });
     }
-    /// @notice Performs the decrypt operation on a ciphertext with default value for gas estimation
-    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @notice performs the sealoutputTyped async function on a euint8 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
+    /// @param value Ciphertext to decrypt and seal
+    /// @param publicKey Public Key that will receive the sealed plaintext
+    /// @return SealedUint({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Common.EUINT8_TFHE })
+    function sealoutputTyped(euint8 value, bytes32 publicKey) internal returns (SealedUint memory) {
+        return SealedUint({ data: sealoutput(value, publicKey), utype: Common.EUINT8_TFHE });
+    }
+    /// @notice performs the sealoutputTyped async function on a euint16 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
+    /// @param value Ciphertext to decrypt and seal
+    /// @param publicKey Public Key that will receive the sealed plaintext
+    /// @return SealedUint({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Common.EUINT16_TFHE })
+    function sealoutputTyped(euint16 value, bytes32 publicKey) internal returns (SealedUint memory) {
+        return SealedUint({ data: sealoutput(value, publicKey), utype: Common.EUINT16_TFHE });
+    }
+    /// @notice performs the sealoutputTyped async function on a euint32 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
+    /// @param value Ciphertext to decrypt and seal
+    /// @param publicKey Public Key that will receive the sealed plaintext
+    /// @return SealedUint({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Common.EUINT32_TFHE })
+    function sealoutputTyped(euint32 value, bytes32 publicKey) internal returns (SealedUint memory) {
+        return SealedUint({ data: sealoutput(value, publicKey), utype: Common.EUINT32_TFHE });
+    }
+    /// @notice performs the sealoutputTyped async function on a euint64 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
+    /// @param value Ciphertext to decrypt and seal
+    /// @param publicKey Public Key that will receive the sealed plaintext
+    /// @return SealedUint({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Common.EUINT64_TFHE })
+    function sealoutputTyped(euint64 value, bytes32 publicKey) internal returns (SealedUint memory) {
+        return SealedUint({ data: sealoutput(value, publicKey), utype: Common.EUINT64_TFHE });
+    }
+    /// @notice performs the sealoutputTyped async function on a euint128 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
+    /// @param value Ciphertext to decrypt and seal
+    /// @param publicKey Public Key that will receive the sealed plaintext
+    /// @return SealedUint({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Common.EUINT128_TFHE })
+    function sealoutputTyped(euint128 value, bytes32 publicKey) internal returns (SealedUint memory) {
+        return SealedUint({ data: sealoutput(value, publicKey), utype: Common.EUINT128_TFHE });
+    }
+    /// @notice performs the sealoutputTyped async function on a euint256 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
+    /// @param value Ciphertext to decrypt and seal
+    /// @param publicKey Public Key that will receive the sealed plaintext
+    /// @return SealedUint({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Common.EUINT256_TFHE })
+    function sealoutputTyped(euint256 value, bytes32 publicKey) internal returns (SealedUint memory) {
+        return SealedUint({ data: sealoutput(value, publicKey), utype: Common.EUINT256_TFHE });
+    }
+    /// @notice performs the sealoutputTyped async function on a eaddress ciphertext. This operation returns the plaintext value, sealed for the public key provided 
+    /// @param value Ciphertext to decrypt and seal
+    /// @param publicKey Public Key that will receive the sealed plaintext
+    /// @return SealedAddress({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Common.EADDRESS_TFHE })
+    function sealoutputTyped(eaddress value, bytes32 publicKey) internal returns (SealedAddress memory) {
+        return SealedAddress({ data: sealoutput(value, publicKey), utype: Common.EADDRESS_TFHE });
+    }
+    /// @notice Performs the async decrypt operation on a ciphertext
+    /// @dev The decrypted output should be asynchronously handled by the IAsyncFHEReceiver implementation
     /// @param input1 the input ciphertext
-    /// @param defaultValue default value to be returned on gas estimation
-    function decrypt(ebool input1, bool defaultValue) internal pure returns (bool) {
+    /// @return the input ciphertext
+    function decrypt(ebool input1) internal returns (ebool) {
         if (!isInitialized(input1)) {
             input1 = asEbool(0);
         }
-        uint256 gasDefaultValue;
-    
-        if (defaultValue) {
-           gasDefaultValue = 1;
-        } else {
-           gasDefaultValue = 0;
-        }
-        
         uint256 unwrappedInput1 = ebool.unwrap(input1);
-        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EBOOL_TFHE, inputAsBytes, gasDefaultValue);
-        return Common.bigIntToBool(result);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createDecryptTask(unwrappedInput1);
+        return input1;
     }
-    /// @notice Performs the decrypt operation on a ciphertext
-    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @notice Performs the async decrypt operation on a ciphertext
+    /// @dev The decrypted output should be asynchronously handled by the IAsyncFHEReceiver implementation
     /// @param input1 the input ciphertext
-    function decrypt(euint8 input1) internal pure returns (uint8) {
-        return FHE.decrypt(input1, (2 ** 8) / 2);
-    }
-    /// @notice Performs the decrypt operation on a ciphertext with default value for gas estimation
-    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
-    /// @param input1 the input ciphertext
-    /// @param defaultValue default value to be returned on gas estimation
-    function decrypt(euint8 input1, uint8 defaultValue) internal pure returns (uint8) {
+    /// @return the input ciphertext
+    function decrypt(euint8 input1) internal returns (euint8) {
         if (!isInitialized(input1)) {
             input1 = asEuint8(0);
         }
-        uint256 gasDefaultValue;
-    
-        gasDefaultValue = uint256(defaultValue);
-      
         uint256 unwrappedInput1 = euint8.unwrap(input1);
-        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EUINT8_TFHE, inputAsBytes, gasDefaultValue);
-        return Common.bigIntToUint8(result);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createDecryptTask(unwrappedInput1);
+        return input1;
     }
-    /// @notice Performs the decrypt operation on a ciphertext
-    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @notice Performs the async decrypt operation on a ciphertext
+    /// @dev The decrypted output should be asynchronously handled by the IAsyncFHEReceiver implementation
     /// @param input1 the input ciphertext
-    function decrypt(euint16 input1) internal pure returns (uint16) {
-        return FHE.decrypt(input1, (2 ** 16) / 2);
-    }
-    /// @notice Performs the decrypt operation on a ciphertext with default value for gas estimation
-    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
-    /// @param input1 the input ciphertext
-    /// @param defaultValue default value to be returned on gas estimation
-    function decrypt(euint16 input1, uint16 defaultValue) internal pure returns (uint16) {
+    /// @return the input ciphertext
+    function decrypt(euint16 input1) internal returns (euint16) {
         if (!isInitialized(input1)) {
             input1 = asEuint16(0);
         }
-        uint256 gasDefaultValue;
-    
-        gasDefaultValue = uint256(defaultValue);
-      
         uint256 unwrappedInput1 = euint16.unwrap(input1);
-        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EUINT16_TFHE, inputAsBytes, gasDefaultValue);
-        return Common.bigIntToUint16(result);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createDecryptTask(unwrappedInput1);
+        return input1;
     }
-    /// @notice Performs the decrypt operation on a ciphertext
-    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @notice Performs the async decrypt operation on a ciphertext
+    /// @dev The decrypted output should be asynchronously handled by the IAsyncFHEReceiver implementation
     /// @param input1 the input ciphertext
-    function decrypt(euint32 input1) internal pure returns (uint32) {
-        return FHE.decrypt(input1, (2 ** 32) / 2);
-    }
-    /// @notice Performs the decrypt operation on a ciphertext with default value for gas estimation
-    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
-    /// @param input1 the input ciphertext
-    /// @param defaultValue default value to be returned on gas estimation
-    function decrypt(euint32 input1, uint32 defaultValue) internal pure returns (uint32) {
+    /// @return the input ciphertext
+    function decrypt(euint32 input1) internal returns (euint32) {
         if (!isInitialized(input1)) {
             input1 = asEuint32(0);
         }
-        uint256 gasDefaultValue;
-    
-        gasDefaultValue = uint256(defaultValue);
-      
         uint256 unwrappedInput1 = euint32.unwrap(input1);
-        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EUINT32_TFHE, inputAsBytes, gasDefaultValue);
-        return Common.bigIntToUint32(result);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createDecryptTask(unwrappedInput1);
+        return input1;
     }
-    /// @notice Performs the decrypt operation on a ciphertext
-    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @notice Performs the async decrypt operation on a ciphertext
+    /// @dev The decrypted output should be asynchronously handled by the IAsyncFHEReceiver implementation
     /// @param input1 the input ciphertext
-    function decrypt(euint64 input1) internal pure returns (uint64) {
-        return FHE.decrypt(input1, (2 ** 64) / 2);
-    }
-    /// @notice Performs the decrypt operation on a ciphertext with default value for gas estimation
-    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
-    /// @param input1 the input ciphertext
-    /// @param defaultValue default value to be returned on gas estimation
-    function decrypt(euint64 input1, uint64 defaultValue) internal pure returns (uint64) {
+    /// @return the input ciphertext
+    function decrypt(euint64 input1) internal returns (euint64) {
         if (!isInitialized(input1)) {
             input1 = asEuint64(0);
         }
-        uint256 gasDefaultValue;
-    
-        gasDefaultValue = uint256(defaultValue);
-      
         uint256 unwrappedInput1 = euint64.unwrap(input1);
-        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EUINT64_TFHE, inputAsBytes, gasDefaultValue);
-        return Common.bigIntToUint64(result);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createDecryptTask(unwrappedInput1);
+        return input1;
     }
-    /// @notice Performs the decrypt operation on a ciphertext
-    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @notice Performs the async decrypt operation on a ciphertext
+    /// @dev The decrypted output should be asynchronously handled by the IAsyncFHEReceiver implementation
     /// @param input1 the input ciphertext
-    function decrypt(euint128 input1) internal pure returns (uint128) {
-        return FHE.decrypt(input1, (2 ** 128) / 2);
-    }
-    /// @notice Performs the decrypt operation on a ciphertext with default value for gas estimation
-    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
-    /// @param input1 the input ciphertext
-    /// @param defaultValue default value to be returned on gas estimation
-    function decrypt(euint128 input1, uint128 defaultValue) internal pure returns (uint128) {
+    /// @return the input ciphertext
+    function decrypt(euint128 input1) internal returns (euint128) {
         if (!isInitialized(input1)) {
             input1 = asEuint128(0);
         }
-        uint256 gasDefaultValue;
-    
-        gasDefaultValue = uint256(defaultValue);
-      
         uint256 unwrappedInput1 = euint128.unwrap(input1);
-        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EUINT128_TFHE, inputAsBytes, gasDefaultValue);
-        return Common.bigIntToUint128(result);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createDecryptTask(unwrappedInput1);
+        return input1;
     }
-    /// @notice Performs the decrypt operation on a ciphertext
-    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @notice Performs the async decrypt operation on a ciphertext
+    /// @dev The decrypted output should be asynchronously handled by the IAsyncFHEReceiver implementation
     /// @param input1 the input ciphertext
-    function decrypt(euint256 input1) internal pure returns (uint256) {
-        return FHE.decrypt(input1, (2 ** 256) / 2);
-    }
-    /// @notice Performs the decrypt operation on a ciphertext with default value for gas estimation
-    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
-    /// @param input1 the input ciphertext
-    /// @param defaultValue default value to be returned on gas estimation
-    function decrypt(euint256 input1, uint256 defaultValue) internal pure returns (uint256) {
+    /// @return the input ciphertext
+    function decrypt(euint256 input1) internal returns (euint256) {
         if (!isInitialized(input1)) {
             input1 = asEuint256(0);
         }
-        uint256 gasDefaultValue;
-    
-        gasDefaultValue = uint256(defaultValue);
-      
         uint256 unwrappedInput1 = euint256.unwrap(input1);
-        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EUINT256_TFHE, inputAsBytes, gasDefaultValue);
-        return Common.bigIntToUint256(result);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createDecryptTask(unwrappedInput1);
+        return input1;
     }
-    /// @notice Performs the decrypt operation on a ciphertext
-    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @notice Performs the async decrypt operation on a ciphertext
+    /// @dev The decrypted output should be asynchronously handled by the IAsyncFHEReceiver implementation
     /// @param input1 the input ciphertext
-    function decrypt(eaddress input1) internal pure returns (address) {
-        return FHE.decrypt(input1, address(0));
-    }
-    /// @notice Performs the decrypt operation on a ciphertext with default value for gas estimation
-    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
-    /// @param input1 the input ciphertext
-    /// @param defaultValue default value to be returned on gas estimation
-    function decrypt(eaddress input1, address defaultValue) internal pure returns (address) {
+    /// @return the input ciphertext
+    function decrypt(eaddress input1) internal returns (eaddress) {
         if (!isInitialized(input1)) {
             input1 = asEaddress(0);
         }
-        uint256 gasDefaultValue;
-    
-        gasDefaultValue = uint256(uint160(defaultValue));
-      
         uint256 unwrappedInput1 = eaddress.unwrap(input1);
-        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EADDRESS_TFHE, inputAsBytes, gasDefaultValue);
-        return Common.bigIntToAddress(result);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createDecryptTask(unwrappedInput1);
+        return input1;
     }
     /// @notice This function performs the lte async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function lte(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
+    function lte(euint8 lhs, euint8 rhs) internal returns (ebool) {
         if (!isInitialized(lhs)) {
             lhs = asEuint8(0);
         }
@@ -637,16 +780,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT8_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lte);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.lte);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "lte", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the lte async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function lte(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
+    function lte(euint16 lhs, euint16 rhs) internal returns (ebool) {
         if (!isInitialized(lhs)) {
             lhs = asEuint16(0);
         }
@@ -656,16 +799,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT16_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lte);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.lte);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "lte", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the lte async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function lte(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
+    function lte(euint32 lhs, euint32 rhs) internal returns (ebool) {
         if (!isInitialized(lhs)) {
             lhs = asEuint32(0);
         }
@@ -675,16 +818,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT32_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lte);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.lte);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "lte", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the lte async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function lte(euint64 lhs, euint64 rhs) internal pure returns (ebool) {
+    function lte(euint64 lhs, euint64 rhs) internal returns (ebool) {
         if (!isInitialized(lhs)) {
             lhs = asEuint64(0);
         }
@@ -694,16 +837,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint64.unwrap(lhs);
         uint256 unwrappedInput2 = euint64.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT64_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lte);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.lte);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "lte", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the lte async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function lte(euint128 lhs, euint128 rhs) internal pure returns (ebool) {
+    function lte(euint128 lhs, euint128 rhs) internal returns (ebool) {
         if (!isInitialized(lhs)) {
             lhs = asEuint128(0);
         }
@@ -713,16 +856,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint128.unwrap(lhs);
         uint256 unwrappedInput2 = euint128.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT128_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lte);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.lte);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "lte", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the sub async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function sub(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
+    function sub(euint8 lhs, euint8 rhs) internal returns (euint8) {
         if (!isInitialized(lhs)) {
             lhs = asEuint8(0);
         }
@@ -732,16 +875,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT8_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).sub);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.sub);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "sub", unwrappedInput1, unwrappedInput2);
         return euint8.wrap(result);
     }
     /// @notice This function performs the sub async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function sub(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
+    function sub(euint16 lhs, euint16 rhs) internal returns (euint16) {
         if (!isInitialized(lhs)) {
             lhs = asEuint16(0);
         }
@@ -751,16 +894,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT16_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).sub);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.sub);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "sub", unwrappedInput1, unwrappedInput2);
         return euint16.wrap(result);
     }
     /// @notice This function performs the sub async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function sub(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
+    function sub(euint32 lhs, euint32 rhs) internal returns (euint32) {
         if (!isInitialized(lhs)) {
             lhs = asEuint32(0);
         }
@@ -770,16 +913,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT32_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).sub);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.sub);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "sub", unwrappedInput1, unwrappedInput2);
         return euint32.wrap(result);
     }
     /// @notice This function performs the sub async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function sub(euint64 lhs, euint64 rhs) internal pure returns (euint64) {
+    function sub(euint64 lhs, euint64 rhs) internal returns (euint64) {
         if (!isInitialized(lhs)) {
             lhs = asEuint64(0);
         }
@@ -789,16 +932,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint64.unwrap(lhs);
         uint256 unwrappedInput2 = euint64.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT64_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).sub);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.sub);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "sub", unwrappedInput1, unwrappedInput2);
         return euint64.wrap(result);
     }
     /// @notice This function performs the sub async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function sub(euint128 lhs, euint128 rhs) internal pure returns (euint128) {
+    function sub(euint128 lhs, euint128 rhs) internal returns (euint128) {
         if (!isInitialized(lhs)) {
             lhs = asEuint128(0);
         }
@@ -808,16 +951,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint128.unwrap(lhs);
         uint256 unwrappedInput2 = euint128.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT128_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).sub);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.sub);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "sub", unwrappedInput1, unwrappedInput2);
         return euint128.wrap(result);
     }
     /// @notice This function performs the mul async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function mul(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
+    function mul(euint8 lhs, euint8 rhs) internal returns (euint8) {
         if (!isInitialized(lhs)) {
             lhs = asEuint8(0);
         }
@@ -827,16 +970,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT8_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).mul);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.mul);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "mul", unwrappedInput1, unwrappedInput2);
         return euint8.wrap(result);
     }
     /// @notice This function performs the mul async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function mul(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
+    function mul(euint16 lhs, euint16 rhs) internal returns (euint16) {
         if (!isInitialized(lhs)) {
             lhs = asEuint16(0);
         }
@@ -846,16 +989,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT16_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).mul);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.mul);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "mul", unwrappedInput1, unwrappedInput2);
         return euint16.wrap(result);
     }
     /// @notice This function performs the mul async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function mul(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
+    function mul(euint32 lhs, euint32 rhs) internal returns (euint32) {
         if (!isInitialized(lhs)) {
             lhs = asEuint32(0);
         }
@@ -865,16 +1008,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT32_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).mul);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.mul);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "mul", unwrappedInput1, unwrappedInput2);
         return euint32.wrap(result);
     }
     /// @notice This function performs the mul async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function mul(euint64 lhs, euint64 rhs) internal pure returns (euint64) {
+    function mul(euint64 lhs, euint64 rhs) internal returns (euint64) {
         if (!isInitialized(lhs)) {
             lhs = asEuint64(0);
         }
@@ -884,16 +1027,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint64.unwrap(lhs);
         uint256 unwrappedInput2 = euint64.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT64_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).mul);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.mul);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "mul", unwrappedInput1, unwrappedInput2);
         return euint64.wrap(result);
     }
     /// @notice This function performs the lt async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function lt(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
+    function lt(euint8 lhs, euint8 rhs) internal returns (ebool) {
         if (!isInitialized(lhs)) {
             lhs = asEuint8(0);
         }
@@ -903,16 +1046,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT8_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lt);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.lt);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "lt", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the lt async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function lt(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
+    function lt(euint16 lhs, euint16 rhs) internal returns (ebool) {
         if (!isInitialized(lhs)) {
             lhs = asEuint16(0);
         }
@@ -922,16 +1065,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT16_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lt);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.lt);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "lt", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the lt async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function lt(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
+    function lt(euint32 lhs, euint32 rhs) internal returns (ebool) {
         if (!isInitialized(lhs)) {
             lhs = asEuint32(0);
         }
@@ -941,16 +1084,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT32_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lt);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.lt);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "lt", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the lt async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function lt(euint64 lhs, euint64 rhs) internal pure returns (ebool) {
+    function lt(euint64 lhs, euint64 rhs) internal returns (ebool) {
         if (!isInitialized(lhs)) {
             lhs = asEuint64(0);
         }
@@ -960,16 +1103,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint64.unwrap(lhs);
         uint256 unwrappedInput2 = euint64.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT64_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lt);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.lt);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "lt", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the lt async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function lt(euint128 lhs, euint128 rhs) internal pure returns (ebool) {
+    function lt(euint128 lhs, euint128 rhs) internal returns (ebool) {
         if (!isInitialized(lhs)) {
             lhs = asEuint128(0);
         }
@@ -979,11 +1122,12 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint128.unwrap(lhs);
         uint256 unwrappedInput2 = euint128.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT128_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).lt);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.lt);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "lt", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
 
-    function select(ebool input1, ebool input2, ebool input3) internal pure returns (ebool) {
+    function select(ebool input1, ebool input2, ebool input3) internal returns (ebool) {
         if (!isInitialized(input1)) {
             input1 = asEbool(0);
         }
@@ -1002,7 +1146,7 @@ library AsyncFHE {
         return ebool.wrap(result);
     }
 
-    function select(ebool input1, euint8 input2, euint8 input3) internal pure returns (euint8) {
+    function select(ebool input1, euint8 input2, euint8 input3) internal returns (euint8) {
         if (!isInitialized(input1)) {
             input1 = asEbool(0);
         }
@@ -1021,7 +1165,7 @@ library AsyncFHE {
         return euint8.wrap(result);
     }
 
-    function select(ebool input1, euint16 input2, euint16 input3) internal pure returns (euint16) {
+    function select(ebool input1, euint16 input2, euint16 input3) internal returns (euint16) {
         if (!isInitialized(input1)) {
             input1 = asEbool(0);
         }
@@ -1040,7 +1184,7 @@ library AsyncFHE {
         return euint16.wrap(result);
     }
 
-    function select(ebool input1, euint32 input2, euint32 input3) internal pure returns (euint32) {
+    function select(ebool input1, euint32 input2, euint32 input3) internal returns (euint32) {
         if (!isInitialized(input1)) {
             input1 = asEbool(0);
         }
@@ -1059,7 +1203,7 @@ library AsyncFHE {
         return euint32.wrap(result);
     }
 
-    function select(ebool input1, euint64 input2, euint64 input3) internal pure returns (euint64) {
+    function select(ebool input1, euint64 input2, euint64 input3) internal returns (euint64) {
         if (!isInitialized(input1)) {
             input1 = asEbool(0);
         }
@@ -1078,7 +1222,7 @@ library AsyncFHE {
         return euint64.wrap(result);
     }
 
-    function select(ebool input1, euint128 input2, euint128 input3) internal pure returns (euint128) {
+    function select(ebool input1, euint128 input2, euint128 input3) internal returns (euint128) {
         if (!isInitialized(input1)) {
             input1 = asEbool(0);
         }
@@ -1097,7 +1241,7 @@ library AsyncFHE {
         return euint128.wrap(result);
     }
 
-    function select(ebool input1, euint256 input2, euint256 input3) internal pure returns (euint256) {
+    function select(ebool input1, euint256 input2, euint256 input3) internal returns (euint256) {
         if (!isInitialized(input1)) {
             input1 = asEbool(0);
         }
@@ -1116,7 +1260,7 @@ library AsyncFHE {
         return euint256.wrap(result);
     }
 
-    function select(ebool input1, eaddress input2, eaddress input3) internal pure returns (eaddress) {
+    function select(ebool input1, eaddress input2, eaddress input3) internal returns (eaddress) {
         if (!isInitialized(input1)) {
             input1 = asEbool(0);
         }
@@ -1135,89 +1279,53 @@ library AsyncFHE {
         return eaddress.wrap(result);
     }
     /// @notice Performs the req operation on a ciphertext
-    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @dev Verifies that the input value matches a valid ciphertext.
     /// @param input1 the input ciphertext
-    function req(ebool input1) internal pure  {
-        if (!isInitialized(input1)) {
-            input1 = asEbool(0);
-        }
-        uint256 unwrappedInput1 = ebool.unwrap(input1);
-        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        FheOps(Precompiles.Fheos).req(Common.EBOOL_TFHE, inputAsBytes);
+    function req(ebool input1) internal {
+      // TODO : Not Implemented
     }
     /// @notice Performs the req operation on a ciphertext
-    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @dev Verifies that the input value matches a valid ciphertext.
     /// @param input1 the input ciphertext
-    function req(euint8 input1) internal pure  {
-        if (!isInitialized(input1)) {
-            input1 = asEuint8(0);
-        }
-        uint256 unwrappedInput1 = euint8.unwrap(input1);
-        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        FheOps(Precompiles.Fheos).req(Common.EUINT8_TFHE, inputAsBytes);
+    function req(euint8 input1) internal {
+      // TODO : Not Implemented
     }
     /// @notice Performs the req operation on a ciphertext
-    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @dev Verifies that the input value matches a valid ciphertext.
     /// @param input1 the input ciphertext
-    function req(euint16 input1) internal pure  {
-        if (!isInitialized(input1)) {
-            input1 = asEuint16(0);
-        }
-        uint256 unwrappedInput1 = euint16.unwrap(input1);
-        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        FheOps(Precompiles.Fheos).req(Common.EUINT16_TFHE, inputAsBytes);
+    function req(euint16 input1) internal {
+      // TODO : Not Implemented
     }
     /// @notice Performs the req operation on a ciphertext
-    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @dev Verifies that the input value matches a valid ciphertext.
     /// @param input1 the input ciphertext
-    function req(euint32 input1) internal pure  {
-        if (!isInitialized(input1)) {
-            input1 = asEuint32(0);
-        }
-        uint256 unwrappedInput1 = euint32.unwrap(input1);
-        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        FheOps(Precompiles.Fheos).req(Common.EUINT32_TFHE, inputAsBytes);
+    function req(euint32 input1) internal {
+      // TODO : Not Implemented
     }
     /// @notice Performs the req operation on a ciphertext
-    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @dev Verifies that the input value matches a valid ciphertext.
     /// @param input1 the input ciphertext
-    function req(euint64 input1) internal pure  {
-        if (!isInitialized(input1)) {
-            input1 = asEuint64(0);
-        }
-        uint256 unwrappedInput1 = euint64.unwrap(input1);
-        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        FheOps(Precompiles.Fheos).req(Common.EUINT64_TFHE, inputAsBytes);
+    function req(euint64 input1) internal {
+      // TODO : Not Implemented
     }
     /// @notice Performs the req operation on a ciphertext
-    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @dev Verifies that the input value matches a valid ciphertext.
     /// @param input1 the input ciphertext
-    function req(euint128 input1) internal pure  {
-        if (!isInitialized(input1)) {
-            input1 = asEuint128(0);
-        }
-        uint256 unwrappedInput1 = euint128.unwrap(input1);
-        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        FheOps(Precompiles.Fheos).req(Common.EUINT128_TFHE, inputAsBytes);
+    function req(euint128 input1) internal {
+      // TODO : Not Implemented
     }
     /// @notice Performs the req operation on a ciphertext
-    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @dev Verifies that the input value matches a valid ciphertext.
     /// @param input1 the input ciphertext
-    function req(euint256 input1) internal pure  {
-        if (!isInitialized(input1)) {
-            input1 = asEuint256(0);
-        }
-        uint256 unwrappedInput1 = euint256.unwrap(input1);
-        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        FheOps(Precompiles.Fheos).req(Common.EUINT256_TFHE, inputAsBytes);
+    function req(euint256 input1) internal {
+      // TODO : Not Implemented
     }
     /// @notice This function performs the div async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function div(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
+    function div(euint8 lhs, euint8 rhs) internal returns (euint8) {
         if (!isInitialized(lhs)) {
             lhs = asEuint8(0);
         }
@@ -1227,16 +1335,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT8_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).div);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.div);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "div", unwrappedInput1, unwrappedInput2);
         return euint8.wrap(result);
     }
     /// @notice This function performs the div async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function div(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
+    function div(euint16 lhs, euint16 rhs) internal returns (euint16) {
         if (!isInitialized(lhs)) {
             lhs = asEuint16(0);
         }
@@ -1246,16 +1354,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT16_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).div);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.div);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "div", unwrappedInput1, unwrappedInput2);
         return euint16.wrap(result);
     }
     /// @notice This function performs the div async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function div(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
+    function div(euint32 lhs, euint32 rhs) internal returns (euint32) {
         if (!isInitialized(lhs)) {
             lhs = asEuint32(0);
         }
@@ -1265,16 +1373,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT32_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).div);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.div);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "div", unwrappedInput1, unwrappedInput2);
         return euint32.wrap(result);
     }
     /// @notice This function performs the gt async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function gt(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
+    function gt(euint8 lhs, euint8 rhs) internal returns (ebool) {
         if (!isInitialized(lhs)) {
             lhs = asEuint8(0);
         }
@@ -1284,16 +1392,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT8_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gt);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.gt);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "gt", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the gt async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function gt(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
+    function gt(euint16 lhs, euint16 rhs) internal returns (ebool) {
         if (!isInitialized(lhs)) {
             lhs = asEuint16(0);
         }
@@ -1303,16 +1411,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT16_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gt);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.gt);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "gt", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the gt async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function gt(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
+    function gt(euint32 lhs, euint32 rhs) internal returns (ebool) {
         if (!isInitialized(lhs)) {
             lhs = asEuint32(0);
         }
@@ -1322,16 +1430,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT32_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gt);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.gt);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "gt", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the gt async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function gt(euint64 lhs, euint64 rhs) internal pure returns (ebool) {
+    function gt(euint64 lhs, euint64 rhs) internal returns (ebool) {
         if (!isInitialized(lhs)) {
             lhs = asEuint64(0);
         }
@@ -1341,16 +1449,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint64.unwrap(lhs);
         uint256 unwrappedInput2 = euint64.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT64_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gt);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.gt);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "gt", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the gt async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function gt(euint128 lhs, euint128 rhs) internal pure returns (ebool) {
+    function gt(euint128 lhs, euint128 rhs) internal returns (ebool) {
         if (!isInitialized(lhs)) {
             lhs = asEuint128(0);
         }
@@ -1360,16 +1468,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint128.unwrap(lhs);
         uint256 unwrappedInput2 = euint128.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT128_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gt);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.gt);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "gt", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the gte async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function gte(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
+    function gte(euint8 lhs, euint8 rhs) internal returns (ebool) {
         if (!isInitialized(lhs)) {
             lhs = asEuint8(0);
         }
@@ -1379,16 +1487,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT8_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gte);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.gte);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "gte", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the gte async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function gte(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
+    function gte(euint16 lhs, euint16 rhs) internal returns (ebool) {
         if (!isInitialized(lhs)) {
             lhs = asEuint16(0);
         }
@@ -1398,16 +1506,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT16_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gte);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.gte);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "gte", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the gte async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function gte(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
+    function gte(euint32 lhs, euint32 rhs) internal returns (ebool) {
         if (!isInitialized(lhs)) {
             lhs = asEuint32(0);
         }
@@ -1417,16 +1525,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT32_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gte);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.gte);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "gte", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the gte async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function gte(euint64 lhs, euint64 rhs) internal pure returns (ebool) {
+    function gte(euint64 lhs, euint64 rhs) internal returns (ebool) {
         if (!isInitialized(lhs)) {
             lhs = asEuint64(0);
         }
@@ -1436,16 +1544,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint64.unwrap(lhs);
         uint256 unwrappedInput2 = euint64.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT64_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gte);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.gte);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "gte", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the gte async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function gte(euint128 lhs, euint128 rhs) internal pure returns (ebool) {
+    function gte(euint128 lhs, euint128 rhs) internal returns (ebool) {
         if (!isInitialized(lhs)) {
             lhs = asEuint128(0);
         }
@@ -1455,16 +1563,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint128.unwrap(lhs);
         uint256 unwrappedInput2 = euint128.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT128_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).gte);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.gte);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "gte", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the rem async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function rem(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
+    function rem(euint8 lhs, euint8 rhs) internal returns (euint8) {
         if (!isInitialized(lhs)) {
             lhs = asEuint8(0);
         }
@@ -1474,16 +1582,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT8_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).rem);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.rem);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "rem", unwrappedInput1, unwrappedInput2);
         return euint8.wrap(result);
     }
     /// @notice This function performs the rem async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function rem(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
+    function rem(euint16 lhs, euint16 rhs) internal returns (euint16) {
         if (!isInitialized(lhs)) {
             lhs = asEuint16(0);
         }
@@ -1493,16 +1601,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT16_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).rem);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.rem);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "rem", unwrappedInput1, unwrappedInput2);
         return euint16.wrap(result);
     }
     /// @notice This function performs the rem async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function rem(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
+    function rem(euint32 lhs, euint32 rhs) internal returns (euint32) {
         if (!isInitialized(lhs)) {
             lhs = asEuint32(0);
         }
@@ -1512,16 +1620,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT32_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).rem);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.rem);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "rem", unwrappedInput1, unwrappedInput2);
         return euint32.wrap(result);
     }
     /// @notice This function performs the and async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function and(ebool lhs, ebool rhs) internal pure returns (ebool) {
+    function and(ebool lhs, ebool rhs) internal returns (ebool) {
         if (!isInitialized(lhs)) {
             lhs = asEbool(0);
         }
@@ -1531,16 +1639,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = ebool.unwrap(lhs);
         uint256 unwrappedInput2 = ebool.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EBOOL_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).and);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.and);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "and", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the and async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function and(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
+    function and(euint8 lhs, euint8 rhs) internal returns (euint8) {
         if (!isInitialized(lhs)) {
             lhs = asEuint8(0);
         }
@@ -1550,16 +1658,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT8_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).and);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.and);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "and", unwrappedInput1, unwrappedInput2);
         return euint8.wrap(result);
     }
     /// @notice This function performs the and async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function and(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
+    function and(euint16 lhs, euint16 rhs) internal returns (euint16) {
         if (!isInitialized(lhs)) {
             lhs = asEuint16(0);
         }
@@ -1569,16 +1677,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT16_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).and);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.and);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "and", unwrappedInput1, unwrappedInput2);
         return euint16.wrap(result);
     }
     /// @notice This function performs the and async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function and(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
+    function and(euint32 lhs, euint32 rhs) internal returns (euint32) {
         if (!isInitialized(lhs)) {
             lhs = asEuint32(0);
         }
@@ -1588,16 +1696,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT32_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).and);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.and);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "and", unwrappedInput1, unwrappedInput2);
         return euint32.wrap(result);
     }
     /// @notice This function performs the and async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function and(euint64 lhs, euint64 rhs) internal pure returns (euint64) {
+    function and(euint64 lhs, euint64 rhs) internal returns (euint64) {
         if (!isInitialized(lhs)) {
             lhs = asEuint64(0);
         }
@@ -1607,16 +1715,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint64.unwrap(lhs);
         uint256 unwrappedInput2 = euint64.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT64_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).and);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.and);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "and", unwrappedInput1, unwrappedInput2);
         return euint64.wrap(result);
     }
     /// @notice This function performs the and async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function and(euint128 lhs, euint128 rhs) internal pure returns (euint128) {
+    function and(euint128 lhs, euint128 rhs) internal returns (euint128) {
         if (!isInitialized(lhs)) {
             lhs = asEuint128(0);
         }
@@ -1626,16 +1734,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint128.unwrap(lhs);
         uint256 unwrappedInput2 = euint128.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT128_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).and);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.and);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "and", unwrappedInput1, unwrappedInput2);
         return euint128.wrap(result);
     }
     /// @notice This function performs the or async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function or(ebool lhs, ebool rhs) internal pure returns (ebool) {
+    function or(ebool lhs, ebool rhs) internal returns (ebool) {
         if (!isInitialized(lhs)) {
             lhs = asEbool(0);
         }
@@ -1645,16 +1753,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = ebool.unwrap(lhs);
         uint256 unwrappedInput2 = ebool.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EBOOL_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).or);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.or);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "or", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the or async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function or(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
+    function or(euint8 lhs, euint8 rhs) internal returns (euint8) {
         if (!isInitialized(lhs)) {
             lhs = asEuint8(0);
         }
@@ -1664,16 +1772,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT8_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).or);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.or);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "or", unwrappedInput1, unwrappedInput2);
         return euint8.wrap(result);
     }
     /// @notice This function performs the or async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function or(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
+    function or(euint16 lhs, euint16 rhs) internal returns (euint16) {
         if (!isInitialized(lhs)) {
             lhs = asEuint16(0);
         }
@@ -1683,16 +1791,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT16_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).or);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.or);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "or", unwrappedInput1, unwrappedInput2);
         return euint16.wrap(result);
     }
     /// @notice This function performs the or async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function or(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
+    function or(euint32 lhs, euint32 rhs) internal returns (euint32) {
         if (!isInitialized(lhs)) {
             lhs = asEuint32(0);
         }
@@ -1702,16 +1810,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT32_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).or);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.or);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "or", unwrappedInput1, unwrappedInput2);
         return euint32.wrap(result);
     }
     /// @notice This function performs the or async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function or(euint64 lhs, euint64 rhs) internal pure returns (euint64) {
+    function or(euint64 lhs, euint64 rhs) internal returns (euint64) {
         if (!isInitialized(lhs)) {
             lhs = asEuint64(0);
         }
@@ -1721,16 +1829,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint64.unwrap(lhs);
         uint256 unwrappedInput2 = euint64.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT64_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).or);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.or);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "or", unwrappedInput1, unwrappedInput2);
         return euint64.wrap(result);
     }
     /// @notice This function performs the or async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function or(euint128 lhs, euint128 rhs) internal pure returns (euint128) {
+    function or(euint128 lhs, euint128 rhs) internal returns (euint128) {
         if (!isInitialized(lhs)) {
             lhs = asEuint128(0);
         }
@@ -1740,16 +1848,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint128.unwrap(lhs);
         uint256 unwrappedInput2 = euint128.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT128_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).or);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.or);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "or", unwrappedInput1, unwrappedInput2);
         return euint128.wrap(result);
     }
     /// @notice This function performs the xor async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function xor(ebool lhs, ebool rhs) internal pure returns (ebool) {
+    function xor(ebool lhs, ebool rhs) internal returns (ebool) {
         if (!isInitialized(lhs)) {
             lhs = asEbool(0);
         }
@@ -1759,16 +1867,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = ebool.unwrap(lhs);
         uint256 unwrappedInput2 = ebool.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EBOOL_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).xor);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.xor);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "xor", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the xor async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function xor(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
+    function xor(euint8 lhs, euint8 rhs) internal returns (euint8) {
         if (!isInitialized(lhs)) {
             lhs = asEuint8(0);
         }
@@ -1778,16 +1886,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT8_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).xor);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.xor);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "xor", unwrappedInput1, unwrappedInput2);
         return euint8.wrap(result);
     }
     /// @notice This function performs the xor async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function xor(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
+    function xor(euint16 lhs, euint16 rhs) internal returns (euint16) {
         if (!isInitialized(lhs)) {
             lhs = asEuint16(0);
         }
@@ -1797,16 +1905,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT16_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).xor);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.xor);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "xor", unwrappedInput1, unwrappedInput2);
         return euint16.wrap(result);
     }
     /// @notice This function performs the xor async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function xor(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
+    function xor(euint32 lhs, euint32 rhs) internal returns (euint32) {
         if (!isInitialized(lhs)) {
             lhs = asEuint32(0);
         }
@@ -1816,16 +1924,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT32_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).xor);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.xor);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "xor", unwrappedInput1, unwrappedInput2);
         return euint32.wrap(result);
     }
     /// @notice This function performs the xor async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function xor(euint64 lhs, euint64 rhs) internal pure returns (euint64) {
+    function xor(euint64 lhs, euint64 rhs) internal returns (euint64) {
         if (!isInitialized(lhs)) {
             lhs = asEuint64(0);
         }
@@ -1835,16 +1943,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint64.unwrap(lhs);
         uint256 unwrappedInput2 = euint64.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT64_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).xor);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.xor);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "xor", unwrappedInput1, unwrappedInput2);
         return euint64.wrap(result);
     }
     /// @notice This function performs the xor async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function xor(euint128 lhs, euint128 rhs) internal pure returns (euint128) {
+    function xor(euint128 lhs, euint128 rhs) internal returns (euint128) {
         if (!isInitialized(lhs)) {
             lhs = asEuint128(0);
         }
@@ -1854,16 +1962,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint128.unwrap(lhs);
         uint256 unwrappedInput2 = euint128.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT128_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).xor);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.xor);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "xor", unwrappedInput1, unwrappedInput2);
         return euint128.wrap(result);
     }
     /// @notice This function performs the eq async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function eq(ebool lhs, ebool rhs) internal pure returns (ebool) {
+    function eq(ebool lhs, ebool rhs) internal returns (ebool) {
         if (!isInitialized(lhs)) {
             lhs = asEbool(0);
         }
@@ -1873,16 +1981,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = ebool.unwrap(lhs);
         uint256 unwrappedInput2 = ebool.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EBOOL_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).eq);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.eq);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "eq", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the eq async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function eq(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
+    function eq(euint8 lhs, euint8 rhs) internal returns (ebool) {
         if (!isInitialized(lhs)) {
             lhs = asEuint8(0);
         }
@@ -1892,16 +2000,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT8_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).eq);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.eq);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "eq", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the eq async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function eq(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
+    function eq(euint16 lhs, euint16 rhs) internal returns (ebool) {
         if (!isInitialized(lhs)) {
             lhs = asEuint16(0);
         }
@@ -1911,16 +2019,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT16_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).eq);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.eq);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "eq", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the eq async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function eq(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
+    function eq(euint32 lhs, euint32 rhs) internal returns (ebool) {
         if (!isInitialized(lhs)) {
             lhs = asEuint32(0);
         }
@@ -1930,16 +2038,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT32_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).eq);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.eq);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "eq", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the eq async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function eq(euint64 lhs, euint64 rhs) internal pure returns (ebool) {
+    function eq(euint64 lhs, euint64 rhs) internal returns (ebool) {
         if (!isInitialized(lhs)) {
             lhs = asEuint64(0);
         }
@@ -1949,16 +2057,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint64.unwrap(lhs);
         uint256 unwrappedInput2 = euint64.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT64_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).eq);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.eq);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "eq", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the eq async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function eq(euint128 lhs, euint128 rhs) internal pure returns (ebool) {
+    function eq(euint128 lhs, euint128 rhs) internal returns (ebool) {
         if (!isInitialized(lhs)) {
             lhs = asEuint128(0);
         }
@@ -1968,16 +2076,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint128.unwrap(lhs);
         uint256 unwrappedInput2 = euint128.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT128_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).eq);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.eq);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "eq", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the eq async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function eq(euint256 lhs, euint256 rhs) internal pure returns (ebool) {
+    function eq(euint256 lhs, euint256 rhs) internal returns (ebool) {
         if (!isInitialized(lhs)) {
             lhs = asEuint256(0);
         }
@@ -1987,16 +2095,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint256.unwrap(lhs);
         uint256 unwrappedInput2 = euint256.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT256_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).eq);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.eq);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "eq", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the eq async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function eq(eaddress lhs, eaddress rhs) internal pure returns (ebool) {
+    function eq(eaddress lhs, eaddress rhs) internal returns (ebool) {
         if (!isInitialized(lhs)) {
             lhs = asEaddress(0);
         }
@@ -2006,16 +2114,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = eaddress.unwrap(lhs);
         uint256 unwrappedInput2 = eaddress.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EADDRESS_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).eq);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.eq);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "eq", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the ne async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function ne(ebool lhs, ebool rhs) internal pure returns (ebool) {
+    function ne(ebool lhs, ebool rhs) internal returns (ebool) {
         if (!isInitialized(lhs)) {
             lhs = asEbool(0);
         }
@@ -2025,16 +2133,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = ebool.unwrap(lhs);
         uint256 unwrappedInput2 = ebool.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EBOOL_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ne);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.ne);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "ne", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the ne async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function ne(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
+    function ne(euint8 lhs, euint8 rhs) internal returns (ebool) {
         if (!isInitialized(lhs)) {
             lhs = asEuint8(0);
         }
@@ -2044,16 +2152,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT8_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ne);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.ne);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "ne", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the ne async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function ne(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
+    function ne(euint16 lhs, euint16 rhs) internal returns (ebool) {
         if (!isInitialized(lhs)) {
             lhs = asEuint16(0);
         }
@@ -2063,16 +2171,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT16_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ne);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.ne);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "ne", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the ne async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function ne(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
+    function ne(euint32 lhs, euint32 rhs) internal returns (ebool) {
         if (!isInitialized(lhs)) {
             lhs = asEuint32(0);
         }
@@ -2082,16 +2190,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT32_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ne);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.ne);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "ne", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the ne async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function ne(euint64 lhs, euint64 rhs) internal pure returns (ebool) {
+    function ne(euint64 lhs, euint64 rhs) internal returns (ebool) {
         if (!isInitialized(lhs)) {
             lhs = asEuint64(0);
         }
@@ -2101,16 +2209,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint64.unwrap(lhs);
         uint256 unwrappedInput2 = euint64.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT64_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ne);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.ne);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "ne", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the ne async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function ne(euint128 lhs, euint128 rhs) internal pure returns (ebool) {
+    function ne(euint128 lhs, euint128 rhs) internal returns (ebool) {
         if (!isInitialized(lhs)) {
             lhs = asEuint128(0);
         }
@@ -2120,16 +2228,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint128.unwrap(lhs);
         uint256 unwrappedInput2 = euint128.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT128_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ne);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.ne);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "ne", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the ne async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function ne(euint256 lhs, euint256 rhs) internal pure returns (ebool) {
+    function ne(euint256 lhs, euint256 rhs) internal returns (ebool) {
         if (!isInitialized(lhs)) {
             lhs = asEuint256(0);
         }
@@ -2139,16 +2247,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint256.unwrap(lhs);
         uint256 unwrappedInput2 = euint256.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT256_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ne);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.ne);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "ne", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the ne async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function ne(eaddress lhs, eaddress rhs) internal pure returns (ebool) {
+    function ne(eaddress lhs, eaddress rhs) internal returns (ebool) {
         if (!isInitialized(lhs)) {
             lhs = asEaddress(0);
         }
@@ -2158,16 +2266,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = eaddress.unwrap(lhs);
         uint256 unwrappedInput2 = eaddress.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EADDRESS_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ne);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.ne);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "ne", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the min async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function min(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
+    function min(euint8 lhs, euint8 rhs) internal returns (euint8) {
         if (!isInitialized(lhs)) {
             lhs = asEuint8(0);
         }
@@ -2177,16 +2285,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT8_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).min);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.min);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "min", unwrappedInput1, unwrappedInput2);
         return euint8.wrap(result);
     }
     /// @notice This function performs the min async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function min(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
+    function min(euint16 lhs, euint16 rhs) internal returns (euint16) {
         if (!isInitialized(lhs)) {
             lhs = asEuint16(0);
         }
@@ -2196,16 +2304,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT16_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).min);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.min);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "min", unwrappedInput1, unwrappedInput2);
         return euint16.wrap(result);
     }
     /// @notice This function performs the min async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function min(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
+    function min(euint32 lhs, euint32 rhs) internal returns (euint32) {
         if (!isInitialized(lhs)) {
             lhs = asEuint32(0);
         }
@@ -2215,16 +2323,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT32_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).min);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.min);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "min", unwrappedInput1, unwrappedInput2);
         return euint32.wrap(result);
     }
     /// @notice This function performs the min async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function min(euint64 lhs, euint64 rhs) internal pure returns (euint64) {
+    function min(euint64 lhs, euint64 rhs) internal returns (euint64) {
         if (!isInitialized(lhs)) {
             lhs = asEuint64(0);
         }
@@ -2234,16 +2342,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint64.unwrap(lhs);
         uint256 unwrappedInput2 = euint64.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT64_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).min);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.min);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "min", unwrappedInput1, unwrappedInput2);
         return euint64.wrap(result);
     }
     /// @notice This function performs the min async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function min(euint128 lhs, euint128 rhs) internal pure returns (euint128) {
+    function min(euint128 lhs, euint128 rhs) internal returns (euint128) {
         if (!isInitialized(lhs)) {
             lhs = asEuint128(0);
         }
@@ -2253,16 +2361,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint128.unwrap(lhs);
         uint256 unwrappedInput2 = euint128.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT128_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).min);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.min);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "min", unwrappedInput1, unwrappedInput2);
         return euint128.wrap(result);
     }
     /// @notice This function performs the max async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function max(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
+    function max(euint8 lhs, euint8 rhs) internal returns (euint8) {
         if (!isInitialized(lhs)) {
             lhs = asEuint8(0);
         }
@@ -2272,16 +2380,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT8_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).max);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.max);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "max", unwrappedInput1, unwrappedInput2);
         return euint8.wrap(result);
     }
     /// @notice This function performs the max async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function max(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
+    function max(euint16 lhs, euint16 rhs) internal returns (euint16) {
         if (!isInitialized(lhs)) {
             lhs = asEuint16(0);
         }
@@ -2291,16 +2399,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT16_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).max);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.max);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "max", unwrappedInput1, unwrappedInput2);
         return euint16.wrap(result);
     }
     /// @notice This function performs the max async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function max(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
+    function max(euint32 lhs, euint32 rhs) internal returns (euint32) {
         if (!isInitialized(lhs)) {
             lhs = asEuint32(0);
         }
@@ -2310,16 +2418,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT32_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).max);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.max);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "max", unwrappedInput1, unwrappedInput2);
         return euint32.wrap(result);
     }
     /// @notice This function performs the max async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function max(euint64 lhs, euint64 rhs) internal pure returns (euint64) {
+    function max(euint64 lhs, euint64 rhs) internal returns (euint64) {
         if (!isInitialized(lhs)) {
             lhs = asEuint64(0);
         }
@@ -2329,16 +2437,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint64.unwrap(lhs);
         uint256 unwrappedInput2 = euint64.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT64_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).max);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.max);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "max", unwrappedInput1, unwrappedInput2);
         return euint64.wrap(result);
     }
     /// @notice This function performs the max async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function max(euint128 lhs, euint128 rhs) internal pure returns (euint128) {
+    function max(euint128 lhs, euint128 rhs) internal returns (euint128) {
         if (!isInitialized(lhs)) {
             lhs = asEuint128(0);
         }
@@ -2348,16 +2456,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint128.unwrap(lhs);
         uint256 unwrappedInput2 = euint128.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT128_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).max);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.max);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "max", unwrappedInput1, unwrappedInput2);
         return euint128.wrap(result);
     }
     /// @notice This function performs the shl async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function shl(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
+    function shl(euint8 lhs, euint8 rhs) internal returns (euint8) {
         if (!isInitialized(lhs)) {
             lhs = asEuint8(0);
         }
@@ -2367,16 +2475,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT8_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shl);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.shl);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "shl", unwrappedInput1, unwrappedInput2);
         return euint8.wrap(result);
     }
     /// @notice This function performs the shl async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function shl(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
+    function shl(euint16 lhs, euint16 rhs) internal returns (euint16) {
         if (!isInitialized(lhs)) {
             lhs = asEuint16(0);
         }
@@ -2386,16 +2494,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT16_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shl);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.shl);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "shl", unwrappedInput1, unwrappedInput2);
         return euint16.wrap(result);
     }
     /// @notice This function performs the shl async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function shl(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
+    function shl(euint32 lhs, euint32 rhs) internal returns (euint32) {
         if (!isInitialized(lhs)) {
             lhs = asEuint32(0);
         }
@@ -2405,16 +2513,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT32_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shl);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.shl);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "shl", unwrappedInput1, unwrappedInput2);
         return euint32.wrap(result);
     }
     /// @notice This function performs the shl async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function shl(euint64 lhs, euint64 rhs) internal pure returns (euint64) {
+    function shl(euint64 lhs, euint64 rhs) internal returns (euint64) {
         if (!isInitialized(lhs)) {
             lhs = asEuint64(0);
         }
@@ -2424,16 +2532,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint64.unwrap(lhs);
         uint256 unwrappedInput2 = euint64.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT64_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shl);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.shl);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "shl", unwrappedInput1, unwrappedInput2);
         return euint64.wrap(result);
     }
     /// @notice This function performs the shl async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function shl(euint128 lhs, euint128 rhs) internal pure returns (euint128) {
+    function shl(euint128 lhs, euint128 rhs) internal returns (euint128) {
         if (!isInitialized(lhs)) {
             lhs = asEuint128(0);
         }
@@ -2443,16 +2551,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint128.unwrap(lhs);
         uint256 unwrappedInput2 = euint128.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT128_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shl);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.shl);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "shl", unwrappedInput1, unwrappedInput2);
         return euint128.wrap(result);
     }
     /// @notice This function performs the shr async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function shr(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
+    function shr(euint8 lhs, euint8 rhs) internal returns (euint8) {
         if (!isInitialized(lhs)) {
             lhs = asEuint8(0);
         }
@@ -2462,16 +2570,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT8_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shr);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.shr);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "shr", unwrappedInput1, unwrappedInput2);
         return euint8.wrap(result);
     }
     /// @notice This function performs the shr async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function shr(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
+    function shr(euint16 lhs, euint16 rhs) internal returns (euint16) {
         if (!isInitialized(lhs)) {
             lhs = asEuint16(0);
         }
@@ -2481,16 +2589,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT16_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shr);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.shr);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "shr", unwrappedInput1, unwrappedInput2);
         return euint16.wrap(result);
     }
     /// @notice This function performs the shr async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function shr(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
+    function shr(euint32 lhs, euint32 rhs) internal returns (euint32) {
         if (!isInitialized(lhs)) {
             lhs = asEuint32(0);
         }
@@ -2500,16 +2608,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT32_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shr);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.shr);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "shr", unwrappedInput1, unwrappedInput2);
         return euint32.wrap(result);
     }
     /// @notice This function performs the shr async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function shr(euint64 lhs, euint64 rhs) internal pure returns (euint64) {
+    function shr(euint64 lhs, euint64 rhs) internal returns (euint64) {
         if (!isInitialized(lhs)) {
             lhs = asEuint64(0);
         }
@@ -2519,16 +2627,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint64.unwrap(lhs);
         uint256 unwrappedInput2 = euint64.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT64_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shr);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.shr);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "shr", unwrappedInput1, unwrappedInput2);
         return euint64.wrap(result);
     }
     /// @notice This function performs the shr async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function shr(euint128 lhs, euint128 rhs) internal pure returns (euint128) {
+    function shr(euint128 lhs, euint128 rhs) internal returns (euint128) {
         if (!isInitialized(lhs)) {
             lhs = asEuint128(0);
         }
@@ -2538,16 +2646,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint128.unwrap(lhs);
         uint256 unwrappedInput2 = euint128.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT128_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).shr);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.shr);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "shr", unwrappedInput1, unwrappedInput2);
         return euint128.wrap(result);
     }
     /// @notice This function performs the rol async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function rol(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
+    function rol(euint8 lhs, euint8 rhs) internal returns (euint8) {
         if (!isInitialized(lhs)) {
             lhs = asEuint8(0);
         }
@@ -2557,16 +2665,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT8_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).rol);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.rol);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "rol", unwrappedInput1, unwrappedInput2);
         return euint8.wrap(result);
     }
     /// @notice This function performs the rol async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function rol(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
+    function rol(euint16 lhs, euint16 rhs) internal returns (euint16) {
         if (!isInitialized(lhs)) {
             lhs = asEuint16(0);
         }
@@ -2576,16 +2684,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT16_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).rol);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.rol);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "rol", unwrappedInput1, unwrappedInput2);
         return euint16.wrap(result);
     }
     /// @notice This function performs the rol async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function rol(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
+    function rol(euint32 lhs, euint32 rhs) internal returns (euint32) {
         if (!isInitialized(lhs)) {
             lhs = asEuint32(0);
         }
@@ -2595,16 +2703,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT32_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).rol);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.rol);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "rol", unwrappedInput1, unwrappedInput2);
         return euint32.wrap(result);
     }
     /// @notice This function performs the rol async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function rol(euint64 lhs, euint64 rhs) internal pure returns (euint64) {
+    function rol(euint64 lhs, euint64 rhs) internal returns (euint64) {
         if (!isInitialized(lhs)) {
             lhs = asEuint64(0);
         }
@@ -2614,16 +2722,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint64.unwrap(lhs);
         uint256 unwrappedInput2 = euint64.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT64_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).rol);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.rol);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "rol", unwrappedInput1, unwrappedInput2);
         return euint64.wrap(result);
     }
     /// @notice This function performs the rol async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function rol(euint128 lhs, euint128 rhs) internal pure returns (euint128) {
+    function rol(euint128 lhs, euint128 rhs) internal returns (euint128) {
         if (!isInitialized(lhs)) {
             lhs = asEuint128(0);
         }
@@ -2633,16 +2741,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint128.unwrap(lhs);
         uint256 unwrappedInput2 = euint128.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT128_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).rol);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.rol);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "rol", unwrappedInput1, unwrappedInput2);
         return euint128.wrap(result);
     }
     /// @notice This function performs the ror async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function ror(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
+    function ror(euint8 lhs, euint8 rhs) internal returns (euint8) {
         if (!isInitialized(lhs)) {
             lhs = asEuint8(0);
         }
@@ -2652,16 +2760,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint8.unwrap(lhs);
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT8_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ror);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.ror);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "ror", unwrappedInput1, unwrappedInput2);
         return euint8.wrap(result);
     }
     /// @notice This function performs the ror async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function ror(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
+    function ror(euint16 lhs, euint16 rhs) internal returns (euint16) {
         if (!isInitialized(lhs)) {
             lhs = asEuint16(0);
         }
@@ -2671,16 +2779,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint16.unwrap(lhs);
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT16_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ror);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.ror);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "ror", unwrappedInput1, unwrappedInput2);
         return euint16.wrap(result);
     }
     /// @notice This function performs the ror async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function ror(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
+    function ror(euint32 lhs, euint32 rhs) internal returns (euint32) {
         if (!isInitialized(lhs)) {
             lhs = asEuint32(0);
         }
@@ -2690,16 +2798,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint32.unwrap(lhs);
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT32_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ror);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.ror);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "ror", unwrappedInput1, unwrappedInput2);
         return euint32.wrap(result);
     }
     /// @notice This function performs the ror async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function ror(euint64 lhs, euint64 rhs) internal pure returns (euint64) {
+    function ror(euint64 lhs, euint64 rhs) internal returns (euint64) {
         if (!isInitialized(lhs)) {
             lhs = asEuint64(0);
         }
@@ -2709,16 +2817,16 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint64.unwrap(lhs);
         uint256 unwrappedInput2 = euint64.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT64_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ror);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.ror);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "ror", unwrappedInput1, unwrappedInput2);
         return euint64.wrap(result);
     }
     /// @notice This function performs the ror async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs The first input 
     /// @param rhs The second input
     /// @return The result of the operation
-    function ror(euint128 lhs, euint128 rhs) internal pure returns (euint128) {
+    function ror(euint128 lhs, euint128 rhs) internal returns (euint128) {
         if (!isInitialized(lhs)) {
             lhs = asEuint128(0);
         }
@@ -2728,86 +2836,81 @@ library AsyncFHE {
         uint256 unwrappedInput1 = euint128.unwrap(lhs);
         uint256 unwrappedInput2 = euint128.unwrap(rhs);
 
-        uint256 result = mathHelper(Common.EUINT128_TFHE, unwrappedInput1, unwrappedInput2, FheOps(Precompiles.Fheos).ror);
+        uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.ror);
+        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "ror", unwrappedInput1, unwrappedInput2);
         return euint128.wrap(result);
     }
     /// @notice Performs the not operation on a ciphertext
-    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @dev Verifies that the input value matches a valid ciphertext.
     /// @param input1 the input ciphertext
-    function not(ebool input1) internal pure returns (ebool) {
-        if (!isInitialized(input1)) {
-            input1 = asEbool(0);
-        }
-        uint256 unwrappedInput1 = ebool.unwrap(input1);
-        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        bytes memory b = FheOps(Precompiles.Fheos).not(Common.EBOOL_TFHE, inputAsBytes);
-        uint256 result = Impl.getValue(b);
-        return ebool.wrap(result);
+    function not(ebool input1) internal returns (ebool) {
+      if (!isInitialized(input1)) {
+          input1 = asEbool(0);
+      }
+      uint256 unwrappedInput1 = ebool.unwrap(input1);
+      uint256 ctHash = calcUnaryPlaceholderValueHash(unwrappedInput1, FunctionId.not);
+      ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(ctHash, "not", unwrappedInput1, 0);
+      return ebool.wrap(ctHash);
     }
     /// @notice Performs the not operation on a ciphertext
-    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @dev Verifies that the input value matches a valid ciphertext.
     /// @param input1 the input ciphertext
-    function not(euint8 input1) internal pure returns (euint8) {
-        if (!isInitialized(input1)) {
-            input1 = asEuint8(0);
-        }
-        uint256 unwrappedInput1 = euint8.unwrap(input1);
-        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        bytes memory b = FheOps(Precompiles.Fheos).not(Common.EUINT8_TFHE, inputAsBytes);
-        uint256 result = Impl.getValue(b);
-        return euint8.wrap(result);
+    function not(euint8 input1) internal returns (euint8) {
+      if (!isInitialized(input1)) {
+          input1 = asEuint8(0);
+      }
+      uint256 unwrappedInput1 = euint8.unwrap(input1);
+      uint256 ctHash = calcUnaryPlaceholderValueHash(unwrappedInput1, FunctionId.not);
+      ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(ctHash, "not", unwrappedInput1, 0);
+      return euint8.wrap(ctHash);
     }
     /// @notice Performs the not operation on a ciphertext
-    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @dev Verifies that the input value matches a valid ciphertext.
     /// @param input1 the input ciphertext
-    function not(euint16 input1) internal pure returns (euint16) {
-        if (!isInitialized(input1)) {
-            input1 = asEuint16(0);
-        }
-        uint256 unwrappedInput1 = euint16.unwrap(input1);
-        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        bytes memory b = FheOps(Precompiles.Fheos).not(Common.EUINT16_TFHE, inputAsBytes);
-        uint256 result = Impl.getValue(b);
-        return euint16.wrap(result);
+    function not(euint16 input1) internal returns (euint16) {
+      if (!isInitialized(input1)) {
+          input1 = asEuint16(0);
+      }
+      uint256 unwrappedInput1 = euint16.unwrap(input1);
+      uint256 ctHash = calcUnaryPlaceholderValueHash(unwrappedInput1, FunctionId.not);
+      ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(ctHash, "not", unwrappedInput1, 0);
+      return euint16.wrap(ctHash);
     }
     /// @notice Performs the not operation on a ciphertext
-    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @dev Verifies that the input value matches a valid ciphertext.
     /// @param input1 the input ciphertext
-    function not(euint32 input1) internal pure returns (euint32) {
-        if (!isInitialized(input1)) {
-            input1 = asEuint32(0);
-        }
-        uint256 unwrappedInput1 = euint32.unwrap(input1);
-        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        bytes memory b = FheOps(Precompiles.Fheos).not(Common.EUINT32_TFHE, inputAsBytes);
-        uint256 result = Impl.getValue(b);
-        return euint32.wrap(result);
+    function not(euint32 input1) internal returns (euint32) {
+      if (!isInitialized(input1)) {
+          input1 = asEuint32(0);
+      }
+      uint256 unwrappedInput1 = euint32.unwrap(input1);
+      uint256 ctHash = calcUnaryPlaceholderValueHash(unwrappedInput1, FunctionId.not);
+      ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(ctHash, "not", unwrappedInput1, 0);
+      return euint32.wrap(ctHash);
     }
     /// @notice Performs the not operation on a ciphertext
-    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @dev Verifies that the input value matches a valid ciphertext.
     /// @param input1 the input ciphertext
-    function not(euint64 input1) internal pure returns (euint64) {
-        if (!isInitialized(input1)) {
-            input1 = asEuint64(0);
-        }
-        uint256 unwrappedInput1 = euint64.unwrap(input1);
-        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        bytes memory b = FheOps(Precompiles.Fheos).not(Common.EUINT64_TFHE, inputAsBytes);
-        uint256 result = Impl.getValue(b);
-        return euint64.wrap(result);
+    function not(euint64 input1) internal returns (euint64) {
+      if (!isInitialized(input1)) {
+          input1 = asEuint64(0);
+      }
+      uint256 unwrappedInput1 = euint64.unwrap(input1);
+      uint256 ctHash = calcUnaryPlaceholderValueHash(unwrappedInput1, FunctionId.not);
+      ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(ctHash, "not", unwrappedInput1, 0);
+      return euint64.wrap(ctHash);
     }
     /// @notice Performs the not operation on a ciphertext
-    /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @dev Verifies that the input value matches a valid ciphertext.
     /// @param input1 the input ciphertext
-    function not(euint128 input1) internal pure returns (euint128) {
-        if (!isInitialized(input1)) {
-            input1 = asEuint128(0);
-        }
-        uint256 unwrappedInput1 = euint128.unwrap(input1);
-        bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        bytes memory b = FheOps(Precompiles.Fheos).not(Common.EUINT128_TFHE, inputAsBytes);
-        uint256 result = Impl.getValue(b);
-        return euint128.wrap(result);
+    function not(euint128 input1) internal returns (euint128) {
+      if (!isInitialized(input1)) {
+          input1 = asEuint128(0);
+      }
+      uint256 unwrappedInput1 = euint128.unwrap(input1);
+      uint256 ctHash = calcUnaryPlaceholderValueHash(unwrappedInput1, FunctionId.not);
+      ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(ctHash, "not", unwrappedInput1, 0);
+      return euint128.wrap(ctHash);
     }
     /// @notice Generates a random value of a given type with the given seed, for the provided securityZone
     /// @dev Calls the desired precompile and returns the hash of the ciphertext
@@ -2909,402 +3012,402 @@ library AsyncFHE {
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an ebool
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
-    function asEbool(inEbool memory value) internal pure returns (ebool) {
+    function asEbool(inEbool memory value) internal returns (ebool) {
         return FHE.asEbool(value.data, value.securityZone);
     }
     /// @notice Converts a ebool to an euint8
-    function asEuint8(ebool value) internal pure returns (euint8) {
+    function asEuint8(ebool value) internal returns (euint8) {
         return euint8.wrap(Impl.cast(Common.EBOOL_TFHE, ebool.unwrap(value), Common.EUINT8_TFHE));
     }
     /// @notice Converts a ebool to an euint16
-    function asEuint16(ebool value) internal pure returns (euint16) {
+    function asEuint16(ebool value) internal returns (euint16) {
         return euint16.wrap(Impl.cast(Common.EBOOL_TFHE, ebool.unwrap(value), Common.EUINT16_TFHE));
     }
     /// @notice Converts a ebool to an euint32
-    function asEuint32(ebool value) internal pure returns (euint32) {
+    function asEuint32(ebool value) internal returns (euint32) {
         return euint32.wrap(Impl.cast(Common.EBOOL_TFHE, ebool.unwrap(value), Common.EUINT32_TFHE));
     }
     /// @notice Converts a ebool to an euint64
-    function asEuint64(ebool value) internal pure returns (euint64) {
+    function asEuint64(ebool value) internal returns (euint64) {
         return euint64.wrap(Impl.cast(Common.EBOOL_TFHE, ebool.unwrap(value), Common.EUINT64_TFHE));
     }
     /// @notice Converts a ebool to an euint128
-    function asEuint128(ebool value) internal pure returns (euint128) {
+    function asEuint128(ebool value) internal returns (euint128) {
         return euint128.wrap(Impl.cast(Common.EBOOL_TFHE, ebool.unwrap(value), Common.EUINT128_TFHE));
     }
     /// @notice Converts a ebool to an euint256
-    function asEuint256(ebool value) internal pure returns (euint256) {
+    function asEuint256(ebool value) internal returns (euint256) {
         return euint256.wrap(Impl.cast(Common.EBOOL_TFHE, ebool.unwrap(value), Common.EUINT256_TFHE));
     }
     
     /// @notice Converts a euint8 to an ebool
-    function asEbool(euint8 value) internal pure returns (ebool) {
+    function asEbool(euint8 value) internal returns (ebool) {
         return ne(value, asEuint8(0));
     }
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an euint8
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
-    function asEuint8(inEuint8 memory value) internal pure returns (euint8) {
+    function asEuint8(inEuint8 memory value) internal returns (euint8) {
         return FHE.asEuint8(value.data, value.securityZone);
     }
     /// @notice Converts a euint8 to an euint16
-    function asEuint16(euint8 value) internal pure returns (euint16) {
+    function asEuint16(euint8 value) internal returns (euint16) {
         return euint16.wrap(Impl.cast(Common.EUINT8_TFHE, euint8.unwrap(value), Common.EUINT16_TFHE));
     }
     /// @notice Converts a euint8 to an euint32
-    function asEuint32(euint8 value) internal pure returns (euint32) {
+    function asEuint32(euint8 value) internal returns (euint32) {
         return euint32.wrap(Impl.cast(Common.EUINT8_TFHE, euint8.unwrap(value), Common.EUINT32_TFHE));
     }
     /// @notice Converts a euint8 to an euint64
-    function asEuint64(euint8 value) internal pure returns (euint64) {
+    function asEuint64(euint8 value) internal returns (euint64) {
         return euint64.wrap(Impl.cast(Common.EUINT8_TFHE, euint8.unwrap(value), Common.EUINT64_TFHE));
     }
     /// @notice Converts a euint8 to an euint128
-    function asEuint128(euint8 value) internal pure returns (euint128) {
+    function asEuint128(euint8 value) internal returns (euint128) {
         return euint128.wrap(Impl.cast(Common.EUINT8_TFHE, euint8.unwrap(value), Common.EUINT128_TFHE));
     }
     /// @notice Converts a euint8 to an euint256
-    function asEuint256(euint8 value) internal pure returns (euint256) {
+    function asEuint256(euint8 value) internal returns (euint256) {
         return euint256.wrap(Impl.cast(Common.EUINT8_TFHE, euint8.unwrap(value), Common.EUINT256_TFHE));
     }
     
     /// @notice Converts a euint16 to an ebool
-    function asEbool(euint16 value) internal pure returns (ebool) {
+    function asEbool(euint16 value) internal returns (ebool) {
         return ne(value, asEuint16(0));
     }
     /// @notice Converts a euint16 to an euint8
-    function asEuint8(euint16 value) internal pure returns (euint8) {
+    function asEuint8(euint16 value) internal returns (euint8) {
         return euint8.wrap(Impl.cast(Common.EUINT16_TFHE, euint16.unwrap(value), Common.EUINT8_TFHE));
     }
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an euint16
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
-    function asEuint16(inEuint16 memory value) internal pure returns (euint16) {
+    function asEuint16(inEuint16 memory value) internal returns (euint16) {
         return FHE.asEuint16(value.data, value.securityZone);
     }
     /// @notice Converts a euint16 to an euint32
-    function asEuint32(euint16 value) internal pure returns (euint32) {
+    function asEuint32(euint16 value) internal returns (euint32) {
         return euint32.wrap(Impl.cast(Common.EUINT16_TFHE, euint16.unwrap(value), Common.EUINT32_TFHE));
     }
     /// @notice Converts a euint16 to an euint64
-    function asEuint64(euint16 value) internal pure returns (euint64) {
+    function asEuint64(euint16 value) internal returns (euint64) {
         return euint64.wrap(Impl.cast(Common.EUINT16_TFHE, euint16.unwrap(value), Common.EUINT64_TFHE));
     }
     /// @notice Converts a euint16 to an euint128
-    function asEuint128(euint16 value) internal pure returns (euint128) {
+    function asEuint128(euint16 value) internal returns (euint128) {
         return euint128.wrap(Impl.cast(Common.EUINT16_TFHE, euint16.unwrap(value), Common.EUINT128_TFHE));
     }
     /// @notice Converts a euint16 to an euint256
-    function asEuint256(euint16 value) internal pure returns (euint256) {
+    function asEuint256(euint16 value) internal returns (euint256) {
         return euint256.wrap(Impl.cast(Common.EUINT16_TFHE, euint16.unwrap(value), Common.EUINT256_TFHE));
     }
     
     /// @notice Converts a euint32 to an ebool
-    function asEbool(euint32 value) internal pure returns (ebool) {
+    function asEbool(euint32 value) internal returns (ebool) {
         return ne(value, asEuint32(0));
     }
     /// @notice Converts a euint32 to an euint8
-    function asEuint8(euint32 value) internal pure returns (euint8) {
+    function asEuint8(euint32 value) internal returns (euint8) {
         return euint8.wrap(Impl.cast(Common.EUINT32_TFHE, euint32.unwrap(value), Common.EUINT8_TFHE));
     }
     /// @notice Converts a euint32 to an euint16
-    function asEuint16(euint32 value) internal pure returns (euint16) {
+    function asEuint16(euint32 value) internal returns (euint16) {
         return euint16.wrap(Impl.cast(Common.EUINT32_TFHE, euint32.unwrap(value), Common.EUINT16_TFHE));
     }
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an euint32
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
-    function asEuint32(inEuint32 memory value) internal pure returns (euint32) {
+    function asEuint32(inEuint32 memory value) internal returns (euint32) {
         return FHE.asEuint32(value.data, value.securityZone);
     }
     /// @notice Converts a euint32 to an euint64
-    function asEuint64(euint32 value) internal pure returns (euint64) {
+    function asEuint64(euint32 value) internal returns (euint64) {
         return euint64.wrap(Impl.cast(Common.EUINT32_TFHE, euint32.unwrap(value), Common.EUINT64_TFHE));
     }
     /// @notice Converts a euint32 to an euint128
-    function asEuint128(euint32 value) internal pure returns (euint128) {
+    function asEuint128(euint32 value) internal returns (euint128) {
         return euint128.wrap(Impl.cast(Common.EUINT32_TFHE, euint32.unwrap(value), Common.EUINT128_TFHE));
     }
     /// @notice Converts a euint32 to an euint256
-    function asEuint256(euint32 value) internal pure returns (euint256) {
+    function asEuint256(euint32 value) internal returns (euint256) {
         return euint256.wrap(Impl.cast(Common.EUINT32_TFHE, euint32.unwrap(value), Common.EUINT256_TFHE));
     }
     
     /// @notice Converts a euint64 to an ebool
-    function asEbool(euint64 value) internal pure returns (ebool) {
+    function asEbool(euint64 value) internal returns (ebool) {
         return ne(value, asEuint64(0));
     }
     /// @notice Converts a euint64 to an euint8
-    function asEuint8(euint64 value) internal pure returns (euint8) {
+    function asEuint8(euint64 value) internal returns (euint8) {
         return euint8.wrap(Impl.cast(Common.EUINT64_TFHE, euint64.unwrap(value), Common.EUINT8_TFHE));
     }
     /// @notice Converts a euint64 to an euint16
-    function asEuint16(euint64 value) internal pure returns (euint16) {
+    function asEuint16(euint64 value) internal returns (euint16) {
         return euint16.wrap(Impl.cast(Common.EUINT64_TFHE, euint64.unwrap(value), Common.EUINT16_TFHE));
     }
     /// @notice Converts a euint64 to an euint32
-    function asEuint32(euint64 value) internal pure returns (euint32) {
+    function asEuint32(euint64 value) internal returns (euint32) {
         return euint32.wrap(Impl.cast(Common.EUINT64_TFHE, euint64.unwrap(value), Common.EUINT32_TFHE));
     }
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an euint64
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
-    function asEuint64(inEuint64 memory value) internal pure returns (euint64) {
+    function asEuint64(inEuint64 memory value) internal returns (euint64) {
         return FHE.asEuint64(value.data, value.securityZone);
     }
     /// @notice Converts a euint64 to an euint128
-    function asEuint128(euint64 value) internal pure returns (euint128) {
+    function asEuint128(euint64 value) internal returns (euint128) {
         return euint128.wrap(Impl.cast(Common.EUINT64_TFHE, euint64.unwrap(value), Common.EUINT128_TFHE));
     }
     /// @notice Converts a euint64 to an euint256
-    function asEuint256(euint64 value) internal pure returns (euint256) {
+    function asEuint256(euint64 value) internal returns (euint256) {
         return euint256.wrap(Impl.cast(Common.EUINT64_TFHE, euint64.unwrap(value), Common.EUINT256_TFHE));
     }
     
     /// @notice Converts a euint128 to an ebool
-    function asEbool(euint128 value) internal pure returns (ebool) {
+    function asEbool(euint128 value) internal returns (ebool) {
         return ne(value, asEuint128(0));
     }
     /// @notice Converts a euint128 to an euint8
-    function asEuint8(euint128 value) internal pure returns (euint8) {
+    function asEuint8(euint128 value) internal returns (euint8) {
         return euint8.wrap(Impl.cast(Common.EUINT128_TFHE, euint128.unwrap(value), Common.EUINT8_TFHE));
     }
     /// @notice Converts a euint128 to an euint16
-    function asEuint16(euint128 value) internal pure returns (euint16) {
+    function asEuint16(euint128 value) internal returns (euint16) {
         return euint16.wrap(Impl.cast(Common.EUINT128_TFHE, euint128.unwrap(value), Common.EUINT16_TFHE));
     }
     /// @notice Converts a euint128 to an euint32
-    function asEuint32(euint128 value) internal pure returns (euint32) {
+    function asEuint32(euint128 value) internal returns (euint32) {
         return euint32.wrap(Impl.cast(Common.EUINT128_TFHE, euint128.unwrap(value), Common.EUINT32_TFHE));
     }
     /// @notice Converts a euint128 to an euint64
-    function asEuint64(euint128 value) internal pure returns (euint64) {
+    function asEuint64(euint128 value) internal returns (euint64) {
         return euint64.wrap(Impl.cast(Common.EUINT128_TFHE, euint128.unwrap(value), Common.EUINT64_TFHE));
     }
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an euint128
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
-    function asEuint128(inEuint128 memory value) internal pure returns (euint128) {
+    function asEuint128(inEuint128 memory value) internal returns (euint128) {
         return FHE.asEuint128(value.data, value.securityZone);
     }
     /// @notice Converts a euint128 to an euint256
-    function asEuint256(euint128 value) internal pure returns (euint256) {
+    function asEuint256(euint128 value) internal returns (euint256) {
         return euint256.wrap(Impl.cast(Common.EUINT128_TFHE, euint128.unwrap(value), Common.EUINT256_TFHE));
     }
     
     /// @notice Converts a euint256 to an ebool
-    function asEbool(euint256 value) internal pure returns (ebool) {
+    function asEbool(euint256 value) internal returns (ebool) {
         return ne(value, asEuint256(0));
     }
     /// @notice Converts a euint256 to an euint8
-    function asEuint8(euint256 value) internal pure returns (euint8) {
+    function asEuint8(euint256 value) internal returns (euint8) {
         return euint8.wrap(Impl.cast(Common.EUINT256_TFHE, euint256.unwrap(value), Common.EUINT8_TFHE));
     }
     /// @notice Converts a euint256 to an euint16
-    function asEuint16(euint256 value) internal pure returns (euint16) {
+    function asEuint16(euint256 value) internal returns (euint16) {
         return euint16.wrap(Impl.cast(Common.EUINT256_TFHE, euint256.unwrap(value), Common.EUINT16_TFHE));
     }
     /// @notice Converts a euint256 to an euint32
-    function asEuint32(euint256 value) internal pure returns (euint32) {
+    function asEuint32(euint256 value) internal returns (euint32) {
         return euint32.wrap(Impl.cast(Common.EUINT256_TFHE, euint256.unwrap(value), Common.EUINT32_TFHE));
     }
     /// @notice Converts a euint256 to an euint64
-    function asEuint64(euint256 value) internal pure returns (euint64) {
+    function asEuint64(euint256 value) internal returns (euint64) {
         return euint64.wrap(Impl.cast(Common.EUINT256_TFHE, euint256.unwrap(value), Common.EUINT64_TFHE));
     }
     /// @notice Converts a euint256 to an euint128
-    function asEuint128(euint256 value) internal pure returns (euint128) {
+    function asEuint128(euint256 value) internal returns (euint128) {
         return euint128.wrap(Impl.cast(Common.EUINT256_TFHE, euint256.unwrap(value), Common.EUINT128_TFHE));
     }
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an euint256
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
-    function asEuint256(inEuint256 memory value) internal pure returns (euint256) {
+    function asEuint256(inEuint256 memory value) internal returns (euint256) {
         return FHE.asEuint256(value.data, value.securityZone);
     }
     /// @notice Converts a euint256 to an eaddress
-    function asEaddress(euint256 value) internal pure returns (eaddress) {
+    function asEaddress(euint256 value) internal returns (eaddress) {
         return eaddress.wrap(Impl.cast(Common.EUINT256_TFHE, euint256.unwrap(value), Common.EADDRESS_TFHE));
     }
     
     /// @notice Converts a eaddress to an ebool
-    function asEbool(eaddress value) internal pure returns (ebool) {
+    function asEbool(eaddress value) internal returns (ebool) {
         return ne(value, asEaddress(0));
     }
     /// @notice Converts a eaddress to an euint8
-    function asEuint8(eaddress value) internal pure returns (euint8) {
+    function asEuint8(eaddress value) internal returns (euint8) {
         return euint8.wrap(Impl.cast(Common.EADDRESS_TFHE, eaddress.unwrap(value), Common.EUINT8_TFHE));
     }
     /// @notice Converts a eaddress to an euint16
-    function asEuint16(eaddress value) internal pure returns (euint16) {
+    function asEuint16(eaddress value) internal returns (euint16) {
         return euint16.wrap(Impl.cast(Common.EADDRESS_TFHE, eaddress.unwrap(value), Common.EUINT16_TFHE));
     }
     /// @notice Converts a eaddress to an euint32
-    function asEuint32(eaddress value) internal pure returns (euint32) {
+    function asEuint32(eaddress value) internal returns (euint32) {
         return euint32.wrap(Impl.cast(Common.EADDRESS_TFHE, eaddress.unwrap(value), Common.EUINT32_TFHE));
     }
     /// @notice Converts a eaddress to an euint64
-    function asEuint64(eaddress value) internal pure returns (euint64) {
+    function asEuint64(eaddress value) internal returns (euint64) {
         return euint64.wrap(Impl.cast(Common.EADDRESS_TFHE, eaddress.unwrap(value), Common.EUINT64_TFHE));
     }
     /// @notice Converts a eaddress to an euint128
-    function asEuint128(eaddress value) internal pure returns (euint128) {
+    function asEuint128(eaddress value) internal returns (euint128) {
         return euint128.wrap(Impl.cast(Common.EADDRESS_TFHE, eaddress.unwrap(value), Common.EUINT128_TFHE));
     }
     /// @notice Converts a eaddress to an euint256
-    function asEuint256(eaddress value) internal pure returns (euint256) {
+    function asEuint256(eaddress value) internal returns (euint256) {
         return euint256.wrap(Impl.cast(Common.EADDRESS_TFHE, eaddress.unwrap(value), Common.EUINT256_TFHE));
     }
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an eaddress
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
-    function asEaddress(inEaddress memory value) internal pure returns (eaddress) {
+    function asEaddress(inEaddress memory value) internal returns (eaddress) {
         return FHE.asEaddress(value.data, value.securityZone);
     }
     /// @notice Converts a uint256 to an ebool
     /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
-    function asEbool(uint256 value) internal pure returns (ebool) {
+    function asEbool(uint256 value) internal returns (ebool) {
         return ebool.wrap(Impl.trivialEncrypt(value, Common.EBOOL_TFHE, 0));
     }
     /// @notice Converts a uint256 to an ebool, specifying security zone
     /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
-    function asEbool(uint256 value, int32 securityZone) internal pure returns (ebool) {
+    function asEbool(uint256 value, int32 securityZone) internal returns (ebool) {
         return ebool.wrap(Impl.trivialEncrypt(value, Common.EBOOL_TFHE, securityZone));
     }
     /// @notice Converts a uint256 to an euint8
     /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
-    function asEuint8(uint256 value) internal pure returns (euint8) {
+    function asEuint8(uint256 value) internal returns (euint8) {
         return euint8.wrap(Impl.trivialEncrypt(value, Common.EUINT8_TFHE, 0));
     }
     /// @notice Converts a uint256 to an euint8, specifying security zone
     /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
-    function asEuint8(uint256 value, int32 securityZone) internal pure returns (euint8) {
+    function asEuint8(uint256 value, int32 securityZone) internal returns (euint8) {
         return euint8.wrap(Impl.trivialEncrypt(value, Common.EUINT8_TFHE, securityZone));
     }
     /// @notice Converts a uint256 to an euint16
     /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
-    function asEuint16(uint256 value) internal pure returns (euint16) {
+    function asEuint16(uint256 value) internal returns (euint16) {
         return euint16.wrap(Impl.trivialEncrypt(value, Common.EUINT16_TFHE, 0));
     }
     /// @notice Converts a uint256 to an euint16, specifying security zone
     /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
-    function asEuint16(uint256 value, int32 securityZone) internal pure returns (euint16) {
+    function asEuint16(uint256 value, int32 securityZone) internal returns (euint16) {
         return euint16.wrap(Impl.trivialEncrypt(value, Common.EUINT16_TFHE, securityZone));
     }
     /// @notice Converts a uint256 to an euint32
     /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
-    function asEuint32(uint256 value) internal pure returns (euint32) {
+    function asEuint32(uint256 value) internal returns (euint32) {
         return euint32.wrap(Impl.trivialEncrypt(value, Common.EUINT32_TFHE, 0));
     }
     /// @notice Converts a uint256 to an euint32, specifying security zone
     /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
-    function asEuint32(uint256 value, int32 securityZone) internal pure returns (euint32) {
+    function asEuint32(uint256 value, int32 securityZone) internal returns (euint32) {
         return euint32.wrap(Impl.trivialEncrypt(value, Common.EUINT32_TFHE, securityZone));
     }
     /// @notice Converts a uint256 to an euint64
     /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
-    function asEuint64(uint256 value) internal pure returns (euint64) {
+    function asEuint64(uint256 value) internal returns (euint64) {
         return euint64.wrap(Impl.trivialEncrypt(value, Common.EUINT64_TFHE, 0));
     }
     /// @notice Converts a uint256 to an euint64, specifying security zone
     /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
-    function asEuint64(uint256 value, int32 securityZone) internal pure returns (euint64) {
+    function asEuint64(uint256 value, int32 securityZone) internal returns (euint64) {
         return euint64.wrap(Impl.trivialEncrypt(value, Common.EUINT64_TFHE, securityZone));
     }
     /// @notice Converts a uint256 to an euint128
     /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
-    function asEuint128(uint256 value) internal pure returns (euint128) {
+    function asEuint128(uint256 value) internal returns (euint128) {
         return euint128.wrap(Impl.trivialEncrypt(value, Common.EUINT128_TFHE, 0));
     }
     /// @notice Converts a uint256 to an euint128, specifying security zone
     /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
-    function asEuint128(uint256 value, int32 securityZone) internal pure returns (euint128) {
+    function asEuint128(uint256 value, int32 securityZone) internal returns (euint128) {
         return euint128.wrap(Impl.trivialEncrypt(value, Common.EUINT128_TFHE, securityZone));
     }
     /// @notice Converts a uint256 to an euint256
     /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
-    function asEuint256(uint256 value) internal pure returns (euint256) {
+    function asEuint256(uint256 value) internal returns (euint256) {
         return euint256.wrap(Impl.trivialEncrypt(value, Common.EUINT256_TFHE, 0));
     }
     /// @notice Converts a uint256 to an euint256, specifying security zone
     /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
-    function asEuint256(uint256 value, int32 securityZone) internal pure returns (euint256) {
+    function asEuint256(uint256 value, int32 securityZone) internal returns (euint256) {
         return euint256.wrap(Impl.trivialEncrypt(value, Common.EUINT256_TFHE, securityZone));
     }
     /// @notice Converts a uint256 to an eaddress
     /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
-    function asEaddress(uint256 value) internal pure returns (eaddress) {
+    function asEaddress(uint256 value) internal returns (eaddress) {
         return eaddress.wrap(Impl.trivialEncrypt(value, Common.EADDRESS_TFHE, 0));
     }
     /// @notice Converts a uint256 to an eaddress, specifying security zone
     /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
-    function asEaddress(uint256 value, int32 securityZone) internal pure returns (eaddress) {
+    function asEaddress(uint256 value, int32 securityZone) internal returns (eaddress) {
         return eaddress.wrap(Impl.trivialEncrypt(value, Common.EADDRESS_TFHE, securityZone));
     }
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an ebool
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
-    function asEbool(bytes memory value, int32 securityZone) internal pure returns (ebool) {
+    function asEbool(bytes memory value, int32 securityZone) internal returns (ebool) {
         return ebool.wrap(Impl.verify(value, Common.EBOOL_TFHE, securityZone));
     }
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an euint8
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
-    function asEuint8(bytes memory value, int32 securityZone) internal pure returns (euint8) {
+    function asEuint8(bytes memory value, int32 securityZone) internal returns (euint8) {
         return euint8.wrap(Impl.verify(value, Common.EUINT8_TFHE, securityZone));
     }
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an euint16
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
-    function asEuint16(bytes memory value, int32 securityZone) internal pure returns (euint16) {
+    function asEuint16(bytes memory value, int32 securityZone) internal returns (euint16) {
         return euint16.wrap(Impl.verify(value, Common.EUINT16_TFHE, securityZone));
     }
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an euint32
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
-    function asEuint32(bytes memory value, int32 securityZone) internal pure returns (euint32) {
+    function asEuint32(bytes memory value, int32 securityZone) internal returns (euint32) {
         return euint32.wrap(Impl.verify(value, Common.EUINT32_TFHE, securityZone));
     }
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an euint64
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
-    function asEuint64(bytes memory value, int32 securityZone) internal pure returns (euint64) {
+    function asEuint64(bytes memory value, int32 securityZone) internal returns (euint64) {
         return euint64.wrap(Impl.verify(value, Common.EUINT64_TFHE, securityZone));
     }
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an euint128
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
-    function asEuint128(bytes memory value, int32 securityZone) internal pure returns (euint128) {
+    function asEuint128(bytes memory value, int32 securityZone) internal returns (euint128) {
         return euint128.wrap(Impl.verify(value, Common.EUINT128_TFHE, securityZone));
     }
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an euint256
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
-    function asEuint256(bytes memory value, int32 securityZone) internal pure returns (euint256) {
+    function asEuint256(bytes memory value, int32 securityZone) internal returns (euint256) {
         return euint256.wrap(Impl.verify(value, Common.EUINT256_TFHE, securityZone));
     }
     /// @notice Parses input ciphertexts from the user. Converts from encrypted raw bytes to an eaddress
     /// @dev Also performs validation that the ciphertext is valid and has been encrypted using the network encryption key
     /// @return a ciphertext representation of the input
-    function asEaddress(bytes memory value, int32 securityZone) internal pure returns (eaddress) {
+    function asEaddress(bytes memory value, int32 securityZone) internal returns (eaddress) {
         return eaddress.wrap(Impl.verify(value, Common.EADDRESS_TFHE, securityZone));
     }
     /// @notice Converts a address to an eaddress
     /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
     /// Allows for a better user experience when working with eaddresses
-    function asEaddress(address value) internal pure returns (eaddress) {
+    function asEaddress(address value) internal returns (eaddress) {
         return eaddress.wrap(Impl.trivialEncrypt(uint256(uint160(value)), Common.EADDRESS_TFHE, 0));
     }
     /// @notice Converts a address to an eaddress, specifying security zone
     /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
     /// Allows for a better user experience when working with eaddresses
-    function asEaddress(address value, int32 securityZone) internal pure returns (eaddress) {
+    function asEaddress(address value, int32 securityZone) internal returns (eaddress) {
         return eaddress.wrap(Impl.trivialEncrypt(uint256(uint160(value)), Common.EADDRESS_TFHE, securityZone));
     }
     /// @notice Converts a plaintext boolean value to a ciphertext ebool
     /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
     /// @return A ciphertext representation of the input
-    function asEbool(bool value) internal pure returns (ebool) {
+    function asEbool(bool value) internal returns (ebool) {
         uint256 sVal = 0;
         if (value) {
             sVal = 1;
@@ -3314,245 +3417,14 @@ library AsyncFHE {
     /// @notice Converts a plaintext boolean value to a ciphertext ebool, specifying security zone
     /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
     /// @return A ciphertext representation of the input
-    function asEbool(bool value, int32 securityZone) internal pure returns (ebool) {
-      uint256 sVal = 0;
-      if (value) {
-        sVal = 1;
-      }
-      return asEbool(sVal, securityZone);
+    function asEbool(bool value, int32 securityZone) internal returns (ebool) {
+        uint256 sVal = 0;
+        if (value) {
+          sVal = 1;
+        }
+        return asEbool(sVal, securityZone);
     }
 }
-
-// ********** OPERATOR OVERLOADING ************* //
-
-using {operatorAddEuint8 as +} for euint8 global;
-/// @notice Performs the add operation
-function operatorAddEuint8(euint8 lhs, euint8 rhs) pure returns (euint8) {
-    return FHE.add(lhs, rhs);
-}
-
-using {operatorAddEuint16 as +} for euint16 global;
-/// @notice Performs the add operation
-function operatorAddEuint16(euint16 lhs, euint16 rhs) pure returns (euint16) {
-    return FHE.add(lhs, rhs);
-}
-
-using {operatorAddEuint32 as +} for euint32 global;
-/// @notice Performs the add operation
-function operatorAddEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
-    return FHE.add(lhs, rhs);
-}
-
-using {operatorAddEuint64 as +} for euint64 global;
-/// @notice Performs the add operation
-function operatorAddEuint64(euint64 lhs, euint64 rhs) pure returns (euint64) {
-    return FHE.add(lhs, rhs);
-}
-
-using {operatorAddEuint128 as +} for euint128 global;
-/// @notice Performs the add operation
-function operatorAddEuint128(euint128 lhs, euint128 rhs) pure returns (euint128) {
-    return FHE.add(lhs, rhs);
-}
-
-using {operatorSubEuint8 as -} for euint8 global;
-/// @notice Performs the sub operation
-function operatorSubEuint8(euint8 lhs, euint8 rhs) pure returns (euint8) {
-    return FHE.sub(lhs, rhs);
-}
-
-using {operatorSubEuint16 as -} for euint16 global;
-/// @notice Performs the sub operation
-function operatorSubEuint16(euint16 lhs, euint16 rhs) pure returns (euint16) {
-    return FHE.sub(lhs, rhs);
-}
-
-using {operatorSubEuint32 as -} for euint32 global;
-/// @notice Performs the sub operation
-function operatorSubEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
-    return FHE.sub(lhs, rhs);
-}
-
-using {operatorSubEuint64 as -} for euint64 global;
-/// @notice Performs the sub operation
-function operatorSubEuint64(euint64 lhs, euint64 rhs) pure returns (euint64) {
-    return FHE.sub(lhs, rhs);
-}
-
-using {operatorSubEuint128 as -} for euint128 global;
-/// @notice Performs the sub operation
-function operatorSubEuint128(euint128 lhs, euint128 rhs) pure returns (euint128) {
-    return FHE.sub(lhs, rhs);
-}
-
-using {operatorMulEuint8 as *} for euint8 global;
-/// @notice Performs the mul operation
-function operatorMulEuint8(euint8 lhs, euint8 rhs) pure returns (euint8) {
-    return FHE.mul(lhs, rhs);
-}
-
-using {operatorMulEuint16 as *} for euint16 global;
-/// @notice Performs the mul operation
-function operatorMulEuint16(euint16 lhs, euint16 rhs) pure returns (euint16) {
-    return FHE.mul(lhs, rhs);
-}
-
-using {operatorMulEuint32 as *} for euint32 global;
-/// @notice Performs the mul operation
-function operatorMulEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
-    return FHE.mul(lhs, rhs);
-}
-
-using {operatorMulEuint64 as *} for euint64 global;
-/// @notice Performs the mul operation
-function operatorMulEuint64(euint64 lhs, euint64 rhs) pure returns (euint64) {
-    return FHE.mul(lhs, rhs);
-}
-
-using {operatorDivEuint8 as /} for euint8 global;
-/// @notice Performs the div operation
-function operatorDivEuint8(euint8 lhs, euint8 rhs) pure returns (euint8) {
-    return FHE.div(lhs, rhs);
-}
-
-using {operatorDivEuint16 as /} for euint16 global;
-/// @notice Performs the div operation
-function operatorDivEuint16(euint16 lhs, euint16 rhs) pure returns (euint16) {
-    return FHE.div(lhs, rhs);
-}
-
-using {operatorDivEuint32 as /} for euint32 global;
-/// @notice Performs the div operation
-function operatorDivEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
-    return FHE.div(lhs, rhs);
-}
-
-using {operatorOrEbool as |} for ebool global;
-/// @notice Performs the or operation
-function operatorOrEbool(ebool lhs, ebool rhs) pure returns (ebool) {
-    return FHE.or(lhs, rhs);
-}
-
-using {operatorOrEuint8 as |} for euint8 global;
-/// @notice Performs the or operation
-function operatorOrEuint8(euint8 lhs, euint8 rhs) pure returns (euint8) {
-    return FHE.or(lhs, rhs);
-}
-
-using {operatorOrEuint16 as |} for euint16 global;
-/// @notice Performs the or operation
-function operatorOrEuint16(euint16 lhs, euint16 rhs) pure returns (euint16) {
-    return FHE.or(lhs, rhs);
-}
-
-using {operatorOrEuint32 as |} for euint32 global;
-/// @notice Performs the or operation
-function operatorOrEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
-    return FHE.or(lhs, rhs);
-}
-
-using {operatorOrEuint64 as |} for euint64 global;
-/// @notice Performs the or operation
-function operatorOrEuint64(euint64 lhs, euint64 rhs) pure returns (euint64) {
-    return FHE.or(lhs, rhs);
-}
-
-using {operatorOrEuint128 as |} for euint128 global;
-/// @notice Performs the or operation
-function operatorOrEuint128(euint128 lhs, euint128 rhs) pure returns (euint128) {
-    return FHE.or(lhs, rhs);
-}
-
-using {operatorAndEbool as &} for ebool global;
-/// @notice Performs the and operation
-function operatorAndEbool(ebool lhs, ebool rhs) pure returns (ebool) {
-    return FHE.and(lhs, rhs);
-}
-
-using {operatorAndEuint8 as &} for euint8 global;
-/// @notice Performs the and operation
-function operatorAndEuint8(euint8 lhs, euint8 rhs) pure returns (euint8) {
-    return FHE.and(lhs, rhs);
-}
-
-using {operatorAndEuint16 as &} for euint16 global;
-/// @notice Performs the and operation
-function operatorAndEuint16(euint16 lhs, euint16 rhs) pure returns (euint16) {
-    return FHE.and(lhs, rhs);
-}
-
-using {operatorAndEuint32 as &} for euint32 global;
-/// @notice Performs the and operation
-function operatorAndEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
-    return FHE.and(lhs, rhs);
-}
-
-using {operatorAndEuint64 as &} for euint64 global;
-/// @notice Performs the and operation
-function operatorAndEuint64(euint64 lhs, euint64 rhs) pure returns (euint64) {
-    return FHE.and(lhs, rhs);
-}
-
-using {operatorAndEuint128 as &} for euint128 global;
-/// @notice Performs the and operation
-function operatorAndEuint128(euint128 lhs, euint128 rhs) pure returns (euint128) {
-    return FHE.and(lhs, rhs);
-}
-
-using {operatorXorEbool as ^} for ebool global;
-/// @notice Performs the xor operation
-function operatorXorEbool(ebool lhs, ebool rhs) pure returns (ebool) {
-    return FHE.xor(lhs, rhs);
-}
-
-using {operatorXorEuint8 as ^} for euint8 global;
-/// @notice Performs the xor operation
-function operatorXorEuint8(euint8 lhs, euint8 rhs) pure returns (euint8) {
-    return FHE.xor(lhs, rhs);
-}
-
-using {operatorXorEuint16 as ^} for euint16 global;
-/// @notice Performs the xor operation
-function operatorXorEuint16(euint16 lhs, euint16 rhs) pure returns (euint16) {
-    return FHE.xor(lhs, rhs);
-}
-
-using {operatorXorEuint32 as ^} for euint32 global;
-/// @notice Performs the xor operation
-function operatorXorEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
-    return FHE.xor(lhs, rhs);
-}
-
-using {operatorXorEuint64 as ^} for euint64 global;
-/// @notice Performs the xor operation
-function operatorXorEuint64(euint64 lhs, euint64 rhs) pure returns (euint64) {
-    return FHE.xor(lhs, rhs);
-}
-
-using {operatorXorEuint128 as ^} for euint128 global;
-/// @notice Performs the xor operation
-function operatorXorEuint128(euint128 lhs, euint128 rhs) pure returns (euint128) {
-    return FHE.xor(lhs, rhs);
-}
-
-using {operatorRemEuint8 as %} for euint8 global;
-/// @notice Performs the rem operation
-function operatorRemEuint8(euint8 lhs, euint8 rhs) pure returns (euint8) {
-    return FHE.rem(lhs, rhs);
-}
-
-using {operatorRemEuint16 as %} for euint16 global;
-/// @notice Performs the rem operation
-function operatorRemEuint16(euint16 lhs, euint16 rhs) pure returns (euint16) {
-    return FHE.rem(lhs, rhs);
-}
-
-using {operatorRemEuint32 as %} for euint32 global;
-/// @notice Performs the rem operation
-function operatorRemEuint32(euint32 lhs, euint32 rhs) pure returns (euint32) {
-    return FHE.rem(lhs, rhs);
-}
-
 // ********** BINDING DEFS ************* //
 
 using BindingsEbool for ebool global;
@@ -3563,7 +3435,7 @@ library BindingsEbool {
     /// @param lhs input of type ebool
     /// @param rhs second input of type ebool
 /// @return the result of the eq
-    function eq(ebool lhs, ebool rhs) internal pure returns (ebool) {
+    function eq(ebool lhs, ebool rhs) internal returns (ebool) {
         return FHE.eq(lhs, rhs);
     }
     
@@ -3572,7 +3444,7 @@ library BindingsEbool {
     /// @param lhs input of type ebool
     /// @param rhs second input of type ebool
 /// @return the result of the ne
-    function ne(ebool lhs, ebool rhs) internal pure returns (ebool) {
+    function ne(ebool lhs, ebool rhs) internal returns (ebool) {
         return FHE.ne(lhs, rhs);
     }
     
@@ -3580,7 +3452,7 @@ library BindingsEbool {
     /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs input of type ebool
     /// @return the result of the not
-    function not(ebool lhs) internal pure returns (ebool) {
+    function not(ebool lhs) internal returns (ebool) {
         return FHE.not(lhs);
     }
     
@@ -3589,7 +3461,7 @@ library BindingsEbool {
     /// @param lhs input of type ebool
     /// @param rhs second input of type ebool
 /// @return the result of the and
-    function and(ebool lhs, ebool rhs) internal pure returns (ebool) {
+    function and(ebool lhs, ebool rhs) internal returns (ebool) {
         return FHE.and(lhs, rhs);
     }
     
@@ -3598,7 +3470,7 @@ library BindingsEbool {
     /// @param lhs input of type ebool
     /// @param rhs second input of type ebool
 /// @return the result of the or
-    function or(ebool lhs, ebool rhs) internal pure returns (ebool) {
+    function or(ebool lhs, ebool rhs) internal returns (ebool) {
         return FHE.or(lhs, rhs);
     }
     
@@ -3607,35 +3479,35 @@ library BindingsEbool {
     /// @param lhs input of type ebool
     /// @param rhs second input of type ebool
 /// @return the result of the xor
-    function xor(ebool lhs, ebool rhs) internal pure returns (ebool) {
+    function xor(ebool lhs, ebool rhs) internal returns (ebool) {
         return FHE.xor(lhs, rhs);
     }
-    function toU8(ebool value) internal pure returns (euint8) {
+    function toU8(ebool value) internal returns (euint8) {
         return FHE.asEuint8(value);
     }
-    function toU16(ebool value) internal pure returns (euint16) {
+    function toU16(ebool value) internal returns (euint16) {
         return FHE.asEuint16(value);
     }
-    function toU32(ebool value) internal pure returns (euint32) {
+    function toU32(ebool value) internal returns (euint32) {
         return FHE.asEuint32(value);
     }
-    function toU64(ebool value) internal pure returns (euint64) {
+    function toU64(ebool value) internal returns (euint64) {
         return FHE.asEuint64(value);
     }
-    function toU128(ebool value) internal pure returns (euint128) {
+    function toU128(ebool value) internal returns (euint128) {
         return FHE.asEuint128(value);
     }
-    function toU256(ebool value) internal pure returns (euint256) {
+    function toU256(ebool value) internal returns (euint256) {
         return FHE.asEuint256(value);
     }
-    function seal(ebool value, bytes32 publicKey) internal pure returns (string memory) {
+    function seal(ebool value, bytes32 publicKey) internal returns (string memory) {
         return FHE.sealoutput(value, publicKey);
     }
-    function decrypt(ebool value) internal pure returns (bool) {
-        return FHE.decrypt(value);
+    function sealTyped(ebool value, bytes32 publicKey) internal returns (SealedBool memory) {
+        return FHE.sealoutputTyped(value, publicKey);
     }
-    function decrypt(ebool value, bool defaultValue) internal pure returns (bool) {
-        return FHE.decrypt(value, defaultValue);
+    function decrypt(ebool value) internal returns (ebool) {
+        return FHE.decrypt(value);
     }
 }
 
@@ -3647,7 +3519,7 @@ library BindingsEuint8 {
     /// @param lhs input of type euint8
     /// @param rhs second input of type euint8
 /// @return the result of the add
-    function add(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
+    function add(euint8 lhs, euint8 rhs) internal returns (euint8) {
         return FHE.add(lhs, rhs);
     }
     
@@ -3656,7 +3528,7 @@ library BindingsEuint8 {
     /// @param lhs input of type euint8
     /// @param rhs second input of type euint8
 /// @return the result of the mul
-    function mul(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
+    function mul(euint8 lhs, euint8 rhs) internal returns (euint8) {
         return FHE.mul(lhs, rhs);
     }
     
@@ -3665,7 +3537,7 @@ library BindingsEuint8 {
     /// @param lhs input of type euint8
     /// @param rhs second input of type euint8
 /// @return the result of the div
-    function div(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
+    function div(euint8 lhs, euint8 rhs) internal returns (euint8) {
         return FHE.div(lhs, rhs);
     }
     
@@ -3674,7 +3546,7 @@ library BindingsEuint8 {
     /// @param lhs input of type euint8
     /// @param rhs second input of type euint8
 /// @return the result of the sub
-    function sub(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
+    function sub(euint8 lhs, euint8 rhs) internal returns (euint8) {
         return FHE.sub(lhs, rhs);
     }
     
@@ -3683,7 +3555,7 @@ library BindingsEuint8 {
     /// @param lhs input of type euint8
     /// @param rhs second input of type euint8
 /// @return the result of the eq
-    function eq(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
+    function eq(euint8 lhs, euint8 rhs) internal returns (ebool) {
         return FHE.eq(lhs, rhs);
     }
     
@@ -3692,7 +3564,7 @@ library BindingsEuint8 {
     /// @param lhs input of type euint8
     /// @param rhs second input of type euint8
 /// @return the result of the ne
-    function ne(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
+    function ne(euint8 lhs, euint8 rhs) internal returns (ebool) {
         return FHE.ne(lhs, rhs);
     }
     
@@ -3700,7 +3572,7 @@ library BindingsEuint8 {
     /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs input of type euint8
     /// @return the result of the not
-    function not(euint8 lhs) internal pure returns (euint8) {
+    function not(euint8 lhs) internal returns (euint8) {
         return FHE.not(lhs);
     }
     
@@ -3709,7 +3581,7 @@ library BindingsEuint8 {
     /// @param lhs input of type euint8
     /// @param rhs second input of type euint8
 /// @return the result of the and
-    function and(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
+    function and(euint8 lhs, euint8 rhs) internal returns (euint8) {
         return FHE.and(lhs, rhs);
     }
     
@@ -3718,7 +3590,7 @@ library BindingsEuint8 {
     /// @param lhs input of type euint8
     /// @param rhs second input of type euint8
 /// @return the result of the or
-    function or(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
+    function or(euint8 lhs, euint8 rhs) internal returns (euint8) {
         return FHE.or(lhs, rhs);
     }
     
@@ -3727,7 +3599,7 @@ library BindingsEuint8 {
     /// @param lhs input of type euint8
     /// @param rhs second input of type euint8
 /// @return the result of the xor
-    function xor(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
+    function xor(euint8 lhs, euint8 rhs) internal returns (euint8) {
         return FHE.xor(lhs, rhs);
     }
     
@@ -3736,7 +3608,7 @@ library BindingsEuint8 {
     /// @param lhs input of type euint8
     /// @param rhs second input of type euint8
 /// @return the result of the gt
-    function gt(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
+    function gt(euint8 lhs, euint8 rhs) internal returns (ebool) {
         return FHE.gt(lhs, rhs);
     }
     
@@ -3745,7 +3617,7 @@ library BindingsEuint8 {
     /// @param lhs input of type euint8
     /// @param rhs second input of type euint8
 /// @return the result of the gte
-    function gte(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
+    function gte(euint8 lhs, euint8 rhs) internal returns (ebool) {
         return FHE.gte(lhs, rhs);
     }
     
@@ -3754,7 +3626,7 @@ library BindingsEuint8 {
     /// @param lhs input of type euint8
     /// @param rhs second input of type euint8
 /// @return the result of the lt
-    function lt(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
+    function lt(euint8 lhs, euint8 rhs) internal returns (ebool) {
         return FHE.lt(lhs, rhs);
     }
     
@@ -3763,7 +3635,7 @@ library BindingsEuint8 {
     /// @param lhs input of type euint8
     /// @param rhs second input of type euint8
 /// @return the result of the lte
-    function lte(euint8 lhs, euint8 rhs) internal pure returns (ebool) {
+    function lte(euint8 lhs, euint8 rhs) internal returns (ebool) {
         return FHE.lte(lhs, rhs);
     }
     
@@ -3772,7 +3644,7 @@ library BindingsEuint8 {
     /// @param lhs input of type euint8
     /// @param rhs second input of type euint8
 /// @return the result of the rem
-    function rem(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
+    function rem(euint8 lhs, euint8 rhs) internal returns (euint8) {
         return FHE.rem(lhs, rhs);
     }
     
@@ -3781,7 +3653,7 @@ library BindingsEuint8 {
     /// @param lhs input of type euint8
     /// @param rhs second input of type euint8
 /// @return the result of the max
-    function max(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
+    function max(euint8 lhs, euint8 rhs) internal returns (euint8) {
         return FHE.max(lhs, rhs);
     }
     
@@ -3790,7 +3662,7 @@ library BindingsEuint8 {
     /// @param lhs input of type euint8
     /// @param rhs second input of type euint8
 /// @return the result of the min
-    function min(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
+    function min(euint8 lhs, euint8 rhs) internal returns (euint8) {
         return FHE.min(lhs, rhs);
     }
     
@@ -3799,7 +3671,7 @@ library BindingsEuint8 {
     /// @param lhs input of type euint8
     /// @param rhs second input of type euint8
 /// @return the result of the shl
-    function shl(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
+    function shl(euint8 lhs, euint8 rhs) internal returns (euint8) {
         return FHE.shl(lhs, rhs);
     }
     
@@ -3808,7 +3680,7 @@ library BindingsEuint8 {
     /// @param lhs input of type euint8
     /// @param rhs second input of type euint8
 /// @return the result of the shr
-    function shr(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
+    function shr(euint8 lhs, euint8 rhs) internal returns (euint8) {
         return FHE.shr(lhs, rhs);
     }
     
@@ -3817,7 +3689,7 @@ library BindingsEuint8 {
     /// @param lhs input of type euint8
     /// @param rhs second input of type euint8
 /// @return the result of the rol
-    function rol(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
+    function rol(euint8 lhs, euint8 rhs) internal returns (euint8) {
         return FHE.rol(lhs, rhs);
     }
     
@@ -3826,35 +3698,35 @@ library BindingsEuint8 {
     /// @param lhs input of type euint8
     /// @param rhs second input of type euint8
 /// @return the result of the ror
-    function ror(euint8 lhs, euint8 rhs) internal pure returns (euint8) {
+    function ror(euint8 lhs, euint8 rhs) internal returns (euint8) {
         return FHE.ror(lhs, rhs);
     }
-    function toBool(euint8 value) internal pure returns (ebool) {
+    function toBool(euint8 value) internal returns (ebool) {
         return FHE.asEbool(value);
     }
-    function toU16(euint8 value) internal pure returns (euint16) {
+    function toU16(euint8 value) internal returns (euint16) {
         return FHE.asEuint16(value);
     }
-    function toU32(euint8 value) internal pure returns (euint32) {
+    function toU32(euint8 value) internal returns (euint32) {
         return FHE.asEuint32(value);
     }
-    function toU64(euint8 value) internal pure returns (euint64) {
+    function toU64(euint8 value) internal returns (euint64) {
         return FHE.asEuint64(value);
     }
-    function toU128(euint8 value) internal pure returns (euint128) {
+    function toU128(euint8 value) internal returns (euint128) {
         return FHE.asEuint128(value);
     }
-    function toU256(euint8 value) internal pure returns (euint256) {
+    function toU256(euint8 value) internal returns (euint256) {
         return FHE.asEuint256(value);
     }
-    function seal(euint8 value, bytes32 publicKey) internal pure returns (string memory) {
+    function seal(euint8 value, bytes32 publicKey) internal returns (string memory) {
         return FHE.sealoutput(value, publicKey);
     }
-    function decrypt(euint8 value) internal pure returns (uint8) {
-        return FHE.decrypt(value);
+    function sealTyped(euint8 value, bytes32 publicKey) internal returns (SealedUint memory) {
+        return FHE.sealoutputTyped(value, publicKey);
     }
-    function decrypt(euint8 value, uint8 defaultValue) internal pure returns (uint8) {
-        return FHE.decrypt(value, defaultValue);
+    function decrypt(euint8 value) internal returns (euint8) {
+        return FHE.decrypt(value);
     }
 }
 
@@ -3866,7 +3738,7 @@ library BindingsEuint16 {
     /// @param lhs input of type euint16
     /// @param rhs second input of type euint16
 /// @return the result of the add
-    function add(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
+    function add(euint16 lhs, euint16 rhs) internal returns (euint16) {
         return FHE.add(lhs, rhs);
     }
     
@@ -3875,7 +3747,7 @@ library BindingsEuint16 {
     /// @param lhs input of type euint16
     /// @param rhs second input of type euint16
 /// @return the result of the mul
-    function mul(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
+    function mul(euint16 lhs, euint16 rhs) internal returns (euint16) {
         return FHE.mul(lhs, rhs);
     }
     
@@ -3884,7 +3756,7 @@ library BindingsEuint16 {
     /// @param lhs input of type euint16
     /// @param rhs second input of type euint16
 /// @return the result of the div
-    function div(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
+    function div(euint16 lhs, euint16 rhs) internal returns (euint16) {
         return FHE.div(lhs, rhs);
     }
     
@@ -3893,7 +3765,7 @@ library BindingsEuint16 {
     /// @param lhs input of type euint16
     /// @param rhs second input of type euint16
 /// @return the result of the sub
-    function sub(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
+    function sub(euint16 lhs, euint16 rhs) internal returns (euint16) {
         return FHE.sub(lhs, rhs);
     }
     
@@ -3902,7 +3774,7 @@ library BindingsEuint16 {
     /// @param lhs input of type euint16
     /// @param rhs second input of type euint16
 /// @return the result of the eq
-    function eq(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
+    function eq(euint16 lhs, euint16 rhs) internal returns (ebool) {
         return FHE.eq(lhs, rhs);
     }
     
@@ -3911,7 +3783,7 @@ library BindingsEuint16 {
     /// @param lhs input of type euint16
     /// @param rhs second input of type euint16
 /// @return the result of the ne
-    function ne(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
+    function ne(euint16 lhs, euint16 rhs) internal returns (ebool) {
         return FHE.ne(lhs, rhs);
     }
     
@@ -3919,7 +3791,7 @@ library BindingsEuint16 {
     /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs input of type euint16
     /// @return the result of the not
-    function not(euint16 lhs) internal pure returns (euint16) {
+    function not(euint16 lhs) internal returns (euint16) {
         return FHE.not(lhs);
     }
     
@@ -3928,7 +3800,7 @@ library BindingsEuint16 {
     /// @param lhs input of type euint16
     /// @param rhs second input of type euint16
 /// @return the result of the and
-    function and(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
+    function and(euint16 lhs, euint16 rhs) internal returns (euint16) {
         return FHE.and(lhs, rhs);
     }
     
@@ -3937,7 +3809,7 @@ library BindingsEuint16 {
     /// @param lhs input of type euint16
     /// @param rhs second input of type euint16
 /// @return the result of the or
-    function or(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
+    function or(euint16 lhs, euint16 rhs) internal returns (euint16) {
         return FHE.or(lhs, rhs);
     }
     
@@ -3946,7 +3818,7 @@ library BindingsEuint16 {
     /// @param lhs input of type euint16
     /// @param rhs second input of type euint16
 /// @return the result of the xor
-    function xor(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
+    function xor(euint16 lhs, euint16 rhs) internal returns (euint16) {
         return FHE.xor(lhs, rhs);
     }
     
@@ -3955,7 +3827,7 @@ library BindingsEuint16 {
     /// @param lhs input of type euint16
     /// @param rhs second input of type euint16
 /// @return the result of the gt
-    function gt(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
+    function gt(euint16 lhs, euint16 rhs) internal returns (ebool) {
         return FHE.gt(lhs, rhs);
     }
     
@@ -3964,7 +3836,7 @@ library BindingsEuint16 {
     /// @param lhs input of type euint16
     /// @param rhs second input of type euint16
 /// @return the result of the gte
-    function gte(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
+    function gte(euint16 lhs, euint16 rhs) internal returns (ebool) {
         return FHE.gte(lhs, rhs);
     }
     
@@ -3973,7 +3845,7 @@ library BindingsEuint16 {
     /// @param lhs input of type euint16
     /// @param rhs second input of type euint16
 /// @return the result of the lt
-    function lt(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
+    function lt(euint16 lhs, euint16 rhs) internal returns (ebool) {
         return FHE.lt(lhs, rhs);
     }
     
@@ -3982,7 +3854,7 @@ library BindingsEuint16 {
     /// @param lhs input of type euint16
     /// @param rhs second input of type euint16
 /// @return the result of the lte
-    function lte(euint16 lhs, euint16 rhs) internal pure returns (ebool) {
+    function lte(euint16 lhs, euint16 rhs) internal returns (ebool) {
         return FHE.lte(lhs, rhs);
     }
     
@@ -3991,7 +3863,7 @@ library BindingsEuint16 {
     /// @param lhs input of type euint16
     /// @param rhs second input of type euint16
 /// @return the result of the rem
-    function rem(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
+    function rem(euint16 lhs, euint16 rhs) internal returns (euint16) {
         return FHE.rem(lhs, rhs);
     }
     
@@ -4000,7 +3872,7 @@ library BindingsEuint16 {
     /// @param lhs input of type euint16
     /// @param rhs second input of type euint16
 /// @return the result of the max
-    function max(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
+    function max(euint16 lhs, euint16 rhs) internal returns (euint16) {
         return FHE.max(lhs, rhs);
     }
     
@@ -4009,7 +3881,7 @@ library BindingsEuint16 {
     /// @param lhs input of type euint16
     /// @param rhs second input of type euint16
 /// @return the result of the min
-    function min(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
+    function min(euint16 lhs, euint16 rhs) internal returns (euint16) {
         return FHE.min(lhs, rhs);
     }
     
@@ -4018,7 +3890,7 @@ library BindingsEuint16 {
     /// @param lhs input of type euint16
     /// @param rhs second input of type euint16
 /// @return the result of the shl
-    function shl(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
+    function shl(euint16 lhs, euint16 rhs) internal returns (euint16) {
         return FHE.shl(lhs, rhs);
     }
     
@@ -4027,7 +3899,7 @@ library BindingsEuint16 {
     /// @param lhs input of type euint16
     /// @param rhs second input of type euint16
 /// @return the result of the shr
-    function shr(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
+    function shr(euint16 lhs, euint16 rhs) internal returns (euint16) {
         return FHE.shr(lhs, rhs);
     }
     
@@ -4036,7 +3908,7 @@ library BindingsEuint16 {
     /// @param lhs input of type euint16
     /// @param rhs second input of type euint16
 /// @return the result of the rol
-    function rol(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
+    function rol(euint16 lhs, euint16 rhs) internal returns (euint16) {
         return FHE.rol(lhs, rhs);
     }
     
@@ -4045,35 +3917,35 @@ library BindingsEuint16 {
     /// @param lhs input of type euint16
     /// @param rhs second input of type euint16
 /// @return the result of the ror
-    function ror(euint16 lhs, euint16 rhs) internal pure returns (euint16) {
+    function ror(euint16 lhs, euint16 rhs) internal returns (euint16) {
         return FHE.ror(lhs, rhs);
     }
-    function toBool(euint16 value) internal pure returns (ebool) {
+    function toBool(euint16 value) internal returns (ebool) {
         return FHE.asEbool(value);
     }
-    function toU8(euint16 value) internal pure returns (euint8) {
+    function toU8(euint16 value) internal returns (euint8) {
         return FHE.asEuint8(value);
     }
-    function toU32(euint16 value) internal pure returns (euint32) {
+    function toU32(euint16 value) internal returns (euint32) {
         return FHE.asEuint32(value);
     }
-    function toU64(euint16 value) internal pure returns (euint64) {
+    function toU64(euint16 value) internal returns (euint64) {
         return FHE.asEuint64(value);
     }
-    function toU128(euint16 value) internal pure returns (euint128) {
+    function toU128(euint16 value) internal returns (euint128) {
         return FHE.asEuint128(value);
     }
-    function toU256(euint16 value) internal pure returns (euint256) {
+    function toU256(euint16 value) internal returns (euint256) {
         return FHE.asEuint256(value);
     }
-    function seal(euint16 value, bytes32 publicKey) internal pure returns (string memory) {
+    function seal(euint16 value, bytes32 publicKey) internal returns (string memory) {
         return FHE.sealoutput(value, publicKey);
     }
-    function decrypt(euint16 value) internal pure returns (uint16) {
-        return FHE.decrypt(value);
+    function sealTyped(euint16 value, bytes32 publicKey) internal returns (SealedUint memory) {
+        return FHE.sealoutputTyped(value, publicKey);
     }
-    function decrypt(euint16 value, uint16 defaultValue) internal pure returns (uint16) {
-        return FHE.decrypt(value, defaultValue);
+    function decrypt(euint16 value) internal returns (euint16) {
+        return FHE.decrypt(value);
     }
 }
 
@@ -4085,7 +3957,7 @@ library BindingsEuint32 {
     /// @param lhs input of type euint32
     /// @param rhs second input of type euint32
 /// @return the result of the add
-    function add(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
+    function add(euint32 lhs, euint32 rhs) internal returns (euint32) {
         return FHE.add(lhs, rhs);
     }
     
@@ -4094,7 +3966,7 @@ library BindingsEuint32 {
     /// @param lhs input of type euint32
     /// @param rhs second input of type euint32
 /// @return the result of the mul
-    function mul(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
+    function mul(euint32 lhs, euint32 rhs) internal returns (euint32) {
         return FHE.mul(lhs, rhs);
     }
     
@@ -4103,7 +3975,7 @@ library BindingsEuint32 {
     /// @param lhs input of type euint32
     /// @param rhs second input of type euint32
 /// @return the result of the div
-    function div(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
+    function div(euint32 lhs, euint32 rhs) internal returns (euint32) {
         return FHE.div(lhs, rhs);
     }
     
@@ -4112,7 +3984,7 @@ library BindingsEuint32 {
     /// @param lhs input of type euint32
     /// @param rhs second input of type euint32
 /// @return the result of the sub
-    function sub(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
+    function sub(euint32 lhs, euint32 rhs) internal returns (euint32) {
         return FHE.sub(lhs, rhs);
     }
     
@@ -4121,7 +3993,7 @@ library BindingsEuint32 {
     /// @param lhs input of type euint32
     /// @param rhs second input of type euint32
 /// @return the result of the eq
-    function eq(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
+    function eq(euint32 lhs, euint32 rhs) internal returns (ebool) {
         return FHE.eq(lhs, rhs);
     }
     
@@ -4130,7 +4002,7 @@ library BindingsEuint32 {
     /// @param lhs input of type euint32
     /// @param rhs second input of type euint32
 /// @return the result of the ne
-    function ne(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
+    function ne(euint32 lhs, euint32 rhs) internal returns (ebool) {
         return FHE.ne(lhs, rhs);
     }
     
@@ -4138,7 +4010,7 @@ library BindingsEuint32 {
     /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs input of type euint32
     /// @return the result of the not
-    function not(euint32 lhs) internal pure returns (euint32) {
+    function not(euint32 lhs) internal returns (euint32) {
         return FHE.not(lhs);
     }
     
@@ -4147,7 +4019,7 @@ library BindingsEuint32 {
     /// @param lhs input of type euint32
     /// @param rhs second input of type euint32
 /// @return the result of the and
-    function and(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
+    function and(euint32 lhs, euint32 rhs) internal returns (euint32) {
         return FHE.and(lhs, rhs);
     }
     
@@ -4156,7 +4028,7 @@ library BindingsEuint32 {
     /// @param lhs input of type euint32
     /// @param rhs second input of type euint32
 /// @return the result of the or
-    function or(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
+    function or(euint32 lhs, euint32 rhs) internal returns (euint32) {
         return FHE.or(lhs, rhs);
     }
     
@@ -4165,7 +4037,7 @@ library BindingsEuint32 {
     /// @param lhs input of type euint32
     /// @param rhs second input of type euint32
 /// @return the result of the xor
-    function xor(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
+    function xor(euint32 lhs, euint32 rhs) internal returns (euint32) {
         return FHE.xor(lhs, rhs);
     }
     
@@ -4174,7 +4046,7 @@ library BindingsEuint32 {
     /// @param lhs input of type euint32
     /// @param rhs second input of type euint32
 /// @return the result of the gt
-    function gt(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
+    function gt(euint32 lhs, euint32 rhs) internal returns (ebool) {
         return FHE.gt(lhs, rhs);
     }
     
@@ -4183,7 +4055,7 @@ library BindingsEuint32 {
     /// @param lhs input of type euint32
     /// @param rhs second input of type euint32
 /// @return the result of the gte
-    function gte(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
+    function gte(euint32 lhs, euint32 rhs) internal returns (ebool) {
         return FHE.gte(lhs, rhs);
     }
     
@@ -4192,7 +4064,7 @@ library BindingsEuint32 {
     /// @param lhs input of type euint32
     /// @param rhs second input of type euint32
 /// @return the result of the lt
-    function lt(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
+    function lt(euint32 lhs, euint32 rhs) internal returns (ebool) {
         return FHE.lt(lhs, rhs);
     }
     
@@ -4201,7 +4073,7 @@ library BindingsEuint32 {
     /// @param lhs input of type euint32
     /// @param rhs second input of type euint32
 /// @return the result of the lte
-    function lte(euint32 lhs, euint32 rhs) internal pure returns (ebool) {
+    function lte(euint32 lhs, euint32 rhs) internal returns (ebool) {
         return FHE.lte(lhs, rhs);
     }
     
@@ -4210,7 +4082,7 @@ library BindingsEuint32 {
     /// @param lhs input of type euint32
     /// @param rhs second input of type euint32
 /// @return the result of the rem
-    function rem(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
+    function rem(euint32 lhs, euint32 rhs) internal returns (euint32) {
         return FHE.rem(lhs, rhs);
     }
     
@@ -4219,7 +4091,7 @@ library BindingsEuint32 {
     /// @param lhs input of type euint32
     /// @param rhs second input of type euint32
 /// @return the result of the max
-    function max(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
+    function max(euint32 lhs, euint32 rhs) internal returns (euint32) {
         return FHE.max(lhs, rhs);
     }
     
@@ -4228,7 +4100,7 @@ library BindingsEuint32 {
     /// @param lhs input of type euint32
     /// @param rhs second input of type euint32
 /// @return the result of the min
-    function min(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
+    function min(euint32 lhs, euint32 rhs) internal returns (euint32) {
         return FHE.min(lhs, rhs);
     }
     
@@ -4237,7 +4109,7 @@ library BindingsEuint32 {
     /// @param lhs input of type euint32
     /// @param rhs second input of type euint32
 /// @return the result of the shl
-    function shl(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
+    function shl(euint32 lhs, euint32 rhs) internal returns (euint32) {
         return FHE.shl(lhs, rhs);
     }
     
@@ -4246,7 +4118,7 @@ library BindingsEuint32 {
     /// @param lhs input of type euint32
     /// @param rhs second input of type euint32
 /// @return the result of the shr
-    function shr(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
+    function shr(euint32 lhs, euint32 rhs) internal returns (euint32) {
         return FHE.shr(lhs, rhs);
     }
     
@@ -4255,7 +4127,7 @@ library BindingsEuint32 {
     /// @param lhs input of type euint32
     /// @param rhs second input of type euint32
 /// @return the result of the rol
-    function rol(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
+    function rol(euint32 lhs, euint32 rhs) internal returns (euint32) {
         return FHE.rol(lhs, rhs);
     }
     
@@ -4264,35 +4136,35 @@ library BindingsEuint32 {
     /// @param lhs input of type euint32
     /// @param rhs second input of type euint32
 /// @return the result of the ror
-    function ror(euint32 lhs, euint32 rhs) internal pure returns (euint32) {
+    function ror(euint32 lhs, euint32 rhs) internal returns (euint32) {
         return FHE.ror(lhs, rhs);
     }
-    function toBool(euint32 value) internal pure returns (ebool) {
+    function toBool(euint32 value) internal returns (ebool) {
         return FHE.asEbool(value);
     }
-    function toU8(euint32 value) internal pure returns (euint8) {
+    function toU8(euint32 value) internal returns (euint8) {
         return FHE.asEuint8(value);
     }
-    function toU16(euint32 value) internal pure returns (euint16) {
+    function toU16(euint32 value) internal returns (euint16) {
         return FHE.asEuint16(value);
     }
-    function toU64(euint32 value) internal pure returns (euint64) {
+    function toU64(euint32 value) internal returns (euint64) {
         return FHE.asEuint64(value);
     }
-    function toU128(euint32 value) internal pure returns (euint128) {
+    function toU128(euint32 value) internal returns (euint128) {
         return FHE.asEuint128(value);
     }
-    function toU256(euint32 value) internal pure returns (euint256) {
+    function toU256(euint32 value) internal returns (euint256) {
         return FHE.asEuint256(value);
     }
-    function seal(euint32 value, bytes32 publicKey) internal pure returns (string memory) {
+    function seal(euint32 value, bytes32 publicKey) internal returns (string memory) {
         return FHE.sealoutput(value, publicKey);
     }
-    function decrypt(euint32 value) internal pure returns (uint32) {
-        return FHE.decrypt(value);
+    function sealTyped(euint32 value, bytes32 publicKey) internal returns (SealedUint memory) {
+        return FHE.sealoutputTyped(value, publicKey);
     }
-    function decrypt(euint32 value, uint32 defaultValue) internal pure returns (uint32) {
-        return FHE.decrypt(value, defaultValue);
+    function decrypt(euint32 value) internal returns (euint32) {
+        return FHE.decrypt(value);
     }
 }
 
@@ -4304,7 +4176,7 @@ library BindingsEuint64 {
     /// @param lhs input of type euint64
     /// @param rhs second input of type euint64
 /// @return the result of the add
-    function add(euint64 lhs, euint64 rhs) internal pure returns (euint64) {
+    function add(euint64 lhs, euint64 rhs) internal returns (euint64) {
         return FHE.add(lhs, rhs);
     }
     
@@ -4313,7 +4185,7 @@ library BindingsEuint64 {
     /// @param lhs input of type euint64
     /// @param rhs second input of type euint64
 /// @return the result of the mul
-    function mul(euint64 lhs, euint64 rhs) internal pure returns (euint64) {
+    function mul(euint64 lhs, euint64 rhs) internal returns (euint64) {
         return FHE.mul(lhs, rhs);
     }
     
@@ -4322,7 +4194,7 @@ library BindingsEuint64 {
     /// @param lhs input of type euint64
     /// @param rhs second input of type euint64
 /// @return the result of the sub
-    function sub(euint64 lhs, euint64 rhs) internal pure returns (euint64) {
+    function sub(euint64 lhs, euint64 rhs) internal returns (euint64) {
         return FHE.sub(lhs, rhs);
     }
     
@@ -4331,7 +4203,7 @@ library BindingsEuint64 {
     /// @param lhs input of type euint64
     /// @param rhs second input of type euint64
 /// @return the result of the eq
-    function eq(euint64 lhs, euint64 rhs) internal pure returns (ebool) {
+    function eq(euint64 lhs, euint64 rhs) internal returns (ebool) {
         return FHE.eq(lhs, rhs);
     }
     
@@ -4340,7 +4212,7 @@ library BindingsEuint64 {
     /// @param lhs input of type euint64
     /// @param rhs second input of type euint64
 /// @return the result of the ne
-    function ne(euint64 lhs, euint64 rhs) internal pure returns (ebool) {
+    function ne(euint64 lhs, euint64 rhs) internal returns (ebool) {
         return FHE.ne(lhs, rhs);
     }
     
@@ -4348,7 +4220,7 @@ library BindingsEuint64 {
     /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs input of type euint64
     /// @return the result of the not
-    function not(euint64 lhs) internal pure returns (euint64) {
+    function not(euint64 lhs) internal returns (euint64) {
         return FHE.not(lhs);
     }
     
@@ -4357,7 +4229,7 @@ library BindingsEuint64 {
     /// @param lhs input of type euint64
     /// @param rhs second input of type euint64
 /// @return the result of the and
-    function and(euint64 lhs, euint64 rhs) internal pure returns (euint64) {
+    function and(euint64 lhs, euint64 rhs) internal returns (euint64) {
         return FHE.and(lhs, rhs);
     }
     
@@ -4366,7 +4238,7 @@ library BindingsEuint64 {
     /// @param lhs input of type euint64
     /// @param rhs second input of type euint64
 /// @return the result of the or
-    function or(euint64 lhs, euint64 rhs) internal pure returns (euint64) {
+    function or(euint64 lhs, euint64 rhs) internal returns (euint64) {
         return FHE.or(lhs, rhs);
     }
     
@@ -4375,7 +4247,7 @@ library BindingsEuint64 {
     /// @param lhs input of type euint64
     /// @param rhs second input of type euint64
 /// @return the result of the xor
-    function xor(euint64 lhs, euint64 rhs) internal pure returns (euint64) {
+    function xor(euint64 lhs, euint64 rhs) internal returns (euint64) {
         return FHE.xor(lhs, rhs);
     }
     
@@ -4384,7 +4256,7 @@ library BindingsEuint64 {
     /// @param lhs input of type euint64
     /// @param rhs second input of type euint64
 /// @return the result of the gt
-    function gt(euint64 lhs, euint64 rhs) internal pure returns (ebool) {
+    function gt(euint64 lhs, euint64 rhs) internal returns (ebool) {
         return FHE.gt(lhs, rhs);
     }
     
@@ -4393,7 +4265,7 @@ library BindingsEuint64 {
     /// @param lhs input of type euint64
     /// @param rhs second input of type euint64
 /// @return the result of the gte
-    function gte(euint64 lhs, euint64 rhs) internal pure returns (ebool) {
+    function gte(euint64 lhs, euint64 rhs) internal returns (ebool) {
         return FHE.gte(lhs, rhs);
     }
     
@@ -4402,7 +4274,7 @@ library BindingsEuint64 {
     /// @param lhs input of type euint64
     /// @param rhs second input of type euint64
 /// @return the result of the lt
-    function lt(euint64 lhs, euint64 rhs) internal pure returns (ebool) {
+    function lt(euint64 lhs, euint64 rhs) internal returns (ebool) {
         return FHE.lt(lhs, rhs);
     }
     
@@ -4411,7 +4283,7 @@ library BindingsEuint64 {
     /// @param lhs input of type euint64
     /// @param rhs second input of type euint64
 /// @return the result of the lte
-    function lte(euint64 lhs, euint64 rhs) internal pure returns (ebool) {
+    function lte(euint64 lhs, euint64 rhs) internal returns (ebool) {
         return FHE.lte(lhs, rhs);
     }
     
@@ -4420,7 +4292,7 @@ library BindingsEuint64 {
     /// @param lhs input of type euint64
     /// @param rhs second input of type euint64
 /// @return the result of the max
-    function max(euint64 lhs, euint64 rhs) internal pure returns (euint64) {
+    function max(euint64 lhs, euint64 rhs) internal returns (euint64) {
         return FHE.max(lhs, rhs);
     }
     
@@ -4429,7 +4301,7 @@ library BindingsEuint64 {
     /// @param lhs input of type euint64
     /// @param rhs second input of type euint64
 /// @return the result of the min
-    function min(euint64 lhs, euint64 rhs) internal pure returns (euint64) {
+    function min(euint64 lhs, euint64 rhs) internal returns (euint64) {
         return FHE.min(lhs, rhs);
     }
     
@@ -4438,7 +4310,7 @@ library BindingsEuint64 {
     /// @param lhs input of type euint64
     /// @param rhs second input of type euint64
 /// @return the result of the shl
-    function shl(euint64 lhs, euint64 rhs) internal pure returns (euint64) {
+    function shl(euint64 lhs, euint64 rhs) internal returns (euint64) {
         return FHE.shl(lhs, rhs);
     }
     
@@ -4447,7 +4319,7 @@ library BindingsEuint64 {
     /// @param lhs input of type euint64
     /// @param rhs second input of type euint64
 /// @return the result of the shr
-    function shr(euint64 lhs, euint64 rhs) internal pure returns (euint64) {
+    function shr(euint64 lhs, euint64 rhs) internal returns (euint64) {
         return FHE.shr(lhs, rhs);
     }
     
@@ -4456,7 +4328,7 @@ library BindingsEuint64 {
     /// @param lhs input of type euint64
     /// @param rhs second input of type euint64
 /// @return the result of the rol
-    function rol(euint64 lhs, euint64 rhs) internal pure returns (euint64) {
+    function rol(euint64 lhs, euint64 rhs) internal returns (euint64) {
         return FHE.rol(lhs, rhs);
     }
     
@@ -4465,35 +4337,35 @@ library BindingsEuint64 {
     /// @param lhs input of type euint64
     /// @param rhs second input of type euint64
 /// @return the result of the ror
-    function ror(euint64 lhs, euint64 rhs) internal pure returns (euint64) {
+    function ror(euint64 lhs, euint64 rhs) internal returns (euint64) {
         return FHE.ror(lhs, rhs);
     }
-    function toBool(euint64 value) internal pure returns (ebool) {
+    function toBool(euint64 value) internal returns (ebool) {
         return FHE.asEbool(value);
     }
-    function toU8(euint64 value) internal pure returns (euint8) {
+    function toU8(euint64 value) internal returns (euint8) {
         return FHE.asEuint8(value);
     }
-    function toU16(euint64 value) internal pure returns (euint16) {
+    function toU16(euint64 value) internal returns (euint16) {
         return FHE.asEuint16(value);
     }
-    function toU32(euint64 value) internal pure returns (euint32) {
+    function toU32(euint64 value) internal returns (euint32) {
         return FHE.asEuint32(value);
     }
-    function toU128(euint64 value) internal pure returns (euint128) {
+    function toU128(euint64 value) internal returns (euint128) {
         return FHE.asEuint128(value);
     }
-    function toU256(euint64 value) internal pure returns (euint256) {
+    function toU256(euint64 value) internal returns (euint256) {
         return FHE.asEuint256(value);
     }
-    function seal(euint64 value, bytes32 publicKey) internal pure returns (string memory) {
+    function seal(euint64 value, bytes32 publicKey) internal returns (string memory) {
         return FHE.sealoutput(value, publicKey);
     }
-    function decrypt(euint64 value) internal pure returns (uint64) {
-        return FHE.decrypt(value);
+    function sealTyped(euint64 value, bytes32 publicKey) internal returns (SealedUint memory) {
+        return FHE.sealoutputTyped(value, publicKey);
     }
-    function decrypt(euint64 value, uint64 defaultValue) internal pure returns (uint64) {
-        return FHE.decrypt(value, defaultValue);
+    function decrypt(euint64 value) internal returns (euint64) {
+        return FHE.decrypt(value);
     }
 }
 
@@ -4505,7 +4377,7 @@ library BindingsEuint128 {
     /// @param lhs input of type euint128
     /// @param rhs second input of type euint128
 /// @return the result of the add
-    function add(euint128 lhs, euint128 rhs) internal pure returns (euint128) {
+    function add(euint128 lhs, euint128 rhs) internal returns (euint128) {
         return FHE.add(lhs, rhs);
     }
     
@@ -4514,7 +4386,7 @@ library BindingsEuint128 {
     /// @param lhs input of type euint128
     /// @param rhs second input of type euint128
 /// @return the result of the sub
-    function sub(euint128 lhs, euint128 rhs) internal pure returns (euint128) {
+    function sub(euint128 lhs, euint128 rhs) internal returns (euint128) {
         return FHE.sub(lhs, rhs);
     }
     
@@ -4523,7 +4395,7 @@ library BindingsEuint128 {
     /// @param lhs input of type euint128
     /// @param rhs second input of type euint128
 /// @return the result of the eq
-    function eq(euint128 lhs, euint128 rhs) internal pure returns (ebool) {
+    function eq(euint128 lhs, euint128 rhs) internal returns (ebool) {
         return FHE.eq(lhs, rhs);
     }
     
@@ -4532,7 +4404,7 @@ library BindingsEuint128 {
     /// @param lhs input of type euint128
     /// @param rhs second input of type euint128
 /// @return the result of the ne
-    function ne(euint128 lhs, euint128 rhs) internal pure returns (ebool) {
+    function ne(euint128 lhs, euint128 rhs) internal returns (ebool) {
         return FHE.ne(lhs, rhs);
     }
     
@@ -4540,7 +4412,7 @@ library BindingsEuint128 {
     /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs input of type euint128
     /// @return the result of the not
-    function not(euint128 lhs) internal pure returns (euint128) {
+    function not(euint128 lhs) internal returns (euint128) {
         return FHE.not(lhs);
     }
     
@@ -4549,7 +4421,7 @@ library BindingsEuint128 {
     /// @param lhs input of type euint128
     /// @param rhs second input of type euint128
 /// @return the result of the and
-    function and(euint128 lhs, euint128 rhs) internal pure returns (euint128) {
+    function and(euint128 lhs, euint128 rhs) internal returns (euint128) {
         return FHE.and(lhs, rhs);
     }
     
@@ -4558,7 +4430,7 @@ library BindingsEuint128 {
     /// @param lhs input of type euint128
     /// @param rhs second input of type euint128
 /// @return the result of the or
-    function or(euint128 lhs, euint128 rhs) internal pure returns (euint128) {
+    function or(euint128 lhs, euint128 rhs) internal returns (euint128) {
         return FHE.or(lhs, rhs);
     }
     
@@ -4567,7 +4439,7 @@ library BindingsEuint128 {
     /// @param lhs input of type euint128
     /// @param rhs second input of type euint128
 /// @return the result of the xor
-    function xor(euint128 lhs, euint128 rhs) internal pure returns (euint128) {
+    function xor(euint128 lhs, euint128 rhs) internal returns (euint128) {
         return FHE.xor(lhs, rhs);
     }
     
@@ -4576,7 +4448,7 @@ library BindingsEuint128 {
     /// @param lhs input of type euint128
     /// @param rhs second input of type euint128
 /// @return the result of the gt
-    function gt(euint128 lhs, euint128 rhs) internal pure returns (ebool) {
+    function gt(euint128 lhs, euint128 rhs) internal returns (ebool) {
         return FHE.gt(lhs, rhs);
     }
     
@@ -4585,7 +4457,7 @@ library BindingsEuint128 {
     /// @param lhs input of type euint128
     /// @param rhs second input of type euint128
 /// @return the result of the gte
-    function gte(euint128 lhs, euint128 rhs) internal pure returns (ebool) {
+    function gte(euint128 lhs, euint128 rhs) internal returns (ebool) {
         return FHE.gte(lhs, rhs);
     }
     
@@ -4594,7 +4466,7 @@ library BindingsEuint128 {
     /// @param lhs input of type euint128
     /// @param rhs second input of type euint128
 /// @return the result of the lt
-    function lt(euint128 lhs, euint128 rhs) internal pure returns (ebool) {
+    function lt(euint128 lhs, euint128 rhs) internal returns (ebool) {
         return FHE.lt(lhs, rhs);
     }
     
@@ -4603,7 +4475,7 @@ library BindingsEuint128 {
     /// @param lhs input of type euint128
     /// @param rhs second input of type euint128
 /// @return the result of the lte
-    function lte(euint128 lhs, euint128 rhs) internal pure returns (ebool) {
+    function lte(euint128 lhs, euint128 rhs) internal returns (ebool) {
         return FHE.lte(lhs, rhs);
     }
     
@@ -4612,7 +4484,7 @@ library BindingsEuint128 {
     /// @param lhs input of type euint128
     /// @param rhs second input of type euint128
 /// @return the result of the max
-    function max(euint128 lhs, euint128 rhs) internal pure returns (euint128) {
+    function max(euint128 lhs, euint128 rhs) internal returns (euint128) {
         return FHE.max(lhs, rhs);
     }
     
@@ -4621,7 +4493,7 @@ library BindingsEuint128 {
     /// @param lhs input of type euint128
     /// @param rhs second input of type euint128
 /// @return the result of the min
-    function min(euint128 lhs, euint128 rhs) internal pure returns (euint128) {
+    function min(euint128 lhs, euint128 rhs) internal returns (euint128) {
         return FHE.min(lhs, rhs);
     }
     
@@ -4630,7 +4502,7 @@ library BindingsEuint128 {
     /// @param lhs input of type euint128
     /// @param rhs second input of type euint128
 /// @return the result of the shl
-    function shl(euint128 lhs, euint128 rhs) internal pure returns (euint128) {
+    function shl(euint128 lhs, euint128 rhs) internal returns (euint128) {
         return FHE.shl(lhs, rhs);
     }
     
@@ -4639,7 +4511,7 @@ library BindingsEuint128 {
     /// @param lhs input of type euint128
     /// @param rhs second input of type euint128
 /// @return the result of the shr
-    function shr(euint128 lhs, euint128 rhs) internal pure returns (euint128) {
+    function shr(euint128 lhs, euint128 rhs) internal returns (euint128) {
         return FHE.shr(lhs, rhs);
     }
     
@@ -4648,7 +4520,7 @@ library BindingsEuint128 {
     /// @param lhs input of type euint128
     /// @param rhs second input of type euint128
 /// @return the result of the rol
-    function rol(euint128 lhs, euint128 rhs) internal pure returns (euint128) {
+    function rol(euint128 lhs, euint128 rhs) internal returns (euint128) {
         return FHE.rol(lhs, rhs);
     }
     
@@ -4657,35 +4529,35 @@ library BindingsEuint128 {
     /// @param lhs input of type euint128
     /// @param rhs second input of type euint128
 /// @return the result of the ror
-    function ror(euint128 lhs, euint128 rhs) internal pure returns (euint128) {
+    function ror(euint128 lhs, euint128 rhs) internal returns (euint128) {
         return FHE.ror(lhs, rhs);
     }
-    function toBool(euint128 value) internal pure returns (ebool) {
+    function toBool(euint128 value) internal returns (ebool) {
         return FHE.asEbool(value);
     }
-    function toU8(euint128 value) internal pure returns (euint8) {
+    function toU8(euint128 value) internal returns (euint8) {
         return FHE.asEuint8(value);
     }
-    function toU16(euint128 value) internal pure returns (euint16) {
+    function toU16(euint128 value) internal returns (euint16) {
         return FHE.asEuint16(value);
     }
-    function toU32(euint128 value) internal pure returns (euint32) {
+    function toU32(euint128 value) internal returns (euint32) {
         return FHE.asEuint32(value);
     }
-    function toU64(euint128 value) internal pure returns (euint64) {
+    function toU64(euint128 value) internal returns (euint64) {
         return FHE.asEuint64(value);
     }
-    function toU256(euint128 value) internal pure returns (euint256) {
+    function toU256(euint128 value) internal returns (euint256) {
         return FHE.asEuint256(value);
     }
-    function seal(euint128 value, bytes32 publicKey) internal pure returns (string memory) {
+    function seal(euint128 value, bytes32 publicKey) internal returns (string memory) {
         return FHE.sealoutput(value, publicKey);
     }
-    function decrypt(euint128 value) internal pure returns (uint128) {
-        return FHE.decrypt(value);
+    function sealTyped(euint128 value, bytes32 publicKey) internal returns (SealedUint memory) {
+        return FHE.sealoutputTyped(value, publicKey);
     }
-    function decrypt(euint128 value, uint128 defaultValue) internal pure returns (uint128) {
-        return FHE.decrypt(value, defaultValue);
+    function decrypt(euint128 value) internal returns (euint128) {
+        return FHE.decrypt(value);
     }
 }
 
@@ -4697,7 +4569,7 @@ library BindingsEuint256 {
     /// @param lhs input of type euint256
     /// @param rhs second input of type euint256
 /// @return the result of the eq
-    function eq(euint256 lhs, euint256 rhs) internal pure returns (ebool) {
+    function eq(euint256 lhs, euint256 rhs) internal returns (ebool) {
         return FHE.eq(lhs, rhs);
     }
     
@@ -4706,38 +4578,38 @@ library BindingsEuint256 {
     /// @param lhs input of type euint256
     /// @param rhs second input of type euint256
 /// @return the result of the ne
-    function ne(euint256 lhs, euint256 rhs) internal pure returns (ebool) {
+    function ne(euint256 lhs, euint256 rhs) internal returns (ebool) {
         return FHE.ne(lhs, rhs);
     }
-    function toBool(euint256 value) internal pure returns (ebool) {
+    function toBool(euint256 value) internal returns (ebool) {
         return FHE.asEbool(value);
     }
-    function toU8(euint256 value) internal pure returns (euint8) {
+    function toU8(euint256 value) internal returns (euint8) {
         return FHE.asEuint8(value);
     }
-    function toU16(euint256 value) internal pure returns (euint16) {
+    function toU16(euint256 value) internal returns (euint16) {
         return FHE.asEuint16(value);
     }
-    function toU32(euint256 value) internal pure returns (euint32) {
+    function toU32(euint256 value) internal returns (euint32) {
         return FHE.asEuint32(value);
     }
-    function toU64(euint256 value) internal pure returns (euint64) {
+    function toU64(euint256 value) internal returns (euint64) {
         return FHE.asEuint64(value);
     }
-    function toU128(euint256 value) internal pure returns (euint128) {
+    function toU128(euint256 value) internal returns (euint128) {
         return FHE.asEuint128(value);
     }
-    function toEaddress(euint256 value) internal pure returns (eaddress) {
+    function toEaddress(euint256 value) internal returns (eaddress) {
         return FHE.asEaddress(value);
     }
-    function seal(euint256 value, bytes32 publicKey) internal pure returns (string memory) {
+    function seal(euint256 value, bytes32 publicKey) internal returns (string memory) {
         return FHE.sealoutput(value, publicKey);
     }
-    function decrypt(euint256 value) internal pure returns (uint256) {
-        return FHE.decrypt(value);
+    function sealTyped(euint256 value, bytes32 publicKey) internal returns (SealedUint memory) {
+        return FHE.sealoutputTyped(value, publicKey);
     }
-    function decrypt(euint256 value, uint256 defaultValue) internal pure returns (uint256) {
-        return FHE.decrypt(value, defaultValue);
+    function decrypt(euint256 value) internal returns (euint256) {
+        return FHE.decrypt(value);
     }
 }
 
@@ -4749,7 +4621,7 @@ library BindingsEaddress {
     /// @param lhs input of type eaddress
     /// @param rhs second input of type eaddress
 /// @return the result of the eq
-    function eq(eaddress lhs, eaddress rhs) internal pure returns (ebool) {
+    function eq(eaddress lhs, eaddress rhs) internal returns (ebool) {
         return FHE.eq(lhs, rhs);
     }
     
@@ -4758,37 +4630,37 @@ library BindingsEaddress {
     /// @param lhs input of type eaddress
     /// @param rhs second input of type eaddress
 /// @return the result of the ne
-    function ne(eaddress lhs, eaddress rhs) internal pure returns (ebool) {
+    function ne(eaddress lhs, eaddress rhs) internal returns (ebool) {
         return FHE.ne(lhs, rhs);
     }
-    function toBool(eaddress value) internal pure returns (ebool) {
+    function toBool(eaddress value) internal returns (ebool) {
         return FHE.asEbool(value);
     }
-    function toU8(eaddress value) internal pure returns (euint8) {
+    function toU8(eaddress value) internal returns (euint8) {
         return FHE.asEuint8(value);
     }
-    function toU16(eaddress value) internal pure returns (euint16) {
+    function toU16(eaddress value) internal returns (euint16) {
         return FHE.asEuint16(value);
     }
-    function toU32(eaddress value) internal pure returns (euint32) {
+    function toU32(eaddress value) internal returns (euint32) {
         return FHE.asEuint32(value);
     }
-    function toU64(eaddress value) internal pure returns (euint64) {
+    function toU64(eaddress value) internal returns (euint64) {
         return FHE.asEuint64(value);
     }
-    function toU128(eaddress value) internal pure returns (euint128) {
+    function toU128(eaddress value) internal returns (euint128) {
         return FHE.asEuint128(value);
     }
-    function toU256(eaddress value) internal pure returns (euint256) {
+    function toU256(eaddress value) internal returns (euint256) {
         return FHE.asEuint256(value);
     }
-    function seal(eaddress value, bytes32 publicKey) internal pure returns (string memory) {
+    function seal(eaddress value, bytes32 publicKey) internal returns (string memory) {
         return FHE.sealoutput(value, publicKey);
     }
-    function decrypt(eaddress value) internal pure returns (address) {
-        return FHE.decrypt(value);
+    function sealTyped(eaddress value, bytes32 publicKey) internal returns (SealedAddress memory) {
+        return FHE.sealoutputTyped(value, publicKey);
     }
-    function decrypt(eaddress value, address defaultValue) internal pure returns (address) {
-        return FHE.decrypt(value, defaultValue);
+    function decrypt(eaddress value) internal returns (eaddress) {
+        return FHE.decrypt(value);
     }
 }

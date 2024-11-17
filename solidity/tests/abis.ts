@@ -19,6 +19,9 @@ export interface SealoutputTypedTestType extends BaseContract {
 export interface DecryptTestType extends BaseContract {
     decrypt: (test: string) => Promise<{}>;
 }
+export interface DecryptTestType extends BaseContract {
+    decrypt: (test: string) => Promise<{}>;
+}
 export interface LteTestType extends BaseContract {
     lte: (test: string, a: bigint, b: bigint) => Promise<bigint>;
 }

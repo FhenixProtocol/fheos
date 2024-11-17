@@ -90,7 +90,7 @@ COPY Makefile fheos/
 
 RUN cd fheos && make build && make build-coprocessor
 
-FROM ghcr.io/fhenixprotocol/localfhenix:v0.1.0-beta5
+FROM ghcr.io/fhenixprotocol/nitro/localfhenix:v0.2.4
 
 # **************** setup dlv
 
@@ -98,7 +98,7 @@ ENV GOROOT=/usr/local/go
 ENV GOPATH=/go/
 ENV PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
 
-ADD https://go.dev/dl/go1.20.linux-amd64.tar.gz go.linux-amd64.tar.gz
+ADD https://go.dev/dl/go1.20.linux-arm64.tar.gz go.linux-amd64.tar.gz
 RUN sudo tar -C /usr/local -xzf go.linux-amd64.tar.gz
 
 RUN sudo chown user:user /usr/local/go

@@ -27,6 +27,7 @@ const specificFunctions = [
     paramTypes: ["encrypted", "uint8", "plaintext"],
   },
   { name: "ProcessOperation1(", amount: 1, paramTypes: ["encrypted"] },
+  { name: "awaitCtResult(", amount: 1, paramTypes: ["encrypted"] },
   { name: "fhedriver.UintType(", amount: 1, paramTypes: ["encrypted"] },
   { name: "GenerateSeedFromEntropy(", amount: 0, paramTypes: [] },
 ];
