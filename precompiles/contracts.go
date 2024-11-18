@@ -337,6 +337,7 @@ func Decrypt(utype byte, input []byte, defaultValue *big.Int, tp *TxParams) (*bi
 	record, exists := State.DecryptResults.Get(key)
 	if value, ok := record.Value.(*big.Int); exists && ok {
 		logger.Debug("found existing decryption result, returning..", "value", value)
+		tp.ParallelTxHooks.NotifyExistingRes(&key)
 		return value, gas, nil
 	} else if tp.GasEstimation {
 		return defaultValue, gas, nil
