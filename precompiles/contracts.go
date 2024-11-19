@@ -247,7 +247,12 @@ func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) (string, uin
 	record, exists := State.DecryptResults.Get(key)
 	if value, ok := record.Value.(string); exists && ok {
 		logger.Debug("found existing sealoutput result, returning..", "value", value)
-		tp.ParallelTxHooks.NotifyExistingRes(&key)
+
+		// Only the sequencer need to know about this to include in the L1 message
+		if tp.ParallelTxHooks != nil {
+			tp.ParallelTxHooks.NotifyExistingRes(&key)
+		}
+
 		return value, gas, nil
 	} else if tp.GasEstimation {
 		return "0x" + strings.Repeat("00", 370), gas, nil
@@ -338,7 +343,12 @@ func Decrypt(utype byte, input []byte, defaultValue *big.Int, tp *TxParams) (*bi
 	record, exists := State.DecryptResults.Get(key)
 	if value, ok := record.Value.(*big.Int); exists && ok {
 		logger.Debug("found existing decryption result, returning..", "value", value)
-		tp.ParallelTxHooks.NotifyExistingRes(&key)
+
+		// Only the sequencer need to know about this to include in the L1 message
+		if tp.ParallelTxHooks != nil {
+			tp.ParallelTxHooks.NotifyExistingRes(&key)
+		}
+
 		return value, gas, nil
 	} else if tp.GasEstimation {
 		return defaultValue, gas, nil
@@ -675,7 +685,12 @@ func Req(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 	record, exists := State.DecryptResults.Get(key)
 	if value, ok := record.Value.(bool); exists && ok {
 		logger.Debug("found existing decryption result, returning..", "value", value)
-		tp.ParallelTxHooks.NotifyExistingRes(&key)
+
+		// Only the sequencer need to know about this to include in the L1 message
+		if tp.ParallelTxHooks != nil {
+			tp.ParallelTxHooks.NotifyExistingRes(&key)
+		}
+
 		if !value {
 			return nil, gas, vm.ErrExecutionReverted
 		}
