@@ -247,6 +247,7 @@ func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams) (string, uin
 	record, exists := State.DecryptResults.Get(key)
 	if value, ok := record.Value.(string); exists && ok {
 		logger.Debug("found existing sealoutput result, returning..", "value", value)
+		tp.ParallelTxHooks.NotifyExistingRes(&key)
 		return value, gas, nil
 	} else if tp.GasEstimation {
 		return "0x" + strings.Repeat("00", 370), gas, nil
@@ -674,6 +675,7 @@ func Req(utype byte, input []byte, tp *TxParams) ([]byte, uint64, error) {
 	record, exists := State.DecryptResults.Get(key)
 	if value, ok := record.Value.(bool); exists && ok {
 		logger.Debug("found existing decryption result, returning..", "value", value)
+		tp.ParallelTxHooks.NotifyExistingRes(&key)
 		if !value {
 			return nil, gas, vm.ErrExecutionReverted
 		}
