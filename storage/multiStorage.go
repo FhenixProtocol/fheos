@@ -3,6 +3,7 @@ package storage
 import (
 	"encoding/hex"
 	"fmt"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethdb/memorydb"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
@@ -77,7 +78,6 @@ func (ms *MultiStore) AppendCt(h types.Hash, cipher *types.FheEncrypted, owner c
 	// Exists but not trivially encrypted
 	if ct != nil {
 		ct.Owners = append(ct.Owners, owner)
-		ct.RefCount++
 		return ms.ephemeral.PutCt(h, ct)
 	}
 

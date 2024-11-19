@@ -1,4 +1,4 @@
-import { getFunctionsFromGo } from "./contracts_parser";
+import { FunctionAnalysis, getFunctionsFromGo } from "./contracts_parser";
 import * as fs from "fs";
 import {
   AsTypeFunction,
@@ -18,6 +18,7 @@ import {
   RandomGenericFunction,
   RandomFunctions,
   SolTemplateDecrypt,
+  SealTypedFromType,
 } from "./templates/library";
 
 import {
@@ -30,6 +31,7 @@ import {
   testContractReq,
   AsTypeTestingContract,
   testContractDecrypt,
+  testContractSealTyped,
 } from "./templates/testContracts";
 
 import {
@@ -52,6 +54,9 @@ import {
   isBitwiseOp,
   SEALING_FUNCTION_NAME,
   capitalize,
+  SEALING_TYPED_FUNCTION_NAME,
+  UTypeSealedOutputMap,
+  EUintType,
 } from "./common";
 
 interface FunctionMetadata {
@@ -64,9 +69,11 @@ interface FunctionMetadata {
 }
 
 const generateMetadataPayload = async (): Promise<FunctionMetadata[]> => {
-  let result = await getFunctionsFromGo("../precompiles/contracts.go");
+  const result = await getFunctionsFromGo("../precompiles/contracts.go");
 
-  return result.map((value) => {
+  const resultWithInjected = injectMetadataAdditionalFunctions(result)
+
+  return resultWithInjected.map((value) => {
     return {
       functionName: value.name,
       hasDifferentInputTypes: !value.needsSameType,
@@ -77,6 +84,24 @@ const generateMetadataPayload = async (): Promise<FunctionMetadata[]> => {
     };
   });
 };
+
+const injectMetadataAdditionalFunctions = (fns: FunctionAnalysis[]) => {
+  // List of additional functions to be generated that depend upon the parsed `go` functions
+  // Dependents will be inserted in the generated contract immediately following the parent function
+  const fnDependents: Record<string, FunctionAnalysis[]> = {
+    [SEALING_FUNCTION_NAME]: [{
+      name: 'sealoutputTyped',
+      paramsCount: 2,
+      needsSameType: false,
+      // Is replaced in `getReturnType` with `SealedBool`/`SealedUint`/`SealedAddress` based on input0
+      returnType: 'SealedStruct',
+      inputTypes: [ 'encrypted', 'bytes32' ],
+      isBooleanMathOp: true
+    }]
+  };
+
+  return fns.flatMap((fn) => fnDependents[fn.name] != null ? [fn, ...fnDependents[fn.name]] : fn);
+}
 
 // Function to generate all combinations of parameters.
 function generateCombinations(
@@ -117,6 +142,11 @@ const getReturnType = (
     }
 
     return inputType.slice(1);
+  }
+
+  // `sealoutputTyped` determine and replace output type based on input0 type
+  if (returnType && returnType === "SealedStruct") {
+    return `${UTypeSealedOutputMap[inputs[0].replace("input0 ", "") as EUintType]} memory`
   }
 
   if (returnType && returnType !== "encrypted") {
@@ -198,6 +228,10 @@ const generateSolidityTestContract = (metadata: FunctionMetadata): string[] => {
     return testContractReencrypt();
   }
 
+  if (functionName === SEALING_TYPED_FUNCTION_NAME) {
+    return testContractSealTyped();
+  }
+
   if (inputCount === 0) {
     return testContract0Args(functionName);
   }
@@ -247,6 +281,11 @@ const generateSolidityBenchContract = (metadata: FunctionMetadata): string => {
 
   if (functionName === SEALING_FUNCTION_NAME) {
     return benchContractReencrypt();
+  }
+
+  if (functionName === SEALING_TYPED_FUNCTION_NAME) {
+    // `sealoutputTyped` is a wrapper around `sealoutput`, and does not need to be benchmarked directly
+    return "";
   }
 
   if (
@@ -540,6 +579,7 @@ const main = async () => {
     );
 
     outputFile += SealFromType(encryptedType);
+    outputFile += SealTypedFromType(encryptedType);
     outputFile += DecryptBinding(encryptedType);
 
     outputFile += PostFix();

@@ -1,4 +1,4 @@
-import { BaseContract } from 'ethers';
+import { BaseContract, getAddress } from 'ethers';
 import { FhenixClient, getPermit, Permit } from 'fhenixjs';
 import { ethers } from 'hardhat';
 
@@ -33,6 +33,9 @@ export const fromHexString = (hexString: string): Uint8Array => {
   if (!arr) return new Uint8Array();
   return Uint8Array.from(arr.map((byte) => parseInt(byte, 16)));
 };
+
+// This function converts a bigint into a checksummed address (dependency:ethers)
+export const bnToAddress = (bn: BigInt) => getAddress(`0x${bn.toString(16).slice(-40)}`)
 
 export const deployContract = async (contractName: string, args?: any[]) => {
   const [signer] = await ethers.getSigners();

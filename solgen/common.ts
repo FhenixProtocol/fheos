@@ -13,7 +13,7 @@ export const EInputType = [
 // FYI: Operations ["sealoutput", "seal", "decrypt", "ne"] are the minimum required for
 // non failing generated code.
 
-const patternAllowedOperationsEbool = ["ne|eq|^and$|^or$|xor|sealoutput|select|seal|decrypt|not"];
+const patternAllowedOperationsEbool = ["ne|eq|^and$|^or$|xor|sealoutput|sealoutputTyped|select|seal|sealTyped|decrypt|not"];
 const patternAllowedOperationsEuint8 = [".*"];
 const patternAllowedOperationsEuint16 = [".*"];
 const patternAllowedOperationsEuint32 = [".*"];
@@ -21,8 +21,8 @@ const patternAllowedOperationsEuint32 = [".*"];
 const patternAllowedOperationsEuint64 = ["^(?!div)", "^(?!rem)"];
 const patternAllowedOperationsEuint128 = ["^(?!div)", "^(?!rem)", "^(?!mul)", "^(?!square)"];
 
-const patternAllowedOperationsEuint256 =   ["ne|eq|sealoutput|select|seal|decrypt|random"];
-const patternAllowedOperationsEaddress =   ["ne|^eq$|sealoutput|select|seal|decrypt"];
+const patternAllowedOperationsEuint256 =   ["ne|eq|sealoutput|sealoutputTyped|select|seal|sealTyped|decrypt|random"];
+const patternAllowedOperationsEaddress =   ["ne|^eq$|sealoutput|sealoutputTyped|select|seal|sealTyped|decrypt"];
 /*------------------------------------------------------------*/
 
 // Although casts from eaddress to types with < 256 bits are possible, we don't want to test them.
@@ -49,6 +49,11 @@ export const EPlaintextType = [
   "uint256",
   "address",
 ];
+export const SealedOutputStructs = [
+	"SealedBool",
+	"SealedUint",
+	"SealedAddress",
+] as const;
 export type EUintType =
   | "ebool"
   | "euint8"
@@ -67,9 +72,11 @@ export type PlaintextType =
   | "uint128"
   | "uint256"
   | "address";
+export type SealedOutputType = (typeof SealedOutputStructs)[number]
 export type AllTypes =
   | PlaintextType
   | EUintType
+	| SealedOutputType
   | "bytes memory"
   | "bytes32"
   | "uint8"
@@ -78,8 +85,10 @@ export type AllTypes =
   | "none";
 
 export const SEALING_FUNCTION_NAME = "sealoutput";
+export const SEALING_TYPED_FUNCTION_NAME = "sealoutputTyped";
 export const SEAL_RETURN_TYPE = "string";
 export const LOCAL_SEAL_FUNCTION_NAME = "seal";
+export const LOCAL_SEAL_TYPED_FUNCTION_NAME = "sealTyped";
 export const LOCAL_DECRYPT_FUNCTION_NAME = "decrypt";
 
 export const UnderlyingTypes: Record<EUintType, string> = {
@@ -103,6 +112,17 @@ export const UintTypes: Record<EUintType, string> = {
   euint256: "Common.EUINT256_TFHE",
   eaddress: "Common.EADDRESS_TFHE",
 };
+
+export const UTypeSealedOutputMap: Record<EUintType, SealedOutputType> = {
+  ebool: "SealedBool",
+  euint8: "SealedUint",
+  euint16: "SealedUint",
+  euint32: "SealedUint",
+  euint64: "SealedUint",
+  euint128: "SealedUint",
+  euint256: "SealedUint",
+  eaddress: "SealedAddress",
+}
 
 interface OperatorMap {
   operator: string | null;

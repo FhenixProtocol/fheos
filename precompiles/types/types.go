@@ -158,4 +158,5 @@ func PrecompileNameFromString(s string) (PrecompileName, bool) {
 type ParallelTxProcessingHook interface {
 	NotifyCt(*PendingDecryption)
 	NotifyDecryptRes(*PendingDecryption) error
+	NotifyExistingRes(*PendingDecryption)
 }
