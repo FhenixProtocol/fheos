@@ -1,4 +1,4 @@
-ARG BRANCH=v0.0.0-alpha.10
+ARG BRANCH=v0.3.3-alpha.1
 ARG DOCKER_NAME=ghcr.io/fhenixprotocol/nitro/fhenix-node-builder:$BRANCH
 
 FROM rust:1.74-slim-bullseye as warp-drive-builder
