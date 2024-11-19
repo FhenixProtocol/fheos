@@ -35,6 +35,7 @@ type DecryptRequest struct {
 type SealOutputRequest struct {
 	UType        byte   `json:"utype"`
 	Hash         string `json:"hash"`
+	PKey         string `json:"pkey"`
 	RequesterUrl string `json:"requesterUrl"`
 }
 
@@ -332,7 +333,15 @@ func SealOutputHandler(w http.ResponseWriter, r *http.Request) {
 		Callback:    handleSealOutputResult,
 	}
 
-	_, _, err = precompiles.SealOutput(req.UType, hash, nil, &tp, &callback)
+	pkey, err := hex.DecodeString(req.PKey)
+	if err != nil {
+		e := fmt.Sprintf("Invalid pkey: %s %+v", req.PKey, err)
+		fmt.Println(e)
+		http.Error(w, e, http.StatusBadRequest)
+		return
+	}
+
+	_, _, err = precompiles.SealOutput(req.UType, hash, pkey, &tp, &callback)
 	if err != nil {
 		e := fmt.Sprintf("Operation failed: %+v", err)
 		fmt.Println(e)
