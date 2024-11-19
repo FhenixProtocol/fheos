@@ -43,8 +43,8 @@ func PreProcessOperation1(functionName types.PrecompileName, utype byte, input [
 	}
 
 	if len(input) != 32 {
-		msg := functionName.String() + " input len must be 32 bytes"
-		logger.Error(msg, "input", hex.EncodeToString(input), "len", len(input))
+		msg := functionName.String() + " ct hash len must be 32 bytes"
+		logger.Error(msg, "ctHash", hex.EncodeToString(input), "len", len(input))
 		return gas, vm.ErrExecutionReverted
 	}
 

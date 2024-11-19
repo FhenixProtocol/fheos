@@ -86,89 +86,43 @@ func Verify(utype byte, input []byte, securityZone int32, tp *TxParams, _ *Callb
 func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams, onResultCallback *SealOutputCallbackFunc) (string, uint64, error) {
 	//solgen: bool math
 	functionName := types.SealOutput
-	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function: " + functionName.String())
-	}
-
-	gas, err := PreProcessSealOutput(functionName, utype, ctHash, pk, onResultCallback)
+	gas, err := PreProcessOperation1(functionName, utype, ctHash, tp)
 	if err != nil {
-		return "0x" + strings.Repeat("00", 370), gas, vm.ErrExecutionReverted
+		return "", gas, vm.ErrExecutionReverted
 	}
 
-	// The rest of the function performs the following steps:
-	// 1. If a result exists, we don't care about mode of execution, just return it.
-	// 2. If gas estimation, return default value.
-	// 3. If query, try to do sync.
-	// 4. Otherwise, we're in a tx, so we are:
-	//    a. Trying to asynchronously evaluate the ct.
-	//    b. Required to have ParallelTxHooks.
-	//    c. Return default value while async evaluation is in progress.
-	go func(ctHash []byte) {
-		storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
+	if len(pk) != 32 {
+		msg := functionName.String() + " public key need to be 32 bytes long"
+		logger.Error(msg, "public-key", hex.EncodeToString(pk), "len", len(pk))
+		return "", gas, vm.ErrExecutionReverted
+	}
 
-		hash := fhe.BytesToHash(ctHash)
-		key := genSealedKey(ctHash, pk, functionName)
-		record, exists := State.DecryptResults.Get(key)
-		url := (*onResultCallback).CallbackUrl
-		if value, ok := record.Value.(string); exists && ok {
-			logger.Debug("found existing sealoutput result, returning..", "value", value)
-			(*onResultCallback).Callback(url, ctHash, value)
-			return
-		} else if tp.GasEstimation {
-			(*onResultCallback).Callback(url, ctHash, "0x"+strings.Repeat("00", 370))
-			return
-		} else {
+	if onResultCallback == nil {
+		msg := functionName.String() + " must set callback"
+		logger.Error(msg, " ctHash ", ctHash)
+		return "", gas, vm.ErrExecutionReverted
+	}
+
+	if !tp.GasEstimation {
+		storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
+		go func(ctHash []byte) {
 			ct := awaitCtResult(storage, ctHash, tp)
 			if ct == nil {
 				msg := functionName.String() + " unverified ciphertext handle"
-				logger.Error(msg, "ciphertext-hash", hex.EncodeToString(ctHash))
+				logger.Error(msg, " ctHash ", ctHash)
 				return
 			}
-
-			if tp.EthCall {
-				reencryptedValue, err := fhe.SealOutput(*ct, pk)
-				if err != nil {
-					logger.Error("failed to seal output", "err", err)
-					return
-				}
-				(*onResultCallback).Callback(url, ctHash, string(reencryptedValue))
-				return
-			} else if tp.ParallelTxHooks == nil {
-			} else if tp.ParallelTxHooks == nil {
-				logger.Error("no decryption result found and no parallel tx hooks were set")
+			sealed, err := fhe.SealOutput(*ct, pk)
+			url := (*onResultCallback).CallbackUrl
+			(*onResultCallback).Callback(url, ctHash, string(sealed))
+			if err != nil {
+				logger.Error("failed decrypting ciphertext", "error", err)
 				return
 			}
+		}(ctHash)
+		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "ctHash", hex.EncodeToString(ctHash))
+	}
 
-			tp.ParallelTxHooks.NotifyCt(&key)
-
-			if !exists {
-				State.DecryptResults.CreateEmptyRecord(key)
-			}
-
-			userPk := make([]byte, len(pk))
-			copy(userPk, pk)
-			go func() {
-				logger.Debug("sealing output", "hash", hash)
-				reencryptedValue, err := fhe.SealOutput(*ct, userPk)
-				if err != nil {
-					logger.Error("failed to seal output", "err", err)
-					return
-				}
-
-				logger.Debug("sealed output", "hash", hash, "value", reencryptedValue)
-				err = State.DecryptResults.SetValue(key, string(reencryptedValue))
-				if err != nil {
-					logger.Error("failed setting sealoutput result", "error", err)
-					return
-				}
-				tp.ParallelTxHooks.NotifyDecryptRes(&key)
-			}()
-
-			logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "ciphertext-hash ", hex.EncodeToString(ctHash), "public-key", hex.EncodeToString(pk))
-			(*onResultCallback).Callback(url, ctHash, "0x"+strings.Repeat("00", 370))
-			return
-		}
-	}(ctHash)
 	return "0x" + strings.Repeat("00", 370), gas, nil
 }
 
@@ -284,6 +238,8 @@ func Select(utype byte, controlHash []byte, ifTrueHash []byte, ifFalseHash []byt
 func Req(utype byte, input []byte, tp *TxParams, _ *CallbackFunc) ([]byte, uint64, error) {
 	//solgen: input encrypted
 	//solgen: return none
+	// Don't remove the next line
+	//gas, err := PreProcessOperation1(functionName, utype, ctHash, tp)
 	functionName := types.Require
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function: " + functionName.String())
@@ -683,5 +639,5 @@ func GetNetworkPublicKey(securityZone int32, tp *TxParams) ([]byte, error) {
 func Square(utype byte, value []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	return Mul(utype, value, value, tp, callback)
 	// Please don't delete the below comment, this is intentionally left here for code generation.
-	//ct := getCiphertext(storage, fhe.BytesToHash(value), tp.ContractAddress)
+	//ct := ProcessOperation1(storage, fhe.BytesToHash(value), tp.ContractAddress)
 }
