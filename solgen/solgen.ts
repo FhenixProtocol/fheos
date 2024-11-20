@@ -242,11 +242,6 @@ const generateSolidityTestContract = (metadata: FunctionMetadata): string[] => {
     return testContract1Arg(functionName);
   }
 
-  if (functionName === SEALING_TYPED_FUNCTION_NAME) {
-    // `sealoutputTyped` is a wrapper around `sealoutput`, and does not need to be benchmarked directly
-    return ["", ""];
-  }
-
   if (
     inputCount === 2 &&
     inputs[0] === "encrypted" &&
