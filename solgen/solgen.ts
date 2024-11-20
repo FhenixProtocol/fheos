@@ -439,7 +439,6 @@ const main = async () => {
   let importLineHelper: string = "import { ";
 
   for (let func of metadata) {
-    console.log(`LIORRR ${func.functionName}`);
     // this generates test contract for every function
     const testContract = generateSolidityTestContract(func);
     const benchContract = generateSolidityBenchContract(func);

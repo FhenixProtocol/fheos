@@ -456,37 +456,6 @@ contract ${capitalize(name)}Test {
 `;
 }
 
-export function testContractReq() {
-  // Req is failing on EthCall so we need to make it as tx for now
-  let func = `function req(string calldata test, uint256 a) public {
-        if (Utils.cmp(test, "req(euint8)")) {
-            FHE.req(FHE.asEuint8(a));
-        } else if (Utils.cmp(test, "req(euint16)")) {
-            FHE.req(FHE.asEuint16(a));
-        } else if (Utils.cmp(test, "req(euint32)")) {
-            FHE.req(FHE.asEuint32(a));
-        } else if (Utils.cmp(test, "req(euint64)")) {
-            FHE.req(FHE.asEuint64(a));
-        } else if (Utils.cmp(test, "req(euint128)")) {
-            FHE.req(FHE.asEuint128(a));
-        } else if (Utils.cmp(test, "req(euint256)")) {
-            FHE.req(FHE.asEuint256(a));
-        } else if (Utils.cmp(test, "req(ebool)")) {
-            bool b = true;
-            if (a == 0) {
-                b = false;
-            }
-            FHE.req(FHE.asEbool(b));
-        } else {
-            revert TestNotFound(test);
-        }
-    }`;
-  const abi = `export interface ReqTestType extends BaseContract {
-    req: (test: string, a: bigint) => Promise<{}>;
-}\n`;
-  return [generateTestContract("req", func), abi];
-}
-
 export function testContractDecrypt() {
   let func = `function decrypt(string calldata test) public {
         if (Utils.cmp(test, "decrypt(euint8)")) {

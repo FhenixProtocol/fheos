@@ -23,7 +23,7 @@ const specificFunctions = [
   {
     name: "ProcessOperation2(",
     amount: 2,
-    needSameInputTypes: true,
+    // needSameInputTypes: true,
     paramTypes: ["encrypted", "uint8", "plaintext"],
   },
   { name: "ProcessOperation1(", amount: 1, paramTypes: ["encrypted"] },

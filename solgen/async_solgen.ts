@@ -28,19 +28,10 @@ import {
   testContract3Arg,
   testContract2ArgBoolRes,
   testContractReencrypt,
-  testContractReq,
   AsTypeTestingContract,
   testContractDecrypt,
   testContractSealTyped,
 } from "./async_templates/testContracts";
-
-import {
-  AsTypeBenchmarkContract,
-  benchContract1Arg,
-  benchContract2Arg,
-  benchContract3Arg,
-  benchContractReencrypt,
-} from "./async_templates/benchContracts";
 
 import {
   AllTypes,
@@ -89,7 +80,7 @@ const injectMetadataAdditionalFunctions = (fns: FunctionAnalysis[]) => {
   // Dependents will be inserted in the generated contract immediately following the parent function
   const fnDependents: Record<string, FunctionAnalysis[]> = {
     [SEALING_FUNCTION_NAME]: [{
-      name: 'sealoutputTyped',
+      name: SEALING_TYPED_FUNCTION_NAME,
       paramsCount: 2,
       needsSameType: false,
       // Is replaced in `getReturnType` with `SealedBool`/`SealedUint`/`SealedAddress` based on input0
@@ -214,10 +205,6 @@ const generateSolidityTestContract = (metadata: FunctionMetadata): string[] => {
     isBooleanMathOp,
   } = metadata;
 
-  if (functionName === "req") {
-    return testContractReq();
-  }
-
   if (functionName === "decrypt") {
     return testContractDecrypt();
   }
@@ -273,42 +260,6 @@ const generateSolidityTestContract = (metadata: FunctionMetadata): string[] => {
   return ["", ""];
 };
 
-/** Generates a Solidity bench contract based on the provided metadata */
-const generateSolidityBenchContract = (metadata: FunctionMetadata): string => {
-  const { functionName, inputCount, inputs } = metadata;
-
-  if (functionName === "random" || functionName === "decrypt") {
-    // todo: bench random/decrypt function
-    return "";
-  }
-
-  if (functionName === SEALING_FUNCTION_NAME) {
-    return benchContractReencrypt();
-  }
-
-  if (
-    inputCount === 2 &&
-    inputs[0] === "encrypted" &&
-    inputs[1] === "encrypted"
-  ) {
-    return benchContract2Arg(functionName);
-  }
-
-  if (inputCount === 1) {
-    return benchContract1Arg(functionName);
-  }
-
-  if (inputCount === 3) {
-    return benchContract3Arg(functionName);
-  }
-
-  console.log(
-    `Function ${functionName} with ${inputCount} inputs that are ${inputs} is not implemented`
-  );
-
-  return "";
-};
-
 /**
  * Generates a Solidity function based on the provided metadata
  * This generates all the different types of function headers that can exist
@@ -327,32 +278,25 @@ const genSolidityFunctionHeaders = (metadata: FunctionMetadata): string[] => {
 
   inputs.forEach((input, idx) => {
     let inputVariants = [];
-    switch (input) {
-      case "encrypted":
-        let index = 0;
-        for (let inputType of EInputType) {
-          if (!IsOperationAllowed(functionName, index++)) {
-            // Skip unallowed operations based on FheEngine's operation_is_allowed
-            continue;
-          }
-          if (
-            inputs.length === 2 &&
-            !isBooleanMathOp &&
-            isComparisonType(inputType)
-          ) {
-            continue;
-          }
-          inputVariants.push(`input${idx} ${inputType}`);
-        }
-        break;
-      case "plaintext":
-        for (let inputType of EPlaintextType) {
-          inputVariants.push(`input${idx} ${inputType}`);
-        }
-        break;
-      default:
-        inputVariants.push(`input${idx} ${input}`);
+    if (input !== "encrypted") {
+      inputVariants.push(`input${idx} ${input}`);
     }
+
+    let index = 0;
+    for (let inputType of EInputType) {
+      if (!IsOperationAllowed(functionName, index++)) {
+        // Skip unallowed operations based on FheEngine's operation_is_allowed
+        continue;
+      } else if (
+        inputs.length === 2 &&
+        !isBooleanMathOp &&
+        isComparisonType(inputType)
+      ) {
+        continue;
+      }
+      inputVariants.push(`input${idx} ${inputType}`);
+    }
+
     functions.push(inputVariants);
   });
 
@@ -436,14 +380,12 @@ const main = async () => {
   let metadata = await generateMetadataPayload();
   let solidityHeaders: string[] = [];
   const testContracts: Record<string, string> = {};
-  const benchContracts: Record<string, string> = {};
   let testContractsAbis = "";
   let importLineHelper: string = "import { ";
 
   for (let func of metadata) {
     // this generates test contract for every function
     // const testContract = generateSolidityTestContract(func);
-    // const benchContract = generateSolidityBenchContract(func);
 
     // if (testContract[0] !== "") {
     //   testContracts[capitalize(func.functionName)] = testContract[0];
@@ -451,9 +393,6 @@ const main = async () => {
     //   importLineHelper += `${capitalize(func.functionName)}TestType,\n`;
     // }
 
-    // if (benchContract !== "") {
-    //   benchContracts[capitalize(func.functionName)] = benchContract;
-    // }
     // this generates solidity header functions for all the different possible types
     solidityHeaders = solidityHeaders.concat(genSolidityFunctionHeaders(func));
   }
@@ -494,7 +433,6 @@ const main = async () => {
     const testContract = AsTypeTestingContract(type);
 
     testContracts[functionName] = testContract[0];
-    benchContracts[functionName] = AsTypeBenchmarkContract(type);
 
     testContractsAbis += testContract[1];
     importLineHelper += `${capitalize(functionName)}TestType,\n`;
@@ -505,33 +443,6 @@ const main = async () => {
   outputFile += AsTypeFunction("bool", "ebool");
 
   outputFile += PostFix();
-
-  // TODO : Operator overloading requires pure functions, which can't be used in async context
-  // outputFile += `\n\n// ********** OPERATOR OVERLOADING ************* //\n`;
-
-  // generate operator overloading
-  // ShorthandOperations.filter((v) => v.operator !== null).forEach((value) => {
-  //   let idx = 0;
-  //   for (let encType of EInputType) {
-  //     if (!valueIsEncrypted(encType)) {
-  //       throw new Error("InputType mismatch");
-  //     }
-
-  //     if (!IsOperationAllowed(value.func, idx++)) {
-  //       // Skip unallowed operations based on FheEngine's operation_is_allowed
-  //       continue;
-  //     }
-  //     if (!isComparisonType(encType) || isBitwiseOp(value.func)) {
-  //       outputFile += OperatorOverloadDecl(
-  //         value.func,
-  //         value.operator!,
-  //         encType,
-  //         value.unary,
-  //         value.returnsBool
-  //       );
-  //     }
-  //   }
-  // });
 
   outputFile += `\n// ********** BINDING DEFS ************* //`;
 
@@ -593,13 +504,6 @@ const main = async () => {
   //   fs.writeFileSync(
   //     `../solidity/tests/contracts/${testContract[0]}.sol`,
   //     testContract[1]
-  //   );
-  // }
-
-  // for (const benchContract of Object.entries(benchContracts)) {
-  //   fs.writeFileSync(
-  //     `../solidity/tests/contracts/bench/${benchContract[0]}.sol`,
-  //     benchContract[1]
   //   );
   // }
 

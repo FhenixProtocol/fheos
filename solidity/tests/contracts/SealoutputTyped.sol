@@ -2,8 +2,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import {FHE, euint8, euint16, euint32, euint64, euint128, euint256, ebool} from "../../FHE.sol";
-import {ebool, eaddress, euint8, SealedUint, SealedBool, SealedAddress} from "../../FHE.sol";
+import {FHE, euint8, euint16, euint32, euint64, euint128, euint256, ebool, eaddress, SealedUint, SealedBool, SealedAddress} from "../../FHE.sol";
 import {Utils} from "./utils/Utils.sol";
 
 error TestNotFound(string test);
