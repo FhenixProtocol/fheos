@@ -27,7 +27,7 @@ const specificFunctions = [
     paramTypes: ["encrypted", "uint8", "plaintext"],
   },
   { name: "ProcessOperation1(", amount: 1, paramTypes: ["encrypted"] },
-  { name: "awaitCtResult(", amount: 1, paramTypes: ["encrypted"] },
+  // { name: "awaitCtResult(", amount: 1, paramTypes: ["encrypted"] },
   { name: "fhedriver.UintType(", amount: 1, paramTypes: ["encrypted"] },
   { name: "GenerateSeedFromEntropy(", amount: 0, paramTypes: [] },
 ];
@@ -97,7 +97,7 @@ async function analyzeGoFile(
         ) {
           let needsSameType = /lhs.UintType\s+!=\s+rhs.UintType/.test(
             trimmedLine
-          ) || !!keyfn.needSameInputTypes;
+          );
           let amount = keyfn.amount;
           if (funcName === SEALING_FUNCTION_NAME) {
             amount = 2;
