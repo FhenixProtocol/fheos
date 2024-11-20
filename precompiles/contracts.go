@@ -128,6 +128,7 @@ func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams, onResultCall
 }
 
 func Decrypt(utype byte, input []byte, defaultValue *big.Int, tp *TxParams, onResultCallback *DecryptCallbackFunc) (*big.Int, uint64, error) {
+	//solgen: output plaintext
 	functionName := types.Decrypt
 
 	gas, err := PreProcessOperation1(functionName, utype, input, tp)

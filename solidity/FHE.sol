@@ -674,38 +674,41 @@ library FHE {
     /// @notice Performs the decrypt operation on a ciphertext
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
-    function decrypt(ebool input1) internal pure returns (ebool) {
-        return FHE.decrypt(input1, 0);
+    function decrypt(ebool input1) internal pure returns (bool) {
+        return FHE.decrypt(input1, false);
     }
     /// @notice Performs the decrypt operation on a ciphertext with default value for gas estimation
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
     /// @param defaultValue default value to be returned on gas estimation
-    function decrypt(ebool input1, ebool defaultValue) internal pure returns (ebool) {
+    function decrypt(ebool input1, bool defaultValue) internal pure returns (bool) {
         if (!isInitialized(input1)) {
             input1 = asEbool(0);
         }
         uint256 gasDefaultValue;
     
-        gasDefaultValue = uint256(defaultValue);
-
+        if (defaultValue) {
+            gasDefaultValue = 1;
+        } else {
+            gasDefaultValue = 0;
+        }
+        
         uint256 unwrappedInput1 = ebool.unwrap(input1);
         bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        bytes memory b = FheOps(Precompiles.Fheos).decrypt(Common.EBOOL_TFHE, inputAsBytes, gasDefaultValue);
-        uint256 result = Impl.getValue(b);
-        return ebool.wrap(result);
+        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EBOOL_TFHE, inputAsBytes, gasDefaultValue);
+        return Common.bigIntToBool(result);
     }
     /// @notice Performs the decrypt operation on a ciphertext
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
-    function decrypt(euint8 input1) internal pure returns (euint8) {
+    function decrypt(euint8 input1) internal pure returns (uint8) {
         return FHE.decrypt(input1, (2 ** 8) / 2);
     }
     /// @notice Performs the decrypt operation on a ciphertext with default value for gas estimation
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
     /// @param defaultValue default value to be returned on gas estimation
-    function decrypt(euint8 input1, euint8 defaultValue) internal pure returns (euint8) {
+    function decrypt(euint8 input1, uint8 defaultValue) internal pure returns (uint8) {
         if (!isInitialized(input1)) {
             input1 = asEuint8(0);
         }
@@ -715,21 +718,20 @@ library FHE {
 
         uint256 unwrappedInput1 = euint8.unwrap(input1);
         bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        bytes memory b = FheOps(Precompiles.Fheos).decrypt(Common.EUINT8_TFHE, inputAsBytes, gasDefaultValue);
-        uint256 result = Impl.getValue(b);
-        return euint8.wrap(result);
+        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EUINT8_TFHE, inputAsBytes, gasDefaultValue);
+        return Common.bigIntToUint8(result);
     }
     /// @notice Performs the decrypt operation on a ciphertext
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
-    function decrypt(euint16 input1) internal pure returns (euint16) {
+    function decrypt(euint16 input1) internal pure returns (uint16) {
         return FHE.decrypt(input1, (2 ** 16) / 2);
     }
     /// @notice Performs the decrypt operation on a ciphertext with default value for gas estimation
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
     /// @param defaultValue default value to be returned on gas estimation
-    function decrypt(euint16 input1, euint16 defaultValue) internal pure returns (euint16) {
+    function decrypt(euint16 input1, uint16 defaultValue) internal pure returns (uint16) {
         if (!isInitialized(input1)) {
             input1 = asEuint16(0);
         }
@@ -739,21 +741,20 @@ library FHE {
 
         uint256 unwrappedInput1 = euint16.unwrap(input1);
         bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        bytes memory b = FheOps(Precompiles.Fheos).decrypt(Common.EUINT16_TFHE, inputAsBytes, gasDefaultValue);
-        uint256 result = Impl.getValue(b);
-        return euint16.wrap(result);
+        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EUINT16_TFHE, inputAsBytes, gasDefaultValue);
+        return Common.bigIntToUint16(result);
     }
     /// @notice Performs the decrypt operation on a ciphertext
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
-    function decrypt(euint32 input1) internal pure returns (euint32) {
+    function decrypt(euint32 input1) internal pure returns (uint32) {
         return FHE.decrypt(input1, (2 ** 32) / 2);
     }
     /// @notice Performs the decrypt operation on a ciphertext with default value for gas estimation
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
     /// @param defaultValue default value to be returned on gas estimation
-    function decrypt(euint32 input1, euint32 defaultValue) internal pure returns (euint32) {
+    function decrypt(euint32 input1, uint32 defaultValue) internal pure returns (uint32) {
         if (!isInitialized(input1)) {
             input1 = asEuint32(0);
         }
@@ -763,21 +764,20 @@ library FHE {
 
         uint256 unwrappedInput1 = euint32.unwrap(input1);
         bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        bytes memory b = FheOps(Precompiles.Fheos).decrypt(Common.EUINT32_TFHE, inputAsBytes, gasDefaultValue);
-        uint256 result = Impl.getValue(b);
-        return euint32.wrap(result);
+        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EUINT32_TFHE, inputAsBytes, gasDefaultValue);
+        return Common.bigIntToUint32(result);
     }
     /// @notice Performs the decrypt operation on a ciphertext
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
-    function decrypt(euint64 input1) internal pure returns (euint64) {
+    function decrypt(euint64 input1) internal pure returns (uint64) {
         return FHE.decrypt(input1, (2 ** 64) / 2);
     }
     /// @notice Performs the decrypt operation on a ciphertext with default value for gas estimation
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
     /// @param defaultValue default value to be returned on gas estimation
-    function decrypt(euint64 input1, euint64 defaultValue) internal pure returns (euint64) {
+    function decrypt(euint64 input1, uint64 defaultValue) internal pure returns (uint64) {
         if (!isInitialized(input1)) {
             input1 = asEuint64(0);
         }
@@ -787,21 +787,20 @@ library FHE {
 
         uint256 unwrappedInput1 = euint64.unwrap(input1);
         bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        bytes memory b = FheOps(Precompiles.Fheos).decrypt(Common.EUINT64_TFHE, inputAsBytes, gasDefaultValue);
-        uint256 result = Impl.getValue(b);
-        return euint64.wrap(result);
+        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EUINT64_TFHE, inputAsBytes, gasDefaultValue);
+        return Common.bigIntToUint64(result);
     }
     /// @notice Performs the decrypt operation on a ciphertext
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
-    function decrypt(euint128 input1) internal pure returns (euint128) {
+    function decrypt(euint128 input1) internal pure returns (uint128) {
         return FHE.decrypt(input1, (2 ** 128) / 2);
     }
     /// @notice Performs the decrypt operation on a ciphertext with default value for gas estimation
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
     /// @param defaultValue default value to be returned on gas estimation
-    function decrypt(euint128 input1, euint128 defaultValue) internal pure returns (euint128) {
+    function decrypt(euint128 input1, uint128 defaultValue) internal pure returns (uint128) {
         if (!isInitialized(input1)) {
             input1 = asEuint128(0);
         }
@@ -811,21 +810,20 @@ library FHE {
 
         uint256 unwrappedInput1 = euint128.unwrap(input1);
         bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        bytes memory b = FheOps(Precompiles.Fheos).decrypt(Common.EUINT128_TFHE, inputAsBytes, gasDefaultValue);
-        uint256 result = Impl.getValue(b);
-        return euint128.wrap(result);
+        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EUINT128_TFHE, inputAsBytes, gasDefaultValue);
+        return Common.bigIntToUint128(result);
     }
     /// @notice Performs the decrypt operation on a ciphertext
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
-    function decrypt(euint256 input1) internal pure returns (euint256) {
+    function decrypt(euint256 input1) internal pure returns (uint256) {
         return FHE.decrypt(input1, (2 ** 256) / 2);
     }
     /// @notice Performs the decrypt operation on a ciphertext with default value for gas estimation
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
     /// @param defaultValue default value to be returned on gas estimation
-    function decrypt(euint256 input1, euint256 defaultValue) internal pure returns (euint256) {
+    function decrypt(euint256 input1, uint256 defaultValue) internal pure returns (uint256) {
         if (!isInitialized(input1)) {
             input1 = asEuint256(0);
         }
@@ -835,69 +833,70 @@ library FHE {
 
         uint256 unwrappedInput1 = euint256.unwrap(input1);
         bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        bytes memory b = FheOps(Precompiles.Fheos).decrypt(Common.EUINT256_TFHE, inputAsBytes, gasDefaultValue);
-        uint256 result = Impl.getValue(b);
-        return euint256.wrap(result);
+        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EUINT256_TFHE, inputAsBytes, gasDefaultValue);
+        return Common.bigIntToUint256(result);
     }
     /// @notice Performs the decrypt operation on a ciphertext
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
-    function decrypt(eaddress input1) internal pure returns (eaddress) {
-        return FHE.decrypt(input1, 0);
+    function decrypt(eaddress input1) internal pure returns (address) {
+        return FHE.decrypt(input1, address(0));
     }
     /// @notice Performs the decrypt operation on a ciphertext with default value for gas estimation
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
     /// @param defaultValue default value to be returned on gas estimation
-    function decrypt(eaddress input1, eaddress defaultValue) internal pure returns (eaddress) {
+    function decrypt(eaddress input1, address defaultValue) internal pure returns (address) {
         if (!isInitialized(input1)) {
             input1 = asEaddress(0);
         }
         uint256 gasDefaultValue;
     
-        gasDefaultValue = uint256(defaultValue);
+        gasDefaultValue = uint256(uint160(defaultValue));
 
         uint256 unwrappedInput1 = eaddress.unwrap(input1);
         bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        bytes memory b = FheOps(Precompiles.Fheos).decrypt(Common.EADDRESS_TFHE, inputAsBytes, gasDefaultValue);
-        uint256 result = Impl.getValue(b);
-        return eaddress.wrap(result);
+        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EADDRESS_TFHE, inputAsBytes, gasDefaultValue);
+        return Common.bigIntToAddress(result);
     }
     /// @notice Performs the decrypt operation on a ciphertext
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
-    function decrypt(ebool input1) internal pure returns (ebool) {
-        return FHE.decrypt(input1, 0);
+    function decrypt(ebool input1) internal pure returns (bool) {
+        return FHE.decrypt(input1, false);
     }
     /// @notice Performs the decrypt operation on a ciphertext with default value for gas estimation
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
     /// @param defaultValue default value to be returned on gas estimation
-    function decrypt(ebool input1, ebool defaultValue) internal pure returns (ebool) {
+    function decrypt(ebool input1, bool defaultValue) internal pure returns (bool) {
         if (!isInitialized(input1)) {
             input1 = asEbool(0);
         }
         uint256 gasDefaultValue;
     
-        gasDefaultValue = uint256(defaultValue);
-
+        if (defaultValue) {
+            gasDefaultValue = 1;
+        } else {
+            gasDefaultValue = 0;
+        }
+        
         uint256 unwrappedInput1 = ebool.unwrap(input1);
         bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        bytes memory b = FheOps(Precompiles.Fheos).decrypt(Common.EBOOL_TFHE, inputAsBytes, gasDefaultValue);
-        uint256 result = Impl.getValue(b);
-        return ebool.wrap(result);
+        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EBOOL_TFHE, inputAsBytes, gasDefaultValue);
+        return Common.bigIntToBool(result);
     }
     /// @notice Performs the decrypt operation on a ciphertext
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
-    function decrypt(euint8 input1) internal pure returns (euint8) {
+    function decrypt(euint8 input1) internal pure returns (uint8) {
         return FHE.decrypt(input1, (2 ** 8) / 2);
     }
     /// @notice Performs the decrypt operation on a ciphertext with default value for gas estimation
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
     /// @param defaultValue default value to be returned on gas estimation
-    function decrypt(euint8 input1, euint8 defaultValue) internal pure returns (euint8) {
+    function decrypt(euint8 input1, uint8 defaultValue) internal pure returns (uint8) {
         if (!isInitialized(input1)) {
             input1 = asEuint8(0);
         }
@@ -907,21 +906,20 @@ library FHE {
 
         uint256 unwrappedInput1 = euint8.unwrap(input1);
         bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        bytes memory b = FheOps(Precompiles.Fheos).decrypt(Common.EUINT8_TFHE, inputAsBytes, gasDefaultValue);
-        uint256 result = Impl.getValue(b);
-        return euint8.wrap(result);
+        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EUINT8_TFHE, inputAsBytes, gasDefaultValue);
+        return Common.bigIntToUint8(result);
     }
     /// @notice Performs the decrypt operation on a ciphertext
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
-    function decrypt(euint16 input1) internal pure returns (euint16) {
+    function decrypt(euint16 input1) internal pure returns (uint16) {
         return FHE.decrypt(input1, (2 ** 16) / 2);
     }
     /// @notice Performs the decrypt operation on a ciphertext with default value for gas estimation
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
     /// @param defaultValue default value to be returned on gas estimation
-    function decrypt(euint16 input1, euint16 defaultValue) internal pure returns (euint16) {
+    function decrypt(euint16 input1, uint16 defaultValue) internal pure returns (uint16) {
         if (!isInitialized(input1)) {
             input1 = asEuint16(0);
         }
@@ -931,21 +929,20 @@ library FHE {
 
         uint256 unwrappedInput1 = euint16.unwrap(input1);
         bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        bytes memory b = FheOps(Precompiles.Fheos).decrypt(Common.EUINT16_TFHE, inputAsBytes, gasDefaultValue);
-        uint256 result = Impl.getValue(b);
-        return euint16.wrap(result);
+        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EUINT16_TFHE, inputAsBytes, gasDefaultValue);
+        return Common.bigIntToUint16(result);
     }
     /// @notice Performs the decrypt operation on a ciphertext
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
-    function decrypt(euint32 input1) internal pure returns (euint32) {
+    function decrypt(euint32 input1) internal pure returns (uint32) {
         return FHE.decrypt(input1, (2 ** 32) / 2);
     }
     /// @notice Performs the decrypt operation on a ciphertext with default value for gas estimation
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
     /// @param defaultValue default value to be returned on gas estimation
-    function decrypt(euint32 input1, euint32 defaultValue) internal pure returns (euint32) {
+    function decrypt(euint32 input1, uint32 defaultValue) internal pure returns (uint32) {
         if (!isInitialized(input1)) {
             input1 = asEuint32(0);
         }
@@ -955,21 +952,20 @@ library FHE {
 
         uint256 unwrappedInput1 = euint32.unwrap(input1);
         bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        bytes memory b = FheOps(Precompiles.Fheos).decrypt(Common.EUINT32_TFHE, inputAsBytes, gasDefaultValue);
-        uint256 result = Impl.getValue(b);
-        return euint32.wrap(result);
+        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EUINT32_TFHE, inputAsBytes, gasDefaultValue);
+        return Common.bigIntToUint32(result);
     }
     /// @notice Performs the decrypt operation on a ciphertext
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
-    function decrypt(euint64 input1) internal pure returns (euint64) {
+    function decrypt(euint64 input1) internal pure returns (uint64) {
         return FHE.decrypt(input1, (2 ** 64) / 2);
     }
     /// @notice Performs the decrypt operation on a ciphertext with default value for gas estimation
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
     /// @param defaultValue default value to be returned on gas estimation
-    function decrypt(euint64 input1, euint64 defaultValue) internal pure returns (euint64) {
+    function decrypt(euint64 input1, uint64 defaultValue) internal pure returns (uint64) {
         if (!isInitialized(input1)) {
             input1 = asEuint64(0);
         }
@@ -979,21 +975,20 @@ library FHE {
 
         uint256 unwrappedInput1 = euint64.unwrap(input1);
         bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        bytes memory b = FheOps(Precompiles.Fheos).decrypt(Common.EUINT64_TFHE, inputAsBytes, gasDefaultValue);
-        uint256 result = Impl.getValue(b);
-        return euint64.wrap(result);
+        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EUINT64_TFHE, inputAsBytes, gasDefaultValue);
+        return Common.bigIntToUint64(result);
     }
     /// @notice Performs the decrypt operation on a ciphertext
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
-    function decrypt(euint128 input1) internal pure returns (euint128) {
+    function decrypt(euint128 input1) internal pure returns (uint128) {
         return FHE.decrypt(input1, (2 ** 128) / 2);
     }
     /// @notice Performs the decrypt operation on a ciphertext with default value for gas estimation
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
     /// @param defaultValue default value to be returned on gas estimation
-    function decrypt(euint128 input1, euint128 defaultValue) internal pure returns (euint128) {
+    function decrypt(euint128 input1, uint128 defaultValue) internal pure returns (uint128) {
         if (!isInitialized(input1)) {
             input1 = asEuint128(0);
         }
@@ -1003,21 +998,20 @@ library FHE {
 
         uint256 unwrappedInput1 = euint128.unwrap(input1);
         bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        bytes memory b = FheOps(Precompiles.Fheos).decrypt(Common.EUINT128_TFHE, inputAsBytes, gasDefaultValue);
-        uint256 result = Impl.getValue(b);
-        return euint128.wrap(result);
+        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EUINT128_TFHE, inputAsBytes, gasDefaultValue);
+        return Common.bigIntToUint128(result);
     }
     /// @notice Performs the decrypt operation on a ciphertext
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
-    function decrypt(euint256 input1) internal pure returns (euint256) {
+    function decrypt(euint256 input1) internal pure returns (uint256) {
         return FHE.decrypt(input1, (2 ** 256) / 2);
     }
     /// @notice Performs the decrypt operation on a ciphertext with default value for gas estimation
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
     /// @param defaultValue default value to be returned on gas estimation
-    function decrypt(euint256 input1, euint256 defaultValue) internal pure returns (euint256) {
+    function decrypt(euint256 input1, uint256 defaultValue) internal pure returns (uint256) {
         if (!isInitialized(input1)) {
             input1 = asEuint256(0);
         }
@@ -1027,33 +1021,31 @@ library FHE {
 
         uint256 unwrappedInput1 = euint256.unwrap(input1);
         bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        bytes memory b = FheOps(Precompiles.Fheos).decrypt(Common.EUINT256_TFHE, inputAsBytes, gasDefaultValue);
-        uint256 result = Impl.getValue(b);
-        return euint256.wrap(result);
+        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EUINT256_TFHE, inputAsBytes, gasDefaultValue);
+        return Common.bigIntToUint256(result);
     }
     /// @notice Performs the decrypt operation on a ciphertext
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
-    function decrypt(eaddress input1) internal pure returns (eaddress) {
-        return FHE.decrypt(input1, 0);
+    function decrypt(eaddress input1) internal pure returns (address) {
+        return FHE.decrypt(input1, address(0));
     }
     /// @notice Performs the decrypt operation on a ciphertext with default value for gas estimation
     /// @dev Verifies that the input value matches a valid ciphertext. Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param input1 the input ciphertext
     /// @param defaultValue default value to be returned on gas estimation
-    function decrypt(eaddress input1, eaddress defaultValue) internal pure returns (eaddress) {
+    function decrypt(eaddress input1, address defaultValue) internal pure returns (address) {
         if (!isInitialized(input1)) {
             input1 = asEaddress(0);
         }
         uint256 gasDefaultValue;
     
-        gasDefaultValue = uint256(defaultValue);
+        gasDefaultValue = uint256(uint160(defaultValue));
 
         uint256 unwrappedInput1 = eaddress.unwrap(input1);
         bytes memory inputAsBytes = Common.toBytes(unwrappedInput1);
-        bytes memory b = FheOps(Precompiles.Fheos).decrypt(Common.EADDRESS_TFHE, inputAsBytes, gasDefaultValue);
-        uint256 result = Impl.getValue(b);
-        return eaddress.wrap(result);
+        uint256 result = FheOps(Precompiles.Fheos).decrypt(Common.EADDRESS_TFHE, inputAsBytes, gasDefaultValue);
+        return Common.bigIntToAddress(result);
     }
     /// @notice This function performs the lte operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext

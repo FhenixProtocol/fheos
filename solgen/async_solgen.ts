@@ -69,7 +69,7 @@ interface FunctionMetadata {
 }
 
 const generateMetadataPayload = async (): Promise<FunctionMetadata[]> => {
-  const result = await getFunctionsFromGo("../precompiles/contracts.go");
+  const result = await getFunctionsFromGo("../precompiles/contracts.go", true);
   const resultWithInjected = injectMetadataAdditionalFunctions(result)
 
   return resultWithInjected.map((value) => {
