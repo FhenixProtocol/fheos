@@ -442,18 +442,18 @@ const main = async () => {
 
   for (let func of metadata) {
     // this generates test contract for every function
-    const testContract = generateSolidityTestContract(func);
-    const benchContract = generateSolidityBenchContract(func);
+    // const testContract = generateSolidityTestContract(func);
+    // const benchContract = generateSolidityBenchContract(func);
 
-    if (testContract[0] !== "") {
-      testContracts[capitalize(func.functionName)] = testContract[0];
-      testContractsAbis += testContract[1];
-      importLineHelper += `${capitalize(func.functionName)}TestType,\n`;
-    }
+    // if (testContract[0] !== "") {
+    //   testContracts[capitalize(func.functionName)] = testContract[0];
+    //   testContractsAbis += testContract[1];
+    //   importLineHelper += `${capitalize(func.functionName)}TestType,\n`;
+    // }
 
-    if (benchContract !== "") {
-      benchContracts[capitalize(func.functionName)] = benchContract;
-    }
+    // if (benchContract !== "") {
+    //   benchContracts[capitalize(func.functionName)] = benchContract;
+    // }
     // this generates solidity header functions for all the different possible types
     solidityHeaders = solidityHeaders.concat(genSolidityFunctionHeaders(func));
   }
@@ -589,21 +589,21 @@ const main = async () => {
   });
 
   await fs.promises.writeFile("AsyncFHE.sol", outputFile);
-  for (const testContract of Object.entries(testContracts)) {
-    fs.writeFileSync(
-      `../solidity/tests/contracts/${testContract[0]}.sol`,
-      testContract[1]
-    );
-  }
+  // for (const testContract of Object.entries(testContracts)) {
+  //   fs.writeFileSync(
+  //     `../solidity/tests/contracts/${testContract[0]}.sol`,
+  //     testContract[1]
+  //   );
+  // }
 
-  for (const benchContract of Object.entries(benchContracts)) {
-    fs.writeFileSync(
-      `../solidity/tests/contracts/bench/${benchContract[0]}.sol`,
-      benchContract[1]
-    );
-  }
+  // for (const benchContract of Object.entries(benchContracts)) {
+  //   fs.writeFileSync(
+  //     `../solidity/tests/contracts/bench/${benchContract[0]}.sol`,
+  //     benchContract[1]
+  //   );
+  // }
 
-  fs.writeFileSync("../solidity/tests/abis.ts", genAbiFile(testContractsAbis));
+  // fs.writeFileSync("../solidity/tests/abis.ts", genAbiFile(testContractsAbis));
   console.log(importLineHelper);
 };
 

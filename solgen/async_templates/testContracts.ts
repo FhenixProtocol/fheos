@@ -730,53 +730,53 @@ export function testContract2Arg(
             return FHE.decrypt(FHE.${name}(FHE.asEuint256(a), FHE.asEuint256(b))); 
         }`;
   }
-  func += ` else if (Utils.cmp(test, "euint8.${name}(euint8)")) {
-            return FHE.decrypt(FHE.asEuint8(a).${name}(FHE.asEuint8(b)));
-        } else if (Utils.cmp(test, "euint16.${name}(euint16)")) {
-            return FHE.decrypt(FHE.asEuint16(a).${name}(FHE.asEuint16(b)));
-        } else if (Utils.cmp(test, "euint32.${name}(euint32)")) {
-            return FHE.decrypt(FHE.asEuint32(a).${name}(FHE.asEuint32(b)));
-        }`;
+  // func += ` else if (Utils.cmp(test, "euint8.${name}(euint8)")) {
+  //           return FHE.decrypt(FHE.asEuint8(a).${name}(FHE.asEuint8(b)));
+  //       } else if (Utils.cmp(test, "euint16.${name}(euint16)")) {
+  //           return FHE.decrypt(FHE.asEuint16(a).${name}(FHE.asEuint16(b)));
+  //       } else if (Utils.cmp(test, "euint32.${name}(euint32)")) {
+  //           return FHE.decrypt(FHE.asEuint32(a).${name}(FHE.asEuint32(b)));
+  //       }`;
 
-  if (isEuint64Allowed) {
-    func += ` else if (Utils.cmp(test, "euint64.${name}(euint64)")) {
-            return FHE.decrypt(FHE.asEuint64(a).${name}(FHE.asEuint64(b)));
-        }`;
-  }
-  if (isEuint128Allowed) {
-    func += ` else if (Utils.cmp(test, "euint128.${name}(euint128)")) {
-            return FHE.decrypt(FHE.asEuint128(a).${name}(FHE.asEuint128(b)));
-        }`;
-  }
-  if (isEuint256Allowed) {
-    func += ` else if (Utils.cmp(test, "euint256.${name}(euint256)")) {
-            return FHE.decrypt(FHE.asEuint256(a).${name}(FHE.asEuint256(b)));
-        }`;
-  }
-  if (op) {
-    func += ` else if (Utils.cmp(test, "euint8 ${op} euint8")) {
-            return FHE.decrypt(FHE.asEuint8(a) ${op} FHE.asEuint8(b));
-        } else if (Utils.cmp(test, "euint16 ${op} euint16")) {
-            return FHE.decrypt(FHE.asEuint16(a) ${op} FHE.asEuint16(b));
-        } else if (Utils.cmp(test, "euint32 ${op} euint32")) {
-            return FHE.decrypt(FHE.asEuint32(a) ${op} FHE.asEuint32(b));
-        }`;
-    if (isEuint64Allowed) {
-      func += ` else if (Utils.cmp(test, "euint64 ${op} euint64")) {
-            return FHE.decrypt(FHE.asEuint64(a) ${op} FHE.asEuint64(b));
-        }`;
-    }
-    if (isEuint128Allowed) {
-      func += ` else if (Utils.cmp(test, "euint128 ${op} euint128")) {
-            return FHE.decrypt(FHE.asEuint128(a) ${op} FHE.asEuint128(b));
-        }`;
-    }
-    if (isEuint256Allowed) {
-      func += ` else if (Utils.cmp(test, "euint256 ${op} euint256")) {
-            return FHE.decrypt(FHE.asEuint256(a) ${op} FHE.asEuint256(b));
-        }`;
-    }
-  }
+  // if (isEuint64Allowed) {
+  //   func += ` else if (Utils.cmp(test, "euint64.${name}(euint64)")) {
+  //           return FHE.decrypt(FHE.asEuint64(a).${name}(FHE.asEuint64(b))); 
+  //       }`;
+  // }
+  // if (isEuint128Allowed) {
+  //   func += ` else if (Utils.cmp(test, "euint128.${name}(euint128)")) {
+  //           return FHE.decrypt(FHE.asEuint128(a).${name}(FHE.asEuint128(b)));
+  //       }`;
+  // }
+  // if (isEuint256Allowed) {
+  //   func += ` else if (Utils.cmp(test, "euint256.${name}(euint256)")) {
+  //           return FHE.decrypt(FHE.asEuint256(a).${name}(FHE.asEuint256(b)));
+  //       }`;
+  // }
+  // if (op) {
+  //   func += ` else if (Utils.cmp(test, "euint8 ${op} euint8")) {
+  //           return FHE.decrypt(FHE.asEuint8(a) ${op} FHE.asEuint8(b));
+  //       } else if (Utils.cmp(test, "euint16 ${op} euint16")) {
+  //           return FHE.decrypt(FHE.asEuint16(a) ${op} FHE.asEuint16(b));
+  //       } else if (Utils.cmp(test, "euint32 ${op} euint32")) {
+  //           return FHE.decrypt(FHE.asEuint32(a) ${op} FHE.asEuint32(b));
+  //       }`;
+  //   if (isEuint64Allowed) {
+  //     func += ` else if (Utils.cmp(test, "euint64 ${op} euint64")) {
+  //           return FHE.decrypt(FHE.asEuint64(a) ${op} FHE.asEuint64(b));
+  //       }`;
+  //   }
+  //   if (isEuint128Allowed) {
+  //     func += ` else if (Utils.cmp(test, "euint128 ${op} euint128")) {
+  //           return FHE.decrypt(FHE.asEuint128(a) ${op} FHE.asEuint128(b));
+  //       }`;
+  //   }
+  //   if (isEuint256Allowed) {
+  //     func += ` else if (Utils.cmp(test, "euint256 ${op} euint256")) {
+  //           return FHE.decrypt(FHE.asEuint256(a) ${op} FHE.asEuint256(b));
+  //       }`;
+  //   }
+  // }
   if (isBoolean) {
     func += ` else if (Utils.cmp(test, "${name}(ebool,ebool)")) {
             bool aBool = true;

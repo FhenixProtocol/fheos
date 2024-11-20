@@ -70,10 +70,8 @@ struct ${struct} {
 }`;
 }).join("\n")}
 
-library TaskManager {
-	//solhint-disable const-name-snakecase
-	address public constant TASK_MANAGER_ADDRESS = address(129);
-}
+//solhint-disable const-name-snakecase
+address constant TASK_MANAGER_ADDRESS = address(129);
 
 library Common {
     // Values used to communicate types to the runtime.
@@ -654,13 +652,13 @@ export function SolTemplate2Arg(
       if (valueIsEncrypted(returnType)) {
         funcBody += `
         ${UnderlyingTypes[returnType]} result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.${name});
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "${name}", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "${name}", unwrappedInput1, unwrappedInput2);
         return ${wrapType(returnType, "result")};`;
       } else {
         // TODO : What's the use case for this? still not removing till I figure this out completely
         funcBody += `
         ${returnType} result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.${name});
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "${name}", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "${name}", unwrappedInput1, unwrappedInput2);
         return result;
         }`;
       }
@@ -671,7 +669,7 @@ export function SolTemplate2Arg(
             ${variableName1} = ${asEuintFuncName(input1)}(0);
         }
         ${UnderlyingTypes[input1]} unwrapped = ${unwrapType(input1,variableName1)};
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createSealOutputTask(unwrapped, publicKey);
+        ITaskManager(TASK_MANAGER_ADDRESS).createSealOutputTask(unwrapped, publicKey);
         return "";`;
     } else if (name === SEALING_TYPED_FUNCTION_NAME) {
       const returnTypeClean = returnType.replace(" memory", "");
@@ -736,7 +734,7 @@ export function SolTemplateDecrypt(input1: AllTypes, returnType: AllTypes) {
           input1,
           "input1"
         )};
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createDecryptTask(unwrappedInput1);
+        ITaskManager(TASK_MANAGER_ADDRESS).createDecryptTask(unwrappedInput1);
         return input1;
     }`;
   } else {
@@ -778,7 +776,7 @@ export function SolTemplate1Arg(
         "input1"
       )};
       uint256 ctHash = calcUnaryPlaceholderValueHash(unwrappedInput1, FunctionId.${name});
-      ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(ctHash, "${name}", unwrappedInput1, 0);
+      ITaskManager(TASK_MANAGER_ADDRESS).createTask(ctHash, "${name}", unwrappedInput1, 0);
       return ${wrapType(returnType, "ctHash")};
     }`;
   } else {

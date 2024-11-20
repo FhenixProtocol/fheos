@@ -78,10 +78,8 @@ struct SealedAddress {
     uint8 utype;
 }
 
-library TaskManager {
-	//solhint-disable const-name-snakecase
-	address public constant TASK_MANAGER_ADDRESS = address(129);
-}
+//solhint-disable const-name-snakecase
+address constant TASK_MANAGER_ADDRESS = address(129);
 
 library Common {
     // Values used to communicate types to the runtime.
@@ -438,7 +436,7 @@ library FHE {
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.add);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "add", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "add", unwrappedInput1, unwrappedInput2);
         return euint8.wrap(result);
     }
     /// @notice This function performs the add async operation
@@ -457,7 +455,7 @@ library FHE {
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.add);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "add", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "add", unwrappedInput1, unwrappedInput2);
         return euint16.wrap(result);
     }
     /// @notice This function performs the add async operation
@@ -476,7 +474,7 @@ library FHE {
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.add);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "add", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "add", unwrappedInput1, unwrappedInput2);
         return euint32.wrap(result);
     }
     /// @notice This function performs the add async operation
@@ -495,7 +493,7 @@ library FHE {
         uint256 unwrappedInput2 = euint64.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.add);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "add", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "add", unwrappedInput1, unwrappedInput2);
         return euint64.wrap(result);
     }
     /// @notice This function performs the add async operation
@@ -514,7 +512,7 @@ library FHE {
         uint256 unwrappedInput2 = euint128.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.add);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "add", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "add", unwrappedInput1, unwrappedInput2);
         return euint128.wrap(result);
     }
     /// @notice performs the sealoutput async function on a ebool ciphertext. This operation returns the plaintext value, sealed for the public key provided 
@@ -526,7 +524,7 @@ library FHE {
             value = asEbool(0);
         }
         uint256 unwrapped = ebool.unwrap(value);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createSealOutputTask(unwrapped, publicKey);
+        ITaskManager(TASK_MANAGER_ADDRESS).createSealOutputTask(unwrapped, publicKey);
         return "";
     }
     /// @notice performs the sealoutput async function on a euint8 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
@@ -538,7 +536,7 @@ library FHE {
             value = asEuint8(0);
         }
         uint256 unwrapped = euint8.unwrap(value);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createSealOutputTask(unwrapped, publicKey);
+        ITaskManager(TASK_MANAGER_ADDRESS).createSealOutputTask(unwrapped, publicKey);
         return "";
     }
     /// @notice performs the sealoutput async function on a euint16 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
@@ -550,7 +548,7 @@ library FHE {
             value = asEuint16(0);
         }
         uint256 unwrapped = euint16.unwrap(value);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createSealOutputTask(unwrapped, publicKey);
+        ITaskManager(TASK_MANAGER_ADDRESS).createSealOutputTask(unwrapped, publicKey);
         return "";
     }
     /// @notice performs the sealoutput async function on a euint32 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
@@ -562,7 +560,7 @@ library FHE {
             value = asEuint32(0);
         }
         uint256 unwrapped = euint32.unwrap(value);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createSealOutputTask(unwrapped, publicKey);
+        ITaskManager(TASK_MANAGER_ADDRESS).createSealOutputTask(unwrapped, publicKey);
         return "";
     }
     /// @notice performs the sealoutput async function on a euint64 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
@@ -574,7 +572,7 @@ library FHE {
             value = asEuint64(0);
         }
         uint256 unwrapped = euint64.unwrap(value);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createSealOutputTask(unwrapped, publicKey);
+        ITaskManager(TASK_MANAGER_ADDRESS).createSealOutputTask(unwrapped, publicKey);
         return "";
     }
     /// @notice performs the sealoutput async function on a euint128 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
@@ -586,7 +584,7 @@ library FHE {
             value = asEuint128(0);
         }
         uint256 unwrapped = euint128.unwrap(value);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createSealOutputTask(unwrapped, publicKey);
+        ITaskManager(TASK_MANAGER_ADDRESS).createSealOutputTask(unwrapped, publicKey);
         return "";
     }
     /// @notice performs the sealoutput async function on a euint256 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
@@ -598,7 +596,7 @@ library FHE {
             value = asEuint256(0);
         }
         uint256 unwrapped = euint256.unwrap(value);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createSealOutputTask(unwrapped, publicKey);
+        ITaskManager(TASK_MANAGER_ADDRESS).createSealOutputTask(unwrapped, publicKey);
         return "";
     }
     /// @notice performs the sealoutput async function on a eaddress ciphertext. This operation returns the plaintext value, sealed for the public key provided 
@@ -610,7 +608,7 @@ library FHE {
             value = asEaddress(0);
         }
         uint256 unwrapped = eaddress.unwrap(value);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createSealOutputTask(unwrapped, publicKey);
+        ITaskManager(TASK_MANAGER_ADDRESS).createSealOutputTask(unwrapped, publicKey);
         return "";
     }
     /// @notice performs the sealoutputTyped async function on a ebool ciphertext. This operation returns the plaintext value, sealed for the public key provided 
@@ -678,7 +676,7 @@ library FHE {
             input1 = asEbool(0);
         }
         uint256 unwrappedInput1 = ebool.unwrap(input1);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createDecryptTask(unwrappedInput1);
+        ITaskManager(TASK_MANAGER_ADDRESS).createDecryptTask(unwrappedInput1);
         return input1;
     }
     /// @notice Performs the async decrypt operation on a ciphertext
@@ -690,7 +688,7 @@ library FHE {
             input1 = asEuint8(0);
         }
         uint256 unwrappedInput1 = euint8.unwrap(input1);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createDecryptTask(unwrappedInput1);
+        ITaskManager(TASK_MANAGER_ADDRESS).createDecryptTask(unwrappedInput1);
         return input1;
     }
     /// @notice Performs the async decrypt operation on a ciphertext
@@ -702,7 +700,7 @@ library FHE {
             input1 = asEuint16(0);
         }
         uint256 unwrappedInput1 = euint16.unwrap(input1);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createDecryptTask(unwrappedInput1);
+        ITaskManager(TASK_MANAGER_ADDRESS).createDecryptTask(unwrappedInput1);
         return input1;
     }
     /// @notice Performs the async decrypt operation on a ciphertext
@@ -714,7 +712,7 @@ library FHE {
             input1 = asEuint32(0);
         }
         uint256 unwrappedInput1 = euint32.unwrap(input1);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createDecryptTask(unwrappedInput1);
+        ITaskManager(TASK_MANAGER_ADDRESS).createDecryptTask(unwrappedInput1);
         return input1;
     }
     /// @notice Performs the async decrypt operation on a ciphertext
@@ -726,7 +724,7 @@ library FHE {
             input1 = asEuint64(0);
         }
         uint256 unwrappedInput1 = euint64.unwrap(input1);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createDecryptTask(unwrappedInput1);
+        ITaskManager(TASK_MANAGER_ADDRESS).createDecryptTask(unwrappedInput1);
         return input1;
     }
     /// @notice Performs the async decrypt operation on a ciphertext
@@ -738,7 +736,7 @@ library FHE {
             input1 = asEuint128(0);
         }
         uint256 unwrappedInput1 = euint128.unwrap(input1);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createDecryptTask(unwrappedInput1);
+        ITaskManager(TASK_MANAGER_ADDRESS).createDecryptTask(unwrappedInput1);
         return input1;
     }
     /// @notice Performs the async decrypt operation on a ciphertext
@@ -750,7 +748,7 @@ library FHE {
             input1 = asEuint256(0);
         }
         uint256 unwrappedInput1 = euint256.unwrap(input1);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createDecryptTask(unwrappedInput1);
+        ITaskManager(TASK_MANAGER_ADDRESS).createDecryptTask(unwrappedInput1);
         return input1;
     }
     /// @notice Performs the async decrypt operation on a ciphertext
@@ -762,7 +760,7 @@ library FHE {
             input1 = asEaddress(0);
         }
         uint256 unwrappedInput1 = eaddress.unwrap(input1);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createDecryptTask(unwrappedInput1);
+        ITaskManager(TASK_MANAGER_ADDRESS).createDecryptTask(unwrappedInput1);
         return input1;
     }
     /// @notice This function performs the lte async operation
@@ -781,7 +779,7 @@ library FHE {
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.lte);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "lte", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "lte", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the lte async operation
@@ -800,7 +798,7 @@ library FHE {
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.lte);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "lte", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "lte", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the lte async operation
@@ -819,7 +817,7 @@ library FHE {
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.lte);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "lte", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "lte", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the lte async operation
@@ -838,7 +836,7 @@ library FHE {
         uint256 unwrappedInput2 = euint64.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.lte);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "lte", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "lte", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the lte async operation
@@ -857,7 +855,7 @@ library FHE {
         uint256 unwrappedInput2 = euint128.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.lte);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "lte", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "lte", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the sub async operation
@@ -876,7 +874,7 @@ library FHE {
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.sub);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "sub", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "sub", unwrappedInput1, unwrappedInput2);
         return euint8.wrap(result);
     }
     /// @notice This function performs the sub async operation
@@ -895,7 +893,7 @@ library FHE {
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.sub);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "sub", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "sub", unwrappedInput1, unwrappedInput2);
         return euint16.wrap(result);
     }
     /// @notice This function performs the sub async operation
@@ -914,7 +912,7 @@ library FHE {
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.sub);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "sub", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "sub", unwrappedInput1, unwrappedInput2);
         return euint32.wrap(result);
     }
     /// @notice This function performs the sub async operation
@@ -933,7 +931,7 @@ library FHE {
         uint256 unwrappedInput2 = euint64.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.sub);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "sub", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "sub", unwrappedInput1, unwrappedInput2);
         return euint64.wrap(result);
     }
     /// @notice This function performs the sub async operation
@@ -952,7 +950,7 @@ library FHE {
         uint256 unwrappedInput2 = euint128.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.sub);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "sub", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "sub", unwrappedInput1, unwrappedInput2);
         return euint128.wrap(result);
     }
     /// @notice This function performs the mul async operation
@@ -971,7 +969,7 @@ library FHE {
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.mul);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "mul", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "mul", unwrappedInput1, unwrappedInput2);
         return euint8.wrap(result);
     }
     /// @notice This function performs the mul async operation
@@ -990,7 +988,7 @@ library FHE {
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.mul);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "mul", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "mul", unwrappedInput1, unwrappedInput2);
         return euint16.wrap(result);
     }
     /// @notice This function performs the mul async operation
@@ -1009,7 +1007,7 @@ library FHE {
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.mul);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "mul", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "mul", unwrappedInput1, unwrappedInput2);
         return euint32.wrap(result);
     }
     /// @notice This function performs the mul async operation
@@ -1028,7 +1026,7 @@ library FHE {
         uint256 unwrappedInput2 = euint64.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.mul);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "mul", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "mul", unwrappedInput1, unwrappedInput2);
         return euint64.wrap(result);
     }
     /// @notice This function performs the lt async operation
@@ -1047,7 +1045,7 @@ library FHE {
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.lt);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "lt", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "lt", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the lt async operation
@@ -1066,7 +1064,7 @@ library FHE {
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.lt);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "lt", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "lt", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the lt async operation
@@ -1085,7 +1083,7 @@ library FHE {
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.lt);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "lt", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "lt", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the lt async operation
@@ -1104,7 +1102,7 @@ library FHE {
         uint256 unwrappedInput2 = euint64.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.lt);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "lt", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "lt", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the lt async operation
@@ -1123,7 +1121,7 @@ library FHE {
         uint256 unwrappedInput2 = euint128.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.lt);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "lt", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "lt", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
 
@@ -1336,7 +1334,7 @@ library FHE {
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.div);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "div", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "div", unwrappedInput1, unwrappedInput2);
         return euint8.wrap(result);
     }
     /// @notice This function performs the div async operation
@@ -1355,7 +1353,7 @@ library FHE {
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.div);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "div", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "div", unwrappedInput1, unwrappedInput2);
         return euint16.wrap(result);
     }
     /// @notice This function performs the div async operation
@@ -1374,7 +1372,7 @@ library FHE {
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.div);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "div", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "div", unwrappedInput1, unwrappedInput2);
         return euint32.wrap(result);
     }
     /// @notice This function performs the gt async operation
@@ -1393,7 +1391,7 @@ library FHE {
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.gt);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "gt", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "gt", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the gt async operation
@@ -1412,7 +1410,7 @@ library FHE {
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.gt);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "gt", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "gt", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the gt async operation
@@ -1431,7 +1429,7 @@ library FHE {
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.gt);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "gt", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "gt", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the gt async operation
@@ -1450,7 +1448,7 @@ library FHE {
         uint256 unwrappedInput2 = euint64.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.gt);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "gt", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "gt", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the gt async operation
@@ -1469,7 +1467,7 @@ library FHE {
         uint256 unwrappedInput2 = euint128.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.gt);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "gt", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "gt", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the gte async operation
@@ -1488,7 +1486,7 @@ library FHE {
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.gte);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "gte", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "gte", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the gte async operation
@@ -1507,7 +1505,7 @@ library FHE {
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.gte);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "gte", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "gte", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the gte async operation
@@ -1526,7 +1524,7 @@ library FHE {
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.gte);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "gte", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "gte", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the gte async operation
@@ -1545,7 +1543,7 @@ library FHE {
         uint256 unwrappedInput2 = euint64.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.gte);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "gte", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "gte", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the gte async operation
@@ -1564,7 +1562,7 @@ library FHE {
         uint256 unwrappedInput2 = euint128.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.gte);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "gte", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "gte", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the rem async operation
@@ -1583,7 +1581,7 @@ library FHE {
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.rem);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "rem", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "rem", unwrappedInput1, unwrappedInput2);
         return euint8.wrap(result);
     }
     /// @notice This function performs the rem async operation
@@ -1602,7 +1600,7 @@ library FHE {
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.rem);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "rem", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "rem", unwrappedInput1, unwrappedInput2);
         return euint16.wrap(result);
     }
     /// @notice This function performs the rem async operation
@@ -1621,7 +1619,7 @@ library FHE {
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.rem);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "rem", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "rem", unwrappedInput1, unwrappedInput2);
         return euint32.wrap(result);
     }
     /// @notice This function performs the and async operation
@@ -1640,7 +1638,7 @@ library FHE {
         uint256 unwrappedInput2 = ebool.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.and);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "and", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "and", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the and async operation
@@ -1659,7 +1657,7 @@ library FHE {
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.and);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "and", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "and", unwrappedInput1, unwrappedInput2);
         return euint8.wrap(result);
     }
     /// @notice This function performs the and async operation
@@ -1678,7 +1676,7 @@ library FHE {
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.and);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "and", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "and", unwrappedInput1, unwrappedInput2);
         return euint16.wrap(result);
     }
     /// @notice This function performs the and async operation
@@ -1697,7 +1695,7 @@ library FHE {
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.and);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "and", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "and", unwrappedInput1, unwrappedInput2);
         return euint32.wrap(result);
     }
     /// @notice This function performs the and async operation
@@ -1716,7 +1714,7 @@ library FHE {
         uint256 unwrappedInput2 = euint64.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.and);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "and", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "and", unwrappedInput1, unwrappedInput2);
         return euint64.wrap(result);
     }
     /// @notice This function performs the and async operation
@@ -1735,7 +1733,7 @@ library FHE {
         uint256 unwrappedInput2 = euint128.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.and);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "and", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "and", unwrappedInput1, unwrappedInput2);
         return euint128.wrap(result);
     }
     /// @notice This function performs the or async operation
@@ -1754,7 +1752,7 @@ library FHE {
         uint256 unwrappedInput2 = ebool.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.or);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "or", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "or", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the or async operation
@@ -1773,7 +1771,7 @@ library FHE {
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.or);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "or", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "or", unwrappedInput1, unwrappedInput2);
         return euint8.wrap(result);
     }
     /// @notice This function performs the or async operation
@@ -1792,7 +1790,7 @@ library FHE {
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.or);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "or", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "or", unwrappedInput1, unwrappedInput2);
         return euint16.wrap(result);
     }
     /// @notice This function performs the or async operation
@@ -1811,7 +1809,7 @@ library FHE {
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.or);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "or", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "or", unwrappedInput1, unwrappedInput2);
         return euint32.wrap(result);
     }
     /// @notice This function performs the or async operation
@@ -1830,7 +1828,7 @@ library FHE {
         uint256 unwrappedInput2 = euint64.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.or);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "or", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "or", unwrappedInput1, unwrappedInput2);
         return euint64.wrap(result);
     }
     /// @notice This function performs the or async operation
@@ -1849,7 +1847,7 @@ library FHE {
         uint256 unwrappedInput2 = euint128.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.or);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "or", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "or", unwrappedInput1, unwrappedInput2);
         return euint128.wrap(result);
     }
     /// @notice This function performs the xor async operation
@@ -1868,7 +1866,7 @@ library FHE {
         uint256 unwrappedInput2 = ebool.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.xor);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "xor", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "xor", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the xor async operation
@@ -1887,7 +1885,7 @@ library FHE {
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.xor);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "xor", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "xor", unwrappedInput1, unwrappedInput2);
         return euint8.wrap(result);
     }
     /// @notice This function performs the xor async operation
@@ -1906,7 +1904,7 @@ library FHE {
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.xor);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "xor", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "xor", unwrappedInput1, unwrappedInput2);
         return euint16.wrap(result);
     }
     /// @notice This function performs the xor async operation
@@ -1925,7 +1923,7 @@ library FHE {
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.xor);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "xor", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "xor", unwrappedInput1, unwrappedInput2);
         return euint32.wrap(result);
     }
     /// @notice This function performs the xor async operation
@@ -1944,7 +1942,7 @@ library FHE {
         uint256 unwrappedInput2 = euint64.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.xor);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "xor", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "xor", unwrappedInput1, unwrappedInput2);
         return euint64.wrap(result);
     }
     /// @notice This function performs the xor async operation
@@ -1963,7 +1961,7 @@ library FHE {
         uint256 unwrappedInput2 = euint128.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.xor);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "xor", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "xor", unwrappedInput1, unwrappedInput2);
         return euint128.wrap(result);
     }
     /// @notice This function performs the eq async operation
@@ -1982,7 +1980,7 @@ library FHE {
         uint256 unwrappedInput2 = ebool.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.eq);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "eq", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "eq", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the eq async operation
@@ -2001,7 +1999,7 @@ library FHE {
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.eq);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "eq", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "eq", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the eq async operation
@@ -2020,7 +2018,7 @@ library FHE {
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.eq);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "eq", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "eq", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the eq async operation
@@ -2039,7 +2037,7 @@ library FHE {
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.eq);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "eq", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "eq", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the eq async operation
@@ -2058,7 +2056,7 @@ library FHE {
         uint256 unwrappedInput2 = euint64.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.eq);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "eq", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "eq", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the eq async operation
@@ -2077,7 +2075,7 @@ library FHE {
         uint256 unwrappedInput2 = euint128.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.eq);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "eq", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "eq", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the eq async operation
@@ -2096,7 +2094,7 @@ library FHE {
         uint256 unwrappedInput2 = euint256.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.eq);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "eq", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "eq", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the eq async operation
@@ -2115,7 +2113,7 @@ library FHE {
         uint256 unwrappedInput2 = eaddress.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.eq);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "eq", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "eq", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the ne async operation
@@ -2134,7 +2132,7 @@ library FHE {
         uint256 unwrappedInput2 = ebool.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.ne);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "ne", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "ne", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the ne async operation
@@ -2153,7 +2151,7 @@ library FHE {
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.ne);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "ne", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "ne", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the ne async operation
@@ -2172,7 +2170,7 @@ library FHE {
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.ne);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "ne", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "ne", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the ne async operation
@@ -2191,7 +2189,7 @@ library FHE {
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.ne);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "ne", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "ne", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the ne async operation
@@ -2210,7 +2208,7 @@ library FHE {
         uint256 unwrappedInput2 = euint64.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.ne);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "ne", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "ne", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the ne async operation
@@ -2229,7 +2227,7 @@ library FHE {
         uint256 unwrappedInput2 = euint128.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.ne);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "ne", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "ne", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the ne async operation
@@ -2248,7 +2246,7 @@ library FHE {
         uint256 unwrappedInput2 = euint256.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.ne);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "ne", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "ne", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the ne async operation
@@ -2267,7 +2265,7 @@ library FHE {
         uint256 unwrappedInput2 = eaddress.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.ne);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "ne", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "ne", unwrappedInput1, unwrappedInput2);
         return ebool.wrap(result);
     }
     /// @notice This function performs the min async operation
@@ -2286,7 +2284,7 @@ library FHE {
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.min);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "min", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "min", unwrappedInput1, unwrappedInput2);
         return euint8.wrap(result);
     }
     /// @notice This function performs the min async operation
@@ -2305,7 +2303,7 @@ library FHE {
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.min);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "min", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "min", unwrappedInput1, unwrappedInput2);
         return euint16.wrap(result);
     }
     /// @notice This function performs the min async operation
@@ -2324,7 +2322,7 @@ library FHE {
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.min);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "min", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "min", unwrappedInput1, unwrappedInput2);
         return euint32.wrap(result);
     }
     /// @notice This function performs the min async operation
@@ -2343,7 +2341,7 @@ library FHE {
         uint256 unwrappedInput2 = euint64.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.min);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "min", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "min", unwrappedInput1, unwrappedInput2);
         return euint64.wrap(result);
     }
     /// @notice This function performs the min async operation
@@ -2362,7 +2360,7 @@ library FHE {
         uint256 unwrappedInput2 = euint128.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.min);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "min", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "min", unwrappedInput1, unwrappedInput2);
         return euint128.wrap(result);
     }
     /// @notice This function performs the max async operation
@@ -2381,7 +2379,7 @@ library FHE {
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.max);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "max", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "max", unwrappedInput1, unwrappedInput2);
         return euint8.wrap(result);
     }
     /// @notice This function performs the max async operation
@@ -2400,7 +2398,7 @@ library FHE {
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.max);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "max", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "max", unwrappedInput1, unwrappedInput2);
         return euint16.wrap(result);
     }
     /// @notice This function performs the max async operation
@@ -2419,7 +2417,7 @@ library FHE {
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.max);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "max", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "max", unwrappedInput1, unwrappedInput2);
         return euint32.wrap(result);
     }
     /// @notice This function performs the max async operation
@@ -2438,7 +2436,7 @@ library FHE {
         uint256 unwrappedInput2 = euint64.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.max);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "max", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "max", unwrappedInput1, unwrappedInput2);
         return euint64.wrap(result);
     }
     /// @notice This function performs the max async operation
@@ -2457,7 +2455,7 @@ library FHE {
         uint256 unwrappedInput2 = euint128.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.max);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "max", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "max", unwrappedInput1, unwrappedInput2);
         return euint128.wrap(result);
     }
     /// @notice This function performs the shl async operation
@@ -2476,7 +2474,7 @@ library FHE {
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.shl);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "shl", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "shl", unwrappedInput1, unwrappedInput2);
         return euint8.wrap(result);
     }
     /// @notice This function performs the shl async operation
@@ -2495,7 +2493,7 @@ library FHE {
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.shl);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "shl", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "shl", unwrappedInput1, unwrappedInput2);
         return euint16.wrap(result);
     }
     /// @notice This function performs the shl async operation
@@ -2514,7 +2512,7 @@ library FHE {
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.shl);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "shl", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "shl", unwrappedInput1, unwrappedInput2);
         return euint32.wrap(result);
     }
     /// @notice This function performs the shl async operation
@@ -2533,7 +2531,7 @@ library FHE {
         uint256 unwrappedInput2 = euint64.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.shl);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "shl", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "shl", unwrappedInput1, unwrappedInput2);
         return euint64.wrap(result);
     }
     /// @notice This function performs the shl async operation
@@ -2552,7 +2550,7 @@ library FHE {
         uint256 unwrappedInput2 = euint128.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.shl);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "shl", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "shl", unwrappedInput1, unwrappedInput2);
         return euint128.wrap(result);
     }
     /// @notice This function performs the shr async operation
@@ -2571,7 +2569,7 @@ library FHE {
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.shr);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "shr", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "shr", unwrappedInput1, unwrappedInput2);
         return euint8.wrap(result);
     }
     /// @notice This function performs the shr async operation
@@ -2590,7 +2588,7 @@ library FHE {
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.shr);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "shr", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "shr", unwrappedInput1, unwrappedInput2);
         return euint16.wrap(result);
     }
     /// @notice This function performs the shr async operation
@@ -2609,7 +2607,7 @@ library FHE {
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.shr);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "shr", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "shr", unwrappedInput1, unwrappedInput2);
         return euint32.wrap(result);
     }
     /// @notice This function performs the shr async operation
@@ -2628,7 +2626,7 @@ library FHE {
         uint256 unwrappedInput2 = euint64.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.shr);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "shr", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "shr", unwrappedInput1, unwrappedInput2);
         return euint64.wrap(result);
     }
     /// @notice This function performs the shr async operation
@@ -2647,7 +2645,7 @@ library FHE {
         uint256 unwrappedInput2 = euint128.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.shr);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "shr", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "shr", unwrappedInput1, unwrappedInput2);
         return euint128.wrap(result);
     }
     /// @notice This function performs the rol async operation
@@ -2666,7 +2664,7 @@ library FHE {
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.rol);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "rol", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "rol", unwrappedInput1, unwrappedInput2);
         return euint8.wrap(result);
     }
     /// @notice This function performs the rol async operation
@@ -2685,7 +2683,7 @@ library FHE {
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.rol);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "rol", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "rol", unwrappedInput1, unwrappedInput2);
         return euint16.wrap(result);
     }
     /// @notice This function performs the rol async operation
@@ -2704,7 +2702,7 @@ library FHE {
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.rol);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "rol", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "rol", unwrappedInput1, unwrappedInput2);
         return euint32.wrap(result);
     }
     /// @notice This function performs the rol async operation
@@ -2723,7 +2721,7 @@ library FHE {
         uint256 unwrappedInput2 = euint64.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.rol);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "rol", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "rol", unwrappedInput1, unwrappedInput2);
         return euint64.wrap(result);
     }
     /// @notice This function performs the rol async operation
@@ -2742,7 +2740,7 @@ library FHE {
         uint256 unwrappedInput2 = euint128.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.rol);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "rol", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "rol", unwrappedInput1, unwrappedInput2);
         return euint128.wrap(result);
     }
     /// @notice This function performs the ror async operation
@@ -2761,7 +2759,7 @@ library FHE {
         uint256 unwrappedInput2 = euint8.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.ror);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "ror", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "ror", unwrappedInput1, unwrappedInput2);
         return euint8.wrap(result);
     }
     /// @notice This function performs the ror async operation
@@ -2780,7 +2778,7 @@ library FHE {
         uint256 unwrappedInput2 = euint16.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.ror);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "ror", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "ror", unwrappedInput1, unwrappedInput2);
         return euint16.wrap(result);
     }
     /// @notice This function performs the ror async operation
@@ -2799,7 +2797,7 @@ library FHE {
         uint256 unwrappedInput2 = euint32.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.ror);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "ror", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "ror", unwrappedInput1, unwrappedInput2);
         return euint32.wrap(result);
     }
     /// @notice This function performs the ror async operation
@@ -2818,7 +2816,7 @@ library FHE {
         uint256 unwrappedInput2 = euint64.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.ror);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "ror", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "ror", unwrappedInput1, unwrappedInput2);
         return euint64.wrap(result);
     }
     /// @notice This function performs the ror async operation
@@ -2837,7 +2835,7 @@ library FHE {
         uint256 unwrappedInput2 = euint128.unwrap(rhs);
 
         uint256 result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.ror);
-        ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(result, "ror", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "ror", unwrappedInput1, unwrappedInput2);
         return euint128.wrap(result);
     }
     /// @notice Performs the not operation on a ciphertext
@@ -2849,7 +2847,7 @@ library FHE {
       }
       uint256 unwrappedInput1 = ebool.unwrap(input1);
       uint256 ctHash = calcUnaryPlaceholderValueHash(unwrappedInput1, FunctionId.not);
-      ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(ctHash, "not", unwrappedInput1, 0);
+      ITaskManager(TASK_MANAGER_ADDRESS).createTask(ctHash, "not", unwrappedInput1, 0);
       return ebool.wrap(ctHash);
     }
     /// @notice Performs the not operation on a ciphertext
@@ -2861,7 +2859,7 @@ library FHE {
       }
       uint256 unwrappedInput1 = euint8.unwrap(input1);
       uint256 ctHash = calcUnaryPlaceholderValueHash(unwrappedInput1, FunctionId.not);
-      ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(ctHash, "not", unwrappedInput1, 0);
+      ITaskManager(TASK_MANAGER_ADDRESS).createTask(ctHash, "not", unwrappedInput1, 0);
       return euint8.wrap(ctHash);
     }
     /// @notice Performs the not operation on a ciphertext
@@ -2873,7 +2871,7 @@ library FHE {
       }
       uint256 unwrappedInput1 = euint16.unwrap(input1);
       uint256 ctHash = calcUnaryPlaceholderValueHash(unwrappedInput1, FunctionId.not);
-      ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(ctHash, "not", unwrappedInput1, 0);
+      ITaskManager(TASK_MANAGER_ADDRESS).createTask(ctHash, "not", unwrappedInput1, 0);
       return euint16.wrap(ctHash);
     }
     /// @notice Performs the not operation on a ciphertext
@@ -2885,7 +2883,7 @@ library FHE {
       }
       uint256 unwrappedInput1 = euint32.unwrap(input1);
       uint256 ctHash = calcUnaryPlaceholderValueHash(unwrappedInput1, FunctionId.not);
-      ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(ctHash, "not", unwrappedInput1, 0);
+      ITaskManager(TASK_MANAGER_ADDRESS).createTask(ctHash, "not", unwrappedInput1, 0);
       return euint32.wrap(ctHash);
     }
     /// @notice Performs the not operation on a ciphertext
@@ -2897,7 +2895,7 @@ library FHE {
       }
       uint256 unwrappedInput1 = euint64.unwrap(input1);
       uint256 ctHash = calcUnaryPlaceholderValueHash(unwrappedInput1, FunctionId.not);
-      ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(ctHash, "not", unwrappedInput1, 0);
+      ITaskManager(TASK_MANAGER_ADDRESS).createTask(ctHash, "not", unwrappedInput1, 0);
       return euint64.wrap(ctHash);
     }
     /// @notice Performs the not operation on a ciphertext
@@ -2909,7 +2907,7 @@ library FHE {
       }
       uint256 unwrappedInput1 = euint128.unwrap(input1);
       uint256 ctHash = calcUnaryPlaceholderValueHash(unwrappedInput1, FunctionId.not);
-      ITaskManager(TaskManager.TASK_MANAGER_ADDRESS).createTask(ctHash, "not", unwrappedInput1, 0);
+      ITaskManager(TASK_MANAGER_ADDRESS).createTask(ctHash, "not", unwrappedInput1, 0);
       return euint128.wrap(ctHash);
     }
     /// @notice Generates a random value of a given type with the given seed, for the provided securityZone
