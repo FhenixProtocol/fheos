@@ -16,6 +16,17 @@ export interface SealoutputTypedTestType extends BaseContract {
     sealoutputTypedUint: (test: string, a: bigint, pubkey: Uint8Array) => Promise<{ data: string, utype: number }>;
     sealoutputTypedAddress: (test: string, a: string, pubkey: Uint8Array) => Promise<{ data: string, utype: number }>;
 }
+export interface SealoutputTestType extends BaseContract {
+    sealoutput: (test: string, a: bigint, pubkey: Uint8Array) => Promise<string>;
+}
+export interface SealoutputTypedTestType extends BaseContract {
+    sealoutputTypedBool: (test: string, a: boolean, pubkey: Uint8Array) => Promise<{ data: string, utype: number }>;
+    sealoutputTypedUint: (test: string, a: bigint, pubkey: Uint8Array) => Promise<{ data: string, utype: number }>;
+    sealoutputTypedAddress: (test: string, a: string, pubkey: Uint8Array) => Promise<{ data: string, utype: number }>;
+}
+export interface DecryptTestType extends BaseContract {
+    decrypt: (test: string) => Promise<{}>;
+}
 export interface DecryptTestType extends BaseContract {
     decrypt: (test: string) => Promise<{}>;
 }
@@ -33,6 +44,9 @@ export interface LtTestType extends BaseContract {
 }
 export interface SelectTestType extends BaseContract {
     select: (test: string, c: boolean, a: bigint, b: bigint) => Promise<bigint>;
+}
+export interface ReqTestType extends BaseContract {
+    req: (test: string, a: bigint) => Promise<{}>;
 }
 export interface ReqTestType extends BaseContract {
     req: (test: string, a: bigint) => Promise<{}>;

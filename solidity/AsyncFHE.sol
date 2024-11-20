@@ -2910,6 +2910,54 @@ library FHE {
       ITaskManager(TASK_MANAGER_ADDRESS).createTask(ctHash, "not", unwrappedInput1, 0);
       return euint128.wrap(ctHash);
     }
+    /// @notice Performs the square operation on a ciphertext
+    /// @dev Verifies that the input value matches a valid ciphertext.
+    /// @param input1 the input ciphertext
+    function square(euint8 input1) internal returns (euint8) {
+      if (!isInitialized(input1)) {
+          input1 = asEuint8(0);
+      }
+      uint256 unwrappedInput1 = euint8.unwrap(input1);
+      uint256 ctHash = calcUnaryPlaceholderValueHash(unwrappedInput1, FunctionId.square);
+      ITaskManager(TASK_MANAGER_ADDRESS).createTask(ctHash, "square", unwrappedInput1, 0);
+      return euint8.wrap(ctHash);
+    }
+    /// @notice Performs the square operation on a ciphertext
+    /// @dev Verifies that the input value matches a valid ciphertext.
+    /// @param input1 the input ciphertext
+    function square(euint16 input1) internal returns (euint16) {
+      if (!isInitialized(input1)) {
+          input1 = asEuint16(0);
+      }
+      uint256 unwrappedInput1 = euint16.unwrap(input1);
+      uint256 ctHash = calcUnaryPlaceholderValueHash(unwrappedInput1, FunctionId.square);
+      ITaskManager(TASK_MANAGER_ADDRESS).createTask(ctHash, "square", unwrappedInput1, 0);
+      return euint16.wrap(ctHash);
+    }
+    /// @notice Performs the square operation on a ciphertext
+    /// @dev Verifies that the input value matches a valid ciphertext.
+    /// @param input1 the input ciphertext
+    function square(euint32 input1) internal returns (euint32) {
+      if (!isInitialized(input1)) {
+          input1 = asEuint32(0);
+      }
+      uint256 unwrappedInput1 = euint32.unwrap(input1);
+      uint256 ctHash = calcUnaryPlaceholderValueHash(unwrappedInput1, FunctionId.square);
+      ITaskManager(TASK_MANAGER_ADDRESS).createTask(ctHash, "square", unwrappedInput1, 0);
+      return euint32.wrap(ctHash);
+    }
+    /// @notice Performs the square operation on a ciphertext
+    /// @dev Verifies that the input value matches a valid ciphertext.
+    /// @param input1 the input ciphertext
+    function square(euint64 input1) internal returns (euint64) {
+      if (!isInitialized(input1)) {
+          input1 = asEuint64(0);
+      }
+      uint256 unwrappedInput1 = euint64.unwrap(input1);
+      uint256 ctHash = calcUnaryPlaceholderValueHash(unwrappedInput1, FunctionId.square);
+      ITaskManager(TASK_MANAGER_ADDRESS).createTask(ctHash, "square", unwrappedInput1, 0);
+      return euint64.wrap(ctHash);
+    }
     /// @notice Generates a random value of a given type with the given seed, for the provided securityZone
     /// @dev Calls the desired precompile and returns the hash of the ciphertext
     /// @param uintType the type of the random value to generate
@@ -3699,6 +3747,14 @@ library BindingsEuint8 {
     function ror(euint8 lhs, euint8 rhs) internal returns (euint8) {
         return FHE.ror(lhs, rhs);
     }
+    
+    /// @notice Performs the square operation
+    /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @param lhs input of type euint8
+    /// @return the result of the square
+    function square(euint8 lhs) internal returns (euint8) {
+        return FHE.square(lhs);
+    }
     function toBool(euint8 value) internal returns (ebool) {
         return FHE.asEbool(value);
     }
@@ -3917,6 +3973,14 @@ library BindingsEuint16 {
 /// @return the result of the ror
     function ror(euint16 lhs, euint16 rhs) internal returns (euint16) {
         return FHE.ror(lhs, rhs);
+    }
+    
+    /// @notice Performs the square operation
+    /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @param lhs input of type euint16
+    /// @return the result of the square
+    function square(euint16 lhs) internal returns (euint16) {
+        return FHE.square(lhs);
     }
     function toBool(euint16 value) internal returns (ebool) {
         return FHE.asEbool(value);
@@ -4137,6 +4201,14 @@ library BindingsEuint32 {
     function ror(euint32 lhs, euint32 rhs) internal returns (euint32) {
         return FHE.ror(lhs, rhs);
     }
+    
+    /// @notice Performs the square operation
+    /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @param lhs input of type euint32
+    /// @return the result of the square
+    function square(euint32 lhs) internal returns (euint32) {
+        return FHE.square(lhs);
+    }
     function toBool(euint32 value) internal returns (ebool) {
         return FHE.asEbool(value);
     }
@@ -4337,6 +4409,14 @@ library BindingsEuint64 {
 /// @return the result of the ror
     function ror(euint64 lhs, euint64 rhs) internal returns (euint64) {
         return FHE.ror(lhs, rhs);
+    }
+    
+    /// @notice Performs the square operation
+    /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
+    /// @param lhs input of type euint64
+    /// @return the result of the square
+    function square(euint64 lhs) internal returns (euint64) {
+        return FHE.square(lhs);
     }
     function toBool(euint64 value) internal returns (ebool) {
         return FHE.asEbool(value);
