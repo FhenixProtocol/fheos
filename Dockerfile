@@ -64,6 +64,7 @@ COPY cmd fheos/cmd
 COPY precompiles fheos/precompiles
 COPY storage fheos/storage
 COPY hooks fheos/hooks
+COPY nitro-overrides/* ./
 RUN cd fheos/precompiles/ && pnpm install
 
 COPY gen.sh fheos/
