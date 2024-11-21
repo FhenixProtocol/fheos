@@ -65,6 +65,8 @@ COPY precompiles fheos/precompiles
 COPY storage fheos/storage
 COPY hooks fheos/hooks
 COPY nitro-overrides/* ./
+RUN ls nitro-overrides
+RUN md5sum ./precompiles/FheOps.go
 RUN cd fheos/precompiles/ && pnpm install
 
 COPY gen.sh fheos/
