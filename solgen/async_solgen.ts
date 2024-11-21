@@ -375,7 +375,7 @@ const generateSolidityFunction = (parsedFunction: ParsedFunction): string => {
 };
 
 const main = async () => {
-  console.log("Starting solgen!!!");
+  console.log("Starting async solgen!!!");
   debugger;
   let metadata = await generateMetadataPayload();
   let solidityHeaders: string[] = [];

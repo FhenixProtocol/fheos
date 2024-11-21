@@ -527,6 +527,25 @@ library FHE {
         ITaskManager(TASK_MANAGER_ADDRESS).createSealOutputTask(unwrapped, publicKey);
         return "";
     }
+    /// @notice performs the sealoutput async function on a ebool ciphertext. This operation returns the plaintext value, sealed for the public key provided 
+    /// @param value Ciphertext to decrypt and seal
+    /// @param publicKey Public Key that will receive the sealed plaintext
+    /// @return Plaintext input, sealed for the owner of `publicKey`
+    function sealoutput(ebool lhs, ebool rhs) internal returns (string memory) {
+        if (!isInitialized(lhs)) {
+            lhs = asEbool(0);
+        }
+        if (!isInitialized(rhs)) {
+            rhs = asEbool(0);
+        }
+        uint256 unwrappedInput1 = ebool.unwrap(lhs);
+        uint256 unwrappedInput2 = ebool.unwrap(rhs);
+
+        string memory result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.sealoutput);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "sealoutput", unwrappedInput1, unwrappedInput2);
+        return result;
+        }
+    }
     /// @notice performs the sealoutput async function on a euint8 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
     /// @param value Ciphertext to decrypt and seal
     /// @param publicKey Public Key that will receive the sealed plaintext
@@ -538,6 +557,25 @@ library FHE {
         uint256 unwrapped = euint8.unwrap(value);
         ITaskManager(TASK_MANAGER_ADDRESS).createSealOutputTask(unwrapped, publicKey);
         return "";
+    }
+    /// @notice performs the sealoutput async function on a euint8 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
+    /// @param value Ciphertext to decrypt and seal
+    /// @param publicKey Public Key that will receive the sealed plaintext
+    /// @return Plaintext input, sealed for the owner of `publicKey`
+    function sealoutput(euint8 lhs, euint8 rhs) internal returns (string memory) {
+        if (!isInitialized(lhs)) {
+            lhs = asEuint8(0);
+        }
+        if (!isInitialized(rhs)) {
+            rhs = asEuint8(0);
+        }
+        uint256 unwrappedInput1 = euint8.unwrap(lhs);
+        uint256 unwrappedInput2 = euint8.unwrap(rhs);
+
+        string memory result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.sealoutput);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "sealoutput", unwrappedInput1, unwrappedInput2);
+        return result;
+        }
     }
     /// @notice performs the sealoutput async function on a euint16 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
     /// @param value Ciphertext to decrypt and seal
@@ -551,6 +589,25 @@ library FHE {
         ITaskManager(TASK_MANAGER_ADDRESS).createSealOutputTask(unwrapped, publicKey);
         return "";
     }
+    /// @notice performs the sealoutput async function on a euint16 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
+    /// @param value Ciphertext to decrypt and seal
+    /// @param publicKey Public Key that will receive the sealed plaintext
+    /// @return Plaintext input, sealed for the owner of `publicKey`
+    function sealoutput(euint16 lhs, euint16 rhs) internal returns (string memory) {
+        if (!isInitialized(lhs)) {
+            lhs = asEuint16(0);
+        }
+        if (!isInitialized(rhs)) {
+            rhs = asEuint16(0);
+        }
+        uint256 unwrappedInput1 = euint16.unwrap(lhs);
+        uint256 unwrappedInput2 = euint16.unwrap(rhs);
+
+        string memory result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.sealoutput);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "sealoutput", unwrappedInput1, unwrappedInput2);
+        return result;
+        }
+    }
     /// @notice performs the sealoutput async function on a euint32 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
     /// @param value Ciphertext to decrypt and seal
     /// @param publicKey Public Key that will receive the sealed plaintext
@@ -562,6 +619,25 @@ library FHE {
         uint256 unwrapped = euint32.unwrap(value);
         ITaskManager(TASK_MANAGER_ADDRESS).createSealOutputTask(unwrapped, publicKey);
         return "";
+    }
+    /// @notice performs the sealoutput async function on a euint32 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
+    /// @param value Ciphertext to decrypt and seal
+    /// @param publicKey Public Key that will receive the sealed plaintext
+    /// @return Plaintext input, sealed for the owner of `publicKey`
+    function sealoutput(euint32 lhs, euint32 rhs) internal returns (string memory) {
+        if (!isInitialized(lhs)) {
+            lhs = asEuint32(0);
+        }
+        if (!isInitialized(rhs)) {
+            rhs = asEuint32(0);
+        }
+        uint256 unwrappedInput1 = euint32.unwrap(lhs);
+        uint256 unwrappedInput2 = euint32.unwrap(rhs);
+
+        string memory result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.sealoutput);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "sealoutput", unwrappedInput1, unwrappedInput2);
+        return result;
+        }
     }
     /// @notice performs the sealoutput async function on a euint64 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
     /// @param value Ciphertext to decrypt and seal
@@ -575,6 +651,25 @@ library FHE {
         ITaskManager(TASK_MANAGER_ADDRESS).createSealOutputTask(unwrapped, publicKey);
         return "";
     }
+    /// @notice performs the sealoutput async function on a euint64 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
+    /// @param value Ciphertext to decrypt and seal
+    /// @param publicKey Public Key that will receive the sealed plaintext
+    /// @return Plaintext input, sealed for the owner of `publicKey`
+    function sealoutput(euint64 lhs, euint64 rhs) internal returns (string memory) {
+        if (!isInitialized(lhs)) {
+            lhs = asEuint64(0);
+        }
+        if (!isInitialized(rhs)) {
+            rhs = asEuint64(0);
+        }
+        uint256 unwrappedInput1 = euint64.unwrap(lhs);
+        uint256 unwrappedInput2 = euint64.unwrap(rhs);
+
+        string memory result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.sealoutput);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "sealoutput", unwrappedInput1, unwrappedInput2);
+        return result;
+        }
+    }
     /// @notice performs the sealoutput async function on a euint128 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
     /// @param value Ciphertext to decrypt and seal
     /// @param publicKey Public Key that will receive the sealed plaintext
@@ -586,6 +681,25 @@ library FHE {
         uint256 unwrapped = euint128.unwrap(value);
         ITaskManager(TASK_MANAGER_ADDRESS).createSealOutputTask(unwrapped, publicKey);
         return "";
+    }
+    /// @notice performs the sealoutput async function on a euint128 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
+    /// @param value Ciphertext to decrypt and seal
+    /// @param publicKey Public Key that will receive the sealed plaintext
+    /// @return Plaintext input, sealed for the owner of `publicKey`
+    function sealoutput(euint128 lhs, euint128 rhs) internal returns (string memory) {
+        if (!isInitialized(lhs)) {
+            lhs = asEuint128(0);
+        }
+        if (!isInitialized(rhs)) {
+            rhs = asEuint128(0);
+        }
+        uint256 unwrappedInput1 = euint128.unwrap(lhs);
+        uint256 unwrappedInput2 = euint128.unwrap(rhs);
+
+        string memory result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.sealoutput);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "sealoutput", unwrappedInput1, unwrappedInput2);
+        return result;
+        }
     }
     /// @notice performs the sealoutput async function on a euint256 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
     /// @param value Ciphertext to decrypt and seal
@@ -599,6 +713,25 @@ library FHE {
         ITaskManager(TASK_MANAGER_ADDRESS).createSealOutputTask(unwrapped, publicKey);
         return "";
     }
+    /// @notice performs the sealoutput async function on a euint256 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
+    /// @param value Ciphertext to decrypt and seal
+    /// @param publicKey Public Key that will receive the sealed plaintext
+    /// @return Plaintext input, sealed for the owner of `publicKey`
+    function sealoutput(euint256 lhs, euint256 rhs) internal returns (string memory) {
+        if (!isInitialized(lhs)) {
+            lhs = asEuint256(0);
+        }
+        if (!isInitialized(rhs)) {
+            rhs = asEuint256(0);
+        }
+        uint256 unwrappedInput1 = euint256.unwrap(lhs);
+        uint256 unwrappedInput2 = euint256.unwrap(rhs);
+
+        string memory result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.sealoutput);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "sealoutput", unwrappedInput1, unwrappedInput2);
+        return result;
+        }
+    }
     /// @notice performs the sealoutput async function on a eaddress ciphertext. This operation returns the plaintext value, sealed for the public key provided 
     /// @param value Ciphertext to decrypt and seal
     /// @param publicKey Public Key that will receive the sealed plaintext
@@ -611,12 +744,50 @@ library FHE {
         ITaskManager(TASK_MANAGER_ADDRESS).createSealOutputTask(unwrapped, publicKey);
         return "";
     }
+    /// @notice performs the sealoutput async function on a eaddress ciphertext. This operation returns the plaintext value, sealed for the public key provided 
+    /// @param value Ciphertext to decrypt and seal
+    /// @param publicKey Public Key that will receive the sealed plaintext
+    /// @return Plaintext input, sealed for the owner of `publicKey`
+    function sealoutput(eaddress lhs, eaddress rhs) internal returns (string memory) {
+        if (!isInitialized(lhs)) {
+            lhs = asEaddress(0);
+        }
+        if (!isInitialized(rhs)) {
+            rhs = asEaddress(0);
+        }
+        uint256 unwrappedInput1 = eaddress.unwrap(lhs);
+        uint256 unwrappedInput2 = eaddress.unwrap(rhs);
+
+        string memory result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.sealoutput);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "sealoutput", unwrappedInput1, unwrappedInput2);
+        return result;
+        }
+    }
     /// @notice performs the sealoutputTyped async function on a ebool ciphertext. This operation returns the plaintext value, sealed for the public key provided 
     /// @param value Ciphertext to decrypt and seal
     /// @param publicKey Public Key that will receive the sealed plaintext
     /// @return SealedBool({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Common.EBOOL_TFHE })
     function sealoutputTyped(ebool value, bytes32 publicKey) internal returns (SealedBool memory) {
         return SealedBool({ data: sealoutput(value, publicKey), utype: Common.EBOOL_TFHE });
+    }
+    /// @notice performs the sealoutputTyped async function on a ebool ciphertext. This operation returns the plaintext value, sealed for the public key provided 
+    /// @param value Ciphertext to decrypt and seal
+    /// @param publicKey Public Key that will receive the sealed plaintext
+    /// @return SealedBool({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Common.EBOOL_TFHE })
+    function sealoutputTyped(ebool lhs, ebool rhs) internal returns (SealedBool memory) {
+        if (!isInitialized(lhs)) {
+            lhs = asEbool(0);
+        }
+        if (!isInitialized(rhs)) {
+            rhs = asEbool(0);
+        }
+        uint256 unwrappedInput1 = ebool.unwrap(lhs);
+        uint256 unwrappedInput2 = ebool.unwrap(rhs);
+
+        SealedBool memory result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.sealoutputTyped);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "sealoutputTyped", unwrappedInput1, unwrappedInput2);
+        return result;
+        }
     }
     /// @notice performs the sealoutputTyped async function on a euint8 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
     /// @param value Ciphertext to decrypt and seal
@@ -625,12 +796,50 @@ library FHE {
     function sealoutputTyped(euint8 value, bytes32 publicKey) internal returns (SealedUint memory) {
         return SealedUint({ data: sealoutput(value, publicKey), utype: Common.EUINT8_TFHE });
     }
+    /// @notice performs the sealoutputTyped async function on a euint8 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
+    /// @param value Ciphertext to decrypt and seal
+    /// @param publicKey Public Key that will receive the sealed plaintext
+    /// @return SealedUint({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Common.EUINT8_TFHE })
+    function sealoutputTyped(euint8 lhs, euint8 rhs) internal returns (SealedUint memory) {
+        if (!isInitialized(lhs)) {
+            lhs = asEuint8(0);
+        }
+        if (!isInitialized(rhs)) {
+            rhs = asEuint8(0);
+        }
+        uint256 unwrappedInput1 = euint8.unwrap(lhs);
+        uint256 unwrappedInput2 = euint8.unwrap(rhs);
+
+        SealedUint memory result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.sealoutputTyped);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "sealoutputTyped", unwrappedInput1, unwrappedInput2);
+        return result;
+        }
+    }
     /// @notice performs the sealoutputTyped async function on a euint16 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
     /// @param value Ciphertext to decrypt and seal
     /// @param publicKey Public Key that will receive the sealed plaintext
     /// @return SealedUint({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Common.EUINT16_TFHE })
     function sealoutputTyped(euint16 value, bytes32 publicKey) internal returns (SealedUint memory) {
         return SealedUint({ data: sealoutput(value, publicKey), utype: Common.EUINT16_TFHE });
+    }
+    /// @notice performs the sealoutputTyped async function on a euint16 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
+    /// @param value Ciphertext to decrypt and seal
+    /// @param publicKey Public Key that will receive the sealed plaintext
+    /// @return SealedUint({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Common.EUINT16_TFHE })
+    function sealoutputTyped(euint16 lhs, euint16 rhs) internal returns (SealedUint memory) {
+        if (!isInitialized(lhs)) {
+            lhs = asEuint16(0);
+        }
+        if (!isInitialized(rhs)) {
+            rhs = asEuint16(0);
+        }
+        uint256 unwrappedInput1 = euint16.unwrap(lhs);
+        uint256 unwrappedInput2 = euint16.unwrap(rhs);
+
+        SealedUint memory result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.sealoutputTyped);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "sealoutputTyped", unwrappedInput1, unwrappedInput2);
+        return result;
+        }
     }
     /// @notice performs the sealoutputTyped async function on a euint32 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
     /// @param value Ciphertext to decrypt and seal
@@ -639,12 +848,50 @@ library FHE {
     function sealoutputTyped(euint32 value, bytes32 publicKey) internal returns (SealedUint memory) {
         return SealedUint({ data: sealoutput(value, publicKey), utype: Common.EUINT32_TFHE });
     }
+    /// @notice performs the sealoutputTyped async function on a euint32 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
+    /// @param value Ciphertext to decrypt and seal
+    /// @param publicKey Public Key that will receive the sealed plaintext
+    /// @return SealedUint({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Common.EUINT32_TFHE })
+    function sealoutputTyped(euint32 lhs, euint32 rhs) internal returns (SealedUint memory) {
+        if (!isInitialized(lhs)) {
+            lhs = asEuint32(0);
+        }
+        if (!isInitialized(rhs)) {
+            rhs = asEuint32(0);
+        }
+        uint256 unwrappedInput1 = euint32.unwrap(lhs);
+        uint256 unwrappedInput2 = euint32.unwrap(rhs);
+
+        SealedUint memory result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.sealoutputTyped);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "sealoutputTyped", unwrappedInput1, unwrappedInput2);
+        return result;
+        }
+    }
     /// @notice performs the sealoutputTyped async function on a euint64 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
     /// @param value Ciphertext to decrypt and seal
     /// @param publicKey Public Key that will receive the sealed plaintext
     /// @return SealedUint({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Common.EUINT64_TFHE })
     function sealoutputTyped(euint64 value, bytes32 publicKey) internal returns (SealedUint memory) {
         return SealedUint({ data: sealoutput(value, publicKey), utype: Common.EUINT64_TFHE });
+    }
+    /// @notice performs the sealoutputTyped async function on a euint64 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
+    /// @param value Ciphertext to decrypt and seal
+    /// @param publicKey Public Key that will receive the sealed plaintext
+    /// @return SealedUint({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Common.EUINT64_TFHE })
+    function sealoutputTyped(euint64 lhs, euint64 rhs) internal returns (SealedUint memory) {
+        if (!isInitialized(lhs)) {
+            lhs = asEuint64(0);
+        }
+        if (!isInitialized(rhs)) {
+            rhs = asEuint64(0);
+        }
+        uint256 unwrappedInput1 = euint64.unwrap(lhs);
+        uint256 unwrappedInput2 = euint64.unwrap(rhs);
+
+        SealedUint memory result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.sealoutputTyped);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "sealoutputTyped", unwrappedInput1, unwrappedInput2);
+        return result;
+        }
     }
     /// @notice performs the sealoutputTyped async function on a euint128 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
     /// @param value Ciphertext to decrypt and seal
@@ -653,6 +900,25 @@ library FHE {
     function sealoutputTyped(euint128 value, bytes32 publicKey) internal returns (SealedUint memory) {
         return SealedUint({ data: sealoutput(value, publicKey), utype: Common.EUINT128_TFHE });
     }
+    /// @notice performs the sealoutputTyped async function on a euint128 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
+    /// @param value Ciphertext to decrypt and seal
+    /// @param publicKey Public Key that will receive the sealed plaintext
+    /// @return SealedUint({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Common.EUINT128_TFHE })
+    function sealoutputTyped(euint128 lhs, euint128 rhs) internal returns (SealedUint memory) {
+        if (!isInitialized(lhs)) {
+            lhs = asEuint128(0);
+        }
+        if (!isInitialized(rhs)) {
+            rhs = asEuint128(0);
+        }
+        uint256 unwrappedInput1 = euint128.unwrap(lhs);
+        uint256 unwrappedInput2 = euint128.unwrap(rhs);
+
+        SealedUint memory result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.sealoutputTyped);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "sealoutputTyped", unwrappedInput1, unwrappedInput2);
+        return result;
+        }
+    }
     /// @notice performs the sealoutputTyped async function on a euint256 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
     /// @param value Ciphertext to decrypt and seal
     /// @param publicKey Public Key that will receive the sealed plaintext
@@ -660,12 +926,50 @@ library FHE {
     function sealoutputTyped(euint256 value, bytes32 publicKey) internal returns (SealedUint memory) {
         return SealedUint({ data: sealoutput(value, publicKey), utype: Common.EUINT256_TFHE });
     }
+    /// @notice performs the sealoutputTyped async function on a euint256 ciphertext. This operation returns the plaintext value, sealed for the public key provided 
+    /// @param value Ciphertext to decrypt and seal
+    /// @param publicKey Public Key that will receive the sealed plaintext
+    /// @return SealedUint({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Common.EUINT256_TFHE })
+    function sealoutputTyped(euint256 lhs, euint256 rhs) internal returns (SealedUint memory) {
+        if (!isInitialized(lhs)) {
+            lhs = asEuint256(0);
+        }
+        if (!isInitialized(rhs)) {
+            rhs = asEuint256(0);
+        }
+        uint256 unwrappedInput1 = euint256.unwrap(lhs);
+        uint256 unwrappedInput2 = euint256.unwrap(rhs);
+
+        SealedUint memory result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.sealoutputTyped);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "sealoutputTyped", unwrappedInput1, unwrappedInput2);
+        return result;
+        }
+    }
     /// @notice performs the sealoutputTyped async function on a eaddress ciphertext. This operation returns the plaintext value, sealed for the public key provided 
     /// @param value Ciphertext to decrypt and seal
     /// @param publicKey Public Key that will receive the sealed plaintext
     /// @return SealedAddress({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Common.EADDRESS_TFHE })
     function sealoutputTyped(eaddress value, bytes32 publicKey) internal returns (SealedAddress memory) {
         return SealedAddress({ data: sealoutput(value, publicKey), utype: Common.EADDRESS_TFHE });
+    }
+    /// @notice performs the sealoutputTyped async function on a eaddress ciphertext. This operation returns the plaintext value, sealed for the public key provided 
+    /// @param value Ciphertext to decrypt and seal
+    /// @param publicKey Public Key that will receive the sealed plaintext
+    /// @return SealedAddress({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Common.EADDRESS_TFHE })
+    function sealoutputTyped(eaddress lhs, eaddress rhs) internal returns (SealedAddress memory) {
+        if (!isInitialized(lhs)) {
+            lhs = asEaddress(0);
+        }
+        if (!isInitialized(rhs)) {
+            rhs = asEaddress(0);
+        }
+        uint256 unwrappedInput1 = eaddress.unwrap(lhs);
+        uint256 unwrappedInput2 = eaddress.unwrap(rhs);
+
+        SealedAddress memory result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.sealoutputTyped);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "sealoutputTyped", unwrappedInput1, unwrappedInput2);
+        return result;
+        }
     }
     /// @notice Performs the async decrypt operation on a ciphertext
     /// @dev The decrypted output should be asynchronously handled by the IAsyncFHEReceiver implementation
