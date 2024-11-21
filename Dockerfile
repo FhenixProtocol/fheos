@@ -64,7 +64,7 @@ COPY cmd fheos/cmd
 COPY precompiles fheos/precompiles
 COPY storage fheos/storage
 COPY hooks fheos/hooks
-COPY nitro-overrides/* ./
+COPY nitro-overrides/precompiles/FheOps.go ./precompiles/FheOps.go
 RUN ls nitro-overrides
 RUN md5sum ./precompiles/FheOps.go
 RUN cd fheos/precompiles/ && pnpm install
