@@ -241,8 +241,12 @@ func (con FheOps) Eq(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 	return ret, err
 }
 
-func (con FheOps) GetNetworkPublicKey(c ctx, evm mech, securityZone int32) ([]byte, error) {
+func (con FheOps) GetCiphertextData(c ctx, evm mech, value []byte) ([]byte, error) {
+	tp := fheos.TxParamsFromEVM(evm, c.caller)
+	return fheos.GetCiphertextData(value, &tp)
+}
 
+func (con FheOps) GetNetworkPublicKey(c ctx, evm mech, securityZone int32) ([]byte, error) {
 	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	return fheos.GetNetworkPublicKey(securityZone, &tp)
 }

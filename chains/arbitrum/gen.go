@@ -442,7 +442,7 @@ type FheOps struct {
 		}
 
 		var template *template.Template
-		if strings.Contains(op.Name, "GetNetworkPublicKey") {
+		if strings.Contains(op.Name, "GetNetworkPublicKey") || strings.Contains(op.Name, "GetCiphertextData") {
 			template = GenerateFHEOperationNoGasTemplate()
 		} else {
 			op.OperationTypeName = "toType"
@@ -486,7 +486,6 @@ type Argument struct {
 func GenerateFHEOperationNoGasTemplate() *template.Template {
 	templateText := `
 func (con FheOps) {{.Name}}(c ctx, evm mech{{.Inputs}}) ({{.ReturnType}}, error) {
-
 	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	return fheos.{{.Name}}({{.InnerInputs}}&tp)
 }
