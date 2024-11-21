@@ -1,14 +1,15 @@
 package main
+
 import (
-	"github.com/fhenixprotocol/fheos/precompiles"
 	"net/http"
+
+	"github.com/fhenixprotocol/fheos/precompiles"
 )
 
 type HandlerDef struct {
 	Name    string
 	Handler func(w http.ResponseWriter, r *http.Request)
 }
-
 
 func AddHandler(w http.ResponseWriter, r *http.Request) {
 	handleRequest(w, r, precompiles.Add)
@@ -90,6 +91,6 @@ func XorHandler(w http.ResponseWriter, r *http.Request) {
 	handleRequest(w, r, precompiles.Xor)
 }
 func getHandlers() []HandlerDef {
-		return []HandlerDef{
-{"/Add", AddHandler},{"/And", AndHandler},{"/Div", DivHandler},{"/Eq", EqHandler},{"/Gt", GtHandler},{"/Gte", GteHandler},{"/Lt", LtHandler},{"/Lte", LteHandler},{"/Max", MaxHandler},{"/Min", MinHandler},{"/Mul", MulHandler},{"/Ne", NeHandler},{"/Or", OrHandler},{"/Rem", RemHandler},{"/Rol", RolHandler},{"/Ror", RorHandler},{"/Shl", ShlHandler},{"/Shr", ShrHandler},{"/Sub", SubHandler},{"/Xor", XorHandler},}
+	return []HandlerDef{
+		{"/Add", AddHandler}, {"/And", AndHandler}, {"/Div", DivHandler}, {"/Eq", EqHandler}, {"/Gt", GtHandler}, {"/Gte", GteHandler}, {"/Lt", LtHandler}, {"/Lte", LteHandler}, {"/Max", MaxHandler}, {"/Min", MinHandler}, {"/Mul", MulHandler}, {"/Ne", NeHandler}, {"/Or", OrHandler}, {"/Rem", RemHandler}, {"/Rol", RolHandler}, {"/Ror", RorHandler}, {"/Shl", ShlHandler}, {"/Shr", ShrHandler}, {"/Sub", SubHandler}, {"/Xor", XorHandler}}
 }
