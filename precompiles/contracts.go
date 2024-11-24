@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/fhenixprotocol/fheos/conf"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
@@ -56,11 +57,13 @@ func InitFheConfig(fheConfig *fhe.Config) error {
 	return nil
 }
 
-func InitFheos(tfheConfig *fhe.Config) error {
+func InitFheos(tfheConfig *fhe.Config, fheosConfig *conf.FheosConfig) error {
 	err := InitFheConfig(tfheConfig)
 	if err != nil {
 		return err
 	}
+
+	conf.SetConfig(*fheosConfig)
 
 	err = InitializeFheosState()
 	if err != nil {

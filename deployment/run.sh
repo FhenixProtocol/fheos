@@ -40,11 +40,11 @@ KEYS_PATH="/home/fhenix/keys/0/tfhe/sks"
 
 # Check if keys exist in the KEYS_PATH
 if [ "$(ls -A $KEYS_PATH 2>/dev/null)" ]; then
-    echo "Keys already exist in $KEYS_PATH, no need to initialize state."
+    echo "Keys already exist in $KEYS_PATH, no need to initialize keys."
 else
-    echo "No keys found in $KEYS_PATH. Initializing state..."
+    echo "No keys found in $KEYS_PATH. Initializing keys..."
     # Initialize the FHE state
-    FHEOS_SECURITY_ZONES=2 fheos init-state
+    FHEOS_SECURITY_ZONES=2 fheos init-keys
 
     # Wait for the keys to be loaded
     sleep 3

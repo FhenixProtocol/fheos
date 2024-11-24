@@ -61,6 +61,7 @@ COPY cmd fheos/cmd
 COPY precompiles fheos/precompiles
 COPY storage fheos/storage
 COPY hooks fheos/hooks
+COPY conf fheos/conf
 RUN cd fheos/precompiles/ && pnpm install
 
 COPY gen.sh fheos/
@@ -76,6 +77,10 @@ WORKDIR fheos
 RUN ./gen.sh
 
 WORKDIR /workspace
+
+COPY nitro-overrides/cmd/nitro/nitro.go cmd/nitro/nitro.go
+COPY nitro-overrides/cmd/nitro-val/nitro_val.go cmd/nitro-val/nitro_val.go
+COPY nitro-overrides/cmd/genericconf/config.go cmd/genericconf/config.go
 
 RUN go mod tidy
 

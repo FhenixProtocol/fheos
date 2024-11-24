@@ -4,14 +4,14 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 	"io"
-	"os"
 	"time"
 
 	"github.com/ethereum/go-ethereum/metrics"
+	"github.com/fhenixprotocol/fheos/conf"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
+	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 )
 
 type FheosState struct {
@@ -31,15 +31,6 @@ func (fs *FheosState) GetRandomForGasEstimation() []byte {
 }
 
 const FheosVersion = uint64(1001)
-
-func getDbPath() string {
-	dbPath := os.Getenv("FHEOS_DB_PATH")
-	if dbPath == "" {
-		return os.TempDir() + "/fheos"
-	}
-
-	return dbPath
-}
 
 var State *FheosState = nil
 
@@ -92,7 +83,7 @@ func createFheosState(storage storage2.FheosStorage, version uint64) {
 }
 
 func InitializeFheosState() error {
-	store, err := storage2.InitStorage(getDbPath())
+	store, err := storage2.InitStorage(conf.GetConfig().FheosDbPath)
 
 	if err != nil {
 		logger.Error("failed to open storage for fheos State")
