@@ -136,7 +136,7 @@ func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 	if lhs.UintType != rhs.UintType || (lhs.UintType != uintType) {
 		msg := functionName.String() + " operand type mismatch"
-		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
+		logger.Error(msg, "lhs", lhs.UintType.ToString(), "rhs", rhs.UintType.ToString())
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -429,7 +429,7 @@ func Lte(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 	if lhs.UintType != rhs.UintType {
 		msg := functionName.String() + " operand type mismatch"
-		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
+		logger.Error(msg, "lhs", lhs.UintType.ToString(), "rhs", rhs.UintType.ToString())
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -478,7 +478,7 @@ func Sub(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 	if lhs.UintType != rhs.UintType {
 		msg := functionName.String() + " operand type mismatch"
-		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
+		logger.Error(msg, "lhs", lhs.UintType.ToString(), "rhs", rhs.UintType.ToString())
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -527,7 +527,7 @@ func Mul(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 	if lhs.UintType != rhs.UintType {
 		msg := functionName.String() + " operand type mismatch"
-		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
+		logger.Error(msg, "lhs", lhs.UintType.ToString(), "rhs", rhs.UintType.ToString())
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -577,7 +577,7 @@ func Lt(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 
 	if lhs.UintType != rhs.UintType {
 		msg := functionName.String() + " operand type mismatch"
-		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
+		logger.Error(msg, "lhs", lhs.UintType.ToString(), "rhs", rhs.UintType.ToString())
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -626,7 +626,7 @@ func Select(utype byte, controlHash []byte, ifTrueHash []byte, ifFalseHash []byt
 
 	if uintType != ifTrue.UintType || ifTrue.UintType != ifFalse.UintType {
 		msg := functionName.String() + " operands type mismatch"
-		logger.Error(msg, " ifTrue ", ifTrue.UintType, " ifFalse ", ifFalse.UintType)
+		logger.Error(msg, " ifTrue ", ifTrue.UintType.ToString(), " ifFalse ", ifFalse.UintType.ToString())
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -902,7 +902,7 @@ func Div(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 	if lhs.UintType != rhs.UintType {
 		msg := functionName.String() + " operand type mismatch"
-		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
+		logger.Error(msg, "lhs", lhs.UintType.ToString(), "rhs", rhs.UintType.ToString())
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -953,7 +953,7 @@ func Gt(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 
 	if lhs.UintType != rhs.UintType {
 		msg := functionName.String() + " operand type mismatch"
-		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
+		logger.Error(msg, "lhs", lhs.UintType.ToString(), "rhs", rhs.UintType.ToString())
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -1004,7 +1004,7 @@ func Gte(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 	if lhs.UintType != rhs.UintType {
 		msg := functionName.String() + " operand type mismatch"
-		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
+		logger.Error(msg, "lhs", lhs.UintType.ToString(), "rhs", rhs.UintType.ToString())
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -1053,7 +1053,7 @@ func Rem(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 	if lhs.UintType != rhs.UintType {
 		msg := functionName.String() + " operand type mismatch"
-		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
+		logger.Error(msg, "lhs", lhs.UintType.ToString(), "rhs", rhs.UintType.ToString())
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -1103,7 +1103,7 @@ func And(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 	if lhs.UintType != rhs.UintType {
 		msg := functionName.String() + " operand type mismatch"
-		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
+		logger.Error(msg, "lhs", lhs.UintType.ToString(), "rhs", rhs.UintType.ToString())
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -1154,7 +1154,7 @@ func Or(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 
 	if lhs.UintType != rhs.UintType {
 		msg := functionName.String() + " operand type mismatch"
-		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
+		logger.Error(msg, "lhs", lhs.UintType.ToString(), "rhs", rhs.UintType.ToString())
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -1205,7 +1205,7 @@ func Xor(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 	if lhs.UintType != rhs.UintType {
 		msg := functionName.String() + " operand type mismatch"
-		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
+		logger.Error(msg, "lhs", lhs.UintType.ToString(), "rhs", rhs.UintType.ToString())
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -1256,7 +1256,7 @@ func Eq(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 
 	if lhs.UintType != rhs.UintType {
 		msg := functionName.String() + " operand type mismatch"
-		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
+		logger.Error(msg, "lhs", lhs.UintType.ToString(), "rhs", rhs.UintType.ToString())
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -1307,7 +1307,7 @@ func Ne(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint6
 
 	if lhs.UintType != rhs.UintType {
 		msg := functionName.String() + " operand type mismatch"
-		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
+		logger.Error(msg, "lhs", lhs.UintType.ToString(), "rhs", rhs.UintType.ToString())
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -1356,7 +1356,7 @@ func Min(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 	if lhs.UintType != rhs.UintType {
 		msg := functionName.String() + " operand type mismatch"
-		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
+		logger.Error(msg, "lhs", lhs.UintType.ToString(), "rhs", rhs.UintType.ToString())
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -1454,7 +1454,7 @@ func Shl(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 	if lhs.UintType != rhs.UintType {
 		msg := functionName.String() + " operand type mismatch"
-		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
+		logger.Error(msg, "lhs", lhs.UintType.ToString(), "rhs", rhs.UintType.ToString())
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -1503,7 +1503,7 @@ func Shr(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 	if lhs.UintType != rhs.UintType {
 		msg := functionName.String() + " operand type mismatch"
-		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
+		logger.Error(msg, "lhs", lhs.UintType.ToString(), "rhs", rhs.UintType.ToString())
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -1552,7 +1552,7 @@ func Rol(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 	if lhs.UintType != rhs.UintType {
 		msg := functionName.String() + " operand type mismatch"
-		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
+		logger.Error(msg, "lhs", lhs.UintType.ToString(), "rhs", rhs.UintType.ToString())
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -1601,7 +1601,7 @@ func Ror(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams) ([]byte, uint
 
 	if lhs.UintType != rhs.UintType {
 		msg := functionName.String() + " operand type mismatch"
-		logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
+		logger.Error(msg, "lhs", lhs.UintType.ToString(), "rhs", rhs.UintType.ToString())
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
