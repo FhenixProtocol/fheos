@@ -37,7 +37,7 @@ func (con FheOps) Add(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 		}(time.Now())
 	}
 
-	ret, gas, err := fheos.Add(utype, lhsHash, rhsHash, &tp)
+	ret, gas, err := fheos.Add(utype, lhsHash, rhsHash, &tp, nil)
 
 	if err != nil {
 		if metrics.Enabled {
@@ -73,7 +73,7 @@ func (con FheOps) And(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 		}(time.Now())
 	}
 
-	ret, gas, err := fheos.And(utype, lhsHash, rhsHash, &tp)
+	ret, gas, err := fheos.And(utype, lhsHash, rhsHash, &tp, nil)
 
 	if err != nil {
 		if metrics.Enabled {
@@ -109,7 +109,7 @@ func (con FheOps) Cast(c ctx, evm mech, utype byte, input []byte, toType byte) (
 		}(time.Now())
 	}
 
-	ret, gas, err := fheos.Cast(utype, input, toType, &tp)
+	ret, gas, err := fheos.Cast(utype, input, toType, &tp, nil)
 
 	if err != nil {
 		if metrics.Enabled {
@@ -145,7 +145,7 @@ func (con FheOps) Decrypt(c ctx, evm mech, utype byte, input []byte, defaultValu
 		}(time.Now())
 	}
 
-	ret, gas, err := fheos.Decrypt(utype, input, defaultValue, &tp)
+	ret, gas, err := fheos.Decrypt(utype, input, defaultValue, &tp, nil)
 
 	if err != nil {
 		if metrics.Enabled {
@@ -181,7 +181,7 @@ func (con FheOps) Div(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 		}(time.Now())
 	}
 
-	ret, gas, err := fheos.Div(utype, lhsHash, rhsHash, &tp)
+	ret, gas, err := fheos.Div(utype, lhsHash, rhsHash, &tp, nil)
 
 	if err != nil {
 		if metrics.Enabled {
@@ -217,7 +217,7 @@ func (con FheOps) Eq(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 		}(time.Now())
 	}
 
-	ret, gas, err := fheos.Eq(utype, lhsHash, rhsHash, &tp)
+	ret, gas, err := fheos.Eq(utype, lhsHash, rhsHash, &tp, nil)
 
 	if err != nil {
 		if metrics.Enabled {
@@ -259,7 +259,7 @@ func (con FheOps) Gt(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 		}(time.Now())
 	}
 
-	ret, gas, err := fheos.Gt(utype, lhsHash, rhsHash, &tp)
+	ret, gas, err := fheos.Gt(utype, lhsHash, rhsHash, &tp, nil)
 
 	if err != nil {
 		if metrics.Enabled {
@@ -295,7 +295,7 @@ func (con FheOps) Gte(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 		}(time.Now())
 	}
 
-	ret, gas, err := fheos.Gte(utype, lhsHash, rhsHash, &tp)
+	ret, gas, err := fheos.Gte(utype, lhsHash, rhsHash, &tp, nil)
 
 	if err != nil {
 		if metrics.Enabled {
@@ -331,7 +331,7 @@ func (con FheOps) Lt(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 		}(time.Now())
 	}
 
-	ret, gas, err := fheos.Lt(utype, lhsHash, rhsHash, &tp)
+	ret, gas, err := fheos.Lt(utype, lhsHash, rhsHash, &tp, nil)
 
 	if err != nil {
 		if metrics.Enabled {
@@ -367,7 +367,7 @@ func (con FheOps) Lte(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 		}(time.Now())
 	}
 
-	ret, gas, err := fheos.Lte(utype, lhsHash, rhsHash, &tp)
+	ret, gas, err := fheos.Lte(utype, lhsHash, rhsHash, &tp, nil)
 
 	if err != nil {
 		if metrics.Enabled {
@@ -403,7 +403,7 @@ func (con FheOps) Max(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 		}(time.Now())
 	}
 
-	ret, gas, err := fheos.Max(utype, lhsHash, rhsHash, &tp)
+	ret, gas, err := fheos.Max(utype, lhsHash, rhsHash, &tp, nil)
 
 	if err != nil {
 		if metrics.Enabled {
@@ -439,7 +439,7 @@ func (con FheOps) Min(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 		}(time.Now())
 	}
 
-	ret, gas, err := fheos.Min(utype, lhsHash, rhsHash, &tp)
+	ret, gas, err := fheos.Min(utype, lhsHash, rhsHash, &tp, nil)
 
 	if err != nil {
 		if metrics.Enabled {
@@ -475,7 +475,7 @@ func (con FheOps) Mul(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 		}(time.Now())
 	}
 
-	ret, gas, err := fheos.Mul(utype, lhsHash, rhsHash, &tp)
+	ret, gas, err := fheos.Mul(utype, lhsHash, rhsHash, &tp, nil)
 
 	if err != nil {
 		if metrics.Enabled {
@@ -511,7 +511,7 @@ func (con FheOps) Ne(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 		}(time.Now())
 	}
 
-	ret, gas, err := fheos.Ne(utype, lhsHash, rhsHash, &tp)
+	ret, gas, err := fheos.Ne(utype, lhsHash, rhsHash, &tp, nil)
 
 	if err != nil {
 		if metrics.Enabled {
@@ -547,7 +547,7 @@ func (con FheOps) Not(c ctx, evm mech, utype byte, value []byte) ([]byte, error)
 		}(time.Now())
 	}
 
-	ret, gas, err := fheos.Not(utype, value, &tp)
+	ret, gas, err := fheos.Not(utype, value, &tp, nil)
 
 	if err != nil {
 		if metrics.Enabled {
@@ -583,7 +583,7 @@ func (con FheOps) Or(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byte
 		}(time.Now())
 	}
 
-	ret, gas, err := fheos.Or(utype, lhsHash, rhsHash, &tp)
+	ret, gas, err := fheos.Or(utype, lhsHash, rhsHash, &tp, nil)
 
 	if err != nil {
 		if metrics.Enabled {
@@ -619,7 +619,7 @@ func (con FheOps) Random(c ctx, evm mech, utype byte, seed uint64, securityZone 
 		}(time.Now())
 	}
 
-	ret, gas, err := fheos.Random(utype, seed, securityZone, &tp)
+	ret, gas, err := fheos.Random(utype, seed, securityZone, &tp, nil)
 
 	if err != nil {
 		if metrics.Enabled {
@@ -655,7 +655,7 @@ func (con FheOps) Rem(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 		}(time.Now())
 	}
 
-	ret, gas, err := fheos.Rem(utype, lhsHash, rhsHash, &tp)
+	ret, gas, err := fheos.Rem(utype, lhsHash, rhsHash, &tp, nil)
 
 	if err != nil {
 		if metrics.Enabled {
@@ -691,7 +691,7 @@ func (con FheOps) Req(c ctx, evm mech, utype byte, input []byte) ([]byte, error)
 		}(time.Now())
 	}
 
-	ret, gas, err := fheos.Req(utype, input, &tp)
+	ret, gas, err := fheos.Req(utype, input, &tp, nil)
 
 	if err != nil {
 		if metrics.Enabled {
@@ -727,7 +727,7 @@ func (con FheOps) Rol(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 		}(time.Now())
 	}
 
-	ret, gas, err := fheos.Rol(utype, lhsHash, rhsHash, &tp)
+	ret, gas, err := fheos.Rol(utype, lhsHash, rhsHash, &tp, nil)
 
 	if err != nil {
 		if metrics.Enabled {
@@ -763,7 +763,7 @@ func (con FheOps) Ror(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 		}(time.Now())
 	}
 
-	ret, gas, err := fheos.Ror(utype, lhsHash, rhsHash, &tp)
+	ret, gas, err := fheos.Ror(utype, lhsHash, rhsHash, &tp, nil)
 
 	if err != nil {
 		if metrics.Enabled {
@@ -799,7 +799,7 @@ func (con FheOps) SealOutput(c ctx, evm mech, utype byte, ctHash []byte, pk []by
 		}(time.Now())
 	}
 
-	ret, gas, err := fheos.SealOutput(utype, ctHash, pk, &tp)
+	ret, gas, err := fheos.SealOutput(utype, ctHash, pk, &tp, nil)
 
 	if err != nil {
 		if metrics.Enabled {
@@ -835,7 +835,7 @@ func (con FheOps) Select(c ctx, evm mech, utype byte, controlHash []byte, ifTrue
 		}(time.Now())
 	}
 
-	ret, gas, err := fheos.Select(utype, controlHash, ifTrueHash, ifFalseHash, &tp)
+	ret, gas, err := fheos.Select(utype, controlHash, ifTrueHash, ifFalseHash, &tp, nil)
 
 	if err != nil {
 		if metrics.Enabled {
@@ -871,7 +871,7 @@ func (con FheOps) Shl(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 		}(time.Now())
 	}
 
-	ret, gas, err := fheos.Shl(utype, lhsHash, rhsHash, &tp)
+	ret, gas, err := fheos.Shl(utype, lhsHash, rhsHash, &tp, nil)
 
 	if err != nil {
 		if metrics.Enabled {
@@ -907,7 +907,7 @@ func (con FheOps) Shr(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 		}(time.Now())
 	}
 
-	ret, gas, err := fheos.Shr(utype, lhsHash, rhsHash, &tp)
+	ret, gas, err := fheos.Shr(utype, lhsHash, rhsHash, &tp, nil)
 
 	if err != nil {
 		if metrics.Enabled {
@@ -943,7 +943,7 @@ func (con FheOps) Square(c ctx, evm mech, utype byte, value []byte) ([]byte, err
 		}(time.Now())
 	}
 
-	ret, gas, err := fheos.Square(utype, value, &tp)
+	ret, gas, err := fheos.Square(utype, value, &tp, nil)
 
 	if err != nil {
 		if metrics.Enabled {
@@ -979,7 +979,7 @@ func (con FheOps) Sub(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 		}(time.Now())
 	}
 
-	ret, gas, err := fheos.Sub(utype, lhsHash, rhsHash, &tp)
+	ret, gas, err := fheos.Sub(utype, lhsHash, rhsHash, &tp, nil)
 
 	if err != nil {
 		if metrics.Enabled {
@@ -1015,7 +1015,7 @@ func (con FheOps) TrivialEncrypt(c ctx, evm mech, input []byte, toType byte, sec
 		}(time.Now())
 	}
 
-	ret, gas, err := fheos.TrivialEncrypt(input, toType, securityZone, &tp)
+	ret, gas, err := fheos.TrivialEncrypt(input, toType, securityZone, &tp, nil)
 
 	if err != nil {
 		if metrics.Enabled {
@@ -1051,7 +1051,7 @@ func (con FheOps) Verify(c ctx, evm mech, utype byte, input []byte, securityZone
 		}(time.Now())
 	}
 
-	ret, gas, err := fheos.Verify(utype, input, securityZone, &tp)
+	ret, gas, err := fheos.Verify(utype, input, securityZone, &tp, nil)
 
 	if err != nil {
 		if metrics.Enabled {
@@ -1087,7 +1087,7 @@ func (con FheOps) Xor(c ctx, evm mech, utype byte, lhsHash []byte, rhsHash []byt
 		}(time.Now())
 	}
 
-	ret, gas, err := fheos.Xor(utype, lhsHash, rhsHash, &tp)
+	ret, gas, err := fheos.Xor(utype, lhsHash, rhsHash, &tp, nil)
 
 	if err != nil {
 		if metrics.Enabled {

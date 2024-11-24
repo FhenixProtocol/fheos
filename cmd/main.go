@@ -112,7 +112,8 @@ func initFheos() (*precompiles.TxParams, error) {
 		ContractAddress: common.HexToAddress("0x0000000000000000000000000000000000000000"),
 		GetBlockHash:    vm.GetHashFunc(nil),
 		BlockNumber:     nil,
-		ParallelTxHooks: nil}
+		ParallelTxHooks: nil,
+	}
 
 	return &tp, err
 }
@@ -130,12 +131,12 @@ func encrypt(val uint32, t uint8, securityZone int32, tp *precompiles.TxParams) 
 	valBz := make([]byte, 32)
 	bval.FillBytes(valBz)
 
-	result, _, err := precompiles.TrivialEncrypt(valBz, t, securityZone, tp)
+	result, _, err := precompiles.TrivialEncrypt(valBz, t, securityZone, tp, nil)
 	return result, err
 }
 
 func decrypt(utype byte, val []byte, tp *precompiles.TxParams) (uint64, error) {
-	decrypted, _, err := precompiles.Decrypt(utype, val, big.NewInt(0), tp)
+	decrypted, _, err := precompiles.Decrypt(utype, val, big.NewInt(0), tp, nil)
 	if err != nil {
 		return 0, err
 	}
@@ -150,7 +151,7 @@ func serialize2Params(lhs *big.Int, rhs *big.Int) []byte {
 	return serialized
 }
 
-type operationFunc func(t byte, lhs, rhs []byte, txParams *precompiles.TxParams) ([]byte, uint64, error)
+type operationFunc func(t byte, lhs, rhs []byte, txParams *precompiles.TxParams, callback *precompiles.CallbackFunc) ([]byte, uint64, error)
 
 func setupOperationCommand(use, short string, op operationFunc) *cobra.Command {
 	var lhs, rhs uint32
@@ -177,7 +178,7 @@ func setupOperationCommand(use, short string, op operationFunc) *cobra.Command {
 				return err
 			}
 
-			result, _, err := op(t, elhs, erhs, txParams)
+			result, _, err := op(t, elhs, erhs, txParams, nil)
 			if err != nil {
 				return err
 			}
