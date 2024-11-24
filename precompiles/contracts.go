@@ -3,18 +3,16 @@ package precompiles
 import (
 	"encoding/hex"
 	"fmt"
-<<<<<<< HEAD
 	"math/big"
 	"strings"
 
-=======
->>>>>>> 6fe6e76ce35635e87147a2ce880f8384ab6ab923
+	"math/big"
+	"strings"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
-	"math/big"
-	"strings"
 
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/log"
@@ -140,26 +138,6 @@ func Decrypt(utype byte, input []byte, defaultValue *big.Int, tp *TxParams, onRe
 		return nil, gas, vm.ErrExecutionReverted
 	}
 
-<<<<<<< HEAD
-	if onResultCallback == nil {
-		msg := functionName.String() + " must set callback"
-		logger.Error(msg, " input ", input)
-		return nil, gas, vm.ErrExecutionReverted
-	}
-
-	if !tp.GasEstimation {
-		storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
-		go func(ctHash []byte) {
-			ct := awaitCtResult(storage, ctHash, tp)
-			if ct == nil {
-				msg := functionName.String() + " unverified ciphertext handle"
-				logger.Error(msg, " input ", input)
-				return
-			}
-			decryptedValue, err := fhe.Decrypt(*ct)
-			url := (*onResultCallback).CallbackUrl
-			(*onResultCallback).Callback(url, input, decryptedValue)
-=======
 	//if onResultCallback == nil {
 	//	msg := functionName.String() + " must set callback"
 	//	logger.Error(msg, " input ", input)
@@ -180,7 +158,6 @@ func Decrypt(utype byte, input []byte, defaultValue *big.Int, tp *TxParams, onRe
 
 			url := (*onResultCallback).CallbackUrl
 			(*onResultCallback).Callback(url, input, plaintext)
->>>>>>> 6fe6e76ce35635e87147a2ce880f8384ab6ab923
 			if err != nil {
 				logger.Error("failed decrypting ciphertext", "error", err)
 				return
