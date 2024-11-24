@@ -25,6 +25,38 @@ type SealOutputCallbackFunc struct {
 	Callback    func(url string, ctKey []byte, value string)
 }
 
+func DecryptHelper(storage *storage2.MultiStore, ctHash []byte, tp *TxParams, defaultValue *big.Int) (*big.Int, error) {
+	ct := awaitCtResult(storage, ctHash, tp)
+	if ct == nil {
+		msg := "decrypt unverified ciphertext handle"
+		logger.Error(msg, " ctHash ", ctHash)
+		return defaultValue, vm.ErrExecutionReverted
+	}
+	plaintext, err := fhe.Decrypt(*ct)
+	if err != nil {
+		logger.Error("decrypt failed for ciphertext", "error", err)
+		return defaultValue, vm.ErrExecutionReverted
+	}
+
+	return plaintext, nil
+}
+
+func SealOutputHelper(storage *storage2.MultiStore, ctHash []byte, pk []byte, tp *TxParams) (string, error) {
+	ct := awaitCtResult(storage, ctHash, tp)
+	if ct == nil {
+		msg := "sealOutput unverified ciphertext handle"
+		logger.Error(msg, " ctHash ", ctHash)
+		return "", vm.ErrExecutionReverted
+	}
+	sealed, err := fhe.SealOutput(*ct, pk)
+	if err != nil {
+		logger.Error("sealOutput failed for ciphertext", "error", err)
+		return "", vm.ErrExecutionReverted
+	}
+
+	return string(sealed), nil
+}
+
 func PreProcessOperation1(functionName types.PrecompileName, utype byte, input []byte, tp *TxParams) (uint64, error) {
 	uintType := fhe.EncryptionType(utype)
 
@@ -48,35 +80,6 @@ func PreProcessOperation1(functionName types.PrecompileName, utype byte, input [
 		return gas, vm.ErrExecutionReverted
 	}
 
-	return gas, nil
-}
-
-func PreProcessSealOutput(functionName types.PrecompileName, utype byte, ctHash []byte, pk []byte, onResultCallback *SealOutputCallbackFunc) (uint64, error) {
-	uintType := fhe.EncryptionType(utype)
-	if !types.IsValidType(uintType) {
-		logger.Error("invalid ciphertext", "type", utype)
-		return 0, vm.ErrExecutionReverted
-	}
-
-	if onResultCallback == nil {
-		msg := functionName.String() + " must set callback"
-		logger.Error(msg, "callback was not provided")
-		return 0, vm.ErrExecutionReverted
-	}
-
-	if len(ctHash) != 32 {
-		msg := functionName.String() + " ciphertext's hashes need to be 32 bytes long"
-		logger.Error(msg, "ciphertext-hash", hex.EncodeToString(ctHash), "hash-len", len(ctHash))
-		return 0, vm.ErrExecutionReverted
-	}
-
-	if len(pk) != 32 {
-		msg := functionName.String() + " public key need to be 32 bytes long"
-		logger.Error(msg, "public-key", hex.EncodeToString(pk), "len", len(pk))
-		return 0, vm.ErrExecutionReverted
-	}
-
-	gas := getGasForPrecompile(functionName, uintType)
 	return gas, nil
 }
 

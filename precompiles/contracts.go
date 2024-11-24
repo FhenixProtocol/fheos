@@ -97,28 +97,27 @@ func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams, onResultCall
 		return "", gas, vm.ErrExecutionReverted
 	}
 
-	if onResultCallback == nil {
-		msg := functionName.String() + " must set callback"
-		logger.Error(msg, " ctHash ", ctHash)
-		return "", gas, vm.ErrExecutionReverted
-	}
+	//if onResultCallback == nil {
+	//	msg := functionName.String() + " must set callback"
+	//	logger.Error(msg, " ctHash ", ctHash)
+	//	return "", gas, vm.ErrExecutionReverted
+	//}
 
 	if !tp.GasEstimation {
 		storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
+		if onResultCallback == nil {
+			sealed, err := SealOutputHelper(storage, ctHash, pk, tp)
+			return sealed, gas, err
+		}
+
 		go func(ctHash []byte) {
-			ct := awaitCtResult(storage, ctHash, tp)
-			if ct == nil {
-				msg := functionName.String() + " unverified ciphertext handle"
-				logger.Error(msg, " ctHash ", ctHash)
+			sealed, err := SealOutputHelper(storage, ctHash, pk, tp)
+			if err != nil {
 				return
 			}
-			sealed, err := fhe.SealOutput(*ct, pk)
+
 			url := (*onResultCallback).CallbackUrl
 			(*onResultCallback).Callback(url, ctHash, string(sealed))
-			if err != nil {
-				logger.Error("failed decrypting ciphertext", "error", err)
-				return
-			}
 		}(ctHash)
 		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "ctHash", hex.EncodeToString(ctHash))
 	}
@@ -135,24 +134,26 @@ func Decrypt(utype byte, input []byte, defaultValue *big.Int, tp *TxParams, onRe
 		return nil, gas, vm.ErrExecutionReverted
 	}
 
-	if onResultCallback == nil {
-		msg := functionName.String() + " must set callback"
-		logger.Error(msg, " input ", input)
-		return nil, gas, vm.ErrExecutionReverted
-	}
+	//if onResultCallback == nil {
+	//	msg := functionName.String() + " must set callback"
+	//	logger.Error(msg, " input ", input)
+	//	return nil, gas, vm.ErrExecutionReverted
+	//}
 
 	if !tp.GasEstimation {
 		storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
+		if onResultCallback == nil {
+			plaintext, err := DecryptHelper(storage, input, tp, defaultValue)
+			return plaintext, gas, err
+		}
 		go func(ctHash []byte) {
-			ct := awaitCtResult(storage, ctHash, tp)
-			if ct == nil {
-				msg := functionName.String() + " unverified ciphertext handle"
-				logger.Error(msg, " input ", input)
+			plaintext, err := DecryptHelper(storage, ctHash, tp, defaultValue)
+			if err != nil {
 				return
 			}
-			decryptedValue, err := fhe.Decrypt(*ct)
+
 			url := (*onResultCallback).CallbackUrl
-			(*onResultCallback).Callback(url, input, decryptedValue)
+			(*onResultCallback).Callback(url, input, plaintext)
 			if err != nil {
 				logger.Error("failed decrypting ciphertext", "error", err)
 				return
