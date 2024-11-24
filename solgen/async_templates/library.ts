@@ -71,6 +71,11 @@ struct ${struct} {
 }).join("\n")}
 
 //solhint-disable const-name-snakecase
+// ================================
+// \\/ \\/ \\/ \\/ \\/ \\/ \\/ \\/ \\/ \\/ \\/
+// TODO : CHANGE ME AFTER DEPLOYING
+// /\\ /\\ /\\ /\\ /\\ /\\ /\\ /\\ /\\ /\\ /\\
+// ================================
 address constant TASK_MANAGER_ADDRESS = address(129);
 
 library Common {
@@ -496,7 +501,7 @@ export const AsTypeFunction = (
     /// @notice Converts a plaintext boolean value to a ciphertext ebool
     /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
     /// @return A ciphertext representation of the input
-    function asEbool(bool value) internal returns (ebool) {
+    function asEbool(bool value) internal pure returns (ebool) {
         uint256 sVal = 0;
         if (value) {
             sVal = 1;
@@ -506,7 +511,7 @@ export const AsTypeFunction = (
     /// @notice Converts a plaintext boolean value to a ciphertext ebool, specifying security zone
     /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
     /// @return A ciphertext representation of the input
-    function asEbool(bool value, int32 securityZone) internal returns (ebool) {
+    function asEbool(bool value, int32 securityZone) internal pure returns (ebool) {
         uint256 sVal = 0;
         if (value) {
           sVal = 1;
@@ -523,7 +528,7 @@ export const AsTypeFunction = (
     return `${docString}
     function as${capitalize(
       toType
-    )}(${fromType} memory value) internal returns (${toType}) {
+    )}(${fromType} memory value) internal pure returns (${toType}) {
         return ${castString};
     }`;
   } else if (fromType === "bytes memory") {
@@ -560,7 +565,7 @@ export const AsTypeFunction = (
   let func = `${docString}
     function as${capitalize(toType)}(${fromType} value${
     addSecurityZone ? ", int32 securityZone" : ""
-  }) internal returns (${toType}) {
+  }) internal pure returns (${toType}) {
         return ${toType}.wrap(${castString});
     }`;
 
@@ -670,7 +675,7 @@ export function SolTemplate2Arg(
         }
         ${UnderlyingTypes[input1]} unwrapped = ${unwrapType(input1,variableName1)};
         ITaskManager(TASK_MANAGER_ADDRESS).createSealOutputTask(unwrapped, publicKey);
-        return "";`;
+        return Common.bytesToHexString(abi.encodePacked(CT_HASH_MAGIC_BYTES, bytes32(unwrapped)));`;
     } else if (name === SEALING_TYPED_FUNCTION_NAME) {
       const returnTypeClean = returnType.replace(" memory", "");
       funcBody += `
@@ -768,16 +773,16 @@ export function SolTemplate1Arg(
     return funcBody;
   } else if (valueIsEncrypted(input1)) {
     funcBody += `
-      if (!isInitialized(input1)) {
-          input1 = ${asEuintFuncName(input1)}(0);
-      }
-      ${UnderlyingTypes[input1]} unwrappedInput1 = ${unwrapType(
-        input1,
-        "input1"
-      )};
-      uint256 ctHash = calcUnaryPlaceholderValueHash(unwrappedInput1, FunctionId.${name});
-      ITaskManager(TASK_MANAGER_ADDRESS).createTask(ctHash, "${name}", unwrappedInput1, 0);
-      return ${wrapType(returnType, "ctHash")};
+        if (!isInitialized(input1)) {
+            input1 = ${asEuintFuncName(input1)}(0);
+        }
+        ${UnderlyingTypes[input1]} unwrappedInput1 = ${unwrapType(
+          input1,
+          "input1"
+        )};
+        uint256 ctHash = calcUnaryPlaceholderValueHash(unwrappedInput1, FunctionId.${name});
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(ctHash, "${name}", unwrappedInput1, 0);
+        return ${wrapType(returnType, "ctHash")};
     }`;
   } else {
     throw new Error("unsupported function of 1 input that is not encrypted");
@@ -804,7 +809,7 @@ export function SolTemplate3Arg(
       }
 
       return `\n
-    function ${name}(${input1} input1, ${input2} input2, ${input3} input3) internal returns (${returnType}) {
+    function ${name}(${input1} input1, ${input2} input2, ${input3} input3) internal pure returns (${returnType}) {
         if (!isInitialized(input1)) {
             input1 = ${asEuintFuncName(input1)}(0);
         }
@@ -900,7 +905,7 @@ export const OperatorBinding = (
     docString += `/// @param rhs second input of type ${forType}\n`;
   }
 
-  docString += `/// @return the result of the ${funcName}`;
+  docString += `    /// @return the result of the ${funcName}`;
 
   return `
     ${docString}
@@ -920,7 +925,7 @@ export const CastBinding = (thisType: string, targetType: string) => {
   return `
     function to${shortenType(
       targetType
-    )}(${thisType} value) internal returns (${targetType}) {
+    )}(${thisType} value) internal ${targetType !== "ebool" ? "pure" : ""} returns (${targetType}) {
         return FHE.as${capitalize(targetType)}(value);
     }`;
 };

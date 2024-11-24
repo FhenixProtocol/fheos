@@ -278,33 +278,40 @@ const genSolidityFunctionHeaders = (metadata: FunctionMetadata): string[] => {
 
   inputs.forEach((input, idx) => {
     let inputVariants = [];
-    if (input !== "encrypted") {
-      inputVariants.push(`input${idx} ${input}`);
+    switch (input) {
+      case "encrypted":
+        let index = 0;
+        for (let inputType of EInputType) {
+          if (!IsOperationAllowed(functionName, index++)) {
+            // Skip unallowed operations based on FheEngine's operation_is_allowed
+            continue;
+          }
+          if (
+              inputs.length === 2 &&
+              !isBooleanMathOp &&
+              isComparisonType(inputType)
+          ) {
+            continue;
+          }
+          inputVariants.push(`input${idx} ${inputType}`);
+        }
+        break;
+      case "plaintext":
+        for (let inputType of EPlaintextType) {
+          inputVariants.push(`input${idx} ${inputType}`);
+        }
+        break;
+      default:
+        inputVariants.push(`input${idx} ${input}`);
     }
-
-    let index = 0;
-    for (let inputType of EInputType) {
-      if (!IsOperationAllowed(functionName, index++)) {
-        // Skip unallowed operations based on FheEngine's operation_is_allowed
-        continue;
-      } else if (
-        inputs.length === 2 &&
-        !isBooleanMathOp &&
-        isComparisonType(inputType)
-      ) {
-        continue;
-      }
-      inputVariants.push(`input${idx} ${inputType}`);
-    }
-
     functions.push(inputVariants);
   });
 
   return getAllFunctionDeclarations(
-    functionName,
-    functions,
-    isBooleanMathOp,
-    returnValueType
+      functionName,
+      functions,
+      isBooleanMathOp,
+      returnValueType
   );
 };
 
@@ -376,7 +383,6 @@ const generateSolidityFunction = (parsedFunction: ParsedFunction): string => {
 
 const main = async () => {
   console.log("Starting async solgen!!!");
-  debugger;
   let metadata = await generateMetadataPayload();
   let solidityHeaders: string[] = [];
   const testContracts: Record<string, string> = {};
