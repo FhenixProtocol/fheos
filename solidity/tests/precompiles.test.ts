@@ -188,7 +188,7 @@ describe("Test SealOutput", () => {
 });
 
 
-describe.only("Test SealOutputTyped", () => {
+describe("Test SealOutputTyped", () => {
   let contract: SealoutputTypedTestType;
   let fheContract;
   let contractAddress;
@@ -2001,6 +2001,20 @@ describe("Test AsEbool", () => {
       expect(decryptedResult).toBe(testCase.output);
     }
   });
+
+  it(`From pre encrypted - Invalid Security Zone`, async () => {
+    const encInput = await fheContract.instance.encrypt_bool(true);
+    encInput.securityZone = 123;
+
+    try {
+      await contract.castFromPreEncryptedToEbool(
+        encInput
+      );
+      fail();
+    } catch (error) {
+      expect(error.toString()).toBe("ProviderError: execution reverted");
+    }
+  });
 });
 
 describe("Test AsEuint8", () => {
@@ -2102,6 +2116,20 @@ describe("Test AsEuint8", () => {
     const encInput = await fheContract.instance.encrypt_uint8(Number(value), 1);
     let decryptedResult = await contract.castFromPreEncryptedToEuint8(encInput);
     expect(decryptedResult).toBe(value);
+  });
+
+  it(`From pre encrypted - Invalid Security Zone`, async () => {
+    const encInput = await fheContract.instance.encrypt_uint8(Number(value));
+    encInput.securityZone = 123;
+
+    try {
+      await contract.castFromPreEncryptedToEuint8(
+        encInput
+      );
+      fail();
+    } catch (error) {
+      expect(error.toString()).toBe("ProviderError: execution reverted");
+    }
   });
 });
 
@@ -2218,6 +2246,20 @@ describe("Test AsEuint16", () => {
     );
     expect(decryptedResult).toBe(value);
   });
+
+  it(`From pre encrypted - Invalid Security Zone`, async () => {
+    const encInput = await fheContract.instance.encrypt_uint16(Number(value));
+    encInput.securityZone = 123;
+
+    try {
+      await contract.castFromPreEncryptedToEuint16(
+        encInput
+      );
+      fail();
+    } catch (error) {
+      expect(error.toString()).toBe("ProviderError: execution reverted");
+    }
+  });
 });
 
 describe("Test AsEuint32", () => {
@@ -2333,6 +2375,20 @@ describe("Test AsEuint32", () => {
     );
     expect(decryptedResult).toBe(value);
   });
+
+  it(`From pre encrypted - Invalid Security Zone`, async () => {
+    const encInput = await fheContract.instance.encrypt_uint32(Number(value));
+    encInput.securityZone = 123;
+
+    try {
+      await contract.castFromPreEncryptedToEuint32(
+        encInput
+      );
+      fail();
+    } catch (error) {
+      expect(error.toString()).toBe("ProviderError: execution reverted");
+    }
+  });
 });
 
 describe("Test AsEuint64", () => {
@@ -2442,6 +2498,20 @@ describe("Test AsEuint64", () => {
     );
     expect(decryptedResult).toBe(value);
   });
+
+  it(`From pre encrypted - Invalid Security Zone`, async () => {
+    const encInput = await fheContract.instance.encrypt_uint64(value);
+    encInput.securityZone = 123;
+
+    try {
+      await contract.castFromPreEncryptedToEuint64(
+        encInput
+      );
+      fail();
+    } catch (error) {
+      expect(error.toString()).toBe("ProviderError: execution reverted");
+    }
+  });
 });
 
 describe("Test AsEuint128", () => {
@@ -2549,6 +2619,20 @@ describe("Test AsEuint128", () => {
       encInput
     );
     expect(decryptedResult).toBe(value);
+  });
+
+  it(`From pre encrypted - Invalid Security Zone`, async () => {
+    const encInput = await fheContract.instance.encrypt_uint128(value);
+    encInput.securityZone = 123;
+
+    try {
+      await contract.castFromPreEncryptedToEuint128(
+        encInput
+      );
+      fail();
+    } catch (error) {
+      expect(error.toString()).toBe("ProviderError: execution reverted");
+    }
   });
 });
 
@@ -2661,6 +2745,20 @@ describe("Test AsEuint256", () => {
     );
     expect(decryptedResult).toBe(value);
   });
+
+  it(`From pre encrypted - Invalid Security Zone`, async () => {
+    const encInput = await fheContract.instance.encrypt_uint256(value);
+    encInput.securityZone = 123;
+
+    try {
+      await contract.castFromPreEncryptedToEuint256(
+        encInput
+      );
+      fail();
+    } catch (error) {
+      expect(error.toString()).toBe("ProviderError: execution reverted");
+    }
+  });
 });
 
 describe("Test AsEaddress", () => {
@@ -2734,6 +2832,20 @@ describe("Test AsEaddress", () => {
     );
     let decimal = BigInt(decryptedResult);
     expect(decimal).toBe(value);
+  });
+
+  it(`From pre encrypted - Invalid Security Zone`, async () => {
+    const encInput = await fheContract.instance.encrypt_address(value);
+    encInput.securityZone = 123;
+
+    try {
+      await contract.castFromPreEncryptedToEaddress(
+        encInput
+      );
+      fail();
+    } catch (error) {
+      expect(error.toString()).toBe("ProviderError: execution reverted");
+    }
   });
 });
 
