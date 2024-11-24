@@ -48,6 +48,16 @@ test-tx: check_network_is_running
 	cp solidity/.env.example solidity/.env
 	cd solidity && pnpm test -- transaction.test.ts
 
+.PHONY: test-werc
+test-werc: check_network_is_running
+	cp solidity/.env.example solidity/.env
+	cd solidity && pnpm test -- werc20.test.ts
+
+.PHONY: test-uninit
+test-uninit: check_network_is_running
+	cp solidity/.env.example solidity/.env
+	cd solidity && pnpm test -- uninit.test.ts
+
 .PHONY: build
 build:
 	go build -o build/main ./cmd/

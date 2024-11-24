@@ -64,6 +64,7 @@ COPY cmd fheos/cmd
 COPY precompiles fheos/precompiles
 COPY storage fheos/storage
 COPY hooks fheos/hooks
+COPY nitro-overrides/precompiles/FheOps.go ./precompiles/FheOps.go
 RUN cd fheos/precompiles/ && pnpm install
 
 COPY gen.sh fheos/
@@ -88,7 +89,8 @@ RUN go build -gcflags "all=-N -l" -ldflags="-X github.com/offchainlabs/nitro/cmd
 
 COPY Makefile fheos/
 
-RUN cd fheos && make build && make build-coprocessor
+RUN cd fheos && make build
+RUN cd fheos && make build-coprocessor
 
 FROM ghcr.io/fhenixprotocol/nitro/localfhenix:v0.2.4
 

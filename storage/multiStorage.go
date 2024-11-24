@@ -72,7 +72,13 @@ func (ms *MultiStore) AppendCt(h types.Hash, cipher *types.FheEncrypted, owner c
 
 	// If we're replacing a placeholder value just hard replace the value
 	if ct != nil && ct.Data.Placeholder && cipher.Placeholder == false {
-		return ms.PutCt(h, &types.CipherTextRepresentation{Data: cipher, Owners: ct.Owners, RefCount: ct.RefCount})
+		newCt := &types.CipherTextRepresentation{Data: cipher, Owners: ct.Owners, RefCount: ct.RefCount}
+		err := ms.PutCt(h, newCt)
+		if err != nil {
+			return err
+		}
+
+		return ms.disk.PutCt(h, newCt)
 	}
 
 	// Exists but not trivially encrypted

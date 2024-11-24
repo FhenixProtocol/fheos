@@ -1,4 +1,9 @@
-import { bnToAddress, createFheInstance, deployContract, fromHexString } from "./utils";
+import {
+  bnToAddress,
+  createFheInstance,
+  deployContract,
+  fromHexString,
+} from "./utils";
 import {
   AddTestType,
   LteTestType,
@@ -187,8 +192,7 @@ describe("Test SealOutput", () => {
   }
 });
 
-
-describe.only("Test SealOutputTyped", () => {
+describe("Test SealOutputTyped", () => {
   let contract: SealoutputTypedTestType;
   let fheContract;
   let contractAddress;
@@ -203,11 +207,8 @@ describe.only("Test SealOutputTyped", () => {
   const EBOOL_TFHE = 13;
 
   const testCases = {
-    'Bool': [
-      "sealoutputTyped(ebool)",
-      "sealTyped(ebool)",
-    ],
-    'Uint': [
+    Bool: ["sealoutputTyped(ebool)", "sealTyped(ebool)"],
+    Uint: [
       { test: "sealoutputTyped(euint8)", utype: EUINT8_TFHE },
       { test: "sealoutputTyped(euint16)", utype: EUINT16_TFHE },
       { test: "sealoutputTyped(euint32)", utype: EUINT32_TFHE },
@@ -216,10 +217,7 @@ describe.only("Test SealOutputTyped", () => {
       { test: "sealoutputTyped(euint256)", utype: EUINT256_TFHE },
       { test: "sealTyped(euint8)", utype: EUINT8_TFHE },
     ],
-    'Address': [
-      "sealoutputTyped(eaddress)",
-      "sealTyped(eaddress)",
-    ],
+    Address: ["sealoutputTyped(eaddress)", "sealTyped(eaddress)"],
   } as const;
 
   it(`Test Contract Deployment`, async () => {
@@ -232,43 +230,64 @@ describe.only("Test SealOutputTyped", () => {
     expect(fheContract).toBeTruthy();
   });
 
-	for (const test of testCases.Bool) {
-		it(`Test SealedBool :: ${test}`, async () => {
-			let plaintextInput = Math.random() > 0.5 ? true : false
+  for (const test of testCases.Bool) {
+    it(`Test SealedBool :: ${test}`, async () => {
+      let plaintextInput = Math.random() > 0.5 ? true : false;
 
-			let encryptedOutput = await contract.sealoutputTypedBool(test, plaintextInput, fromHexString(fheContract.permit.sealingKey.publicKey))
-			expect(encryptedOutput.utype).toBe(BigInt(EBOOL_TFHE))
+      let encryptedOutput = await contract.sealoutputTypedBool(
+        test,
+        plaintextInput,
+        fromHexString(fheContract.permit.sealingKey.publicKey)
+      );
+      expect(encryptedOutput.utype).toBe(BigInt(EBOOL_TFHE));
 
-			let decryptedOutput = fheContract.instance.unseal(contractAddress, encryptedOutput.data)
-			let decryptedOutputBool = Boolean(decryptedOutput).valueOf()
-			expect(decryptedOutputBool).toBe(plaintextInput)
-		})
-	}
+      let decryptedOutput = fheContract.instance.unseal(
+        contractAddress,
+        encryptedOutput.data
+      );
+      let decryptedOutputBool = Boolean(decryptedOutput).valueOf();
+      expect(decryptedOutputBool).toBe(plaintextInput);
+    });
+  }
 
-	for (const { test, utype } of testCases.Uint) {
-		it(`Test SealedUint :: ${test}`, async () => {
-			let plaintextInput = BigInt(Math.floor(Math.random() * 1000) % 256)
+  for (const { test, utype } of testCases.Uint) {
+    it(`Test SealedUint :: ${test}`, async () => {
+      let plaintextInput = BigInt(Math.floor(Math.random() * 1000) % 256);
 
-			let encryptedOutput = await contract.sealoutputTypedUint(test, plaintextInput, fromHexString(fheContract.permit.sealingKey.publicKey))
-			expect(encryptedOutput.utype).toBe(BigInt(utype))
-      
-			let decryptedOutput = fheContract.instance.unseal(contractAddress, encryptedOutput.data)
-			expect(decryptedOutput).toBe(plaintextInput)
-		})
-	}
+      let encryptedOutput = await contract.sealoutputTypedUint(
+        test,
+        plaintextInput,
+        fromHexString(fheContract.permit.sealingKey.publicKey)
+      );
+      expect(encryptedOutput.utype).toBe(BigInt(utype));
 
-	for (const test of testCases.Address) {
-		it(`Test SealedAddress :: ${test}`, async () => {
-			let plaintextInput = '0x1BDB34f2cEA785317903eD9618F5282BD5Be5c75'
+      let decryptedOutput = fheContract.instance.unseal(
+        contractAddress,
+        encryptedOutput.data
+      );
+      expect(decryptedOutput).toBe(plaintextInput);
+    });
+  }
 
-			let encryptedOutput = await contract.sealoutputTypedAddress(test, plaintextInput, fromHexString(fheContract.permit.sealingKey.publicKey))
-			expect(encryptedOutput.utype).toBe(BigInt(EADDRESS_TFHE))
+  for (const test of testCases.Address) {
+    it(`Test SealedAddress :: ${test}`, async () => {
+      let plaintextInput = "0x1BDB34f2cEA785317903eD9618F5282BD5Be5c75";
 
-			let decryptedOutput = fheContract.instance.unseal(contractAddress, encryptedOutput.data)
-			let decryptedOutputAddress = bnToAddress(decryptedOutput)
-			expect(decryptedOutputAddress).toBe(plaintextInput)
-		})
-	}
+      let encryptedOutput = await contract.sealoutputTypedAddress(
+        test,
+        plaintextInput,
+        fromHexString(fheContract.permit.sealingKey.publicKey)
+      );
+      expect(encryptedOutput.utype).toBe(BigInt(EADDRESS_TFHE));
+
+      let decryptedOutput = fheContract.instance.unseal(
+        contractAddress,
+        encryptedOutput.data
+      );
+      let decryptedOutputAddress = bnToAddress(decryptedOutput);
+      expect(decryptedOutputAddress).toBe(plaintextInput);
+    });
+  }
 });
 
 describe("Test Lte", () => {
@@ -1639,23 +1658,29 @@ describe("Test Rol", () => {
   });
 
   const generateTestCases = (bitSize: number) => {
-    const basePattern = BigInt(`0b${'11100000'.repeat(bitSize / 8)}`);
+    const basePattern = BigInt(`0b${"11100000".repeat(bitSize / 8)}`);
     const mask = (1n << BigInt(bitSize)) - 1n;
 
-    return [1, 2, 3, 4, 5].map(rotateAmount => {
-      const rotated = ((basePattern << BigInt(rotateAmount)) | (basePattern >> BigInt(bitSize - rotateAmount))) & mask;
+    return [1, 2, 3, 4, 5].map((rotateAmount) => {
+      const rotated =
+        ((basePattern << BigInt(rotateAmount)) |
+          (basePattern >> BigInt(bitSize - rotateAmount))) &
+        mask;
       return {
         a: basePattern,
         b: rotateAmount,
         expectedResult: rotated,
-        name: ` rol ${rotateAmount}`
+        name: ` rol ${rotateAmount}`,
       };
     });
   };
 
   const bitSizes = [8, 16, 32, 64, 128];
 
-  const funcsToTest = bitSizes.map(size => [`rol(euint${size},euint${size})`, `euint${size}.rol(euint${size})`]);
+  const funcsToTest = bitSizes.map((size) => [
+    `rol(euint${size},euint${size})`,
+    `euint${size}.rol(euint${size})`,
+  ]);
 
   funcsToTest.forEach((test, index) => {
     const bitSize = bitSizes[index];
@@ -1685,23 +1710,29 @@ describe("Test Ror", () => {
   });
 
   const generateTestCases = (bitSize: number) => {
-    const basePattern = BigInt(`0b${'10000001'.repeat(bitSize / 8)}`);
+    const basePattern = BigInt(`0b${"10000001".repeat(bitSize / 8)}`);
     const mask = (1n << BigInt(bitSize)) - 1n;
 
-    return [1, 2, 3, 4, 5].map(rotateAmount => {
-      const rotated = ((basePattern >> BigInt(rotateAmount)) | (basePattern << BigInt(bitSize - rotateAmount))) & mask;
+    return [1, 2, 3, 4, 5].map((rotateAmount) => {
+      const rotated =
+        ((basePattern >> BigInt(rotateAmount)) |
+          (basePattern << BigInt(bitSize - rotateAmount))) &
+        mask;
       return {
         a: basePattern,
         b: rotateAmount,
         expectedResult: rotated,
-        name: ` ror ${rotateAmount}`
+        name: ` ror ${rotateAmount}`,
       };
     });
   };
 
   const bitSizes = [8, 16, 32, 64, 128];
 
-  const funcsToTest = bitSizes.map(size => [`ror(euint${size},euint${size})`, `euint${size}.ror(euint${size})`]);
+  const funcsToTest = bitSizes.map((size) => [
+    `ror(euint${size},euint${size})`,
+    `euint${size}.ror(euint${size})`,
+  ]);
 
   funcsToTest.forEach((test, index) => {
     const bitSize = bitSizes[index];
@@ -2757,7 +2788,9 @@ describe("Test Square", () => {
         { a: 2, expectedResult: 4, name: "" },
         {
           a: overflow8,
-          expectedResult: Number(BigInt.asUintN(8, BigInt(overflow8 * overflow8))),
+          expectedResult: Number(
+            BigInt.asUintN(8, BigInt(overflow8 * overflow8))
+          ),
           name: " as overflow",
         },
       ],
@@ -2768,7 +2801,9 @@ describe("Test Square", () => {
         { a: 2, expectedResult: 4, name: "" },
         {
           a: overflow16,
-          expectedResult: Number(BigInt.asUintN(16, BigInt(overflow16 * overflow16))),
+          expectedResult: Number(
+            BigInt.asUintN(16, BigInt(overflow16 * overflow16))
+          ),
           name: " as overflow",
         },
       ],
@@ -2780,7 +2815,9 @@ describe("Test Square", () => {
         {
           a: overflow32,
           b: 2,
-          expectedResult: Number(BigInt.asUintN(32, BigInt(overflow32 * overflow32))),
+          expectedResult: Number(
+            BigInt.asUintN(32, BigInt(overflow32 * overflow32))
+          ),
           name: " as overflow",
         },
       ],
@@ -2791,7 +2828,9 @@ describe("Test Square", () => {
         { a: 3, expectedResult: 9, name: "" },
         {
           a: overflow64,
-          expectedResult: Number(BigInt.asUintN(64, BigInt(overflow64 * overflow64))),
+          expectedResult: Number(
+            BigInt.asUintN(64, BigInt(overflow64 * overflow64))
+          ),
           name: " with large number",
         },
       ],
@@ -2815,4 +2854,3 @@ describe("Test Square", () => {
     }
   }
 });
-

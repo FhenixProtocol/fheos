@@ -70,7 +70,7 @@ interface FunctionMetadata {
 
 const generateMetadataPayload = async (): Promise<FunctionMetadata[]> => {
   const result = await getFunctionsFromGo("../precompiles/contracts.go");
-  const resultWithInjected = injectMetadataAdditionalFunctions(result)
+  const resultWithInjected = injectMetadataAdditionalFunctions(result);
 
   return resultWithInjected.map((value) => {
     return {
@@ -88,15 +88,17 @@ const injectMetadataAdditionalFunctions = (fns: FunctionAnalysis[]) => {
   // List of additional functions to be generated that depend upon the parsed `go` functions
   // Dependents will be inserted in the generated contract immediately following the parent function
   const fnDependents: Record<string, FunctionAnalysis[]> = {
-    [SEALING_FUNCTION_NAME]: [{
-      name: 'sealoutputTyped',
-      paramsCount: 2,
-      needsSameType: false,
-      // Is replaced in `getReturnType` with `SealedBool`/`SealedUint`/`SealedAddress` based on input0
-      returnType: 'SealedStruct',
-      inputTypes: [ 'encrypted', 'bytes32' ],
-      isBooleanMathOp: true
-    }]
+    [SEALING_FUNCTION_NAME]: [
+      {
+        name: "sealoutputTyped",
+        paramsCount: 2,
+        needsSameType: false,
+        // Is replaced in `getReturnType` with `SealedBool`/`SealedUint`/`SealedAddress` based on input0
+        returnType: "SealedStruct",
+        inputTypes: ["encrypted", "bytes32"],
+        isBooleanMathOp: true,
+      },
+    ],
   };
   return fns.flatMap((fn) => fnDependents[fn.name] != null ? [fn, ...fnDependents[fn.name]] : fn);
 }
@@ -144,7 +146,9 @@ const getReturnType = (
 
   // `sealoutputTyped` determine and replace output type based on input0 type
   if (returnType && returnType === "SealedStruct") {
-    return `${UTypeSealedOutputMap[inputs[0].replace("input0 ", "") as EUintType]} memory`
+    return `${
+      UTypeSealedOutputMap[inputs[0].replace("input0 ", "") as EUintType]
+    } memory`;
   }
 
   if (returnType && returnType !== "encrypted") {
