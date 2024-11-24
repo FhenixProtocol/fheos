@@ -89,9 +89,8 @@ RUN go build -gcflags "all=-N -l" -ldflags="-X github.com/offchainlabs/nitro/cmd
 
 COPY Makefile fheos/
 
-RUN cd fheos
-RUN make build
-RUN make build-coprocessor
+RUN cd fheos && make build
+RUN cd fheos && make build-coprocessor
 
 FROM ghcr.io/fhenixprotocol/localfhenix:v0.1.0-beta5
 
