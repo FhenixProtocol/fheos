@@ -139,30 +139,25 @@ func CreatePlaceHolderData() []byte {
 	return make([]byte, 32)[:]
 }
 
-func blockUntilBinaryOperandsAvailable(storage *storage.MultiStore, lhsHash, rhsHash []byte, tp *TxParams) (*fhe.FheEncrypted, *fhe.FheEncrypted) {
+func blockUntilBinaryOperandsAvailable(storage *storage.MultiStore, lhsKey, rhsKey *fhe.CiphertextKey, tp *TxParams) (*fhe.FheEncrypted, *fhe.FheEncrypted) {
 	var lhsValue *fhe.FheEncrypted
 	var rhsValue *fhe.FheEncrypted
 
-	if !fhe.IsCtHash([32]byte(lhsHash)) || !fhe.IsCtHash([32]byte(rhsHash)) {
-		// return error
-		return nil, nil
-	}
-
 	// can speed this up to be concurrent, but for now this is fine I guess?
-	lhsValue = awaitCtResult(storage, lhsHash, tp)
-	rhsValue = awaitCtResult(storage, rhsHash, tp)
+	lhsValue = awaitCtResult(storage, lhsKey.Hash, tp)
+	rhsValue = awaitCtResult(storage, rhsKey.Hash, tp)
 
 	return lhsValue, rhsValue
 }
 
-func awaitCtResult(storage *storage.MultiStore, lhsHash []byte, tp *TxParams) *fhe.FheEncrypted {
-	lhsValue := getCiphertext(storage, fhe.Hash(lhsHash), tp.ContractAddress)
+func awaitCtResult(storage *storage.MultiStore, lhsHash fhe.Hash, tp *TxParams) *fhe.FheEncrypted {
+	lhsValue := getCiphertext(storage, lhsHash, tp.ContractAddress)
 	if lhsValue == nil {
 		return nil
 	}
 
 	for lhsValue.IsPlaceholderValue() {
-		lhsValue = getCiphertext(storage, fhe.Hash(lhsHash), tp.ContractAddress)
+		lhsValue = getCiphertext(storage, lhsHash, tp.ContractAddress)
 		time.Sleep(1 * time.Millisecond)
 	}
 	return lhsValue
@@ -178,37 +173,30 @@ func getCiphertext(state *storage.MultiStore, ciphertextHash fhe.Hash, caller co
 
 	return (*fhe.FheEncrypted)(ct)
 }
-func get2VerifiedOperands(storage *storage.MultiStore, lhsHash []byte, rhsHash []byte, caller common.Address) (lhs *fhe.FheEncrypted, rhs *fhe.FheEncrypted, err error) {
-	if len(lhsHash) != 32 || len(rhsHash) != 32 {
-		return nil, nil, errors.New("ciphertext's hashes need to be 32 bytes long")
+
+func get3VerifiedOperands(storage *storage.MultiStore, controlKeyBz, ifTrueKeyBz, ifFalseKeyBz []byte, tp *TxParams) (control *fhe.FheEncrypted, ifTrue *fhe.FheEncrypted, ifFalse *fhe.FheEncrypted, err error) {
+	controlKey, err := types.DeserializeCiphertextKey(controlKeyBz)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	ifTrueKey, err := types.DeserializeCiphertextKey(ifTrueKeyBz)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	ifFalseKey, err := types.DeserializeCiphertextKey(ifFalseKeyBz)
+	if err != nil {
+		return nil, nil, nil, err
 	}
 
-	lhs = getCiphertext(storage, fhe.BytesToHash(lhsHash), caller)
-	if lhs == nil {
-		return nil, nil, errors.New("unverified ciphertext handle")
-	}
-	rhs = getCiphertext(storage, fhe.BytesToHash(rhsHash), caller)
-	if rhs == nil {
-		return nil, nil, errors.New("unverified ciphertext handle")
-	}
-	err = nil
-	return
-}
-
-func get3VerifiedOperands(storage *storage.MultiStore, controlHash []byte, ifTrueHash []byte, ifFalseHash []byte, tp *TxParams) (control *fhe.FheEncrypted, ifTrue *fhe.FheEncrypted, ifFalse *fhe.FheEncrypted, err error) {
-	if len(controlHash) != 32 || len(ifTrueHash) != 32 || len(ifFalseHash) != 32 {
-		return nil, nil, nil, errors.New("ciphertext's hashes need to be 32 bytes long")
-	}
-
-	control = awaitCtResult(storage, controlHash, tp)
+	control = awaitCtResult(storage, controlKey.Hash, tp)
 	if control == nil {
 		return nil, nil, nil, errors.New("unverified ciphertext handle")
 	}
-	ifTrue = awaitCtResult(storage, ifTrueHash, tp)
+	ifTrue = awaitCtResult(storage, ifTrueKey.Hash, tp)
 	if ifTrue == nil {
 		return nil, nil, nil, errors.New("unverified ciphertext handle")
 	}
-	ifFalse = awaitCtResult(storage, ifFalseHash, tp)
+	ifFalse = awaitCtResult(storage, ifFalseKey.Hash, tp)
 	if ifFalse == nil {
 		return nil, nil, nil, errors.New("unverified ciphertext handle")
 	}

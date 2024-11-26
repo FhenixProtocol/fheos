@@ -25,7 +25,7 @@ type SealOutputCallbackFunc struct {
 	Callback    func(url string, ctKey []byte, value string)
 }
 
-func DecryptHelper(storage *storage2.MultiStore, ctHash []byte, tp *TxParams, defaultValue *big.Int) (*big.Int, error) {
+func DecryptHelper(storage *storage2.MultiStore, ctHash fhe.Hash, tp *TxParams, defaultValue *big.Int) (*big.Int, error) {
 	ct := awaitCtResult(storage, ctHash, tp)
 	if ct == nil {
 		msg := "decrypt unverified ciphertext handle"
@@ -41,7 +41,7 @@ func DecryptHelper(storage *storage2.MultiStore, ctHash []byte, tp *TxParams, de
 	return plaintext, nil
 }
 
-func SealOutputHelper(storage *storage2.MultiStore, ctHash []byte, pk []byte, tp *TxParams) (string, error) {
+func SealOutputHelper(storage *storage2.MultiStore, ctHash fhe.Hash, pk []byte, tp *TxParams) (string, error) {
 	ct := awaitCtResult(storage, ctHash, tp)
 	if ct == nil {
 		msg := "sealOutput unverified ciphertext handle"
@@ -57,40 +57,40 @@ func SealOutputHelper(storage *storage2.MultiStore, ctHash []byte, pk []byte, tp
 	return string(sealed), nil
 }
 
-func PreProcessOperation1(functionName types.PrecompileName, utype byte, input []byte, tp *TxParams) (uint64, error) {
+func PreProcessOperation1(functionName types.PrecompileName, utype byte, inputBz []byte, tp *TxParams) (fhe.CiphertextKey, uint64, error) {
+	input, err := types.DeserializeCiphertextKey(inputBz)
+	if err != nil {
+		logger.Error(functionName.String()+" failed to deserialize input ciphertext key", "err", err)
+		return types.GetEmptyCiphertextKey(), 0, vm.ErrExecutionReverted
+	}
+
 	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
-		return gas, nil
+		return types.GetEmptyCiphertextKey(), gas, nil
 	}
 
 	if !types.IsValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
-		return gas, vm.ErrExecutionReverted
+		return types.GetEmptyCiphertextKey(), gas, vm.ErrExecutionReverted
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
-	if len(input) != 32 {
-		msg := functionName.String() + " ct hash len must be 32 bytes"
-		logger.Error(msg, "ctHash", hex.EncodeToString(input), "len", len(input))
-		return gas, vm.ErrExecutionReverted
-	}
-
-	return gas, nil
+	return input, gas, nil
 }
 
-func ProcessOperation1(functionName types.PrecompileName, utype byte, input []byte, tp *TxParams) (*fhe.FheEncrypted, uint64, error) {
-	gas, err := PreProcessOperation1(functionName, utype, input, tp)
+func ProcessOperation1(functionName types.PrecompileName, utype byte, inputBz []byte, tp *TxParams) (*fhe.FheEncrypted, uint64, error) {
+	input, gas, err := PreProcessOperation1(functionName, utype, inputBz, tp)
 	if err != nil {
 		return nil, gas, err
 	}
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
-	ct := awaitCtResult(storage, input, tp)
+	ct := awaitCtResult(storage, input.Hash, tp)
 	if ct == nil {
 		msg := functionName.String() + " unverified ciphertext handle"
 		logger.Error(msg, " input ", input)
@@ -99,18 +99,29 @@ func ProcessOperation1(functionName types.PrecompileName, utype byte, input []by
 	return ct, gas, nil
 }
 
-func ProcessOperation2(functionName types.PrecompileName, mathOp TwoOperationFunc, utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
+func ProcessOperation2(functionName types.PrecompileName, mathOp TwoOperationFunc, utype byte, lhsKeyBz, rhsKeyBz []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
+	lhsKey, err := types.DeserializeCiphertextKey(lhsKeyBz)
+	if err != nil {
+		logger.Error(functionName.String()+" failed to deserialize lhs ciphertext key", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+	rhsKey, err := types.DeserializeCiphertextKey(rhsKeyBz)
+	if err != nil {
+		logger.Error(functionName.String()+" failed to deserialize rhs ciphertext key", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 
 	placeholderCt := fhe.CreateFheEncryptedWithData(CreatePlaceHolderData(), fhe.EncryptionType(utype), true)
-	placeholderKey := fhe.CalcBinaryPlaceholderValueHash(lhsHash, rhsHash, int(functionName))
-	placeholderCt.Hash = placeholderKey
+	placeholderKey := fhe.CalcBinaryPlaceholderValueHash(&lhsKey, &rhsKey, int(functionName))
+	placeholderCt.Key = placeholderKey
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Debug(functionName.String(), "lhs", hex.EncodeToString(lhsHash), "rhs", hex.EncodeToString(rhsHash), "placeholderKey", hex.EncodeToString(placeholderKey))
+		logger.Debug(functionName.String(), "lhs", hex.EncodeToString(lhsKey.Hash[:]), "rhs", hex.EncodeToString(rhsKey.Hash[:]), "placeholderKey", hex.EncodeToString(placeholderKey.Hash[:]))
 	}
 
-	err := storeCipherText(storage, placeholderCt, tp.ContractAddress)
+	err = storeCipherText(storage, placeholderCt, tp.ContractAddress)
 	if err != nil {
 		logger.Error(functionName.String()+" failed to store async ciphertext", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -129,24 +140,19 @@ func ProcessOperation2(functionName types.PrecompileName, mathOp TwoOperationFun
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Debug("fn", functionName.String(), "Storing async ciphertext", "placeholderKey", hex.EncodeToString(placeholderKey))
-	}
-	err = storage.SetAsyncCtStart(types.Hash(placeholderKey))
-	if err != nil {
-		logger.Error(functionName.String()+" failed to set async value start", "err", err)
-		return nil, 0, vm.ErrExecutionReverted
+		logger.Debug("fn", functionName.String(), "Storing async ciphertext", "placeholderKey", hex.EncodeToString(placeholderKey.Hash[:]))
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Debug("Starting new precompiled contract function: " + functionName.String())
 	}
 
-	lhsHashCopy := CopySlice(lhsHash)
-	rhsHashCopy := CopySlice(rhsHash)
-	placeholderKeyCopy := CopySlice(placeholderKey)
+	placeholderKeyCopy := placeholderKey
+	rhsKeyCopy := rhsKey
+	lhsKeyCopy := lhsKey
 
-	go func(lhsHash, rhsHash, resultHash []byte) {
-		lhs, rhs := blockUntilBinaryOperandsAvailable(storage, lhsHash, rhsHash, tp)
+	go func(lhsKey, rhsKey, resultKey *fhe.CiphertextKey) {
+		lhs, rhs := blockUntilBinaryOperandsAvailable(storage, lhsKey, rhsKey, tp)
 
 		if lhs == nil || rhs == nil {
 			logger.Error(functionName.String() + ": inputs not verified")
@@ -171,7 +177,7 @@ func ProcessOperation2(functionName types.PrecompileName, mathOp TwoOperationFun
 			return
 		}
 
-		result.Hash = resultHash
+		result.Key = *resultKey
 
 		err2 = storeCipherText(storage, result, tp.ContractAddress)
 		if err2 != nil {
@@ -179,12 +185,11 @@ func ProcessOperation2(functionName types.PrecompileName, mathOp TwoOperationFun
 			return
 		}
 
-		_ = storage.SetAsyncCtDone(types.Hash(resultHash))
 		if callback != nil {
 			url := (*callback).CallbackUrl
-			(*callback).Callback(url, placeholderKeyCopy, realResultHash)
+			(*callback).Callback(url, placeholderKeyCopy.Hash[:], realResultHash)
 		}
 		logger.Info(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.GetHash().Hex(), "rhs", rhs.GetHash().Hex(), "result", result.GetHash().Hex())
-	}(lhsHashCopy, rhsHashCopy, placeholderKeyCopy)
-	return placeholderKey[:], gas, err
+	}(&lhsKeyCopy, &rhsKeyCopy, &placeholderKeyCopy)
+	return types.SerializeCiphertextKey(placeholderKey), gas, err
 }

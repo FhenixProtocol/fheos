@@ -10,6 +10,10 @@ type DataType uint64
 type Hash fhe.Hash
 type FheEncrypted fhe.FheEncrypted
 
+var DeserializeCiphertextKey = fhe.DeserializeCiphertextKey
+var GetEmptyCiphertextKey = fhe.GetEmptyCiphertextKey
+var SerializeCiphertextKey = fhe.SerializeCiphertextKey
+
 func IsValidType(t fhe.EncryptionType) bool {
 	return t >= fhe.Uint8 && t <= fhe.Bool
 }
@@ -36,10 +40,6 @@ type FheCipherTextStorage interface {
 	HasCt(h Hash) bool
 
 	DeleteCt(h Hash) error
-
-	SetAsyncCtStart(h Hash) error
-	SetAsyncCtDone(h Hash) error
-	IsAsyncCtDone() (bool, error)
 }
 
 type PrecompileName int

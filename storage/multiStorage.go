@@ -6,7 +6,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethdb/memorydb"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
-	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 	"golang.org/x/exp/slices"
 )
 
@@ -35,18 +34,6 @@ func (ms *MultiStore) GetEphemeral() EphemeralStorage {
 func (ms *MultiStore) PutCt(h types.Hash, cipher *types.CipherTextRepresentation) error {
 	err := ms.ephemeral.PutCt(h, cipher)
 	return err
-}
-
-func (ms *MultiStore) SetAsyncCtStart(h types.Hash) error {
-	return ms.ephemeral.SetAsyncCtStart(h)
-}
-
-func (ms *MultiStore) SetAsyncCtDone(h types.Hash) error {
-	return ms.ephemeral.SetAsyncCtDone(h)
-}
-
-func (ms *MultiStore) IsAsyncCtDone() (bool, error) {
-	return ms.ephemeral.IsAsyncCtDone()
 }
 
 // AppendPhV stores a PlaceholderValue in ephemeral storage - it does NOT mark it as LTS. The reason is that we want only SSTORE to mark it as LTS, which is
@@ -107,7 +94,7 @@ func (ms *MultiStore) GetCtRepresentation(h types.Hash, caller common.Address) (
 	}
 
 	//This is new
-	owner, err := ms.isOwner(h, ct, caller)
+	owner, err := ms.isOwner(ct, caller)
 	if err != nil {
 		return nil, err
 	}
@@ -126,12 +113,12 @@ func (ms *MultiStore) GetCt(h types.Hash, caller common.Address) (*types.FheEncr
 
 	return ct.Data, nil
 }
-func (ms *MultiStore) isOwner(h types.Hash, ct *types.CipherTextRepresentation, owner common.Address) (bool, error) {
+func (ms *MultiStore) isOwner(ct *types.CipherTextRepresentation, owner common.Address) (bool, error) {
 	if ct == nil {
 		return false, fmt.Errorf("ciphertext not found")
 	}
 	// No ownership for trivially encrypted values
-	if fhe.IsTriviallyEncryptedCtHash(h) {
+	if ct.Data.Key.IsTriviallyEncrypted {
 		return true, nil
 	}
 
@@ -168,7 +155,7 @@ func (ms *MultiStore) AddOwner(h types.Hash, ct *types.CipherTextRepresentation,
 
 	// isOwner will return true for trivially encrypted values for every contract
 	// The meaning is that we won't add any owner for trivially encrypted value
-	isOwner, err := ms.isOwner(h, ct, owner)
+	isOwner, err := ms.isOwner(ct, owner)
 	if err != nil {
 		return err
 	}

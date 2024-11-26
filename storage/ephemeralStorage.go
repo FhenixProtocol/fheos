@@ -86,31 +86,6 @@ func (es *EphemeralStorageImpl) DecodeDeletionCiphertexts(raw []byte) (map[types
 	return deletion, nil
 }
 
-func (es *EphemeralStorageImpl) GetAsyncList() ([]types.Hash, error) {
-	raw, err := es.memstore.Get([]byte(AsyncCtKey))
-	if err != nil {
-		if err.Error() == "not found" {
-			return []types.Hash{}, nil
-		}
-
-		return nil, err
-	}
-	var asyncList []types.Hash
-	err = gob.NewDecoder(bytes.NewBuffer(raw)).Decode(&asyncList)
-
-	return asyncList, err
-}
-
-func (es *EphemeralStorageImpl) SetAsyncList(asyncList []types.Hash) error {
-	var buf bytes.Buffer
-	err := gob.NewEncoder(&buf).Encode(asyncList)
-	if err != nil {
-		return err
-	}
-
-	return es.memstore.Put([]byte(AsyncCtKey), buf.Bytes())
-}
-
 func (es *EphemeralStorageImpl) MarkForPersistence(contract common.Address, h types.Hash) error {
 	// We might have marked this ciphertext for deletion before
 	es.unmarkForDeletion(h)
@@ -269,41 +244,6 @@ func (es *EphemeralStorageImpl) GetAllToDelete() map[types.Hash]uint8 {
 	}
 
 	return parsedDeletions
-}
-
-func (es *EphemeralStorageImpl) SetAsyncCtStart(h types.Hash) error {
-	asyncList, err := es.GetAsyncList()
-	if err != nil {
-		return err
-	}
-
-	asyncList = append(asyncList, h)
-	return es.SetAsyncList(asyncList)
-}
-
-func (es *EphemeralStorageImpl) SetAsyncCtDone(h types.Hash) error {
-	asyncList, err := es.GetAsyncList()
-	if err != nil {
-		return err
-	}
-
-	for i, v := range asyncList {
-		if v == h {
-			asyncList = append(asyncList[:i], asyncList[i+1:]...)
-			break
-		}
-	}
-
-	return es.SetAsyncList(asyncList)
-}
-
-func (es *EphemeralStorageImpl) IsAsyncCtDone() (bool, error) {
-	asyncList, err := es.GetAsyncList()
-	if err != nil {
-		return false, err
-	}
-
-	return len(asyncList) == 0, nil
 }
 
 func (es *EphemeralStorageImpl) unmarkForDeletion(h types.Hash) error {
