@@ -5,17 +5,23 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/ethdb/memorydb"
-	"github.com/fhenixprotocol/fheos/precompiles"
-	fhedriver "github.com/fhenixprotocol/warp-drive/fhe-driver"
 	"io/ioutil"
 	"log"
 	"math/big"
 	"net/http"
 	"os"
 	"strconv"
+	"time"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ethereum/go-ethereum/ethdb/memorydb"
+	"github.com/fhenixprotocol/fheos/precompiles"
+	fhedriver "github.com/fhenixprotocol/warp-drive/fhe-driver"
+)
+
+const (
+	maxRetries = 3
 )
 
 // Struct to parse the incoming JSON request
@@ -56,28 +62,61 @@ type SealOutputResultUpdate struct {
 
 var tp precompiles.TxParams
 
+func doWithRetry(operation func() error) error {
+	var lastErr error
+	for i := 0; i < maxRetries; i++ {
+		if err := operation(); err != nil {
+			lastErr = err
+			// Small exponential backoff before retrying
+			time.Sleep(time.Duration(i+1) * time.Millisecond * 50)
+			fmt.Printf("Retrying operation (attempt %d/%d)\n", i+1, maxRetries)
+		} else {
+			return nil
+		}
+	}
+	return fmt.Errorf("operation failed after %d attempts: %v", maxRetries, lastErr)
+}
+
 func responseToServer(url string, tempKey []byte, json []byte) {
-	// Create a new request using http.NewRequest
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(json))
-	if err != nil {
-		log.Fatalf("Error creating request: %v", err)
-	}
+	err := doWithRetry(func() error {
+		// Create a new request using http.NewRequest
+		req, err := http.NewRequest("POST", url, bytes.NewBuffer(json))
+		if err != nil {
+			return fmt.Errorf("error creating request: %v", err)
+		}
 
-	// Set the request content-type to application/json
-	req.Header.Set("Content-Type", "application/json")
+		// Set the request content-type to application/json
+		req.Header.Set("Content-Type", "application/json")
 
-	// Send the request using http.Client
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Fatalf("Error sending request: %v", err)
-	}
-	defer resp.Body.Close()
+		// Send the request using http.Client
+		client := &http.Client{
+			// TODO : Adjust this timeout after gathering some real data
+			Timeout: 5 * time.Second,
+		}
 
-	// Read and print the response body
-	_, err = ioutil.ReadAll(resp.Body)
+		resp, err := client.Do(req)
+		if err != nil {
+			return fmt.Errorf("error sending request: %v", err)
+		}
+		defer resp.Body.Close()
+
+		// Read and print the response body
+		_, err = ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return fmt.Errorf("error reading response: %v", err)
+		}
+
+		// Check if the status code indicates success
+		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+			return fmt.Errorf("server returned non-success status code: %d for %s", resp.StatusCode, url)
+		}
+
+		return nil
+	})
+
 	if err != nil {
-		log.Fatalf("Error reading response: %v", err)
+		log.Printf("Failed to send response after all retries: %v", err)
+		return
 	}
 
 	fmt.Printf("Update requester %s with the result of %+v\n", url, tempKey)
@@ -370,7 +409,15 @@ func main() {
 	http.HandleFunc("/Decrypt", DecryptHandler)
 	http.HandleFunc("/SealOutput", SealOutputHandler)
 
+	// Create a server with timeouts
+	server := &http.Server{
+		Addr:         ":8448",
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
+
 	// Start the server
 	log.Println("Server listening on port 8448...")
-	log.Fatal(http.ListenAndServe(":8448", nil))
+	log.Fatal(server.ListenAndServe())
 }
