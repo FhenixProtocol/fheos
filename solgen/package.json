@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Code that generates solidity user facing library",
   "scripts": {
-    "build": "tsc solgen.ts && node solgen.js && mv FHE.sol ../solidity"
+    "build": "tsc solgen.ts && node solgen.js && mv FHE.sol ../solidity && tsc async_solgen.ts && node async_solgen.js && mv AsyncFHE.sol ../solidity/AsyncFHE.sol"
   },
   "keywords": [],
   "author": "",
