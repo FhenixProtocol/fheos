@@ -1,9 +1,8 @@
 package main
 
 import (
-	"net/http"
-
 	"github.com/fhenixprotocol/fheos/precompiles"
+	"net/http"
 )
 
 type HandlerDef struct {

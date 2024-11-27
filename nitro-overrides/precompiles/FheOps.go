@@ -4,11 +4,10 @@ package precompiles
 
 import (
 	"fmt"
-	"math/big"
-	"time"
-
 	"github.com/ethereum/go-ethereum/metrics"
 	fheos "github.com/fhenixprotocol/fheos/precompiles"
+	"math/big"
+	"time"
 )
 
 type FheOps struct {

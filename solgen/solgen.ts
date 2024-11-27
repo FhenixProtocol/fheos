@@ -54,9 +54,9 @@ import {
   isBitwiseOp,
   SEALING_FUNCTION_NAME,
   capitalize,
+  SEALING_TYPED_FUNCTION_NAME,
   UTypeSealedOutputMap,
   EUintType,
-  SEALING_TYPED_FUNCTION_NAME,
 } from "./common";
 
 interface FunctionMetadata {
@@ -70,6 +70,7 @@ interface FunctionMetadata {
 
 const generateMetadataPayload = async (): Promise<FunctionMetadata[]> => {
   const result = await getFunctionsFromGo("../precompiles/contracts.go");
+
   const resultWithInjected = injectMetadataAdditionalFunctions(result);
 
   return resultWithInjected.map((value) => {
@@ -100,8 +101,11 @@ const injectMetadataAdditionalFunctions = (fns: FunctionAnalysis[]) => {
       },
     ],
   };
-  return fns.flatMap((fn) => fnDependents[fn.name] != null ? [fn, ...fnDependents[fn.name]] : fn);
-}
+
+  return fns.flatMap((fn) =>
+    fnDependents[fn.name] != null ? [fn, ...fnDependents[fn.name]] : fn
+  );
+};
 
 // Function to generate all combinations of parameters.
 function generateCombinations(

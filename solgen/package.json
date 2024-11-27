@@ -3,19 +3,12 @@
   "version": "1.0.0",
   "description": "Code that generates solidity user facing library",
   "scripts": {
-    "build-old": "tsc solgen.ts && node solgen.js && mv FHE.sol ../solidity",
-    "build": "tsc async_solgen.ts && node async_solgen.js && mv AsyncFHE.sol ../solidity/AsyncFHE.sol"
+    "build": "tsc solgen.ts && node solgen.js && mv FHE.sol ../solidity && tsc async_solgen.ts && node async_solgen.js && mv AsyncFHE.sol ../solidity/AsyncFHE.sol"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@types/node": "^20.10.0"
-  },
-  "packageManager": "pnpm@9.12.1+sha512.e5a7e52a4183a02d5931057f7a0dbff9d5e9ce3161e33fa68ae392125b79282a8a8a470a51dfc8a0ed86221442eb2fb57019b0990ed24fab519bf0e1bc5ccfc4",
-  "devDependencies": {
-    "ts-node": "^10.9.2",
-    "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.6.3"
   }
 }
