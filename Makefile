@@ -8,7 +8,6 @@ install:
 gen:
 	./gen.sh
 	cd solgen && pnpm build
-	cd solgen && pnpm build-old
 
 .PHONY: gen-fheops
 gen-fheops:
