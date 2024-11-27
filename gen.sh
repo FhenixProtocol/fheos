@@ -5,7 +5,7 @@ set -e
 # Default values
 FHE_OPS_DEST="../precompiles"
 OUTPUT="chains/arbitrum"
-GEN_FHEOPS="false"
+GEN_FHEOPS="true"
 NITRO_OVERRIDE="false"
 
 # Parse flags

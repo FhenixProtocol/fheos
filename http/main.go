@@ -349,7 +349,7 @@ func SealOutputHandler(w http.ResponseWriter, r *http.Request) {
 
 	var req SealOutputRequest
 	if err := json.Unmarshal(body, &req); err != nil {
-		fmt.("Failed unmarsheling request: %+v body is %+v\n", err, string(body))
+		fmt.Errorf("Failed unmarsheling request: %+v body is %+v\n", err, string(body))
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
