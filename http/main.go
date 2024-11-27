@@ -405,17 +405,9 @@ func main() {
 	http.HandleFunc("/Decrypt", DecryptHandler)
 	http.HandleFunc("/SealOutput", SealOutputHandler)
 
-	// Create a server with timeouts
-	server := &http.Server{
-		Addr:         ":8448",
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
-		IdleTimeout:  60 * time.Second,
-	}
-
 	// Start the server
 	log.Println("Server listening on port 8448...")
-	if err := server.ListenAndServe(); err != nil {
+	if err := http.ListenAndServe(":8448", nil); err != nil {
 		log.Fatalf("Server stopped: %v", err)
 	}
 }
