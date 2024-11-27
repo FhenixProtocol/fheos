@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	maxRetries = 3
+	maxRetriesForRepost = 3
 )
 
 // Struct to parse the incoming JSON request
