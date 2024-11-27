@@ -115,7 +115,7 @@ func responseToServer(url string, tempKey []byte, json []byte) {
 	})
 
 	if err != nil {
-		log.Printf("Failed to send response after all retries: %v", err)
+		log.Errorf("Failed to send response after all retries: %v", err)
 		return
 	}
 
@@ -127,7 +127,7 @@ func handleResult(url string, tempKey []byte, actualHash []byte) {
 	// JSON data to be sent in the request body
 	jsonData, err := json.Marshal(HashResultUpdate{TempKey: tempKey, ActualHash: actualHash})
 	if err != nil {
-		log.Printf("Failed to marshal update for requester %s with the result of %+v: %v", url, tempKey, err)
+		log.Errorf("Failed to marshal update for requester %s with the result of %+v: %v", url, tempKey, err)
 		return
 	}
 
@@ -139,7 +139,7 @@ func handleDecryptResult(url string, ctKey []byte, plaintext *big.Int) {
 	plaintextString := plaintext.Text(16)
 	jsonData, err := json.Marshal(DecryptResultUpdate{CtKey: ctKey, Plaintext: plaintextString})
 	if err != nil {
-		log.Printf("Failed to marshal decrypt result for requester %s with the result of %+v: %v", url, ctKey, err)
+		log.Errorf("Failed to marshal decrypt result for requester %s with the result of %+v: %v", url, ctKey, err)
 		return
 	}
 
@@ -150,7 +150,7 @@ func handleSealOutputResult(url string, ctKey []byte, value string) {
 	fmt.Printf("Got result for %s : %s\n", hex.EncodeToString(ctKey), value)
 	jsonData, err := json.Marshal(SealOutputResultUpdate{CtKey: ctKey, Value: value})
 	if err != nil {
-		log.Printf("Failed to marshal seal output result for requester %s with the result of %+v: %v", url, ctKey, err)
+		log.Errorf("Failed to marshal seal output result for requester %s with the result of %+v: %v", url, ctKey, err)
 		return
 	}
 
@@ -308,7 +308,7 @@ func DecryptHandler(w http.ResponseWriter, r *http.Request) {
 
 	var req DecryptRequest
 	if err := json.Unmarshal(body, &req); err != nil {
-		fmt.Printf("Failed unmarsheling request: %+v body is %+v\n", err, string(body))
+		fmt.Errorf("Failed unmarsheling request: %+v body is %+v\n", err, string(body))
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -349,7 +349,7 @@ func SealOutputHandler(w http.ResponseWriter, r *http.Request) {
 
 	var req SealOutputRequest
 	if err := json.Unmarshal(body, &req); err != nil {
-		fmt.Printf("Failed unmarsheling request: %+v body is %+v\n", err, string(body))
+		fmt.("Failed unmarsheling request: %+v body is %+v\n", err, string(body))
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
