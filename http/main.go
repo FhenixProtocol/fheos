@@ -127,7 +127,8 @@ func handleResult(url string, tempKey []byte, actualHash []byte) {
 	// JSON data to be sent in the request body
 	jsonData, err := json.Marshal(HashResultUpdate{TempKey: tempKey, ActualHash: actualHash})
 	if err != nil {
-		log.Fatalf("Failed to update requester %s with the result of %+v", url, tempKey)
+		log.Printf("Failed to marshal update for requester %s with the result of %+v: %v", url, tempKey, err)
+		return
 	}
 
 	responseToServer(url, tempKey, jsonData)
@@ -138,7 +139,8 @@ func handleDecryptResult(url string, ctKey []byte, plaintext *big.Int) {
 	plaintextString := plaintext.Text(16)
 	jsonData, err := json.Marshal(DecryptResultUpdate{CtKey: ctKey, Plaintext: plaintextString})
 	if err != nil {
-		log.Fatalf("Failed to update requester %s with the result of %+v", url, ctKey)
+		log.Printf("Failed to marshal decrypt result for requester %s with the result of %+v: %v", url, ctKey, err)
+		return
 	}
 
 	responseToServer(url, ctKey, jsonData)
@@ -148,7 +150,8 @@ func handleSealOutputResult(url string, ctKey []byte, value string) {
 	fmt.Printf("Got result for %s : %s\n", hex.EncodeToString(ctKey), value)
 	jsonData, err := json.Marshal(SealOutputResultUpdate{CtKey: ctKey, Value: value})
 	if err != nil {
-		log.Fatalf("Failed to update requester %s with the result of %+v", url, ctKey)
+		log.Printf("Failed to marshal seal output result for requester %s with the result of %+v: %v", url, ctKey, err)
+		return
 	}
 
 	responseToServer(url, ctKey, jsonData)
@@ -220,23 +223,20 @@ func getenvInt(key string, defaultValue int) (int, error) {
 
 func generateKeys(securityZones int32) error {
 	if _, err := os.Stat("./keys/"); os.IsNotExist(err) {
-		err := os.Mkdir("./keys/", 0755)
-		if err != nil {
-			return err
+		if err := os.Mkdir("./keys/", 0755); err != nil {
+			return fmt.Errorf("failed to create keys directory: %v", err)
 		}
 	}
 
 	if _, err := os.Stat("./keys/tfhe/"); os.IsNotExist(err) {
-		err := os.Mkdir("./keys/tfhe/", 0755)
-		if err != nil {
-			return err
+		if err := os.Mkdir("./keys/tfhe/", 0755); err != nil {
+			return fmt.Errorf("failed to create tfhe directory: %v", err)
 		}
 	}
 
 	for i := int32(0); i < securityZones; i++ {
-		err := fhedriver.GenerateFheKeys(i)
-		if err != nil {
-			return fmt.Errorf("error generating FheKeys for securityZone %d: %s", i, err)
+		if err := fhedriver.GenerateFheKeys(i); err != nil {
+			return fmt.Errorf("error generating FheKeys for securityZone %d: %v", i, err)
 		}
 	}
 	return nil
@@ -244,34 +244,30 @@ func generateKeys(securityZones int32) error {
 
 func initFheos() (*precompiles.TxParams, error) {
 	if os.Getenv("FHEOS_DB_PATH") == "" {
-		err := os.Setenv("FHEOS_DB_PATH", "./fheosdb")
-		if err != nil {
-			return nil, err
+		if err := os.Setenv("FHEOS_DB_PATH", "./fheosdb"); err != nil {
+			return nil, fmt.Errorf("failed to set FHEOS_DB_PATH: %v", err)
 		}
 	}
 
-	err := precompiles.InitFheConfig(&fhedriver.ConfigDefault)
-	if err != nil {
-		return nil, err
+	if err := precompiles.InitFheConfig(&fhedriver.ConfigDefault); err != nil {
+		return nil, fmt.Errorf("failed to init FHE config: %v", err)
 	}
 
 	securityZones, err := getenvInt("FHEOS_SECURITY_ZONES", 1)
 	if err != nil {
-		return nil, err
-	}
-	err = generateKeys(int32(securityZones))
-	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get security zones: %v", err)
 	}
 
-	err = precompiles.InitializeFheosState()
-	if err != nil {
-		return nil, err
+	if err := generateKeys(int32(securityZones)); err != nil {
+		return nil, fmt.Errorf("failed to generate keys: %v", err)
 	}
 
-	err = os.Setenv("FHEOS_DB_PATH", "")
-	if err != nil {
-		return nil, err
+	if err := precompiles.InitializeFheosState(); err != nil {
+		return nil, fmt.Errorf("failed to initialize FHEOS state: %v", err)
+	}
+
+	if err := os.Setenv("FHEOS_DB_PATH", ""); err != nil {
+		return nil, fmt.Errorf("failed to clear FHEOS_DB_PATH: %v", err)
 	}
 
 	tp = precompiles.TxParams{
@@ -295,7 +291,7 @@ func initFheos() (*precompiles.TxParams, error) {
 		toEncrypt[31] = uint8(i)
 		trivialHash, _, err = precompiles.TrivialEncrypt(toEncrypt, 2, 0, &tp, nil)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to generate trivial hash for %d: %v", i, err)
 		}
 		fmt.Printf("Trivial hash for %d: %x\n", i, trivialHash)
 	}
@@ -419,5 +415,7 @@ func main() {
 
 	// Start the server
 	log.Println("Server listening on port 8448...")
-	log.Fatal(server.ListenAndServe())
+	if err := server.ListenAndServe(); err != nil {
+		log.Fatalf("Server stopped: %v", err)
+	}
 }
