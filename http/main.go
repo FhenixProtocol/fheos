@@ -308,7 +308,7 @@ func DecryptHandler(w http.ResponseWriter, r *http.Request) {
 
 	var req DecryptRequest
 	if err := json.Unmarshal(body, &req); err != nil {
-		fmt.Errorf("Failed unmarsheling request: %+v body is %+v\n", err, string(body))
+		fmt.Printf("Failed unmarsheling request: %+v body is %+v\n", err, string(body))
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -349,7 +349,7 @@ func SealOutputHandler(w http.ResponseWriter, r *http.Request) {
 
 	var req SealOutputRequest
 	if err := json.Unmarshal(body, &req); err != nil {
-		fmt.Errorf("Failed unmarsheling request: %+v body is %+v\n", err, string(body))
+		fmt.Printf("Failed unmarsheling request: %+v body is %+v\n", err, string(body))
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
