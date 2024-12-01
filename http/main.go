@@ -10,6 +10,7 @@ import (
 	"math/big"
 	"net/http"
 	"os"
+	"reflect"
 	"strconv"
 	"time"
 
@@ -157,8 +158,87 @@ func handleSealOutputResult(url string, ctKey []byte, value string) {
 	responseToServer(url, ctKey, jsonData)
 }
 
+type HandlerFunc interface {
+	func(byte, []byte, *precompiles.TxParams, *precompiles.CallbackFunc) ([]byte, uint64, error) |
+		func(byte, []byte, []byte, *precompiles.TxParams, *precompiles.CallbackFunc) ([]byte, uint64, error) |
+		func(byte, []byte, []byte, []byte, *precompiles.TxParams, *precompiles.CallbackFunc) ([]byte, uint64, error)
+}
+
+type GenericHashRequest struct {
+	UType        byte     `json:"utype"`
+	Inputs       []string `json:"inputs"`
+	RequesterUrl string   `json:"requesterUrl"`
+}
+
+func handleRequest[T HandlerFunc](w http.ResponseWriter, r *http.Request, handler T) {
+	fmt.Printf("Got a request from %s\n", r.RemoteAddr)
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var req GenericHashRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Get the number of expected inputs based on handler type
+	handlerType := reflect.TypeOf(handler)
+	expectedInputs := handlerType.NumIn() - 3 // subtract utype, txParams, and callback
+
+	if len(req.Inputs) != expectedInputs {
+		http.Error(w, fmt.Sprintf("Handler expects %d inputs, got %d", expectedInputs, len(req.Inputs)), http.StatusBadRequest)
+		return
+	}
+
+	// Convert all hex strings to byte arrays
+	inputs := [][]byte{}
+	for i, hexStr := range req.Inputs {
+		decoded, err := hex.DecodeString(hexStr)
+		if err != nil {
+			e := fmt.Sprintf("Invalid input hex string at position %d: %s %+v", i, hexStr, err)
+			fmt.Println(e)
+			http.Error(w, e, http.StatusBadRequest)
+			return
+		}
+		inputs = append(inputs, decoded)
+	}
+
+	callback := precompiles.CallbackFunc{
+		CallbackUrl: req.RequesterUrl,
+		Callback:    handleResult,
+	}
+
+	// Prepare the arguments for the handler call
+	args := make([]reflect.Value, handlerType.NumIn())
+	args[0] = reflect.ValueOf(req.UType)
+	for i, input := range inputs {
+		args[i+1] = reflect.ValueOf(input)
+	}
+	args[len(args)-2] = reflect.ValueOf(&tp)
+	args[len(args)-1] = reflect.ValueOf(&callback)
+
+	// Call the handler with the appropriate number of inputs
+	results := reflect.ValueOf(handler).Call(args)
+
+	// TODO : handle gasUsed at index 1
+	result, _, err := results[0].Interface().([]byte), results[1].Interface().(uint64), results[2].Interface().(error)
+	if err != nil {
+		e := fmt.Sprintf("Operation failed: %+v", err)
+		fmt.Println(e)
+		http.Error(w, e, http.StatusBadRequest)
+		return
+	}
+
+	res := []byte(hex.EncodeToString(result))
+	w.Write(res)
+	fmt.Printf("Started processing the request for tempkey %s\n", hex.EncodeToString(result))
+}
+
 // Helper function to handle decoding the request and calling the respective function
-func handleRequest(w http.ResponseWriter, r *http.Request, handler func(byte, []byte, []byte, *precompiles.TxParams, *precompiles.CallbackFunc) ([]byte, uint64, error)) {
+func handleTwoRequest(w http.ResponseWriter, r *http.Request, handler func(byte, []byte, []byte, *precompiles.TxParams, *precompiles.CallbackFunc) ([]byte, uint64, error)) {
 	fmt.Printf("Got a request from %s\n", r.RemoteAddr)
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
