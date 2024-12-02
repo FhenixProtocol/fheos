@@ -32,8 +32,6 @@ RUN cd warp-drive/fhe-engine && cargo update
 # Copy the rest of the stuff so we can actually build it
 COPY warp-drive/ warp-drive/
 
-COPY http/ http/
-
 WORKDIR /workspace/warp-drive/fhe-engine
 
 # Todo: fix arm support
@@ -92,6 +90,7 @@ COPY Makefile fheos/
 RUN cd fheos && make build
 RUN cd fheos && make build-coprocessor
 
+# FROM ghcr.io/fhenixprotocol/nitro/localfhenix:v0.2.4
 FROM ghcr.io/fhenixprotocol/localfhenix:v0.1.0-beta5
 
 # **************** setup dlv
@@ -100,6 +99,7 @@ ENV GOROOT=/usr/local/go
 ENV GOPATH=/go/
 ENV PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
 
+# ADD https://go.dev/dl/go1.20.linux-arm64.tar.gz go.linux-amd64.tar.gz
 ADD https://go.dev/dl/go1.20.linux-amd64.tar.gz go.linux-amd64.tar.gz
 RUN sudo tar -C /usr/local -xzf go.linux-amd64.tar.gz
 

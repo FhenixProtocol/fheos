@@ -15,16 +15,9 @@ export interface FunctionAnalysis {
 
 // helps us know how many input parameters there are
 const specificFunctions = [
-  {
-    name: "get3VerifiedOperands(",
-    amount: 3,
-    paramTypes: ["encrypted", "encrypted", "encrypted"],
-  },
-  {
-    name: "ProcessOperation2(",
-    amount: 2,
-    paramTypes: ["encrypted", "uint8", "plaintext"],
-  },
+  { name: "OneOperationFunc", amount: 1, paramTypes: ["encrypted"] },
+  { name: "TwoOperationFunc", amount: 2, paramTypes: ["encrypted", "uint8", "plaintext"] },
+  { name: "ThreeOperationFunc", amount: 3, paramTypes: ["encrypted", "encrypted", "encrypted"] },
   { name: "ProcessOperation1(", amount: 1, paramTypes: ["encrypted"] },
   { name: "fhedriver.UintType(", amount: 1, paramTypes: ["encrypted"] },
   { name: "GenerateSeedFromEntropy(", amount: 0, paramTypes: [] },
