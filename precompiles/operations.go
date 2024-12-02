@@ -2,11 +2,13 @@ package precompiles
 
 import (
 	"encoding/hex"
+	"fmt"
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
-	"math/big"
 )
 
 type TwoOperationFunc func(lhs *fhe.FheEncrypted, rhs *fhe.FheEncrypted) (*fhe.FheEncrypted, error)
@@ -55,6 +57,27 @@ func SealOutputHelper(storage *storage2.MultiStore, ctHash []byte, pk []byte, tp
 	}
 
 	return string(sealed), nil
+}
+
+func createPlaceholder(utype byte, functionName types.PrecompileName, inputHashes ...[]byte) (*fhe.FheEncrypted, error) {
+	placeholderCt := fhe.CreateFheEncryptedWithData(CreatePlaceHolderData(), fhe.EncryptionType(utype), true)
+
+	// Calculate placeholder based on number of inputs
+	var placeholderKey []byte
+	// TODO : Make it generic for n inputs
+	switch len(inputHashes) {
+	case 1:
+		placeholderKey = fhe.CalcUnaryPlaceholderValueHash(inputHashes[0], int(functionName))
+	case 2:
+		placeholderKey = fhe.CalcBinaryPlaceholderValueHash(inputHashes[0], inputHashes[1], int(functionName))
+	case 3:
+		placeholderKey = fhe.CalcTernaryPlaceholderValueHash(inputHashes[0], inputHashes[1], inputHashes[2], int(functionName))
+	default:
+		return nil, fmt.Errorf("unsupported number of inputs: %d", len(inputHashes))
+	}
+
+	placeholderCt.Hash = placeholderKey[:]
+	return placeholderCt, nil
 }
 
 func PreProcessOperation1(functionName types.PrecompileName, utype byte, input []byte, tp *TxParams) (uint64, error) {

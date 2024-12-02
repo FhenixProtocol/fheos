@@ -155,6 +155,44 @@ func blockUntilBinaryOperandsAvailable(storage *storage.MultiStore, lhsHash, rhs
 	return lhsValue, rhsValue
 }
 
+func blockUntilInputsAvailable(storage *storage.MultiStore, tp *TxParams, inputHashes ...[]byte) ([]*fhe.FheEncrypted, error) {
+	// Check validity of all input hashes before awaiting results
+	for _, hash := range inputHashes {
+		// TODO : Adjust according to lior's struct changes
+		if len(hash) != 32 {
+			return nil, errors.New("ciphertext's hashes need to be 32 bytes long")
+		}
+	}
+
+	cts := make([]*fhe.FheEncrypted, len(inputHashes))
+	results := make(chan struct {
+        index int
+        ct    *fhe.FheEncrypted
+    }, len(inputHashes))
+
+	// Launch goroutines for each hash
+	for i, hash := range inputHashes {
+		go func(index int, hash []byte) {
+			ct := awaitCtResult(storage, hash, tp)
+			results <- struct {
+				index int
+				ct    *fhe.FheEncrypted
+			}{index, ct}
+		}(i, hash)
+	}
+
+	// Collect results
+	for i := 0; i < len(inputHashes); i++ {
+		result := <-results
+		cts[result.index] = result.ct
+		if result.ct == nil {
+			return nil, errors.New("unverified ciphertext handle")
+		}
+	}
+
+	return cts, nil
+}
+
 func awaitCtResult(storage *storage.MultiStore, lhsHash []byte, tp *TxParams) *fhe.FheEncrypted {
 	lhsValue := getCiphertext(storage, fhe.Hash(lhsHash), tp.ContractAddress)
 	if lhsValue == nil {

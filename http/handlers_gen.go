@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/fhenixprotocol/fheos/precompiles"
 	"net/http"
+
+	"github.com/fhenixprotocol/fheos/precompiles"
 )
 
 type HandlerDef struct {
@@ -89,7 +90,48 @@ func SubHandler(w http.ResponseWriter, r *http.Request) {
 func XorHandler(w http.ResponseWriter, r *http.Request) {
 	handleRequest(w, r, precompiles.Xor)
 }
+
+func SelectHandler(w http.ResponseWriter, r *http.Request) {
+	handleRequest(w, r, precompiles.Select)
+}
+
+func NotHandler(w http.ResponseWriter, r *http.Request) {
+	handleRequest(w, r, precompiles.Not)
+}
+
+func SquareHandler(w http.ResponseWriter, r *http.Request) {
+	handleRequest(w, r, precompiles.Square)
+}
+
+// func RandomHandler(w http.ResponseWriter, r *http.Request) {
+// 	handleRandomRequest(w, r, precompiles.Random)
+// }
+
 func getHandlers() []HandlerDef {
 	return []HandlerDef{
-		{"/Add", AddHandler}, {"/And", AndHandler}, {"/Div", DivHandler}, {"/Eq", EqHandler}, {"/Gt", GtHandler}, {"/Gte", GteHandler}, {"/Lt", LtHandler}, {"/Lte", LteHandler}, {"/Max", MaxHandler}, {"/Min", MinHandler}, {"/Mul", MulHandler}, {"/Ne", NeHandler}, {"/Or", OrHandler}, {"/Rem", RemHandler}, {"/Rol", RolHandler}, {"/Ror", RorHandler}, {"/Shl", ShlHandler}, {"/Shr", ShrHandler}, {"/Sub", SubHandler}, {"/Xor", XorHandler}}
+		{"/Add", AddHandler},
+		{"/And", AndHandler},
+		{"/Div", DivHandler},
+		{"/Eq", EqHandler},
+		{"/Gt", GtHandler},
+		{"/Gte", GteHandler},
+		{"/Lt", LtHandler},
+		{"/Lte", LteHandler},
+		{"/Max", MaxHandler},
+		{"/Min", MinHandler},
+		{"/Mul", MulHandler},
+		{"/Ne", NeHandler},
+		{"/Not", NotHandler},
+		{"/Or", OrHandler},
+		{"/Rem", RemHandler},
+		{"/Rol", RolHandler},
+		{"/Ror", RorHandler},
+		{"/Shl", ShlHandler},
+		{"/Shr", ShrHandler},
+		{"/Square", SquareHandler},
+		{"/Sub", SubHandler},
+		{"/Xor", XorHandler},
+		{"/Select", SelectHandler},
+		// {"/Random", RandomHandler},
+	}
 }

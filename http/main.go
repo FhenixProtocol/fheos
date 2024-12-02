@@ -10,6 +10,7 @@ import (
 	"math/big"
 	"net/http"
 	"os"
+	"reflect"
 	"strconv"
 	"time"
 
@@ -43,6 +44,67 @@ type SealOutputRequest struct {
 	Hash         string `json:"hash"`
 	PKey         string `json:"pkey"`
 	RequesterUrl string `json:"requesterUrl"`
+}
+
+// type BigInt struct {
+// 	Value *big.Int
+// }
+
+// func (b *BigInt) UnmarshalJSON(data []byte) error {
+// 	// Unmarshal the string into a temporary variable
+// 	var str string
+// 	if err := json.Unmarshal(data, &str); err != nil {
+// 		return err
+// 	}
+
+// 	// Convert the string to a big.Int
+// 	b.Value = new(big.Int)
+// 	_, ok := b.Value.SetString(str, 10) // base 10
+// 	if !ok {
+// 		return fmt.Errorf("invalid big.Int format: %s", str)
+// 	}
+// 	return nil
+// }
+
+type TrivialEncryptRequest struct {
+	Value        *big.Int `json:"value"`
+	ToType       byte     `json:"toType"`
+	SecurityZone int32    `json:"securityZone"`
+	RequesterUrl string   `json:"requesterUrl"`
+}
+
+func (r *TrivialEncryptRequest) UnmarshalJSON(data []byte) error {
+	// Define a temporary struct to unmarshal JSON into
+	var aux struct {
+		Value        string `json:"value"`        // Temporary string to handle big.Int
+		ToType       byte   `json:"toType"`       // As-is
+		SecurityZone string `json:"securityZone"` // Temporary string for int32 conversion
+		RequesterUrl string `json:"requesterUrl"` // As-is
+	}
+
+	// Unmarshal into the temporary struct
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+
+	// Parse `value` as *big.Int
+	r.Value = new(big.Int)
+	if _, ok := r.Value.SetString(aux.Value, 10); !ok {
+		return fmt.Errorf("invalid big.Int format: %s", aux.Value)
+	}
+
+	// Parse `securityZone` as int32
+	securityZone, err := strconv.ParseInt(aux.SecurityZone, 10, 32)
+	if err != nil {
+		return fmt.Errorf("invalid securityZone format: %s", aux.SecurityZone)
+	}
+	r.SecurityZone = int32(securityZone)
+
+	// Assign the other fields
+	r.ToType = aux.ToType
+	r.RequesterUrl = aux.RequesterUrl
+
+	return nil
 }
 
 type HashResultUpdate struct {
@@ -157,8 +219,91 @@ func handleSealOutputResult(url string, ctKey []byte, value string) {
 	responseToServer(url, ctKey, jsonData)
 }
 
+type HandlerFunc interface {
+	func(byte, []byte, *precompiles.TxParams, *precompiles.CallbackFunc) ([]byte, uint64, error) |
+		func(byte, []byte, []byte, *precompiles.TxParams, *precompiles.CallbackFunc) ([]byte, uint64, error) |
+		func(byte, []byte, []byte, []byte, *precompiles.TxParams, *precompiles.CallbackFunc) ([]byte, uint64, error)
+}
+
+type GenericHashRequest struct {
+	UType        byte     `json:"utype"`
+	Inputs       []string `json:"inputs"`
+	RequesterUrl string   `json:"requesterUrl"`
+}
+
+// func handleRandomRequest(w http.ResponseWriter, r *http.Request, handler func(byte, uint64, int32, *precompiles.TxParams, *precompiles.CallbackFunc) ([]byte, uint64, error)) {
+// 	handleRequest(w, r, handler)
+// }
+
+func handleRequest[T HandlerFunc](w http.ResponseWriter, r *http.Request, handler T) {
+	fmt.Printf("Got a request from %s\n", r.RemoteAddr)
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var req GenericHashRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Get the number of expected inputs based on handler type
+	handlerType := reflect.TypeOf(handler)
+	expectedInputs := handlerType.NumIn() - 3 // subtract utype, txParams, and callback
+
+	if len(req.Inputs) != expectedInputs {
+		http.Error(w, fmt.Sprintf("Handler expects %d inputs, got %d", expectedInputs, len(req.Inputs)), http.StatusBadRequest)
+		return
+	}
+
+	// Convert all hex strings to byte arrays
+	inputs := [][]byte{}
+	for i, hexStr := range req.Inputs {
+		decoded, err := hex.DecodeString(hexStr)
+		if err != nil {
+			e := fmt.Sprintf("Invalid input hex string at position %d: %s %+v", i, hexStr, err)
+			fmt.Println(e)
+			http.Error(w, e, http.StatusBadRequest)
+			return
+		}
+		inputs = append(inputs, decoded)
+	}
+
+	callback := precompiles.CallbackFunc{
+		CallbackUrl: req.RequesterUrl,
+		Callback:    handleResult,
+	}
+
+	// Prepare the arguments for the handler call
+	args := make([]reflect.Value, handlerType.NumIn())
+	args[0] = reflect.ValueOf(req.UType)
+	for i, input := range inputs {
+		args[i+1] = reflect.ValueOf(input)
+	}
+	args[len(args)-2] = reflect.ValueOf(&tp)
+	args[len(args)-1] = reflect.ValueOf(&callback)
+
+	// Call the handler with the appropriate number of inputs
+	results := reflect.ValueOf(handler).Call(args)
+
+	// TODO : handle gasUsed at index 1
+	result, _, err := results[0].Interface().([]byte), results[1].Interface().(uint64), results[2].Interface().(error)
+	if err != nil {
+		e := fmt.Sprintf("Operation failed: %+v", err)
+		fmt.Println(e)
+		http.Error(w, e, http.StatusBadRequest)
+		return
+	}
+
+	res := []byte(hex.EncodeToString(result))
+	w.Write(res)
+	fmt.Printf("Started processing the request for tempkey %s\n", hex.EncodeToString(result))
+}
+
 // Helper function to handle decoding the request and calling the respective function
-func handleRequest(w http.ResponseWriter, r *http.Request, handler func(byte, []byte, []byte, *precompiles.TxParams, *precompiles.CallbackFunc) ([]byte, uint64, error)) {
+func handleTwoRequest(w http.ResponseWriter, r *http.Request, handler func(byte, []byte, []byte, *precompiles.TxParams, *precompiles.CallbackFunc) ([]byte, uint64, error)) {
 	fmt.Printf("Got a request from %s\n", r.RemoteAddr)
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -253,14 +398,14 @@ func initFheos() (*precompiles.TxParams, error) {
 		return nil, fmt.Errorf("failed to init FHE config: %v", err)
 	}
 
-	securityZones, err := getenvInt("FHEOS_SECURITY_ZONES", 1)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get security zones: %v", err)
-	}
+	// securityZones, err := getenvInt("FHEOS_SECURITY_ZONES", 1)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("failed to get security zones: %v", err)
+	// }
 
-	if err := generateKeys(int32(securityZones)); err != nil {
-		return nil, fmt.Errorf("failed to generate keys: %v", err)
-	}
+	// if err := generateKeys(int32(securityZones)); err != nil {
+	// 	return nil, fmt.Errorf("failed to generate keys: %v", err)
+	// }
 
 	if err := precompiles.InitializeFheosState(); err != nil {
 		return nil, fmt.Errorf("failed to initialize FHEOS state: %v", err)
@@ -281,20 +426,20 @@ func initFheos() (*precompiles.TxParams, error) {
 		ParallelTxHooks: nil,
 	}
 
-	var trivialHash []byte
-	for i := 0; i <= 50; i++ {
+	// var trivialHash []byte
+	// for i := 0; i <= 50; i++ {
 
-		// Create a byte slice of size 32
-		toEncrypt := make([]byte, 32)
+	// 	// Create a byte slice of size 32
+	// 	toEncrypt := make([]byte, 32)
 
-		// Convert the integer to bytes and store it in the byte slice
-		toEncrypt[31] = uint8(i)
-		trivialHash, _, err = precompiles.TrivialEncrypt(toEncrypt, 2, 0, &tp, nil)
-		if err != nil {
-			return nil, fmt.Errorf("failed to generate trivial hash for %d: %v", i, err)
-		}
-		fmt.Printf("Trivial hash for %d: %x\n", i, trivialHash)
-	}
+	// 	// Convert the integer to bytes and store it in the byte slice
+	// 	toEncrypt[31] = uint8(i)
+	// 	trivialHash, _, err = precompiles.TrivialEncrypt(toEncrypt, 2, 0, &tp, nil)
+	// 	if err != nil {
+	// 		return nil, fmt.Errorf("failed to generate trivial hash for %d: %v", i, err)
+	// 	}
+	// 	fmt.Printf("Trivial hash for %d: %x\n", i, trivialHash)
+	// }
 	return &tp, nil
 }
 
@@ -386,7 +531,50 @@ func SealOutputHandler(w http.ResponseWriter, r *http.Request) {
 	// Respond with the result
 	w.Write(hash)
 	fmt.Printf("Received seal output request for %+v and type %+v\n", hash, req.UType)
+}
 
+func TrivialEncryptHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("Got a request from %s\n", r.RemoteAddr)
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var req TrivialEncryptRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		fmt.Printf("Failed unmarsheling request: %+v body is %+v\n", err, string(body))
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	callback := precompiles.CallbackFunc{
+		CallbackUrl: req.RequesterUrl,
+		Callback:    handleResult,
+	}
+
+	// Convert the value strings to byte arrays
+	hexStr := fmt.Sprintf("%064x", req.Value)
+	value, err := hex.DecodeString(hexStr)
+	if err != nil {
+		e := fmt.Sprintf("Invalid value: %s %+v", req.Value, err)
+		fmt.Println(e)
+		http.Error(w, e, http.StatusBadRequest)
+		return
+	}
+
+	result, _, err := precompiles.TrivialEncrypt(value, req.ToType, req.SecurityZone, &tp, &callback)
+	if err != nil {
+		e := fmt.Sprintf("Operation failed: %+v", err)
+		fmt.Println(e)
+		http.Error(w, e, http.StatusBadRequest)
+		return
+	}
+
+	// Respond with the result
+	res := []byte(hex.EncodeToString(result))
+	w.Write(res)
+	fmt.Printf("Started processing the request for tempkey %s\n", hex.EncodeToString(result))
 }
 
 func main() {
@@ -404,6 +592,8 @@ func main() {
 
 	http.HandleFunc("/Decrypt", DecryptHandler)
 	http.HandleFunc("/SealOutput", SealOutputHandler)
+	http.HandleFunc("/TrivialEncrypt", TrivialEncryptHandler)
+	// http.HandleFunc("/Cast", CastHandler)
 
 	// Start the server
 	log.Println("Server listening on port 8448...")
