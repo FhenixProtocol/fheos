@@ -195,6 +195,44 @@ func get2VerifiedOperands(storage *storage.MultiStore, lhsHash []byte, rhsHash [
 	return
 }
 
+func blockUntilInputsAvailable(storage *storage.MultiStore, tp *TxParams, inputHashes ...[]byte) ([]*fhe.FheEncrypted, error) {
+	// Check validity of all input hashes before awaiting results
+	for _, hash := range inputHashes {
+		// TODO : Adjust according to lior's struct changes
+		if len(hash) != 32 {
+			return nil, errors.New("ciphertext's hashes need to be 32 bytes long")
+		}
+	}
+
+	cts := make([]*fhe.FheEncrypted, len(inputHashes))
+	results := make(chan struct {
+        index int
+        ct    *fhe.FheEncrypted
+    }, len(inputHashes))
+
+	// Launch goroutines for each hash
+	for i, hash := range inputHashes {
+		go func(index int, hash []byte) {
+			ct := awaitCtResult(storage, hash, tp)
+			results <- struct {
+				index int
+				ct    *fhe.FheEncrypted
+			}{index, ct}
+		}(i, hash)
+	}
+
+	// Collect results
+	for i := 0; i < len(inputHashes); i++ {
+		result := <-results
+		cts[result.index] = result.ct
+		if result.ct == nil {
+			return nil, errors.New("unverified ciphertext handle")
+		}
+	}
+
+	return cts, nil
+}
+
 func get3VerifiedOperands(storage *storage.MultiStore, controlHash []byte, ifTrueHash []byte, ifFalseHash []byte, tp *TxParams) (control *fhe.FheEncrypted, ifTrue *fhe.FheEncrypted, ifFalse *fhe.FheEncrypted, err error) {
 	if len(controlHash) != 32 || len(ifTrueHash) != 32 || len(ifFalseHash) != 32 {
 		return nil, nil, nil, errors.New("ciphertext's hashes need to be 32 bytes long")

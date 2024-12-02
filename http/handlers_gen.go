@@ -103,6 +103,18 @@ func SquareHandler(w http.ResponseWriter, r *http.Request) {
 	handleRequest(w, r, precompiles.Square)
 }
 
+func RandomHandler(w http.ResponseWriter, r *http.Request) {
+	handleRandomRequest(w, r, precompiles.Random)
+}
+
+func CastHandler(w http.ResponseWriter, r *http.Request) {
+	handleRequest(w, r, precompiles.Cast)
+}
+
+func TrivialEncryptHandler(w http.ResponseWriter, r *http.Request) {
+	handleRequest(w, r, precompiles.TrivialEncrypt)
+}
+
 func getHandlers() []HandlerDef {
 	return []HandlerDef{
 		{"/Add", AddHandler},
@@ -128,5 +140,8 @@ func getHandlers() []HandlerDef {
 		{"/Sub", SubHandler},
 		{"/Xor", XorHandler},
 		{"/Select", SelectHandler},
+		{"/Random", RandomHandler},
+		{"/Cast", CastHandler},
+		{"/TrivialEncrypt", TrivialEncryptHandler},
 	}
 }

@@ -234,6 +234,55 @@ func Select(utype byte, controlHash []byte, ifTrueHash []byte, ifFalseHash []byt
 	return resultHash[:], gas, nil
 }
 
+func AsyncSelect(utype byte, controlHash []byte, ifTrueHash []byte, ifFalseHash []byte, tp *TxParams, _ *CallbackFunc) ([]byte, uint64, error) {
+	functionName := types.Select
+
+	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
+	uintType := fhe.EncryptionType(utype)
+	if !types.IsValidType(uintType) {
+		logger.Error("invalid ciphertext", "type", utype)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	gas := getGasForPrecompile(functionName, uintType)
+	if tp.GasEstimation {
+		randomHash := State.GetRandomForGasEstimation()
+		return randomHash[:], gas, nil
+	}
+
+	if shouldPrintPrecompileInfo(tp) {
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
+	}
+
+	control, ifTrue, ifFalse, err := get3VerifiedOperands(storage, controlHash, ifTrueHash, ifFalseHash, tp)
+	if err != nil {
+		logger.Error(functionName.String()+": inputs not verified control len: ", len(controlHash), " ifTrue len: ", len(ifTrueHash), " ifFalse len: ", len(ifFalseHash), " err: ", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	if uintType != ifTrue.UintType || ifTrue.UintType != ifFalse.UintType {
+		msg := functionName.String() + " operands type mismatch"
+		logger.Error(msg, " ifTrue ", ifTrue.UintType, " ifFalse ", ifFalse.UintType)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	result, err := control.Select(ifTrue, ifFalse)
+	if err != nil {
+		logger.Error(functionName.String()+" failed", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	err = storeCipherText(storage, result, tp.ContractAddress)
+	if err != nil {
+		logger.Error(functionName.String()+" failed", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	resultHash := result.GetHash()
+	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "control", control.GetHash().Hex(), "ifTrue", ifTrue.GetHash().Hex(), "ifFalse", ifTrue.GetHash().Hex(), "result", resultHash.Hex())
+	return resultHash[:], gas, nil
+}
+
 func Req(utype byte, input []byte, tp *TxParams, _ *CallbackFunc) ([]byte, uint64, error) {
 	//solgen: input encrypted
 	//solgen: return none
