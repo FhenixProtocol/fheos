@@ -582,6 +582,8 @@ const asEuintFuncName = (typeName: EUintType): string =>
   `as${capitalize(typeName)}`;
 const asDecryptedType = (typeName: EUintType): string =>
   `${typeName.toLowerCase().slice(1, typeName.length)}`;
+const UintType = (typeName: EUintType): string =>
+  `Common.${typeName.toUpperCase()}_TFHE`;
 
 export function SolTemplate2Arg(
   name: string,
@@ -659,13 +661,13 @@ export function SolTemplate2Arg(
       if (valueIsEncrypted(returnType)) {
         funcBody += `
         ${UnderlyingTypes[returnType]} result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.${name});
-        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "${name}", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, ${UintType(input1)}, "${name}", unwrappedInput1, unwrappedInput2);
         return ${wrapType(returnType, "result")};`;
       } else {
         // TODO : What's the use case for this? still not removing till I figure this out completely
         funcBody += `
         ${returnType} result = calcBinaryPlaceholderValueHash(unwrappedInput1, unwrappedInput2, FunctionId.${name});
-        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, "${name}", unwrappedInput1, unwrappedInput2);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(result, ${UintType(input1)}, "${name}", unwrappedInput1, unwrappedInput2);
         return result;
         }`;
       }
@@ -783,7 +785,7 @@ export function SolTemplate1Arg(
           "input1"
         )};
         uint256 ctHash = calcUnaryPlaceholderValueHash(unwrappedInput1, FunctionId.${name});
-        ITaskManager(TASK_MANAGER_ADDRESS).createTask(ctHash, "${name}", unwrappedInput1, 0);
+        ITaskManager(TASK_MANAGER_ADDRESS).createTask(ctHash, ${UintType(input1)}, "${name}", unwrappedInput1);
         return ${wrapType(returnType, "ctHash")};
     }`;
   } else {
