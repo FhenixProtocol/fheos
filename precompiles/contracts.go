@@ -155,7 +155,7 @@ func Decrypt(utype byte, inputBz []byte, defaultValue *big.Int, tp *TxParams, on
 			}
 
 			url := (*onResultCallback).CallbackUrl
-			(*onResultCallback).Callback(url, input.Hash, plaintext)
+			(*onResultCallback).Callback(url, ctHash[:], plaintext)
 			if err != nil {
 				logger.Error("failed decrypting ciphertext", "error", err)
 				return
