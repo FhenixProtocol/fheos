@@ -17,11 +17,11 @@ func (fs *FheosStorage) DeleteCt(h types.Hash) error {
 	return fs.diskStore.DeleteCt(h)
 }
 
-func (fs *FheosStorage) PutCt(h types.Hash, cipher *types.CipherTextRepresentation) error {
+func (fs *FheosStorage) PutCt(h types.Hash, cipher *types.FheEncrypted) error {
 	return fs.diskStore.PutCt(h, cipher)
 }
 
-func (fs *FheosStorage) GetCt(h types.Hash) (*types.CipherTextRepresentation, error) {
+func (fs *FheosStorage) GetCt(h types.Hash) (*types.FheEncrypted, error) {
 	a, e := fs.diskStore.GetCt(h)
 	return a, e
 }
@@ -34,6 +34,10 @@ func (fs *FheosStorage) GetVersion() (uint64, error) {
 	return fs.diskStore.GetVersion()
 }
 
+func (fs *FheosStorage) HasCt(h types.Hash) bool {
+	return fs.diskStore.HasCt(h)
+}
+
 func newFheosStorage(diskStore types.Storage) *FheosStorage {
 
 	if diskStore == nil {
@@ -42,8 +46,6 @@ func newFheosStorage(diskStore types.Storage) *FheosStorage {
 
 	return &FheosStorage{
 		diskStore: diskStore,
-		//memStore:    memStore,
-		//isEphemeral: false,
 	}
 }
 

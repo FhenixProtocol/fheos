@@ -29,9 +29,22 @@ pragma solidity >=0.8.19 <0.9.0;
 
 import {Precompiles, FheOps} from "./FheOS.sol";
 
+
+struct CiphertextKey {
+  bool     isTriviallyEncrypted;
+  uint32   uintType;
+  int32    securityZone;
+  uint256  hash;
+}
+
 ${EInputType.map((type) => {
-  return `type ${type} is uint256;`;
-}).join("\n")}
+  return `struct ${type} {
+  bool     isTriviallyEncrypted;
+  uint32   uintType;
+  int32    securityZone;
+  uint256  hash;
+}`;
+}).join("\n\n")}
 
 ${EInputType.map((type) => {
   return `struct in${capitalize(type)} {
@@ -47,10 +60,10 @@ struct SealedArray {
 ${SealedOutputStructs.map((struct) => {
   let docstring = `
 /// @dev Utility structure providing clients with type context of a sealed output string.
-/// Return type of \`FHE.sealoutputTyped\` and \`sealTyped\` within the binding libraries.`
+/// Return type of \`FHE.sealoutputTyped\` and \`sealTyped\` within the binding libraries.`;
 
   if (struct === `SealedBool`) {
-    docstring +=  `
+    docstring += `
 /// \`utype\` representing Bool is 13. See \`FHE.sol\` for more.`;
   }
   if (struct === `SealedUint`) {
@@ -60,7 +73,7 @@ ${SealedOutputStructs.map((struct) => {
 /// \`utype\` map: {uint8: 0} {uint16: 1} {uint32: 2} {uint64: 3} {uint128: 4} {uint256: 5}.`;
   }
   if (struct === `SealedAddress`) {
-    docstring +=  `
+    docstring += `
 /// \`utype\` representing Address is 12. See \`FHE.sol\` for more.`;
   }
 
@@ -432,7 +445,9 @@ export function SolTemplate2Arg(
     if (name === SEALING_TYPED_FUNCTION_NAME) {
       // Example Output: "/// @return SealedBool({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Common.EBOOL_TFHE })"
       const returnTypeClean = returnType.replace(" memory", "");
-      docString += `/// @return ${returnTypeClean}({ data: Plaintext input, sealed for the owner of \`publicKey\`, utype: ${UintTypes[input1 as EUintType]} })
+      docString += `/// @return ${returnTypeClean}({ data: Plaintext input, sealed for the owner of \`publicKey\`, utype: ${
+        UintTypes[input1 as EUintType]
+      } })
     `;
     }
   }
@@ -499,7 +514,9 @@ export function SolTemplate2Arg(
     } else if (name === SEALING_TYPED_FUNCTION_NAME) {
       const returnTypeClean = returnType.replace(" memory", "");
       funcBody += `
-        return ${returnTypeClean}({ data: sealoutput(${variableName1}, ${variableName2}), utype: ${UintTypes[input1 as EUintType]} });`;
+        return ${returnTypeClean}({ data: sealoutput(${variableName1}, ${variableName2}), utype: ${
+        UintTypes[input1 as EUintType]
+      } });`;
     }
   } else {
     // don't support input 1 is plaintext
@@ -831,10 +848,10 @@ export const SealFromType = (thisType: string) => {
 };
 
 export const SealTypedFromType = (thisType: string) => {
-  let returnType: string
-  if (thisType === 'ebool') returnType = 'SealedBool'
-  else if (thisType === 'eaddress') returnType = 'SealedAddress'
-  else returnType = 'SealedUint'
+  let returnType: string;
+  if (thisType === "ebool") returnType = "SealedBool";
+  else if (thisType === "eaddress") returnType = "SealedAddress";
+  else returnType = "SealedUint";
 
   return `
     function ${LOCAL_SEAL_TYPED_FUNCTION_NAME}(${thisType} value, bytes32 publicKey) internal pure returns (${returnType} memory) {
@@ -873,7 +890,6 @@ export const DecryptBinding = (thisType: string) => {
     }`;
 };
 
-
 export const RandomGenericFunction = () => {
   return `
     /// @notice Generates a random value of a given type with the given seed, for the provided securityZone
@@ -909,16 +925,14 @@ const RandomFunctionForType = (type: string) => {
     /// @dev Calls the desired precompile and returns the hash of the ciphertext
     /// @param securityZone the security zone to use for the random value
     function random${capitalize(
-    type
-  )}(int32 securityZone) internal pure returns (${type}) {
+      type
+    )}(int32 securityZone) internal pure returns (${type}) {
         uint256 result = random(Common.${type.toUpperCase()}_TFHE, 0, securityZone);
         return ${type}.wrap(result);
     }
     /// @notice Generates a random value of a ${type} type
     /// @dev Calls the desired precompile and returns the hash of the ciphertext
-    function random${capitalize(
-    type
-  )}() internal pure returns (${type}) {
+    function random${capitalize(type)}() internal pure returns (${type}) {
         return random${capitalize(type)}(0);
     }
     `;

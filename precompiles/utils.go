@@ -151,20 +151,20 @@ func blockUntilBinaryOperandsAvailable(storage *storage.MultiStore, lhsKey, rhsK
 }
 
 func awaitCtResult(storage *storage.MultiStore, lhsHash fhe.Hash, tp *TxParams) *fhe.FheEncrypted {
-	lhsValue := getCiphertext(storage, lhsHash, tp.ContractAddress)
+	lhsValue := getCiphertext(storage, lhsHash)
 	if lhsValue == nil {
 		return nil
 	}
 
 	for lhsValue.IsPlaceholderValue() {
-		lhsValue = getCiphertext(storage, lhsHash, tp.ContractAddress)
+		lhsValue = getCiphertext(storage, lhsHash)
 		time.Sleep(1 * time.Millisecond)
 	}
 	return lhsValue
 }
 
-func getCiphertext(state *storage.MultiStore, ciphertextHash fhe.Hash, caller common.Address) *fhe.FheEncrypted {
-	ct, err := state.GetCt(types.Hash(ciphertextHash), caller)
+func getCiphertext(state *storage.MultiStore, ciphertextHash fhe.Hash) *fhe.FheEncrypted {
+	ct, err := state.GetCt(types.Hash(ciphertextHash))
 	if err != nil {
 
 		logger.Error("reading ciphertext from State resulted with error", "hash", ciphertextHash.Hex(), "error", err.Error())
@@ -204,8 +204,8 @@ func get3VerifiedOperands(storage *storage.MultiStore, controlKeyBz, ifTrueKeyBz
 	return
 }
 
-func storeCipherText(storage *storage.MultiStore, ct *fhe.FheEncrypted, owner common.Address) error {
-	err := storage.AppendCt(types.Hash(ct.GetHash()), (*types.FheEncrypted)(ct), owner)
+func storeCipherText(storage *storage.MultiStore, ct *fhe.FheEncrypted) error {
+	err := storage.PutCtIfNotExist(types.Hash(ct.GetHash()), (*types.FheEncrypted)(ct))
 	if err != nil {
 		logger.Error("failed importing ciphertext to state: ", err)
 		return err

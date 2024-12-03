@@ -121,7 +121,7 @@ func ProcessOperation2(functionName types.PrecompileName, mathOp TwoOperationFun
 		logger.Debug(functionName.String(), "lhs", hex.EncodeToString(lhsKey.Hash[:]), "rhs", hex.EncodeToString(rhsKey.Hash[:]), "placeholderKey", hex.EncodeToString(placeholderKey.Hash[:]))
 	}
 
-	err = storeCipherText(storage, placeholderCt, tp.ContractAddress)
+	err = storeCipherText(storage, placeholderCt)
 	if err != nil {
 		logger.Error(functionName.String()+" failed to store async ciphertext", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -135,7 +135,7 @@ func ProcessOperation2(functionName types.PrecompileName, mathOp TwoOperationFun
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
-		randomHash := State.GetRandomForGasEstimation()
+		randomHash := State.GetRandomKeyForGasEstimation()
 		return randomHash[:], gas, nil
 	}
 
@@ -179,7 +179,7 @@ func ProcessOperation2(functionName types.PrecompileName, mathOp TwoOperationFun
 
 		result.Key = *resultKey
 
-		err2 = storeCipherText(storage, result, tp.ContractAddress)
+		err2 = storeCipherText(storage, result)
 		if err2 != nil {
 			logger.Error(functionName.String()+" failed", "err", err2)
 			return
