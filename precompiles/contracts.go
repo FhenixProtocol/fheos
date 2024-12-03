@@ -3,12 +3,13 @@ package precompiles
 import (
 	"encoding/hex"
 	"fmt"
+	"math/big"
+	"strings"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
-	"math/big"
-	"strings"
 
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/log"
@@ -149,11 +150,12 @@ func Decrypt(utype byte, inputBz []byte, defaultValue *big.Int, tp *TxParams, on
 		go func(ctHash [common.HashLength]byte) {
 			plaintext, err := DecryptHelper(storage, ctHash, tp, defaultValue)
 			if err != nil {
+				logger.Error("failed decrypting ciphertext", "error", err)
 				return
 			}
 
 			url := (*onResultCallback).CallbackUrl
-			(*onResultCallback).Callback(url, ctHash[:], plaintext)
+			(*onResultCallback).Callback(url, input.Hash, plaintext)
 			if err != nil {
 				logger.Error("failed decrypting ciphertext", "error", err)
 				return
