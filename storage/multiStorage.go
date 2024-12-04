@@ -3,6 +3,7 @@ package storage
 import (
 	"encoding/hex"
 	"fmt"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethdb/memorydb"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
@@ -62,7 +63,7 @@ func (ms *MultiStore) AppendCt(h types.Hash, cipher *types.FheEncrypted, owner c
 	ct, _ := ms.getCtHelper(h)
 	if cipher.IsTriviallyEncrypted {
 		// Already exists
-		if ct != nil {
+		if ct != nil && !ct.Data.Placeholder {
 			return nil
 		}
 
@@ -112,7 +113,7 @@ func (ms *MultiStore) GetCtRepresentation(h types.Hash, caller common.Address) (
 		return nil, err
 	}
 
-	if !owner {
+	if !owner && !ct.Data.IsTriviallyEncrypted {
 		return nil, fmt.Errorf("contract is not allowed to access the ciphertext (ct: %s, contract: %s)", hex.EncodeToString(h[:]), caller.String())
 	}
 

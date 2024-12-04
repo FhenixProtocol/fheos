@@ -234,12 +234,18 @@ func Select(utype byte, controlHash []byte, ifTrueHash []byte, ifFalseHash []byt
 	placeholderKeyCopy := CopySlice(placeholderCt.Hash)
 
 	go func(controlHash, ifTrueHash, ifFalseHash, resultHash []byte) {
-		ct, err := blockUntilInputsAvailable(storage, tp, controlHash, ifTrueHash, ifFalseHash)
-		control, ifTrue, ifFalse := ct[0], ct[1], ct[2]
+		logger.Info("About to block until inputs are available")
+		defer logger.Info("Finishing goroutine execution")
+
+		ct, err := blockUntilThreeInputsAvailable(storage, tp, controlHash, ifTrueHash, ifFalseHash)
 		if err != nil {
 			logger.Error(functionName.String()+": inputs not verified control len: ", len(controlHash), " ifTrue len: ", len(ifTrueHash), " ifFalse len: ", len(ifFalseHash), " err: ", err)
 			return
 		}
+
+		logger.Info("Inputs are available")
+
+		control, ifTrue, ifFalse := ct[0], ct[1], ct[2]
 
 		if uintType != ifTrue.UintType || ifTrue.UintType != ifFalse.UintType {
 			msg := functionName.String() + " operands type mismatch"
@@ -247,11 +253,15 @@ func Select(utype byte, controlHash []byte, ifTrueHash []byte, ifFalseHash []byt
 			return
 		}
 
+		logger.Info("About to select")
+
 		result, err := control.Select(ifTrue, ifFalse)
 		if err != nil {
 			logger.Error(functionName.String()+" failed", "err", err)
 			return
 		}
+
+		logger.Info("About to decode result hash")
 
 		realResultHash, err := hex.DecodeString(result.GetHash().Hex())
 		if err != nil {
@@ -259,13 +269,19 @@ func Select(utype byte, controlHash []byte, ifTrueHash []byte, ifFalseHash []byt
 			return
 		}
 
+		logger.Info("Result hash decoded")
+
 		result.Hash = resultHash
+
+		logger.Info("About to store result")
 
 		err = storeCipherText(storage, result, tp.ContractAddress)
 		if err != nil {
 			logger.Error(functionName.String()+" failed", "err", err)
 			return
 		}
+
+		logger.Info("About to set async ct done")
 
 		_ = storage.SetAsyncCtDone(types.Hash(resultHash))
 		if callback != nil {
@@ -495,7 +511,7 @@ func TrivialEncrypt(input []byte, toType byte, securityZone int32, tp *TxParams,
 		return nil, gas, vm.ErrExecutionReverted
 	}
 
-	placeholderCt, err := createPlaceholder(toType, functionName, input)
+	placeholderCt, err := createPlaceholder(toType, functionName, input, []byte{toType}, []byte{byte(securityZone)})
 	if err != nil {
 		logger.Error(functionName.String()+" failed to create placeholder", "err", err)
 		return nil, 0, vm.ErrExecutionReverted

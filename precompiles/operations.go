@@ -12,6 +12,9 @@ import (
 )
 
 type TwoOperationFunc func(lhs *fhe.FheEncrypted, rhs *fhe.FheEncrypted) (*fhe.FheEncrypted, error)
+
+type Handler interface{}
+
 type CallbackFunc struct {
 	CallbackUrl string
 	Callback    func(url string, ctKey []byte, newCtKey []byte)

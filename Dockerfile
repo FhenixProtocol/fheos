@@ -32,8 +32,6 @@ RUN cd warp-drive/fhe-engine && cargo update
 # Copy the rest of the stuff so we can actually build it
 COPY warp-drive/ warp-drive/
 
-COPY http/ http/
-
 WORKDIR /workspace/warp-drive/fhe-engine
 
 # Todo: fix arm support

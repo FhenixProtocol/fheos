@@ -155,20 +155,53 @@ func blockUntilBinaryOperandsAvailable(storage *storage.MultiStore, lhsHash, rhs
 	return lhsValue, rhsValue
 }
 
+func blockUntilThreeInputsAvailable(storage *storage.MultiStore, tp *TxParams, input1, input2, input3 []byte) ([]*fhe.FheEncrypted, error) {
+	var ct1 *fhe.FheEncrypted
+	var ct2 *fhe.FheEncrypted
+	var ct3 *fhe.FheEncrypted
+
+	if !fhe.IsCtHash([32]byte(input1)) || !fhe.IsCtHash([32]byte(input2)) || !fhe.IsCtHash([32]byte(input3)) {
+		// return error
+		return nil, errors.New("ciphertext's hashes need to be 32 bytes long")
+	}
+
+	// can speed this up to be concurrent, but for now this is fine I guess?
+	if input1 != nil {
+		ct1 = awaitCtResult(storage, input1, tp)
+		if ct1 == nil {
+			return nil, errors.New("unverified ciphertext handle for input1")
+		}
+	}
+	if input2 != nil {
+		ct2 = awaitCtResult(storage, input2, tp)
+		if ct2 == nil {
+			return nil, errors.New("unverified ciphertext handle for input2")
+		}
+	}
+	if input3 != nil {
+		ct3 = awaitCtResult(storage, input3, tp)
+		if ct3 == nil {
+			return nil, errors.New("unverified ciphertext handle for input3")
+		}
+	}
+
+	return []*fhe.FheEncrypted{ct1, ct2, ct3}, nil
+}
+
 func blockUntilInputsAvailable(storage *storage.MultiStore, tp *TxParams, inputHashes ...[]byte) ([]*fhe.FheEncrypted, error) {
 	// Check validity of all input hashes before awaiting results
 	for _, hash := range inputHashes {
 		// TODO : Adjust according to lior's struct changes
 		if len(hash) != 32 {
-			return nil, errors.New("ciphertext's hashes need to be 32 bytes long")
+			return nil, errors.New("ciphertext's hashes need to be 32 bytes long, hash: " + fhe.Hash(hash).Hex())
 		}
 	}
 
 	cts := make([]*fhe.FheEncrypted, len(inputHashes))
 	results := make(chan struct {
-        index int
-        ct    *fhe.FheEncrypted
-    }, len(inputHashes))
+		index int
+		ct    *fhe.FheEncrypted
+	}, len(inputHashes))
 
 	// Launch goroutines for each hash
 	for i, hash := range inputHashes {
@@ -186,7 +219,7 @@ func blockUntilInputsAvailable(storage *storage.MultiStore, tp *TxParams, inputH
 		result := <-results
 		cts[result.index] = result.ct
 		if result.ct == nil {
-			return nil, errors.New("unverified ciphertext handle")
+			return nil, errors.New("unverified ciphertext handle, hash: " + fhe.Hash(inputHashes[result.index]).Hex())
 		}
 	}
 
@@ -201,7 +234,7 @@ func awaitCtResult(storage *storage.MultiStore, lhsHash []byte, tp *TxParams) *f
 
 	for lhsValue.IsPlaceholderValue() {
 		lhsValue = getCiphertext(storage, fhe.Hash(lhsHash), tp.ContractAddress)
-		time.Sleep(1 * time.Millisecond)
+		time.Sleep(1 * time.Second)
 	}
 	return lhsValue
 }
@@ -261,6 +294,7 @@ func storeCipherText(storage *storage.MultiStore, ct *fhe.FheEncrypted, owner co
 		return err
 	}
 
+	logger.Info("stored ciphertext", "hash", ct.GetHash().Hex())
 	return nil
 }
 func minInt(a int, b int) int {
