@@ -46,26 +46,6 @@ type SealOutputRequest struct {
 	RequesterUrl string `json:"requesterUrl"`
 }
 
-// type BigInt struct {
-// 	Value *big.Int
-// }
-
-// func (b *BigInt) UnmarshalJSON(data []byte) error {
-// 	// Unmarshal the string into a temporary variable
-// 	var str string
-// 	if err := json.Unmarshal(data, &str); err != nil {
-// 		return err
-// 	}
-
-// 	// Convert the string to a big.Int
-// 	b.Value = new(big.Int)
-// 	_, ok := b.Value.SetString(str, 10) // base 10
-// 	if !ok {
-// 		return fmt.Errorf("invalid big.Int format: %s", str)
-// 	}
-// 	return nil
-// }
-
 type TrivialEncryptRequest struct {
 	Value        *big.Int `json:"value"`
 	ToType       byte     `json:"toType"`
@@ -309,58 +289,6 @@ func handleRequest[T HandlerFunc](w http.ResponseWriter, r *http.Request, handle
 	fmt.Printf("Started processing the request for tempkey %s\n", hex.EncodeToString(result))
 }
 
-// Helper function to handle decoding the request and calling the respective function
-func handleTwoRequest(w http.ResponseWriter, r *http.Request, handler func(byte, []byte, []byte, *precompiles.TxParams, *precompiles.CallbackFunc) ([]byte, uint64, error)) {
-	fmt.Printf("Got a request from %s\n", r.RemoteAddr)
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	var req HashRequest
-	if err := json.Unmarshal(body, &req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	// Convert the hash strings to byte arrays
-	lhsHash, err := hex.DecodeString(req.LhsHash)
-	if err != nil {
-		e := fmt.Sprintf("Invalid lhsHash: %s %+v", req.LhsHash, err)
-		fmt.Println(e)
-		http.Error(w, e, http.StatusBadRequest)
-		return
-	}
-
-	rhsHash, err := hex.DecodeString(req.RhsHash)
-	if err != nil {
-		e := fmt.Sprintf("Invalid lhsHash: %s %+v", req.LhsHash, err)
-		fmt.Println(e)
-		http.Error(w, e, http.StatusBadRequest)
-		return
-	}
-
-	callback := precompiles.CallbackFunc{
-		CallbackUrl: req.RequesterUrl,
-		Callback:    handleResult,
-	}
-
-	result, _, err := handler(req.UType, lhsHash, rhsHash, &tp, &callback)
-
-	if err != nil {
-		e := fmt.Sprintf("Operation failed: %s %+v", req.LhsHash, err)
-		fmt.Println(e)
-		http.Error(w, e, http.StatusBadRequest)
-		return
-	}
-
-	res := []byte(hex.EncodeToString(result))
-	// Respond with the result
-	w.Write(res)
-	fmt.Printf("Started processing the request for tempkey %s\n", hex.EncodeToString(result))
-}
-
 func getenvInt(key string, defaultValue int) (int, error) {
 	s := os.Getenv(key)
 	if s == "" {
@@ -433,20 +361,20 @@ func initFheos() (*precompiles.TxParams, error) {
 		ParallelTxHooks: nil,
 	}
 
-	// var trivialHash []byte
-	// for i := 0; i <= 50; i++ {
+	var trivialHash []byte
+	for i := 0; i <= 50; i++ {
 
-	// 	// Create a byte slice of size 32
-	// 	toEncrypt := make([]byte, 32)
+		// Create a byte slice of size 32
+		toEncrypt := make([]byte, 32)
 
-	// 	// Convert the integer to bytes and store it in the byte slice
-	// 	toEncrypt[31] = uint8(i)
-	// 	trivialHash, _, err = precompiles.TrivialEncrypt(toEncrypt, 2, 0, &tp, nil)
-	// 	if err != nil {
-	// 		return nil, fmt.Errorf("failed to generate trivial hash for %d: %v", i, err)
-	// 	}
-	// 	fmt.Printf("Trivial hash for %d: %x\n", i, trivialHash)
-	// }
+		// Convert the integer to bytes and store it in the byte slice
+		toEncrypt[31] = uint8(i)
+		trivialHash, _, err = precompiles.TrivialEncrypt(toEncrypt, 2, 0, &tp, nil)
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate trivial hash for %d: %v", i, err)
+		}
+		fmt.Printf("Trivial hash for %d: %x\n", i, trivialHash)
+	}
 	return &tp, nil
 }
 
