@@ -45,6 +45,17 @@ type SealOutputRequest struct {
 	RequesterUrl string `json:"requesterUrl"`
 }
 
+type VerifyRequest struct {
+	UType        byte   `json:"utype"`
+	Value        string `json:"value"`
+	SecurityZone byte   `json:"securityZone"`
+}
+
+type VerifyResult struct {
+	CtHash    string `json:"ctHash"`
+	Signature string `json:"signature"`
+}
+
 type HashResultUpdate struct {
 	TempKey    []byte `json:"tempKey"`
 	ActualHash []byte `json:"actualHash"`
@@ -389,6 +400,62 @@ func SealOutputHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func createVerifyResponse(ctHash []byte) ([]byte, error) {
+	verifyResult := VerifyResult{
+		CtHash:    hex.EncodeToString(ctHash),
+		Signature: "Haim",
+	}
+
+	responseData, err := json.Marshal(verifyResult)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to marshal response: %+v", err)
+	}
+	return responseData, nil
+}
+
+func UpdateCTHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("Got a verify request from %s\n", r.RemoteAddr)
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	var req VerifyRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		fmt.Printf("Failed unmarshaling request: %+v body is %+v\n", err, string(body))
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// fmt.Printf("Verify Request Value: %s\n", req.Value)
+	value, err := hex.DecodeString(req.Value)
+	if err != nil {
+		e := fmt.Sprintf("Invalid Value: %s %+v", req.Value, err)
+		fmt.Println(e)
+		http.Error(w, e, http.StatusBadRequest)
+		return
+	}
+
+	ctHash, _, err := precompiles.Verify(req.UType, value, int32(req.SecurityZone), &tp, nil)
+	if err != nil {
+		e := fmt.Sprintf("Operation failed: %+v", err)
+		fmt.Println(e)
+		http.Error(w, e, http.StatusBadRequest)
+		return
+	}
+
+	responseData, err := createVerifyResponse(ctHash)
+	if err != nil {
+		e := fmt.Sprintf("Failed to marshal response: %+v", err)
+		fmt.Println(e)
+		http.Error(w, e, http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(responseData)
+}
+
 func main() {
 	_, err := initFheos()
 	if err != nil {
@@ -404,6 +471,7 @@ func main() {
 
 	http.HandleFunc("/Decrypt", DecryptHandler)
 	http.HandleFunc("/SealOutput", SealOutputHandler)
+	http.HandleFunc("/UpdateCT", UpdateCTHandler)
 
 	// Start the server
 	log.Println("Server listening on port 8448...")
