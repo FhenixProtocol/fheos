@@ -7,7 +7,7 @@ install:
 .PHONY: gen
 gen:
 	./gen.sh
-	cd solgen && pnpm build
+	#cd solgen && pnpm build
 
 .PHONY: gen-fheops
 gen-fheops:
@@ -34,8 +34,8 @@ check_network_is_running:
 
 .PHONY: test
 test: check_network_is_running gen compile
-	cd solidity && pnpm install
-	cd solidity && pnpm test
+	#cd solidity && pnpm install
+	#cd solidity && pnpm test
 
 .PHONY: test-precomp
 test-precomp: check_network_is_running

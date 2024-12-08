@@ -13,61 +13,14 @@ struct CiphertextKey {
   uint256  hash;
 }
 
-struct ebool {
-  bool     isTriviallyEncrypted;
-  uint32   uintType;
-  int32    securityZone;
-  uint256  hash;
-}
-
-struct euint8 {
-  bool     isTriviallyEncrypted;
-  uint32   uintType;
-  int32    securityZone;
-  uint256  hash;
-}
-
-struct euint16 {
-  bool     isTriviallyEncrypted;
-  uint32   uintType;
-  int32    securityZone;
-  uint256  hash;
-}
-
-struct euint32 {
-  bool     isTriviallyEncrypted;
-  uint32   uintType;
-  int32    securityZone;
-  uint256  hash;
-}
-
-struct euint64 {
-  bool     isTriviallyEncrypted;
-  uint32   uintType;
-  int32    securityZone;
-  uint256  hash;
-}
-
-struct euint128 {
-  bool     isTriviallyEncrypted;
-  uint32   uintType;
-  int32    securityZone;
-  uint256  hash;
-}
-
-struct euint256 {
-  bool     isTriviallyEncrypted;
-  uint32   uintType;
-  int32    securityZone;
-  uint256  hash;
-}
-
-struct eaddress {
-  bool     isTriviallyEncrypted;
-  uint32   uintType;
-  int32    securityZone;
-  uint256  hash;
-}
+type ebool is uint256;
+type euint8 is uint256;
+type euint16 is uint256;
+type euint32 is uint256;
+type euint64 is uint256;
+type euint128 is uint256;
+type euint256 is uint256;
+type eaddress is uint256;
 
 struct inEbool {
     bytes data;
