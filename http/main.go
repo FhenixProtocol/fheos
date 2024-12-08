@@ -21,11 +21,10 @@ import (
 )
 
 // Struct to parse the incoming JSON request
-type HashRequest struct {
-	UType        byte   `json:"utype"`
-	LhsHash      string `json:"lhsHash"`
-	RhsHash      string `json:"rhsHash"`
-	RequesterUrl string `json:"requesterUrl"`
+type GenericHashRequest struct {
+	UType        byte     `json:"utype"`
+	Inputs       []string `json:"inputs"`
+	RequesterUrl string   `json:"requesterUrl"`
 }
 
 type DecryptRequest struct {
@@ -41,13 +40,6 @@ type SealOutputRequest struct {
 	RequesterUrl string `json:"requesterUrl"`
 }
 
-type TrivialEncryptRequest struct {
-	Value        *big.Int `json:"value"`
-	ToType       byte     `json:"toType"`
-	SecurityZone int32    `json:"securityZone"`
-	RequesterUrl string   `json:"requesterUrl"`
-}
-
 type CastRequest struct {
 	UType        byte   `json:"utype"`
 	Input        string `json:"input"`
@@ -60,6 +52,13 @@ type RandomRequest struct {
 	Seed         string `json:"seed"`
 	SecurityZone string `json:"securityZone"`
 	RequesterUrl string `json:"requesterUrl"`
+}
+
+type TrivialEncryptRequest struct {
+	Value        *big.Int `json:"value"`
+	ToType       byte     `json:"toType"`
+	SecurityZone int32    `json:"securityZone"`
+	RequesterUrl string   `json:"requesterUrl"`
 }
 
 func (r *TrivialEncryptRequest) UnmarshalJSON(data []byte) error {
@@ -179,12 +178,6 @@ type HandlerFunc interface {
 		func(byte, []byte, []byte, []byte, *precompiles.TxParams, *precompiles.CallbackFunc) ([]byte, uint64, error) | // 3 operands
 		func([]byte, byte, int32, *precompiles.TxParams, *precompiles.CallbackFunc) ([]byte, uint64, error) | // TrivialEncrypt
 		func(byte, uint64, int32, *precompiles.TxParams, *precompiles.CallbackFunc) ([]byte, uint64, error) // Random
-}
-
-type GenericHashRequest struct {
-	UType        byte     `json:"utype"`
-	Inputs       []string `json:"inputs"`
-	RequesterUrl string   `json:"requesterUrl"`
 }
 
 func handleRequest[T HandlerFunc](w http.ResponseWriter, r *http.Request, handler T) {
