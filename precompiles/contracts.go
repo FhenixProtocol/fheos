@@ -51,7 +51,7 @@ func Verify(utype byte, input []byte, securityZone int32, tp *TxParams, _ *Callb
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
-		randomHash := State.GetRandomForGasEstimation()
+		randomHash := State.GetRandomKeyForGasEstimation()
 		return randomHash[:], gas, nil
 	}
 
@@ -74,20 +74,20 @@ func Verify(utype byte, input []byte, securityZone int32, tp *TxParams, _ *Callb
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	err = storeCipherText(storage, &ct, tp.ContractAddress)
+	err = storeCipherText(storage, &ct)
 	if err != nil {
 		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "ctHash", ct.GetHash().Hex())
-	return ct.GetHashBytes(), gas, nil
+	return ct.GetKeyBytes(), gas, nil
 }
 
-func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams, onResultCallback *SealOutputCallbackFunc) (string, uint64, error) {
+func SealOutput(utype byte, inputBz []byte, pk []byte, tp *TxParams, onResultCallback *SealOutputCallbackFunc) (string, uint64, error) {
 	//solgen: bool math
 	functionName := types.SealOutput
-	gas, err := PreProcessOperation1(functionName, utype, ctHash, tp)
+	input, gas, err := PreProcessOperation1(functionName, utype, inputBz, tp)
 	if err != nil {
 		return "", gas, vm.ErrExecutionReverted
 	}
@@ -107,30 +107,30 @@ func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams, onResultCall
 	if !tp.GasEstimation {
 		storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 		if onResultCallback == nil {
-			sealed, err := SealOutputHelper(storage, ctHash, pk, tp)
+			sealed, err := SealOutputHelper(storage, input.Hash, pk, tp)
 			return sealed, gas, err
 		}
 
-		go func(ctHash []byte) {
+		go func(ctHash [common.HashLength]byte) {
 			sealed, err := SealOutputHelper(storage, ctHash, pk, tp)
 			if err != nil {
 				return
 			}
 
 			url := (*onResultCallback).CallbackUrl
-			(*onResultCallback).Callback(url, ctHash, string(sealed))
-		}(ctHash)
-		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "ctHash", hex.EncodeToString(ctHash))
+			(*onResultCallback).Callback(url, ctHash[:], string(sealed))
+		}(input.Hash)
+		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "ctHash", hex.EncodeToString(input.Hash[:]))
 	}
 
 	return "0x" + strings.Repeat("00", 370), gas, nil
 }
 
-func Decrypt(utype byte, input []byte, defaultValue *big.Int, tp *TxParams, onResultCallback *DecryptCallbackFunc) (*big.Int, uint64, error) {
+func Decrypt(utype byte, inputBz []byte, defaultValue *big.Int, tp *TxParams, onResultCallback *DecryptCallbackFunc) (*big.Int, uint64, error) {
 	//solgen: output plaintext
 	functionName := types.Decrypt
 
-	gas, err := PreProcessOperation1(functionName, utype, input, tp)
+	input, gas, err := PreProcessOperation1(functionName, utype, inputBz, tp)
 	if err != nil {
 		return nil, gas, vm.ErrExecutionReverted
 	}
@@ -144,10 +144,10 @@ func Decrypt(utype byte, input []byte, defaultValue *big.Int, tp *TxParams, onRe
 	if !tp.GasEstimation {
 		storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 		if onResultCallback == nil {
-			plaintext, err := DecryptHelper(storage, input, tp, defaultValue)
+			plaintext, err := DecryptHelper(storage, input.Hash, tp, defaultValue)
 			return plaintext, gas, err
 		}
-		go func(ctHash []byte) {
+		go func(ctHash [common.HashLength]byte) {
 			plaintext, err := DecryptHelper(storage, ctHash, tp, defaultValue)
 			if err != nil {
 				logger.Error("failed decrypting ciphertext", "error", err)
@@ -155,9 +155,13 @@ func Decrypt(utype byte, input []byte, defaultValue *big.Int, tp *TxParams, onRe
 			}
 
 			url := (*onResultCallback).CallbackUrl
-			(*onResultCallback).Callback(url, input, plaintext)
-		}(input)
-		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "input", hex.EncodeToString(input))
+			(*onResultCallback).Callback(url, ctHash[:], plaintext)
+			if err != nil {
+				logger.Error("failed decrypting ciphertext", "error", err)
+				return
+			}
+		}(input.Hash)
+		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "input", hex.EncodeToString(input.Hash[:]))
 	}
 
 	return defaultValue, gas, nil
@@ -185,7 +189,7 @@ func Lt(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *Call
 	return ProcessOperation2(functionName, (*fhe.FheEncrypted).Lt, utype, lhsHash, rhsHash, tp, callback)
 }
 
-func Select(utype byte, controlHash []byte, ifTrueHash []byte, ifFalseHash []byte, tp *TxParams, _ *CallbackFunc) ([]byte, uint64, error) {
+func Select(utype byte, controlKey []byte, ifTrueKey []byte, ifFalseKey []byte, tp *TxParams, _ *CallbackFunc) ([]byte, uint64, error) {
 	functionName := types.Select
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
@@ -197,7 +201,7 @@ func Select(utype byte, controlHash []byte, ifTrueHash []byte, ifFalseHash []byt
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
-		randomHash := State.GetRandomForGasEstimation()
+		randomHash := State.GetRandomKeyForGasEstimation()
 		return randomHash[:], gas, nil
 	}
 
@@ -205,9 +209,9 @@ func Select(utype byte, controlHash []byte, ifTrueHash []byte, ifFalseHash []byt
 		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
-	control, ifTrue, ifFalse, err := get3VerifiedOperands(storage, controlHash, ifTrueHash, ifFalseHash, tp)
+	control, ifTrue, ifFalse, err := get3VerifiedOperands(storage, controlKey, ifTrueKey, ifFalseKey, tp)
 	if err != nil {
-		logger.Error(functionName.String()+": inputs not verified control len: ", len(controlHash), " ifTrue len: ", len(ifTrueHash), " ifFalse len: ", len(ifFalseHash), " err: ", err)
+		logger.Error(functionName.String()+": inputs not verified control len: ", len(control.Key.Hash), " ifTrue len: ", len(ifTrue.Key.Hash), " ifFalse len: ", len(ifFalse.Key.Hash), " err: ", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -223,7 +227,7 @@ func Select(utype byte, controlHash []byte, ifTrueHash []byte, ifFalseHash []byt
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	err = storeCipherText(storage, result, tp.ContractAddress)
+	err = storeCipherText(storage, result)
 	if err != nil {
 		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -266,7 +270,9 @@ func Req(utype byte, input []byte, tp *TxParams, _ *CallbackFunc) ([]byte, uint6
 	//    a. Trying to asynchronously evaluate the ct.
 	//    b. Required to have ParallelTxHooks.
 	//    c. Return default value while async evaluation is in progress.
-	ctHash := fhe.BytesToHash(input)
+	var inputSer [common.HashLength]byte
+	copy(inputSer[:], input)
+	ctHash := fhe.BytesToHash(inputSer)
 	key := types.PendingDecryption{
 		Hash: ctHash,
 		Type: functionName,
@@ -287,7 +293,7 @@ func Req(utype byte, input []byte, tp *TxParams, _ *CallbackFunc) ([]byte, uint6
 	} else if tp.GasEstimation {
 		return nil, gas, nil
 	} else {
-		ct := awaitCtResult(storage, input, tp)
+		ct := awaitCtResult(storage, inputSer, tp)
 		if ct == nil {
 			msg := functionName.String() + " unverified ciphertext handle"
 			logger.Error(msg, "input", hex.EncodeToString(input))
@@ -357,7 +363,7 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams, _ *CallbackFunc) 
 	}
 
 	if tp.GasEstimation {
-		randomHash := State.GetRandomForGasEstimation()
+		randomHash := State.GetRandomKeyForGasEstimation()
 		return randomHash[:], gas, nil
 	}
 
@@ -370,7 +376,7 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams, _ *CallbackFunc) 
 
 	resHash := res.GetHash()
 
-	err = storeCipherText(storage, res, tp.ContractAddress)
+	err = storeCipherText(storage, res)
 	if err != nil {
 		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -397,18 +403,12 @@ func TrivialEncrypt(input []byte, toType byte, securityZone int32, tp *TxParams,
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
-		randomHash := State.GetRandomForGasEstimation()
+		randomHash := State.GetRandomKeyForGasEstimation()
 		return randomHash[:], gas, nil
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function: " + functionName.String())
-	}
-
-	if len(input) != 32 {
-		msg := functionName.String() + " input len must be 32 bytes"
-		logger.Error(msg, " input ", hex.EncodeToString(input), " len ", len(input))
-		return nil, gas, vm.ErrExecutionReverted
 	}
 
 	valueToEncrypt := *new(big.Int).SetBytes(input)
@@ -436,17 +436,16 @@ func TrivialEncrypt(input []byte, toType byte, securityZone int32, tp *TxParams,
 		return nil, gas, vm.ErrExecutionReverted
 	}
 
-	ctHash := ct.GetHash()
-	err = storeCipherText(storage, ct, tp.ContractAddress)
+	err = storeCipherText(storage, ct)
 	if err != nil {
 		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, gas, vm.ErrExecutionReverted
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "ctHash", ctHash.Hex(), "valueToEncrypt", valueToEncrypt.Uint64(), "securityZone", ct.SecurityZone)
+		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "ctHash", ct.GetHash(), "valueToEncrypt", valueToEncrypt.Uint64(), "securityZone", ct.SecurityZone)
 	}
-	return ctHash[:], gas, nil
+	return ct.GetKeyBytes(), gas, nil
 }
 
 func Div(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
@@ -543,7 +542,7 @@ func Not(utype byte, value []byte, tp *TxParams, _ *CallbackFunc) ([]byte, uint6
 	}
 
 	if tp.GasEstimation {
-		randomHash := State.GetRandomForGasEstimation()
+		randomHash := State.GetRandomKeyForGasEstimation()
 		return randomHash[:], gas, nil
 	}
 	result, err := ct.Not()
@@ -552,7 +551,7 @@ func Not(utype byte, value []byte, tp *TxParams, _ *CallbackFunc) ([]byte, uint6
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	err = storeCipherText(storage, result, tp.ContractAddress)
+	err = storeCipherText(storage, result)
 	if err != nil {
 		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -575,7 +574,7 @@ func Random(utype byte, seed uint64, securityZone int32, tp *TxParams, _ *Callba
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
-		randomHash := State.GetRandomForGasEstimation()
+		randomHash := State.GetRandomKeyForGasEstimation()
 		return randomHash[:], gas, nil
 	}
 
@@ -608,7 +607,7 @@ func Random(utype byte, seed uint64, securityZone int32, tp *TxParams, _ *Callba
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	err = storeCipherText(storage, result, tp.ContractAddress)
+	err = storeCipherText(storage, result)
 	if err != nil {
 		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted

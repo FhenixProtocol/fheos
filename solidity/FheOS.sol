@@ -11,13 +11,13 @@ interface FheOps {
     function log(string memory s) external pure;
     function add(uint8 utype, bytes memory lhsHash, bytes memory rhsHash) external pure returns (bytes memory);
     function verify(uint8 utype, bytes memory input, int32 securityZone) external pure returns (bytes memory);
-    function sealOutput(uint8 utype, bytes memory ctHash, bytes memory pk) external pure returns (string memory);
-    function decrypt(uint8 utype, bytes memory input, uint256 defaultValue) external pure returns (uint256);
+    function sealOutput(uint8 utype, bytes memory inputBz, bytes memory pk) external pure returns (string memory);
+    function decrypt(uint8 utype, bytes memory inputBz, uint256 defaultValue) external pure returns (uint256);
     function lte(uint8 utype, bytes memory lhsHash, bytes memory rhsHash) external pure returns (bytes memory);
     function sub(uint8 utype, bytes memory lhsHash, bytes memory rhsHash) external pure returns (bytes memory);
     function mul(uint8 utype, bytes memory lhsHash, bytes memory rhsHash) external pure returns (bytes memory);
     function lt(uint8 utype, bytes memory lhsHash, bytes memory rhsHash) external pure returns (bytes memory);
-    function select(uint8 utype, bytes memory controlHash, bytes memory ifTrueHash, bytes memory ifFalseHash) external pure returns (bytes memory);
+    function select(uint8 utype, bytes memory controlKey, bytes memory ifTrueKey, bytes memory ifFalseKey) external pure returns (bytes memory);
     function req(uint8 utype, bytes memory input) external pure returns (bytes memory);
     function cast(uint8 utype, bytes memory input, uint8 toType) external pure returns (bytes memory);
     function trivialEncrypt(bytes memory input, uint8 toType, int32 securityZone) external pure returns (bytes memory);
