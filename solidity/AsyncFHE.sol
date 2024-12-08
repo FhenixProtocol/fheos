@@ -5,97 +5,97 @@ pragma solidity >=0.8.19 <0.9.0;
 
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-struct CiphertextKey {
-    bool     isTriviallyEncrypted;
-    uint32   uintType;
-    int32    securityZone;
-    uint256  hash;
-}
+    struct CiphertextKey {
+        bool     isTriviallyEncrypted;
+        uint32   uintType;
+        int32    securityZone;
+        uint256  hash;
+    }
 
-struct ebool {
-    bool     isTriviallyEncrypted;
-    uint32   uintType;
-    int32    securityZone;
-    uint256  hash;
-}
+    struct ebool {
+        bool     isTriviallyEncrypted;
+        uint32   uintType;
+        int32    securityZone;
+        uint256  hash;
+    }
 
-struct euint8 {
-    bool     isTriviallyEncrypted;
-    uint32   uintType;
-    int32    securityZone;
-    uint256  hash;
-}
+    struct euint8 {
+        bool     isTriviallyEncrypted;
+        uint32   uintType;
+        int32    securityZone;
+        uint256  hash;
+    }
 
-struct euint16 {
-    bool     isTriviallyEncrypted;
-    uint32   uintType;
-    int32    securityZone;
-    uint256  hash;
-}
+    struct euint16 {
+        bool     isTriviallyEncrypted;
+        uint32   uintType;
+        int32    securityZone;
+        uint256  hash;
+    }
 
-struct euint32 {
-    bool     isTriviallyEncrypted;
-    uint32   uintType;
-    int32    securityZone;
-    uint256  hash;
-}
+    struct euint32 {
+        bool     isTriviallyEncrypted;
+        uint32   uintType;
+        int32    securityZone;
+        uint256  hash;
+    }
 
-struct euint64 {
-    bool     isTriviallyEncrypted;
-    uint32   uintType;
-    int32    securityZone;
-    uint256  hash;
-}
+    struct euint64 {
+        bool     isTriviallyEncrypted;
+        uint32   uintType;
+        int32    securityZone;
+        uint256  hash;
+    }
 
-struct euint128 {
-    bool     isTriviallyEncrypted;
-    uint32   uintType;
-    int32    securityZone;
-    uint256  hash;
-}
+    struct euint128 {
+        bool     isTriviallyEncrypted;
+        uint32   uintType;
+        int32    securityZone;
+        uint256  hash;
+    }
 
-struct euint256 {
-    bool     isTriviallyEncrypted;
-    uint32   uintType;
-    int32    securityZone;
-    uint256  hash;
-}
+    struct euint256 {
+        bool     isTriviallyEncrypted;
+        uint32   uintType;
+        int32    securityZone;
+        uint256  hash;
+    }
 
-struct eaddress {
-    bool     isTriviallyEncrypted;
-    uint32   uintType;
-    int32    securityZone;
-    uint256  hash;
-}
+    struct eaddress {
+        bool     isTriviallyEncrypted;
+        uint32   uintType;
+        int32    securityZone;
+        uint256  hash;
+    }
 
-struct SealedArray {
-  bytes[] data;
-}
+    struct SealedArray {
+        bytes[] data;
+    }
 
 /// @dev Utility structure providing clients with type context of a sealed output string.
 /// Return type of `FHE.sealoutputTyped` and `sealTyped` within the binding libraries.
 /// `utype` representing Bool is 13. See `FHE.sol` for more.
-struct SealedBool {
-    string data;
-    uint8 utype;
-}
+    struct SealedBool {
+        string data;
+        uint8 utype;
+    }
 
 /// @dev Utility structure providing clients with type context of a sealed output string.
 /// Return type of `FHE.sealoutputTyped` and `sealTyped` within the binding libraries.
 /// `utype` representing Uints is 0-5. See `FHE.sol` for more.
 /// `utype` map: {uint8: 0} {uint16: 1} {uint32: 2} {uint64: 3} {uint128: 4} {uint256: 5}.
-struct SealedUint {
-    string data;
-    uint8 utype;
-}
+    struct SealedUint {
+        string data;
+        uint8 utype;
+    }
 
 /// @dev Utility structure providing clients with type context of a sealed output string.
 /// Return type of `FHE.sealoutputTyped` and `sealTyped` within the binding libraries.
 /// `utype` representing Address is 12. See `FHE.sol` for more.
-struct SealedAddress {
-    string data;
-    uint8 utype;
-}
+    struct SealedAddress {
+        string data;
+        uint8 utype;
+    }
 
 // ================================
 // \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/
@@ -107,7 +107,7 @@ address constant TASK_MANAGER_ADDRESS = 0x54245f6371c6ABcc40dde38912D86720Af5e60
 
 library Common {
     // Values used to communicate types to the runtime.
-    // Must match values defined in warp-drive protobufs for everything to 
+    // Must match values defined in warp-drive protobufs for everything to
     // make sense
     uint8 internal constant EUINT8_TFHE = 0;
     uint8 internal constant EUINT16_TFHE = 1;
@@ -156,7 +156,7 @@ library Common {
         ror,            // 29
         square          // 30
     }
-    
+
     function bigIntToBool(uint256 i) internal pure returns (bool) {
         return (i > 0);
     }
@@ -188,12 +188,12 @@ library Common {
     function bigIntToAddress(uint256 i) internal pure returns (address) {
         return address(uint160(i));
     }
-    
+
     function toBytes(uint256 x) internal pure returns (bytes memory b) {
         b = new bytes(32);
         assembly { mstore(add(b, 32), x) }
     }
-    
+
     function bytesToUint256(bytes memory b) internal pure returns (uint256) {
         require(b.length == 32, string(abi.encodePacked("Input bytes length must be 32, but got ", Strings.toString(b.length))));
 
@@ -266,13 +266,13 @@ library Common {
     function bytesToHexString(bytes memory buffer) internal pure returns (string memory) {
         // Each byte takes 2 characters
         bytes memory hexChars = new bytes(buffer.length * 2);
-        
+
         for(uint i = 0; i < buffer.length; i++) {
             uint8 value = uint8(buffer[i]);
             hexChars[i * 2] = byteToChar(value / 16);
             hexChars[i * 2 + 1] = byteToChar(value % 16);
         }
-        
+
         return string(hexChars);
     }
 
@@ -352,7 +352,7 @@ library Common {
             hash: key.hash
         });
     }
-    
+
     function keyAsEuint8(CiphertextKey memory key) internal pure returns (euint8 memory) {
         revert(key.uintType != Common.EUINT8_TFHE, "Key type mismatch");
         return euint8({
@@ -2941,7 +2941,7 @@ library FHE {
     /// @dev The decrypted output should be asynchronously handled by the IAsyncFHEReceiver implementation
     /// @param input1 the input ciphertext
     /// @return the input ciphertext
-    function decrypt(eaddress input1) internal returns (eaddress) {
+    function decrypt(eaddress input1) internal returns (eaddress memory) {
         if (!Common.isInitialized(input1)) {
             input1 = asEaddress(0);
         }
@@ -3586,14 +3586,14 @@ library FHE {
     function asEbool(bool value, int32 securityZone) internal returns (ebool memory) {
         uint256 sVal = 0;
         if (value) {
-          sVal = 1;
+            sVal = 1;
         }
         return asEbool(sVal, securityZone);
     }
 }
 // ********** BINDING DEFS ************* //
 
-using BindingsEbool for ebool global;
+    using BindingsEbool for ebool global;
 library BindingsEbool {
 
     /// @notice Performs the eq operation
@@ -3617,7 +3617,7 @@ library BindingsEbool {
     /// @notice Performs the not operation
     /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs input of type ebool
-        /// @return the result of the not
+    /// @return the result of the not
     function not(ebool memory lhs) internal returns (ebool memory) {
         return FHE.not(lhs);
     }
@@ -3677,7 +3677,7 @@ library BindingsEbool {
     }
 }
 
-using BindingsEuint8 for euint8 global;
+    using BindingsEuint8 for euint8 global;
 library BindingsEuint8 {
 
     /// @notice Performs the add operation
@@ -3737,7 +3737,7 @@ library BindingsEuint8 {
     /// @notice Performs the not operation
     /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs input of type euint8
-        /// @return the result of the not
+    /// @return the result of the not
     function not(euint8 memory lhs) internal returns (euint8 memory) {
         return FHE.not(lhs);
     }
@@ -3871,7 +3871,7 @@ library BindingsEuint8 {
     /// @notice Performs the square operation
     /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs input of type euint8
-        /// @return the result of the square
+    /// @return the result of the square
     function square(euint8 memory lhs) internal returns (euint8 memory) {
         return FHE.square(lhs);
     }
@@ -3904,7 +3904,7 @@ library BindingsEuint8 {
     }
 }
 
-using BindingsEuint16 for euint16 global;
+    using BindingsEuint16 for euint16 global;
 library BindingsEuint16 {
 
     /// @notice Performs the add operation
@@ -3964,7 +3964,7 @@ library BindingsEuint16 {
     /// @notice Performs the not operation
     /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs input of type euint16
-        /// @return the result of the not
+    /// @return the result of the not
     function not(euint16 memory lhs) internal returns (euint16 memory) {
         return FHE.not(lhs);
     }
@@ -4098,7 +4098,7 @@ library BindingsEuint16 {
     /// @notice Performs the square operation
     /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs input of type euint16
-        /// @return the result of the square
+    /// @return the result of the square
     function square(euint16 memory lhs) internal returns (euint16 memory) {
         return FHE.square(lhs);
     }
@@ -4131,7 +4131,7 @@ library BindingsEuint16 {
     }
 }
 
-using BindingsEuint32 for euint32 global;
+    using BindingsEuint32 for euint32 global;
 library BindingsEuint32 {
 
     /// @notice Performs the add operation
@@ -4191,7 +4191,7 @@ library BindingsEuint32 {
     /// @notice Performs the not operation
     /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs input of type euint32
-        /// @return the result of the not
+    /// @return the result of the not
     function not(euint32 memory lhs) internal returns (euint32 memory) {
         return FHE.not(lhs);
     }
@@ -4325,7 +4325,7 @@ library BindingsEuint32 {
     /// @notice Performs the square operation
     /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs input of type euint32
-        /// @return the result of the square
+    /// @return the result of the square
     function square(euint32 memory lhs) internal returns (euint32 memory) {
         return FHE.square(lhs);
     }
@@ -4358,7 +4358,7 @@ library BindingsEuint32 {
     }
 }
 
-using BindingsEuint64 for euint64 global;
+    using BindingsEuint64 for euint64 global;
 library BindingsEuint64 {
 
     /// @notice Performs the add operation
@@ -4409,7 +4409,7 @@ library BindingsEuint64 {
     /// @notice Performs the not operation
     /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs input of type euint64
-        /// @return the result of the not
+    /// @return the result of the not
     function not(euint64 memory lhs) internal returns (euint64 memory) {
         return FHE.not(lhs);
     }
@@ -4534,7 +4534,7 @@ library BindingsEuint64 {
     /// @notice Performs the square operation
     /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs input of type euint64
-        /// @return the result of the square
+    /// @return the result of the square
     function square(euint64 memory lhs) internal returns (euint64 memory) {
         return FHE.square(lhs);
     }
@@ -4567,7 +4567,7 @@ library BindingsEuint64 {
     }
 }
 
-using BindingsEuint128 for euint128 global;
+    using BindingsEuint128 for euint128 global;
 library BindingsEuint128 {
 
     /// @notice Performs the add operation
@@ -4609,7 +4609,7 @@ library BindingsEuint128 {
     /// @notice Performs the not operation
     /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param lhs input of type euint128
-        /// @return the result of the not
+    /// @return the result of the not
     function not(euint128 memory lhs) internal returns (euint128 memory) {
         return FHE.not(lhs);
     }
@@ -4759,7 +4759,7 @@ library BindingsEuint128 {
     }
 }
 
-using BindingsEuint256 for euint256 global;
+    using BindingsEuint256 for euint256 global;
 library BindingsEuint256 {
 
     /// @notice Performs the eq operation
@@ -4797,7 +4797,7 @@ library BindingsEuint256 {
     function toU128(euint256 memory value) internal returns (euint128 memory) {
         return FHE.asEuint128(value);
     }
-    function toEaddress(euint256 memory value) internal returns (eaddress) {
+    function toEaddress(euint256 memory value) internal returns (eaddress memory) {
         return FHE.asEaddress(value);
     }
     function seal(euint256 memory value, bytes32 publicKey) internal returns (string memory) {
@@ -4811,7 +4811,7 @@ library BindingsEuint256 {
     }
 }
 
-using BindingsEaddress for eaddress global;
+    using BindingsEaddress for eaddress global;
 library BindingsEaddress {
 
     /// @notice Performs the eq operation
@@ -4858,7 +4858,7 @@ library BindingsEaddress {
     function sealTyped(eaddress memory value, bytes32 publicKey) internal returns (SealedAddress memory) {
         return FHE.sealoutputTyped(value, publicKey);
     }
-    function decrypt(eaddress memory value) internal returns (eaddress) {
+    function decrypt(eaddress memory value) internal returns (eaddress memory) {
         return FHE.decrypt(value);
     }
 }
