@@ -142,7 +142,6 @@ func CreatePlaceHolderData() []byte {
 func blockUntilInputsAvailable(storage *storage.MultiStore, tp *TxParams, inputHashes ...[]byte) ([]*fhe.FheEncrypted, error) {
 	// Check validity of all input hashes before awaiting results
 	for _, hash := range inputHashes {
-		// TODO : Adjust according to lior's struct changes
 		if len(hash) != 32 {
 			return nil, errors.New("ciphertext's hashes need to be 32 bytes long, hash: " + fhe.Hash(hash).Hex())
 		}
