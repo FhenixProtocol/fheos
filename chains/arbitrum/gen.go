@@ -489,7 +489,7 @@ type HandlerDef struct {
 			template = GenerateFHEOperationTemplate()
 
 			// Filter out special cases
-			if op.Name != "TrivialEncrypt" && op.Name != "Cast" && op.Name != "Random" && op.Name != "Decrypt" && op.Name != "SealOutput" && op.Name != "Verify" && op.Name != "Req" {
+			if op.Name != "TrivialEncrypt" && op.Name != "Random" && op.Name != "Cast" && op.Name != "Decrypt" && op.Name != "SealOutput" && op.Name != "Verify" && op.Name != "Req" {
 				funcTemplate, callTemplate = GenerateHandlerFunction(op.Name)
 			}
 

@@ -53,6 +53,13 @@ type TrivialEncryptRequest struct {
 	RequesterUrl string   `json:"requesterUrl"`
 }
 
+type CastRequest struct {
+	UType        byte   `json:"utype"`
+	Input        string `json:"input"`
+	ToType       string `json:"toType"`
+	RequesterUrl string `json:"requesterUrl"`
+}
+
 func (r *TrivialEncryptRequest) UnmarshalJSON(data []byte) error {
 	// Define a temporary struct to unmarshal JSON into
 	var aux struct {
@@ -512,6 +519,57 @@ func TrivialEncryptHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Started processing the request for tempkey %s\n", hex.EncodeToString(result))
 }
 
+func CastHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("Got a request from %s\n", r.RemoteAddr)
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var req CastRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		fmt.Printf("Failed unmarsheling request: %+v body is %+v\n", err, string(body))
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	callback := precompiles.CallbackFunc{
+		CallbackUrl: req.RequesterUrl,
+		Callback:    handleResult,
+	}
+
+	// Convert the value strings to byte arrays
+	value, err := hex.DecodeString(req.Input)
+	if err != nil {
+		e := fmt.Sprintf("Invalid value: %s %+v", req.Input, err)
+		fmt.Println(e)
+		http.Error(w, e, http.StatusBadRequest)
+		return
+	}
+
+	toTypeInt, err := strconv.Atoi(req.ToType)
+	if err != nil {
+		e := fmt.Sprintf("Invalid toType: %s %+v", req.ToType, err)
+		fmt.Println(e)
+		http.Error(w, e, http.StatusBadRequest)
+		return
+	}
+
+	result, _, err := precompiles.Cast(req.UType, value, byte(toTypeInt), &tp, &callback)
+	if err != nil {
+		e := fmt.Sprintf("Operation failed: %+v", err)
+		fmt.Println(e)
+		http.Error(w, e, http.StatusBadRequest)
+		return
+	}
+
+	// Respond with the result
+	res := []byte(hex.EncodeToString(result))
+	w.Write(res)
+	fmt.Printf("Started processing the request for tempkey %s\n", hex.EncodeToString(result))
+}
+
 func main() {
 	_, err := initFheos()
 	if err != nil {
@@ -533,6 +591,8 @@ func main() {
 	log.Printf("Added handler for /SealOutput")
 	http.HandleFunc("/TrivialEncrypt", TrivialEncryptHandler)
 	log.Printf("Added handler for /TrivialEncrypt")
+	http.HandleFunc("/Cast", CastHandler)
+	log.Printf("Added handler for /Cast")
 
 	// Start the server
 	log.Println("Server listening on port 8448...")
