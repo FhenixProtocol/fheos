@@ -5,11 +5,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/ethdb/memorydb"
-	"github.com/fhenixprotocol/fheos/precompiles"
-	fhedriver "github.com/fhenixprotocol/warp-drive/fhe-driver"
 	"io/ioutil"
 	"log"
 	"math/big"
@@ -17,6 +12,12 @@ import (
 	"os"
 	"reflect"
 	"strconv"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ethereum/go-ethereum/ethdb/memorydb"
+	"github.com/fhenixprotocol/fheos/precompiles"
+	fhedriver "github.com/fhenixprotocol/warp-drive/fhe-driver"
 )
 
 // Struct to parse the incoming JSON request
@@ -51,6 +52,13 @@ type CastRequest struct {
 	UType        byte   `json:"utype"`
 	Input        string `json:"input"`
 	ToType       string `json:"toType"`
+	RequesterUrl string `json:"requesterUrl"`
+}
+
+type RandomRequest struct {
+	UType        byte   `json:"utype"`
+	Seed         string `json:"seed"`
+	SecurityZone string `json:"securityZone"`
 	RequesterUrl string `json:"requesterUrl"`
 }
 
@@ -534,6 +542,57 @@ func CastHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Started processing the request for tempkey %s\n", hex.EncodeToString(result))
 }
 
+func RandomHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("Got a request from %s\n", r.RemoteAddr)
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var req RandomRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		fmt.Printf("Failed unmarsheling request: %+v body is %+v\n", err, string(body))
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	callback := precompiles.CallbackFunc{
+		CallbackUrl: req.RequesterUrl,
+		Callback:    handleResult,
+	}
+
+	// Convert the value strings to byte arrays
+	seed, err := strconv.ParseUint(req.Seed, 10, 64)
+	if err != nil {
+		e := fmt.Sprintf("Invalid seed: %s %+v", req.Seed, err)
+		fmt.Println(e)
+		http.Error(w, e, http.StatusBadRequest)
+		return
+	}
+
+	securityZoneInt, err := strconv.Atoi(req.SecurityZone)
+	if err != nil {
+		e := fmt.Sprintf("Invalid securityZone: %s %+v", req.SecurityZone, err)
+		fmt.Println(e)
+		http.Error(w, e, http.StatusBadRequest)
+		return
+	}
+
+	result, _, err := precompiles.Random(req.UType, seed, int32(securityZoneInt), &tp, &callback)
+	if err != nil {
+		e := fmt.Sprintf("Operation failed: %+v", err)
+		fmt.Println(e)
+		http.Error(w, e, http.StatusBadRequest)
+		return
+	}
+
+	// Respond with the result
+	res := []byte(hex.EncodeToString(result))
+	w.Write(res)
+	fmt.Printf("Started processing the request for tempkey %s\n", hex.EncodeToString(result))
+}
+
 func main() {
 	_, err := initFheos()
 	if err != nil {
@@ -542,21 +601,16 @@ func main() {
 	}
 
 	handlers := getHandlers()
-	log.Printf("Got %d handlers", len(handlers))
 	// iterate handlers
-	for i, handler := range handlers {
+	for _, handler := range handlers {
 		http.HandleFunc(handler.Name, handler.Handler)
-		log.Printf("Added handler for %s in index %d", handler.Name, i)
 	}
 
 	http.HandleFunc("/Decrypt", DecryptHandler)
-	log.Printf("Added handler for /Decrypt")
 	http.HandleFunc("/SealOutput", SealOutputHandler)
-	log.Printf("Added handler for /SealOutput")
 	http.HandleFunc("/TrivialEncrypt", TrivialEncryptHandler)
-	log.Printf("Added handler for /TrivialEncrypt")
 	http.HandleFunc("/Cast", CastHandler)
-	log.Printf("Added handler for /Cast")
+	http.HandleFunc("/Random", RandomHandler)
 
 	// Start the server
 	log.Println("Server listening on port 8448...")
