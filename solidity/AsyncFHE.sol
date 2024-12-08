@@ -67,6 +67,7 @@ struct eaddress {
     int32    securityZone;
     uint256  hash;
 }
+
 struct SealedArray {
   bytes[] data;
 }
