@@ -2886,7 +2886,7 @@ library FHE {
     /// @dev The decrypted output should be asynchronously handled by the IAsyncFHEReceiver implementation
     /// @param input1 the input ciphertext
     /// @return the input ciphertext
-    function decrypt(euint16 input1) internal returns (euint16 memory) {
+    function decrypt(euint16 memory input1) internal returns (euint16 memory) {
         if (!Common.isInitialized(input1)) {
             input1 = asEuint16(0);
         }
@@ -2897,7 +2897,7 @@ library FHE {
     /// @dev The decrypted output should be asynchronously handled by the IAsyncFHEReceiver implementation
     /// @param input1 the input ciphertext
     /// @return the input ciphertext
-    function decrypt(euint32 input1) internal returns (euint32 memory) {
+    function decrypt(euint32 memory input1) internal returns (euint32 memory) {
         if (!Common.isInitialized(input1)) {
             input1 = asEuint32(0);
         }
@@ -2908,7 +2908,7 @@ library FHE {
     /// @dev The decrypted output should be asynchronously handled by the IAsyncFHEReceiver implementation
     /// @param input1 the input ciphertext
     /// @return the input ciphertext
-    function decrypt(euint64 input1) internal returns (euint64 memory) {
+    function decrypt(euint64 memory input1) internal returns (euint64 memory) {
         if (!Common.isInitialized(input1)) {
             input1 = asEuint64(0);
         }
@@ -2919,7 +2919,7 @@ library FHE {
     /// @dev The decrypted output should be asynchronously handled by the IAsyncFHEReceiver implementation
     /// @param input1 the input ciphertext
     /// @return the input ciphertext
-    function decrypt(euint128 input1) internal returns (euint128 memory) {
+    function decrypt(euint128 memory input1) internal returns (euint128 memory) {
         if (!Common.isInitialized(input1)) {
             input1 = asEuint128(0);
         }
@@ -2930,7 +2930,7 @@ library FHE {
     /// @dev The decrypted output should be asynchronously handled by the IAsyncFHEReceiver implementation
     /// @param input1 the input ciphertext
     /// @return the input ciphertext
-    function decrypt(euint256 input1) internal returns (euint256 memory) {
+    function decrypt(euint256 memory input1) internal returns (euint256 memory) {
         if (!Common.isInitialized(input1)) {
             input1 = asEuint256(0);
         }
@@ -2941,7 +2941,7 @@ library FHE {
     /// @dev The decrypted output should be asynchronously handled by the IAsyncFHEReceiver implementation
     /// @param input1 the input ciphertext
     /// @return the input ciphertext
-    function decrypt(eaddress input1) internal returns (eaddress memory) {
+    function decrypt(eaddress memory input1) internal returns (eaddress memory) {
         if (!Common.isInitialized(input1)) {
             input1 = asEaddress(0);
         }
