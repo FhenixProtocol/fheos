@@ -107,18 +107,20 @@ func (ms *MultiStore) GetCtRepresentation(h types.Hash, caller common.Address) (
 		return nil, err
 	}
 
-	//This is new
-	owner, err := ms.isOwner(h, ct, caller)
-	if err != nil {
-		return nil, err
-	}
+	if !ct.Data.IsTriviallyEncrypted {
+		owner, err := ms.isOwner(h, ct, caller)
+		if err != nil {
+			return nil, err
+		}
 
-	if !owner && !ct.Data.IsTriviallyEncrypted {
-		return nil, fmt.Errorf("contract is not allowed to access the ciphertext (ct: %s, contract: %s)", hex.EncodeToString(h[:]), caller.String())
+		if !owner {
+			return nil, fmt.Errorf("contract is not allowed to access the ciphertext (ct: %s, contract: %s)", hex.EncodeToString(h[:]), caller.String())
+		}
 	}
 
 	return ct, nil
 }
+
 func (ms *MultiStore) GetCt(h types.Hash, caller common.Address) (*types.FheEncrypted, error) {
 	ct, err := ms.GetCtRepresentation(h, caller)
 	if (err != nil) || (ct == nil) {

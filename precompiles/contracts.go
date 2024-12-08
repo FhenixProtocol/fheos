@@ -3,12 +3,13 @@ package precompiles
 import (
 	"encoding/hex"
 	"fmt"
+	"math/big"
+	"strings"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
-	"math/big"
-	"strings"
 
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/log"
@@ -604,10 +605,9 @@ func Not(utype byte, value []byte, tp *TxParams, callback *CallbackFunc) ([]byte
 	return ProcessOperation(functionName, notOp, utype, [][]byte{value}, tp, callback)
 }
 
-func Random(utype byte, seed uint64, securityZone int32, tp *TxParams, _ *CallbackFunc) ([]byte, uint64, error) {
+func Random(utype byte, seed uint64, securityZone int32, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	functionName := types.Random
 
-	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 	uintType := fhe.EncryptionType(utype)
 	if !types.IsValidType(uintType) {
 		logger.Error("invalid random output type", "type", utype)
@@ -620,44 +620,86 @@ func Random(utype byte, seed uint64, securityZone int32, tp *TxParams, _ *Callba
 		return randomHash[:], gas, nil
 	}
 
-	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function: " + functionName.String())
+	placeholderCt, err := createPlaceholder(utype, functionName, []byte{byte(uintType)}, []byte{byte(seed)}, []byte{byte(securityZone)})
+	if err != nil {
+		logger.Error(functionName.String()+" failed to create placeholder", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	var finalSeed uint64
-	if seed != 0 {
-		finalSeed = seed
-	} else {
-		var randomCounter uint64
-		var hash common.Hash
-		if tp.Commit {
-			// We're incrementing before the request for the random number, so that queries
-			// that came before this Tx would have received a different seed.
-			randomCounter = State.IncRandomCounter()
-			hash = tp.TxContext.Hash
+	if shouldPrintPrecompileInfo(tp) {
+		logger.Debug("fn", functionName.String(), "Storing async ciphertext", "placeholderKey", hex.EncodeToString(placeholderCt.Hash))
+	}
+
+	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
+	err = storeCipherText(storage, placeholderCt, tp.ContractAddress)
+	if err != nil {
+		logger.Error(functionName.String()+" failed to store async ciphertext", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	err = storage.SetAsyncCtStart(types.Hash(placeholderCt.Hash))
+	if err != nil {
+		logger.Error(functionName.String()+" failed to set async value start", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	if shouldPrintPrecompileInfo(tp) {
+		logger.Info("Starting new async precompiled contract function: " + functionName.String())
+	}
+
+	placeholderKeyCopy := CopySlice(placeholderCt.Hash)
+
+	go func(placeholderKey []byte, securityZone int32, uintType fhe.EncryptionType) {
+		var finalSeed uint64
+		if seed != 0 {
+			finalSeed = seed
 		} else {
-			randomCounter = State.GetRandomCounter()
-			hash = tp.GetBlockHash(tp.BlockNumber.Uint64() - 1) // If no tx hash - use block hash
+			var randomCounter uint64
+			var hash common.Hash
+			if tp.Commit {
+				// We're incrementing before the request for the random number, so that queries
+				// that came before this Tx would have received a different seed.
+				// TODO : Make sure that this can happen in Goroutine and shouldn't be blocking
+				randomCounter = State.IncRandomCounter()
+				hash = tp.TxContext.Hash
+			} else {
+				randomCounter = State.GetRandomCounter()
+				hash = tp.GetBlockHash(tp.BlockNumber.Uint64() - 1) // If no tx hash - use block hash
+			}
+
+			finalSeed = GenerateSeedFromEntropy(tp.ContractAddress, hash, randomCounter)
 		}
 
-		finalSeed = GenerateSeedFromEntropy(tp.ContractAddress, hash, randomCounter)
-	}
+		result, err := fhe.FheRandom(securityZone, uintType, finalSeed)
+		if err != nil {
+			logger.Error(functionName.String()+" failed to generate random value", "err", err)
+			return
+		}
 
-	result, err := fhe.FheRandom(securityZone, uintType, finalSeed)
-	if err != nil {
-		logger.Error(functionName.String()+" failed", "err", err)
-		return nil, 0, vm.ErrExecutionReverted
-	}
+		realResultHash, err := hex.DecodeString(result.GetHash().Hex())
+		if err != nil {
+			logger.Error(functionName.String()+" failed to decode result hash", "err", err)
+			return
+		}
+		result.Hash = realResultHash
 
-	err = storeCipherText(storage, result, tp.ContractAddress)
-	if err != nil {
-		logger.Error(functionName.String()+" failed", "err", err)
-		return nil, 0, vm.ErrExecutionReverted
-	}
+		err = storeCipherText(storage, result, tp.ContractAddress)
+		if err != nil {
+			logger.Error(functionName.String()+" failed to store result", "err", err)
+			return
+		}
 
-	resultHash := result.GetHash()
-	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "result", resultHash.Hex())
-	return resultHash[:], gas, nil
+		_ = storage.SetAsyncCtDone(types.Hash(realResultHash))
+
+		if callback != nil {
+			url := (*callback).CallbackUrl
+			(*callback).Callback(url, placeholderKeyCopy, realResultHash)
+		}
+
+		logger.Info(functionName.String()+" success", "contractAddress", tp.ContractAddress, "seed", finalSeed, "securityZone", securityZone, "result", hex.EncodeToString(realResultHash))
+	}(placeholderKeyCopy, securityZone, uintType)
+
+	return placeholderCt.Hash[:], gas, nil
 }
 
 func GetNetworkPublicKey(securityZone int32, tp *TxParams) ([]byte, error) {
