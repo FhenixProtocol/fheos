@@ -166,7 +166,7 @@ func (h *FheOSHooksImpl) EvmCallEnd(evmSuccess bool) {
 	}
 
 	if fheos.State != nil {
-		fheos.State.RandomCounter = 0
+		fheos.State.RandomCounter.Store(0)
 	}
 
 	if h.evm.Commit {
