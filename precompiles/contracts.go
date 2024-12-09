@@ -151,15 +151,12 @@ func Decrypt(utype byte, input []byte, defaultValue *big.Int, tp *TxParams, onRe
 		go func(ctHash []byte) {
 			plaintext, err := DecryptHelper(storage, ctHash, tp, defaultValue)
 			if err != nil {
+				logger.Error("failed decrypting ciphertext", "error", err)
 				return
 			}
 
 			url := (*onResultCallback).CallbackUrl
 			(*onResultCallback).Callback(url, input, plaintext)
-			if err != nil {
-				logger.Error("failed decrypting ciphertext", "error", err)
-				return
-			}
 		}(input)
 		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "input", hex.EncodeToString(input))
 	}
@@ -385,7 +382,7 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams, callback *Callbac
 			logger.Error(functionName.String()+" failed to decode result hash", "err", err)
 			return
 		}
-		result.Hash = realResultHash
+		result.Hash = placeholderKey
 		err = storeCipherText(storage, result, tp.ContractAddress)
 		if err != nil {
 			logger.Error(functionName.String()+" failed to store result", "err", err)
@@ -428,6 +425,10 @@ func TrivialEncrypt(input []byte, toType byte, securityZone int32, tp *TxParams,
 	}
 
 	placeholderCt, err := createPlaceholder(toType, functionName, input, []byte{toType}, []byte{byte(securityZone)})
+	hash := placeholderCt.Hash
+	hash[3] = 0xad
+	placeholderCt.Hash = hash
+
 	if err != nil {
 		logger.Error(functionName.String()+" failed to create placeholder", "err", err)
 		return nil, 0, vm.ErrExecutionReverted

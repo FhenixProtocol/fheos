@@ -67,7 +67,13 @@ func (ms *MultiStore) AppendCt(h types.Hash, cipher *types.FheEncrypted, owner c
 			return nil
 		}
 
-		return ms.PutCt(h, &types.CipherTextRepresentation{Data: cipher, Owners: []common.Address{}, RefCount: 0})
+		newCt := &types.CipherTextRepresentation{Data: cipher, Owners: []common.Address{owner}, RefCount: 0}
+		err := ms.PutCt(h, newCt)
+		if err != nil {
+			return err
+		}
+
+		return ms.disk.PutCt(h, newCt)
 	}
 
 	// If we're replacing a placeholder value just hard replace the value
@@ -107,20 +113,18 @@ func (ms *MultiStore) GetCtRepresentation(h types.Hash, caller common.Address) (
 		return nil, err
 	}
 
-	if !ct.Data.IsTriviallyEncrypted {
-		owner, err := ms.isOwner(h, ct, caller)
-		if err != nil {
-			return nil, err
-		}
+	//This is new
+	owner, err := ms.isOwner(h, ct, caller)
+	if err != nil {
+		return nil, err
+	}
 
-		if !owner {
-			return nil, fmt.Errorf("contract is not allowed to access the ciphertext (ct: %s, contract: %s)", hex.EncodeToString(h[:]), caller.String())
-		}
+	if !owner && !ct.Data.IsTriviallyEncrypted {
+		return nil, fmt.Errorf("contract is not allowed to access the ciphertext (ct: %s, contract: %s)", hex.EncodeToString(h[:]), caller.String())
 	}
 
 	return ct, nil
 }
-
 func (ms *MultiStore) GetCt(h types.Hash, caller common.Address) (*types.FheEncrypted, error) {
 	ct, err := ms.GetCtRepresentation(h, caller)
 	if (err != nil) || (ct == nil) {

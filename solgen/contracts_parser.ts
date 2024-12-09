@@ -24,7 +24,8 @@ const specificFunctions = [
 ];
 
 async function analyzeGoFile(
-  filePath: string
+  filePath: string,
+  isAsyncMode: boolean
 ): Promise<FunctionAnalysis[] | null> {
   const fileContent = await fs.promises.readFile(filePath, "utf-8");
   const lines = fileContent.split("\n");
@@ -61,7 +62,7 @@ async function analyzeGoFile(
           // @ts-ignore
           inputs[1] = trimmedLine.split("input2 ")[1].trim();
         }
-        if (solgenOutputPlaintextComment.test(trimmedLine)) {
+        if (solgenOutputPlaintextComment.test(trimmedLine) && !isAsyncMode) {
           returnType = "plaintext";
         }
         if (solgenBooleanMathOp.test(trimmedLine)) {
@@ -132,10 +133,10 @@ async function analyzeGoFile(
   return specificFunctionAnalysis.length > 0 ? specificFunctionAnalysis : null;
 }
 
-export const getFunctionsFromGo = async (file: string) => {
+export const getFunctionsFromGo = async (file: string, isAsyncMode: boolean = false): Promise<FunctionAnalysis[]> => {
   let goFilePath = path.join(__dirname, file);
 
-  let result = await analyzeGoFile(goFilePath);
+  let result = await analyzeGoFile(goFilePath, isAsyncMode);
   if (result) {
     // console.log(result)
     return result;
