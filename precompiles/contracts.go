@@ -427,6 +427,10 @@ func TrivialEncrypt(input []byte, toType byte, securityZone int32, tp *TxParams,
 	}
 
 	placeholderCt, err := createPlaceholder(toType, functionName, input, []byte{toType}, []byte{byte(securityZone)})
+	hash := placeholderCt.Hash
+	hash[3] = 0xad
+	placeholderCt.Hash = hash
+
 	if err != nil {
 		logger.Error(functionName.String()+" failed to create placeholder", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
