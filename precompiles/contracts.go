@@ -681,7 +681,7 @@ func Random(utype byte, seed uint64, securityZone int32, tp *TxParams, callback 
 			logger.Error(functionName.String()+" failed to decode result hash", "err", err)
 			return
 		}
-		result.Hash = realResultHash
+		result.Hash = placeholderKeyCopy
 
 		err = storeCipherText(storage, result, tp.ContractAddress)
 		if err != nil {
