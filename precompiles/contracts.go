@@ -384,7 +384,7 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams, callback *Callbac
 			logger.Error(functionName.String()+" failed to decode result hash", "err", err)
 			return
 		}
-		result.Hash = realResultHash
+		result.Hash = placeholderKey
 		err = storeCipherText(storage, result, tp.ContractAddress)
 		if err != nil {
 			logger.Error(functionName.String()+" failed to store result", "err", err)
@@ -486,6 +486,7 @@ func TrivialEncrypt(input []byte, toType byte, securityZone int32, tp *TxParams,
 		result.Hash = resultHash
 
 		err = storeCipherText(storage, result, tp.ContractAddress)
+		logger.Error("LIORRRRRRRRRRRRR ", "hash", result.GetHash().Hex())
 		if err != nil {
 			logger.Error(functionName.String()+" failed to store result", "err", err)
 			return
