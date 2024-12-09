@@ -2,14 +2,80 @@ package precompiles
 
 import (
 	"encoding/hex"
+	"fmt"
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
-	"math/big"
 )
 
-type TwoOperationFunc func(lhs *fhe.FheEncrypted, rhs *fhe.FheEncrypted) (*fhe.FheEncrypted, error)
+// OperationFunc is a generic function type that can handle variable number of operands
+type OperationFunc interface {
+	Execute(inputs []*fhe.FheEncrypted) (*fhe.FheEncrypted, error)
+	ValidateTypes(inputs []*fhe.FheEncrypted, utype byte) error
+}
+
+// OneOperationFunc wraps a single operand function to match OperationFunc interface
+type OneOperationFunc func(input *fhe.FheEncrypted) (*fhe.FheEncrypted, error)
+
+// TwoOperationFunc wraps a two operand function to match OperationFunc interface
+type TwoOperationFunc func(first, second *fhe.FheEncrypted) (*fhe.FheEncrypted, error)
+
+// ThreeOperationFunc wraps a three operand function to match OperationFunc interface
+type ThreeOperationFunc struct {
+	Fn               func(control, ifTrue, ifFalse *fhe.FheEncrypted) (*fhe.FheEncrypted, error)
+	CustomValidation func(inputs []*fhe.FheEncrypted, utype byte) error
+}
+
+func (f OneOperationFunc) Execute(inputs []*fhe.FheEncrypted) (*fhe.FheEncrypted, error) {
+	if len(inputs) != 1 {
+		return nil, fmt.Errorf("expected 1 input, got %d", len(inputs))
+	}
+	return f(inputs[0])
+}
+
+func (f OneOperationFunc) ValidateTypes(inputs []*fhe.FheEncrypted, utype byte) error {
+	return validateAllSameType(inputs, utype) // Default validation
+}
+
+func (f TwoOperationFunc) Execute(inputs []*fhe.FheEncrypted) (*fhe.FheEncrypted, error) {
+	if len(inputs) != 2 {
+		return nil, fmt.Errorf("expected 2 inputs, got %d", len(inputs))
+	}
+	return f(inputs[0], inputs[1])
+}
+
+func (f TwoOperationFunc) ValidateTypes(inputs []*fhe.FheEncrypted, utype byte) error {
+	return validateAllSameType(inputs, utype) // Default validation
+}
+
+func (f ThreeOperationFunc) Execute(inputs []*fhe.FheEncrypted) (*fhe.FheEncrypted, error) {
+	if len(inputs) != 3 {
+		return nil, fmt.Errorf("expected 3 inputs, got %d", len(inputs))
+	}
+	return f.Fn(inputs[0], inputs[1], inputs[2])
+}
+
+func (f ThreeOperationFunc) ValidateTypes(inputs []*fhe.FheEncrypted, utype byte) error {
+	if f.CustomValidation != nil {
+		return f.CustomValidation(inputs, utype)
+	}
+	return validateAllSameType(inputs, utype)
+}
+
+// Helper function for default type validation
+func validateAllSameType(inputs []*fhe.FheEncrypted, utype byte) error {
+	expectedType := fhe.EncryptionType(utype)
+	for i, ct := range inputs {
+		if ct.UintType != expectedType {
+			return fmt.Errorf("input %d type mismatch: expected %v, got %v", i, expectedType, ct.UintType)
+		}
+	}
+	return nil
+}
+
 type CallbackFunc struct {
 	CallbackUrl string
 	Callback    func(url string, ctKey []byte, newCtKey []byte)
@@ -23,6 +89,14 @@ type DecryptCallbackFunc struct {
 type SealOutputCallbackFunc struct {
 	CallbackUrl string
 	Callback    func(url string, ctKey []byte, value string)
+}
+
+func inputsToString(inputHashes [][]byte) string {
+	var concatenated string
+	for i, hash := range inputHashes {
+		concatenated += fmt.Sprintf("input%d: %s, ", i, hex.EncodeToString(hash))
+	}
+	return concatenated
 }
 
 func DecryptHelper(storage *storage2.MultiStore, ctHash []byte, tp *TxParams, defaultValue *big.Int) (*big.Int, error) {
@@ -57,6 +131,16 @@ func SealOutputHelper(storage *storage2.MultiStore, ctHash []byte, pk []byte, tp
 	return string(sealed), nil
 }
 
+func createPlaceholder(utype byte, functionName types.PrecompileName, inputHashes ...[]byte) (*fhe.FheEncrypted, error) {
+	placeholderCt := fhe.CreateFheEncryptedWithData(CreatePlaceHolderData(), fhe.EncryptionType(utype), true)
+
+	// Calculate placeholder based on number of inputs
+	placeholderKey := fhe.CalcPlaceholderValueHash(int(functionName), inputHashes...)
+
+	placeholderCt.Hash = placeholderKey[:]
+	return placeholderCt, nil
+}
+
 func PreProcessOperation1(functionName types.PrecompileName, utype byte, input []byte, tp *TxParams) (uint64, error) {
 	uintType := fhe.EncryptionType(utype)
 
@@ -83,35 +167,21 @@ func PreProcessOperation1(functionName types.PrecompileName, utype byte, input [
 	return gas, nil
 }
 
-func ProcessOperation1(functionName types.PrecompileName, utype byte, input []byte, tp *TxParams) (*fhe.FheEncrypted, uint64, error) {
-	gas, err := PreProcessOperation1(functionName, utype, input, tp)
+// ProcessOperation handles operations with variable number of inputs
+func ProcessOperation(functionName types.PrecompileName, operation OperationFunc, utype byte, inputHashes [][]byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
+	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
+
+	placeholderCt, err := createPlaceholder(utype, functionName, inputHashes...)
 	if err != nil {
-		return nil, gas, err
+		logger.Error(functionName.String()+" failed", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
 	}
-
-	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
-	ct := awaitCtResult(storage, input, tp)
-	if ct == nil {
-		msg := functionName.String() + " unverified ciphertext handle"
-		logger.Error(msg, " input ", input)
-		return nil, gas, vm.ErrExecutionReverted
-	}
-	return ct, gas, nil
-}
-
-func ProcessOperation2(functionName types.PrecompileName, mathOp TwoOperationFunc, utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
-	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
-
-	placeholderCt := fhe.CreateFheEncryptedWithData(CreatePlaceHolderData(), fhe.EncryptionType(utype), true)
-	placeholderKey := fhe.CalcBinaryPlaceholderValueHash(lhsHash, rhsHash, int(functionName))
-	placeholderCt.Hash = placeholderKey
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Debug(functionName.String(), "lhs", hex.EncodeToString(lhsHash), "rhs", hex.EncodeToString(rhsHash), "placeholderKey", hex.EncodeToString(placeholderKey))
+		logger.Debug(functionName.String(), inputsToString(inputHashes), "placeholderKey", hex.EncodeToString(placeholderCt.Hash))
 	}
 
-	err := storeCipherText(storage, placeholderCt, tp.ContractAddress)
-	if err != nil {
+	if err := storeCipherText(storage, placeholderCt, tp.ContractAddress); err != nil {
 		logger.Error(functionName.String()+" failed to store async ciphertext", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
@@ -129,53 +199,58 @@ func ProcessOperation2(functionName types.PrecompileName, mathOp TwoOperationFun
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Debug("fn", functionName.String(), "Storing async ciphertext", "placeholderKey", hex.EncodeToString(placeholderKey))
+		logger.Debug("fn", functionName.String(), "Storing async ciphertext", "placeholderKey", hex.EncodeToString(placeholderCt.Hash))
 	}
-	err = storage.SetAsyncCtStart(types.Hash(placeholderKey))
+	err = storage.SetAsyncCtStart(types.Hash(placeholderCt.Hash))
 	if err != nil {
 		logger.Error(functionName.String()+" failed to set async value start", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	if shouldPrintPrecompileInfo(tp) {
-		logger.Debug("Starting new precompiled contract function: " + functionName.String())
+	// Make copies for goroutine
+	copiedInputs := make([][]byte, len(inputHashes))
+	for i, hash := range inputHashes {
+		copiedInputs[i] = CopySlice(hash)
 	}
+	placeholderKeyCopy := CopySlice(placeholderCt.Hash)
 
-	lhsHashCopy := CopySlice(lhsHash)
-	rhsHashCopy := CopySlice(rhsHash)
-	placeholderKeyCopy := CopySlice(placeholderKey)
-
-	go func(lhsHash, rhsHash, resultHash []byte) {
-		lhs, rhs := blockUntilBinaryOperandsAvailable(storage, lhsHash, rhsHash, tp)
-
-		if lhs == nil || rhs == nil {
+	go func(inputs [][]byte, resultHash []byte) {
+		cts, err := blockUntilInputsAvailable(storage, tp, inputs...)
+		if err != nil || len(cts) != len(inputs) {
 			logger.Error(functionName.String() + ": inputs not verified")
 			return
 		}
 
-		if lhs.UintType != rhs.UintType || lhs.UintType != uintType {
-			msg := functionName.String() + " operand type mismatch"
-			logger.Error(msg, "lhs", lhs.UintType, "rhs", rhs.UintType)
+		for i, ct := range cts {
+			if ct == nil {
+				logger.Error(functionName.String()+": input not verified", "index", i)
+				return
+			}
+		}
+
+		// Use the operation's custom type validation
+		if err := operation.ValidateTypes(cts, utype); err != nil {
+			logger.Error(functionName.String()+" type validation failed", "err", err)
 			return
 		}
 
-		result, err2 := mathOp(lhs, rhs)
-		if err2 != nil {
-			logger.Error(functionName.String()+" failed", "err", err2)
+		result, err := operation.Execute(cts)
+		if err != nil {
+			logger.Error(functionName.String()+" failed", "err", err)
 			return
 		}
 
-		realResultHash, err3 := hex.DecodeString(result.GetHash().Hex())
-		if err3 != nil {
-			logger.Error(functionName.String()+" failed", "err", err3)
+		realResultHash, err := hex.DecodeString(result.GetHash().Hex())
+		if err != nil {
+			logger.Error(functionName.String()+" failed", "err", err)
 			return
 		}
 
 		result.Hash = resultHash
 
-		err2 = storeCipherText(storage, result, tp.ContractAddress)
-		if err2 != nil {
-			logger.Error(functionName.String()+" failed", "err", err2)
+		err = storeCipherText(storage, result, tp.ContractAddress)
+		if err != nil {
+			logger.Error(functionName.String()+" failed", "err", err)
 			return
 		}
 
@@ -184,7 +259,17 @@ func ProcessOperation2(functionName types.PrecompileName, mathOp TwoOperationFun
 			url := (*callback).CallbackUrl
 			(*callback).Callback(url, placeholderKeyCopy, realResultHash)
 		}
-		logger.Info(functionName.String()+" success", "contractAddress", tp.ContractAddress, "lhs", lhs.GetHash().Hex(), "rhs", rhs.GetHash().Hex(), "result", result.GetHash().Hex())
-	}(lhsHashCopy, rhsHashCopy, placeholderKeyCopy)
-	return placeholderKey[:], gas, err
+
+		// Log success with all input hashes and result
+		logFields := []interface{}{
+			"contractAddress", tp.ContractAddress,
+			"result", result.GetHash().Hex(),
+		}
+		for i, ct := range cts {
+			logFields = append(logFields, fmt.Sprintf("input%d", i), ct.GetHash().Hex())
+		}
+		logger.Info("["+functionName.String()+"]: success", logFields...)
+	}(copiedInputs, placeholderKeyCopy)
+
+	return placeholderCt.Hash[:], gas, nil
 }

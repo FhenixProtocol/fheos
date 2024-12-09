@@ -34,7 +34,8 @@ func Log(s string, tp *TxParams) (uint64, error) {
 
 func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	functionName := types.Add
-	return ProcessOperation2(functionName, (*fhe.FheEncrypted).Add, utype, lhsHash, rhsHash, tp, callback)
+	addOp := TwoOperationFunc((*fhe.FheEncrypted).Add)
+	return ProcessOperation(functionName, addOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
 }
 
 // Verify takes inputs from the user and runs them through verification. Note that we will always get ciphertexts that
@@ -166,72 +167,44 @@ func Decrypt(utype byte, input []byte, defaultValue *big.Int, tp *TxParams, onRe
 func Lte(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	//solgen: return ebool
 	functionName := types.Lte
-	return ProcessOperation2(functionName, (*fhe.FheEncrypted).Lte, utype, lhsHash, rhsHash, tp, callback)
+	lteOp := TwoOperationFunc((*fhe.FheEncrypted).Lte)
+	return ProcessOperation(functionName, lteOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
 }
 
 func Sub(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	functionName := types.Sub
-	return ProcessOperation2(functionName, (*fhe.FheEncrypted).Sub, utype, lhsHash, rhsHash, tp, callback)
+	subOp := TwoOperationFunc((*fhe.FheEncrypted).Sub)
+	return ProcessOperation(functionName, subOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
 }
 
 func Mul(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	functionName := types.Mul
-	return ProcessOperation2(functionName, (*fhe.FheEncrypted).Mul, utype, lhsHash, rhsHash, tp, callback)
+	mulOp := TwoOperationFunc((*fhe.FheEncrypted).Mul)
+	return ProcessOperation(functionName, mulOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
 }
 
 func Lt(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	//solgen: return ebool
 	functionName := types.Lt
-	return ProcessOperation2(functionName, (*fhe.FheEncrypted).Lt, utype, lhsHash, rhsHash, tp, callback)
+	ltOp := TwoOperationFunc((*fhe.FheEncrypted).Lt)
+	return ProcessOperation(functionName, ltOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
 }
 
-func Select(utype byte, controlHash []byte, ifTrueHash []byte, ifFalseHash []byte, tp *TxParams, _ *CallbackFunc) ([]byte, uint64, error) {
+func Select(utype byte, controlHash []byte, ifTrueHash []byte, ifFalseHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	functionName := types.Select
 
-	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
-	uintType := fhe.EncryptionType(utype)
-	if !types.IsValidType(uintType) {
-		logger.Error("invalid ciphertext", "type", utype)
-		return nil, 0, vm.ErrExecutionReverted
+	selectOp := ThreeOperationFunc{
+		Fn: (*fhe.FheEncrypted).Select,
+		CustomValidation: func(inputs []*fhe.FheEncrypted, utype byte) error {
+			// Only validate that ifTrue and ifFalse have matching types
+			if inputs[1].UintType != inputs[2].UintType {
+				return fmt.Errorf("operands type mismatch: ifTrue=%v, ifFalse=%v",
+					inputs[1].UintType, inputs[2].UintType)
+			}
+			return nil
+		},
 	}
-
-	gas := getGasForPrecompile(functionName, uintType)
-	if tp.GasEstimation {
-		randomHash := State.GetRandomForGasEstimation()
-		return randomHash[:], gas, nil
-	}
-
-	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function: " + functionName.String())
-	}
-
-	control, ifTrue, ifFalse, err := get3VerifiedOperands(storage, controlHash, ifTrueHash, ifFalseHash, tp)
-	if err != nil {
-		logger.Error(functionName.String()+": inputs not verified control len: ", len(controlHash), " ifTrue len: ", len(ifTrueHash), " ifFalse len: ", len(ifFalseHash), " err: ", err)
-		return nil, 0, vm.ErrExecutionReverted
-	}
-
-	if uintType != ifTrue.UintType || ifTrue.UintType != ifFalse.UintType {
-		msg := functionName.String() + " operands type mismatch"
-		logger.Error(msg, " ifTrue ", ifTrue.UintType, " ifFalse ", ifFalse.UintType)
-		return nil, 0, vm.ErrExecutionReverted
-	}
-
-	result, err := control.Select(ifTrue, ifFalse)
-	if err != nil {
-		logger.Error(functionName.String()+" failed", "err", err)
-		return nil, 0, vm.ErrExecutionReverted
-	}
-
-	err = storeCipherText(storage, result, tp.ContractAddress)
-	if err != nil {
-		logger.Error(functionName.String()+" failed", "err", err)
-		return nil, 0, vm.ErrExecutionReverted
-	}
-
-	resultHash := result.GetHash()
-	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "control", control.GetHash().Hex(), "ifTrue", ifTrue.GetHash().Hex(), "ifFalse", ifTrue.GetHash().Hex(), "result", resultHash.Hex())
-	return resultHash[:], gas, nil
+	return ProcessOperation(functionName, selectOp, utype, [][]byte{controlHash, ifTrueHash, ifFalseHash}, tp, callback)
 }
 
 func Req(utype byte, input []byte, tp *TxParams, _ *CallbackFunc) ([]byte, uint64, error) {
@@ -341,50 +314,95 @@ func Req(utype byte, input []byte, tp *TxParams, _ *CallbackFunc) ([]byte, uint6
 	}
 }
 
-func Cast(utype byte, input []byte, toType byte, tp *TxParams, _ *CallbackFunc) ([]byte, uint64, error) {
+func Cast(utype byte, input []byte, toType byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	functionName := types.Cast
-	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
+
+	uintType := fhe.EncryptionType(utype)
+	if !types.IsValidType(uintType) {
+		logger.Error("invalid ciphertext", "type", utype)
+		return nil, 0, vm.ErrExecutionReverted
+	}
 
 	if !types.IsValidType(fhe.EncryptionType(toType)) {
 		logger.Error("invalid type to cast to")
 		return nil, 0, vm.ErrExecutionReverted
 	}
+
 	castToType := fhe.EncryptionType(toType)
-
-	ct, gas, err := ProcessOperation1(functionName, utype, input, tp)
-	if err != nil {
-		return nil, gas, vm.ErrExecutionReverted
-	}
-
+	gas := getGasForPrecompile(functionName, castToType)
 	if tp.GasEstimation {
 		randomHash := State.GetRandomForGasEstimation()
 		return randomHash[:], gas, nil
 	}
 
-	res, err := ct.Cast(castToType)
+	placeholderCt, err := createPlaceholder(utype, functionName, input, []byte{toType})
 	if err != nil {
-		msg := fmt.Sprintf("failed to cast to type %s", UtypeToString(toType))
-		logger.Error(msg, " type ", castToType)
+		logger.Error(functionName.String()+" failed to create placeholder", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	resHash := res.GetHash()
+	if shouldPrintPrecompileInfo(tp) {
+		logger.Debug("fn", functionName.String(), "Storing async ciphertext", "placeholderKey", hex.EncodeToString(placeholderCt.Hash))
+	}
 
-	err = storeCipherText(storage, res, tp.ContractAddress)
+	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
+	err = storeCipherText(storage, placeholderCt, tp.ContractAddress)
 	if err != nil {
-		logger.Error(functionName.String()+" failed", "err", err)
+		logger.Error(functionName.String()+" failed to store async ciphertext", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "ctHash", resHash.Hex())
+	err = storage.SetAsyncCtStart(types.Hash(placeholderCt.Hash))
+	if err != nil {
+		logger.Error(functionName.String()+" failed to set async value start", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
 
-	return resHash[:], gas, nil
+	if shouldPrintPrecompileInfo(tp) {
+		logger.Debug("Starting new async precompiled contract function: " + functionName.String())
+	}
+
+	inputCopy := CopySlice(input)
+	placeholderKeyCopy := CopySlice(placeholderCt.Hash)
+
+	go func(inputHash, placeholderKey []byte, toType byte) {
+		ct, err := blockUntilInputsAvailable(storage, tp, inputHash)
+		input := ct[0]
+		if err != nil {
+			logger.Error(functionName.String()+": input not verified, len: ", len(inputHash), " err: ", err)
+			return
+		}
+		result, err := input.Cast(castToType)
+		if err != nil {
+			logger.Error("failed to cast to type "+UtypeToString(toType), " err ", err)
+			return
+		}
+		realResultHash, err := hex.DecodeString(result.GetHash().Hex())
+		if err != nil {
+			logger.Error(functionName.String()+" failed to decode result hash", "err", err)
+			return
+		}
+		result.Hash = placeholderKey
+		err = storeCipherText(storage, result, tp.ContractAddress)
+		if err != nil {
+			logger.Error(functionName.String()+" failed to store result", "err", err)
+			return
+		}
+		_ = storage.SetAsyncCtDone(types.Hash(realResultHash))
+		if callback != nil {
+			url := (*callback).CallbackUrl
+			(*callback).Callback(url, placeholderKeyCopy, realResultHash)
+		}
+		logger.Info(functionName.String()+" success", "contractAddress", tp.ContractAddress, "input", hex.EncodeToString(inputHash), "result", hex.EncodeToString(realResultHash))
+	}(inputCopy, placeholderKeyCopy, toType)
+
+	return placeholderCt.Hash[:], gas, nil
 }
 
 // TrivialEncrypt takes a plaintext number and encrypts it to a _compact_ ciphertext
 // using the server/computation key - obviously this doesn't hide any information as the
 // number was known plaintext
-func TrivialEncrypt(input []byte, toType byte, securityZone int32, tp *TxParams, _ *CallbackFunc) ([]byte, uint64, error) {
+func TrivialEncrypt(input []byte, toType byte, securityZone int32, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	functionName := types.TrivialEncrypt
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
@@ -401,20 +419,27 @@ func TrivialEncrypt(input []byte, toType byte, securityZone int32, tp *TxParams,
 		return randomHash[:], gas, nil
 	}
 
-	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function: " + functionName.String())
-	}
-
 	if len(input) != 32 {
-		msg := functionName.String() + " input len must be 32 bytes"
-		logger.Error(msg, " input ", hex.EncodeToString(input), " len ", len(input))
+		logger.Error(functionName.String()+" input len must be 32 bytes", " input ", hex.EncodeToString(input), " len ", len(input))
 		return nil, gas, vm.ErrExecutionReverted
 	}
 
-	valueToEncrypt := *new(big.Int).SetBytes(input)
+	placeholderCt, err := createPlaceholder(toType, functionName, input, []byte{toType}, []byte{byte(securityZone)})
+	hash := placeholderCt.Hash
+	hash[3] = 0xad
+	placeholderCt.Hash = hash
 
-	var ct *fhe.FheEncrypted
-	var err error
+	if err != nil {
+		logger.Error(functionName.String()+" failed to create placeholder", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	err = storeCipherText(storage, placeholderCt, tp.ContractAddress)
+	if err != nil {
+		logger.Error(functionName.String()+" failed to store async ciphertext", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
 	// Check if value is not overflowing the type
 	maxOfType := fhe.MaxOfType(uintType)
 	if maxOfType == nil {
@@ -422,145 +447,163 @@ func TrivialEncrypt(input []byte, toType byte, securityZone int32, tp *TxParams,
 		return nil, gas, vm.ErrExecutionReverted
 	}
 
+	valueToEncrypt := *new(big.Int).SetBytes(input)
+
 	// If value is bigger than the maximal value that is supported by the type
 	if valueToEncrypt.Cmp(maxOfType) > 0 {
 		logger.Error("failed to create trivially encrypted value, value is too large for type: ", "value", valueToEncrypt, "type", uintType)
 		return nil, gas, vm.ErrExecutionReverted
 	}
 
-	// we encrypt this using the computation key not the public key. Also, compact to save space in case this gets saved directly
-	// to storage
-	ct, err = fhe.EncryptPlainText(valueToEncrypt, uintType, securityZone)
+	err = storage.SetAsyncCtStart(types.Hash(placeholderCt.Hash))
 	if err != nil {
-		logger.Error("failed to create trivial encrypted value")
-		return nil, gas, vm.ErrExecutionReverted
-	}
-
-	ctHash := ct.GetHash()
-	err = storeCipherText(storage, ct, tp.ContractAddress)
-	if err != nil {
-		logger.Error(functionName.String()+" failed", "err", err)
-		return nil, gas, vm.ErrExecutionReverted
+		logger.Error(functionName.String()+" failed to set async value start", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "ctHash", ctHash.Hex(), "valueToEncrypt", valueToEncrypt.Uint64(), "securityZone", ct.SecurityZone)
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
-	return ctHash[:], gas, nil
+
+	placeholderKeyCopy := CopySlice(placeholderCt.Hash)
+
+	go func(resultHash []byte, toType byte) {
+		// we encrypt this using the computation key not the public key. Also, compact to save space in case this gets saved directly
+		// to storage
+		result, err := fhe.EncryptPlainText(valueToEncrypt, uintType, securityZone)
+		if err != nil {
+			logger.Error("failed to create trivial encrypted value")
+			return
+		}
+
+		realResultHash, err := hex.DecodeString(result.GetHash().Hex())
+		if err != nil {
+			logger.Error(functionName.String()+" failed to decode result hash", "err", err)
+			return
+		}
+		result.Hash = resultHash
+
+		err = storeCipherText(storage, result, tp.ContractAddress)
+		if err != nil {
+			logger.Error(functionName.String()+" failed to store result", "err", err)
+			return
+		}
+
+		_ = storage.SetAsyncCtDone(types.Hash(resultHash))
+		if callback != nil {
+			url := (*callback).CallbackUrl
+			(*callback).Callback(url, resultHash, realResultHash)
+		}
+		logger.Info(functionName.String()+" success", "contractAddress", tp.ContractAddress, "input", hex.EncodeToString(input), "result", hex.EncodeToString(realResultHash))
+	}(placeholderKeyCopy, toType)
+
+	return placeholderCt.Hash[:], gas, nil
 }
 
 func Div(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	functionName := types.Div
-	return ProcessOperation2(functionName, (*fhe.FheEncrypted).Div, utype, lhsHash, rhsHash, tp, callback)
+	divOp := TwoOperationFunc((*fhe.FheEncrypted).Div)
+	return ProcessOperation(functionName, divOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
 }
 
 func Gt(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	//solgen: return ebool
 	functionName := types.Gt
-	return ProcessOperation2(functionName, (*fhe.FheEncrypted).Gt, utype, lhsHash, rhsHash, tp, callback)
+	gtOp := TwoOperationFunc((*fhe.FheEncrypted).Gt)
+	return ProcessOperation(functionName, gtOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
 }
 
 func Gte(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	//solgen: return ebool
 	functionName := types.Gte
-	return ProcessOperation2(functionName, (*fhe.FheEncrypted).Gte, utype, lhsHash, rhsHash, tp, callback)
+	gteOp := TwoOperationFunc((*fhe.FheEncrypted).Gte)
+	return ProcessOperation(functionName, gteOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
 }
 
 func Rem(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	functionName := types.Rem
-	return ProcessOperation2(functionName, (*fhe.FheEncrypted).Rem, utype, lhsHash, rhsHash, tp, callback)
+	remOp := TwoOperationFunc((*fhe.FheEncrypted).Rem)
+	return ProcessOperation(functionName, remOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
 }
 
 func And(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	//solgen: bool math
 	functionName := types.And
-	return ProcessOperation2(functionName, (*fhe.FheEncrypted).And, utype, lhsHash, rhsHash, tp, callback)
+	andOp := TwoOperationFunc((*fhe.FheEncrypted).And)
+	return ProcessOperation(functionName, andOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
 }
 
 func Or(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	//solgen: bool math
 	functionName := types.Or
-	return ProcessOperation2(functionName, (*fhe.FheEncrypted).Or, utype, lhsHash, rhsHash, tp, callback)
+	orOp := TwoOperationFunc((*fhe.FheEncrypted).Or)
+	return ProcessOperation(functionName, orOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
 }
 
 func Xor(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	//solgen: bool math
 	functionName := types.Xor
-	return ProcessOperation2(functionName, (*fhe.FheEncrypted).Xor, utype, lhsHash, rhsHash, tp, callback)
+	xorOp := TwoOperationFunc((*fhe.FheEncrypted).Xor)
+	return ProcessOperation(functionName, xorOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
 }
 
 func Eq(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	//solgen: bool math
 	//solgen: return ebool
 	functionName := types.Eq
-	return ProcessOperation2(functionName, (*fhe.FheEncrypted).Eq, utype, lhsHash, rhsHash, tp, callback)
+	eqOp := TwoOperationFunc((*fhe.FheEncrypted).Eq)
+	return ProcessOperation(functionName, eqOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
 }
 
 func Ne(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	//solgen: bool math
 	//solgen: return ebool
 	functionName := types.Ne
-	return ProcessOperation2(functionName, (*fhe.FheEncrypted).Ne, utype, lhsHash, rhsHash, tp, callback)
+	neOp := TwoOperationFunc((*fhe.FheEncrypted).Ne)
+	return ProcessOperation(functionName, neOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
 }
 
 func Min(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	functionName := types.Min
-	return ProcessOperation2(functionName, (*fhe.FheEncrypted).Min, utype, lhsHash, rhsHash, tp, callback)
+	minOp := TwoOperationFunc((*fhe.FheEncrypted).Min)
+	return ProcessOperation(functionName, minOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
 }
 
 func Max(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	functionName := types.Max
-	return ProcessOperation2(functionName, (*fhe.FheEncrypted).Max, utype, lhsHash, rhsHash, tp, callback)
+	maxOp := TwoOperationFunc((*fhe.FheEncrypted).Max)
+	return ProcessOperation(functionName, maxOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
 }
 
 func Shl(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	functionName := types.Shl
-	return ProcessOperation2(functionName, (*fhe.FheEncrypted).Shl, utype, lhsHash, rhsHash, tp, callback)
+	shlOp := TwoOperationFunc((*fhe.FheEncrypted).Shl)
+	return ProcessOperation(functionName, shlOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
 }
 
 func Shr(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	functionName := types.Shr
-	return ProcessOperation2(functionName, (*fhe.FheEncrypted).Shr, utype, lhsHash, rhsHash, tp, callback)
+	shrOp := TwoOperationFunc((*fhe.FheEncrypted).Shr)
+	return ProcessOperation(functionName, shrOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
 }
 
 func Rol(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	functionName := types.Rol
-	return ProcessOperation2(functionName, (*fhe.FheEncrypted).Rol, utype, lhsHash, rhsHash, tp, callback)
+	rolOp := TwoOperationFunc((*fhe.FheEncrypted).Rol)
+	return ProcessOperation(functionName, rolOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
 }
 
 func Ror(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	functionName := types.Ror
-	return ProcessOperation2(functionName, (*fhe.FheEncrypted).Ror, utype, lhsHash, rhsHash, tp, callback)
+	rorOp := TwoOperationFunc((*fhe.FheEncrypted).Ror)
+	return ProcessOperation(functionName, rorOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
 }
 
-func Not(utype byte, value []byte, tp *TxParams, _ *CallbackFunc) ([]byte, uint64, error) {
+func Not(utype byte, value []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	functionName := types.Not
-	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
+	notOp := OneOperationFunc((*fhe.FheEncrypted).Not)
 
-	ct, gas, err := ProcessOperation1(functionName, utype, value, tp)
-	if err != nil {
-		return nil, gas, vm.ErrExecutionReverted
-	}
-
-	if tp.GasEstimation {
-		randomHash := State.GetRandomForGasEstimation()
-		return randomHash[:], gas, nil
-	}
-	result, err := ct.Not()
-	if err != nil {
-		logger.Error("not failed", "err", err)
-		return nil, 0, vm.ErrExecutionReverted
-	}
-
-	err = storeCipherText(storage, result, tp.ContractAddress)
-	if err != nil {
-		logger.Error(functionName.String()+" failed", "err", err)
-		return nil, 0, vm.ErrExecutionReverted
-	}
-
-	resultHash := result.GetHash()
-	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "input", ct.GetHash().Hex(), "result", resultHash.Hex())
-	return resultHash[:], gas, nil
+	return ProcessOperation(functionName, notOp, utype, [][]byte{value}, tp, callback)
 }
 
 func Random(utype byte, seed uint64, securityZone int32, tp *TxParams, _ *CallbackFunc) ([]byte, uint64, error) {
