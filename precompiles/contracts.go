@@ -486,7 +486,6 @@ func TrivialEncrypt(input []byte, toType byte, securityZone int32, tp *TxParams,
 		result.Hash = resultHash
 
 		err = storeCipherText(storage, result, tp.ContractAddress)
-		logger.Error("LIORRRRRRRRRRRRR ", "hash", result.GetHash().Hex())
 		if err != nil {
 			logger.Error(functionName.String()+" failed to store result", "err", err)
 			return
