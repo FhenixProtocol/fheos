@@ -4,10 +4,12 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 	"io"
 	"os"
+	"sync/atomic"
 	"time"
+
+	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 
 	"github.com/ethereum/go-ethereum/metrics"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
@@ -17,7 +19,7 @@ import (
 type FheosState struct {
 	FheosVersion   uint64
 	Storage        storage2.FheosStorage
-	RandomCounter  uint64
+	RandomCounter  atomic.Uint64
 	DecryptResults *types.DecryptionResults
 	//MaxUintValue *big.Int // This should contain the max value of the supported uint type
 }
@@ -74,19 +76,19 @@ func (fs *FheosState) SetCiphertext(ct *types.CipherTextRepresentation) error {
 }
 
 func (fs *FheosState) GetRandomCounter() uint64 {
-	return fs.RandomCounter
+	return fs.RandomCounter.Load()
 }
 
 func (fs *FheosState) IncRandomCounter() uint64 {
-	fs.RandomCounter += 1
-	return fs.RandomCounter
+	fs.RandomCounter.Add(1)
+	return fs.RandomCounter.Load()
 }
 
 func createFheosState(storage storage2.FheosStorage, version uint64) {
 	State = &FheosState{
 		version,
 		storage,
-		0,
+		atomic.Uint64{},
 		types.NewDecryptionResultsMap(),
 	}
 }

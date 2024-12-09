@@ -660,7 +660,6 @@ func Random(utype byte, seed uint64, securityZone int32, tp *TxParams, callback 
 			if tp.Commit {
 				// We're incrementing before the request for the random number, so that queries
 				// that came before this Tx would have received a different seed.
-				// TODO : Make sure that this can happen in Goroutine and shouldn't be blocking
 				randomCounter = State.IncRandomCounter()
 				hash = tp.TxContext.Hash
 			} else {
