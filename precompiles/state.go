@@ -80,8 +80,7 @@ func (fs *FheosState) GetRandomCounter() uint64 {
 }
 
 func (fs *FheosState) IncRandomCounter() uint64 {
-	fs.RandomCounter.Add(1)
-	return fs.RandomCounter.Load()
+	return fs.RandomCounter.Add(1)
 }
 
 func createFheosState(storage storage2.FheosStorage, version uint64) {
