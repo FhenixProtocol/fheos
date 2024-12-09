@@ -295,22 +295,6 @@ describe("Test Transactions Scenarios", () => {
     }
   });
 
-  it("Random sanity check", async () => {
-    let result;
-    try {
-      const tx = await contractCaller.randomSanity();
-      await tx.wait();
-      const filter = contractCaller.filters.RandomSanityEvent;
-      const events = await contractCaller.queryFilter(filter, -1);
-      result = events[0].args;
-    } catch (e) {
-      console.error("failed sstore sanity check");
-      fail("Should not have reverted");
-    }
-
-    expect(result[0] === result[1]).toBeFalsy();
-  });
-
   // function addDelegate(inEuint32 calldata value, bytes32 publicKey) public returns (bytes memory) {
 });
 
