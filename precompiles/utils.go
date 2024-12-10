@@ -139,15 +139,41 @@ func CreatePlaceHolderData() []byte {
 	return make([]byte, 32)[:]
 }
 
-func blockUntilBinaryOperandsAvailable(storage *storage.MultiStore, lhsKey, rhsKey *fhe.CiphertextKey, tp *TxParams) (*fhe.FheEncrypted, *fhe.FheEncrypted) {
-	var lhsValue *fhe.FheEncrypted
-	var rhsValue *fhe.FheEncrypted
+func blockUntilInputsAvailable(storage *storage.MultiStore, tp *TxParams, inputHashes ...[]byte) ([]*fhe.FheEncrypted, error) {
+	// Check validity of all input hashes before awaiting results
+	for _, hash := range inputHashes {
+		if len(hash) != 32 {
+			return nil, errors.New("ciphertext's hashes need to be 32 bytes long, hash: " + fhe.Hash(hash).Hex())
+		}
+	}
 
-	// can speed this up to be concurrent, but for now this is fine I guess?
-	lhsValue = awaitCtResult(storage, lhsKey.Hash, tp)
-	rhsValue = awaitCtResult(storage, rhsKey.Hash, tp)
+	cts := make([]*fhe.FheEncrypted, len(inputHashes))
+	results := make(chan struct {
+		index int
+		ct    *fhe.FheEncrypted
+	}, len(inputHashes))
 
-	return lhsValue, rhsValue
+	// Launch goroutines for each hash
+	for i, hash := range inputHashes {
+		go func(index int, hash []byte) {
+			ct := awaitCtResult(storage, hash, tp)
+			results <- struct {
+				index int
+				ct    *fhe.FheEncrypted
+			}{index, ct}
+		}(i, hash)
+	}
+
+	// Collect results
+	for i := 0; i < len(inputHashes); i++ {
+		result := <-results
+		cts[result.index] = result.ct
+		if result.ct == nil {
+			return nil, errors.New("unverified ciphertext handle, hash: " + fhe.Hash(inputHashes[result.index]).Hex())
+		}
+	}
+
+	return cts, nil
 }
 
 func awaitCtResult(storage *storage.MultiStore, lhsHash fhe.Hash, tp *TxParams) *fhe.FheEncrypted {
@@ -182,23 +208,6 @@ func get3VerifiedOperands(storage *storage.MultiStore, controlKeyBz, ifTrueKeyBz
 	ifTrueKey, err := types.DeserializeCiphertextKey(ifTrueKeyBz)
 	if err != nil {
 		return nil, nil, nil, err
-	}
-	ifFalseKey, err := types.DeserializeCiphertextKey(ifFalseKeyBz)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	control = awaitCtResult(storage, controlKey.Hash, tp)
-	if control == nil {
-		return nil, nil, nil, errors.New("unverified ciphertext handle")
-	}
-	ifTrue = awaitCtResult(storage, ifTrueKey.Hash, tp)
-	if ifTrue == nil {
-		return nil, nil, nil, errors.New("unverified ciphertext handle")
-	}
-	ifFalse = awaitCtResult(storage, ifFalseKey.Hash, tp)
-	if ifFalse == nil {
-		return nil, nil, nil, errors.New("unverified ciphertext handle")
 	}
 	err = nil
 	return
