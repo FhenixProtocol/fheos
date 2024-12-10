@@ -7,12 +7,11 @@ import (
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
-
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/log"
 )
 
 var logger log.Logger
@@ -50,7 +49,6 @@ func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *Cal
 func Verify(utype byte, input []byte, securityZone int32, tp *TxParams, _ *CallbackFunc) ([]byte, uint64, error) {
 	functionName := types.Verify
 
-	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 	uintType := fhe.EncryptionType(utype)
 	if !types.IsValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
@@ -63,10 +61,6 @@ func Verify(utype byte, input []byte, securityZone int32, tp *TxParams, _ *Callb
 		return randomHash[:], gas, nil
 	}
 
-	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function: " + functionName.String())
-	}
-
 	ct := fhe.NewFheEncryptedFromBytes(
 		input,
 		uintType,
@@ -76,19 +70,27 @@ func Verify(utype byte, input []byte, securityZone int32, tp *TxParams, _ *Callb
 		false,
 	)
 
-	err := ct.Verify()
-	if err != nil {
-		logger.Info(fmt.Sprintf("failed to verify ciphertext %s for type %d - was input corrupted?", ct.GetHash().Hex(), uintType))
-		return nil, 0, vm.ErrExecutionReverted
-	}
+	go func() {
+		if shouldPrintPrecompileInfo(tp) {
+			logger.Info("Starting new precompiled contract function: " + functionName.String())
+		}
 
-	err = storeCipherText(storage, &ct)
-	if err != nil {
-		logger.Error(functionName.String()+" failed", "err", err)
-		return nil, 0, vm.ErrExecutionReverted
-	}
+		storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 
-	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "ctHash", ct.GetHash().Hex())
+		err := ct.Verify()
+		if err != nil {
+			logger.Info(fmt.Sprintf("failed to verify ciphertext %s for type %d - was input corrupted?", ct.GetHash().Hex(), uintType))
+			return
+		}
+
+		err = storeCipherText(storage, &ct)
+		if err != nil {
+			logger.Error(functionName.String()+" failed", "err", err)
+			return
+		}
+		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "ctHash", ct.GetHash().Hex())
+	}()
+
 	return ct.GetKeyBytes(), gas, nil
 }
 
