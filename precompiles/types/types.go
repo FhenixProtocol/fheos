@@ -1,7 +1,6 @@
 package types
 
 import (
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 )
 
@@ -10,14 +9,12 @@ type DataType uint64
 type Hash fhe.Hash
 type FheEncrypted fhe.FheEncrypted
 
+var DeserializeCiphertextKey = fhe.DeserializeCiphertextKey
+var GetEmptyCiphertextKey = fhe.GetEmptyCiphertextKey
+var SerializeCiphertextKey = fhe.SerializeCiphertextKey
+
 func IsValidType(t fhe.EncryptionType) bool {
 	return t >= fhe.Uint8 && t <= fhe.Bool
-}
-
-type CipherTextRepresentation struct {
-	Data     *FheEncrypted
-	Owners   []common.Address
-	RefCount uint64
 }
 
 type Storage interface {
@@ -30,16 +27,12 @@ type Storage interface {
 }
 
 type FheCipherTextStorage interface {
-	PutCt(h Hash, cipher *CipherTextRepresentation) error
-	GetCt(h Hash) (*CipherTextRepresentation, error)
+	PutCt(h Hash, cipher *FheEncrypted) error
+	GetCt(h Hash) (*FheEncrypted, error)
 
 	HasCt(h Hash) bool
 
 	DeleteCt(h Hash) error
-
-	SetAsyncCtStart(h Hash) error
-	SetAsyncCtDone(h Hash) error
-	IsAsyncCtDone() (bool, error)
 }
 
 type PrecompileName int
