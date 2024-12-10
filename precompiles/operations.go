@@ -91,10 +91,10 @@ type SealOutputCallbackFunc struct {
 	Callback    func(url string, ctKey []byte, value string)
 }
 
-func inputsToString(inputHashes [][]byte) string {
+func inputsToString(inputKeys []fhe.CiphertextKey) string {
 	var concatenated string
-	for i, hash := range inputHashes {
-		concatenated += fmt.Sprintf("input%d: %s, ", i, hex.EncodeToString(hash))
+	for i, key := range inputKeys {
+		concatenated += fmt.Sprintf("input%d: %s, ", i, hex.EncodeToString(key.Hash[:]))
 	}
 	return concatenated
 }
@@ -131,13 +131,13 @@ func SealOutputHelper(storage *storage2.MultiStore, ctHash fhe.Hash, pk []byte, 
 	return string(sealed), nil
 }
 
-func createPlaceholder(utype byte, functionName types.PrecompileName, inputHashes ...[]byte) (*fhe.FheEncrypted, error) {
+func createPlaceholder(utype byte, securityZone int32, functionName types.PrecompileName, inputKeys ...[]byte) (*fhe.FheEncrypted, error) {
 	placeholderCt := fhe.CreateFheEncryptedWithData(CreatePlaceHolderData(), fhe.EncryptionType(utype), true)
 
 	// Calculate placeholder based on number of inputs
-	placeholderKey := fhe.CalcPlaceholderValueHash(int(functionName), inputHashes...)
+	placeholderKey := fhe.CalcPlaceholderValueHash(int(functionName), fhe.EncryptionType(utype), securityZone, inputKeys...)
 
-	placeholderCt.Hash = placeholderKey[:]
+	placeholderCt.Key = placeholderKey
 	return placeholderCt, nil
 }
 
@@ -167,21 +167,41 @@ func PreProcessOperation1(functionName types.PrecompileName, utype byte, inputBz
 	return input, gas, nil
 }
 
+func SolidityInputsToCiphertextKeys(inputs ...[]byte) ([]fhe.CiphertextKey, error) {
+	var inputKeys []fhe.CiphertextKey
+	for _, input := range inputs {
+		key, err := types.DeserializeCiphertextKey(input)
+		if err != nil {
+			return nil, err
+		}
+		inputKeys = append(inputKeys, key)
+	}
+	return inputKeys, nil
+}
+
+func keysToHashes(keys []fhe.CiphertextKey) [][]byte {
+	hashes := make([][]byte, len(keys))
+	for i, key := range keys {
+		hashes[i] = key.Hash[:]
+	}
+	return hashes
+}
+
 // ProcessOperation handles operations with variable number of inputs
-func ProcessOperation(functionName types.PrecompileName, operation OperationFunc, utype byte, inputHashes [][]byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
+func ProcessOperation(functionName types.PrecompileName, operation OperationFunc, utype byte, securtiyZone int32, inputKeys []fhe.CiphertextKey, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 
-	placeholderCt, err := createPlaceholder(utype, functionName, inputHashes...)
+	placeholderCt, err := createPlaceholder(utype, securtiyZone, functionName, keysToHashes(inputKeys)...)
 	if err != nil {
 		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Debug(functionName.String(), inputsToString(inputHashes), "placeholderKey", hex.EncodeToString(placeholderCt.Hash))
+		logger.Debug(functionName.String(), inputsToString(inputKeys), "placeholderKey", hex.EncodeToString(placeholderCt.Key.Hash[:]))
 	}
 
-	if err := storeCipherText(storage, placeholderCt, tp.ContractAddress); err != nil {
+	if err := storeCipherText(storage, placeholderCt); err != nil {
 		logger.Error(functionName.String()+" failed to store async ciphertext", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
@@ -199,17 +219,17 @@ func ProcessOperation(functionName types.PrecompileName, operation OperationFunc
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Debug("fn", functionName.String(), "Storing async ciphertext", "placeholderKey", hex.EncodeToString(placeholderKey.Hash[:]))
+		logger.Debug("fn", functionName.String(), "Storing async ciphertext", "placeholderKey", hex.EncodeToString(placeholderCt.Key.Hash[:]))
 	}
 
 	// Make copies for goroutine
-	copiedInputs := make([][]byte, len(inputHashes))
-	for i, hash := range inputHashes {
-		copiedInputs[i] = CopySlice(hash)
+	copiedInputs := make([]fhe.CiphertextKey, len(inputKeys))
+	for i, key := range inputKeys {
+		copiedInputs[i] = key
 	}
-	placeholderKeyCopy := CopySlice(placeholderCt.Hash)
+	placeholderKeyCopy := placeholderCt.Key
 
-	go func(inputs [][]byte, resultHash []byte) {
+	go func(inputs []fhe.CiphertextKey, resultKey fhe.CiphertextKey) {
 		cts, err := blockUntilInputsAvailable(storage, tp, inputs...)
 		if err != nil || len(cts) != len(inputs) {
 			logger.Error(functionName.String() + ": inputs not verified")
@@ -241,9 +261,9 @@ func ProcessOperation(functionName types.PrecompileName, operation OperationFunc
 			return
 		}
 
-		result.Key = *resultKey
+		result.Key = resultKey
 
-		err = storeCipherText(storage, result, tp.ContractAddress)
+		err = storeCipherText(storage, result)
 		if err != nil {
 			logger.Error(functionName.String()+" failed", "err", err)
 			return
@@ -265,5 +285,5 @@ func ProcessOperation(functionName types.PrecompileName, operation OperationFunc
 		logger.Info("["+functionName.String()+"]: success", logFields...)
 	}(copiedInputs, placeholderKeyCopy)
 
-	return placeholderCt.Hash[:], gas, nil
+	return types.SerializeCiphertextKey(placeholderCt.Key), gas, nil
 }

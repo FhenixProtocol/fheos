@@ -139,37 +139,30 @@ func CreatePlaceHolderData() []byte {
 	return make([]byte, 32)[:]
 }
 
-func blockUntilInputsAvailable(storage *storage.MultiStore, tp *TxParams, inputHashes ...[]byte) ([]*fhe.FheEncrypted, error) {
-	// Check validity of all input hashes before awaiting results
-	for _, hash := range inputHashes {
-		if len(hash) != 32 {
-			return nil, errors.New("ciphertext's hashes need to be 32 bytes long, hash: " + fhe.Hash(hash).Hex())
-		}
-	}
-
-	cts := make([]*fhe.FheEncrypted, len(inputHashes))
+func blockUntilInputsAvailable(storage *storage.MultiStore, tp *TxParams, inputKeys ...fhe.CiphertextKey) ([]*fhe.FheEncrypted, error) {
+	cts := make([]*fhe.FheEncrypted, len(inputKeys))
 	results := make(chan struct {
 		index int
 		ct    *fhe.FheEncrypted
-	}, len(inputHashes))
+	}, len(inputKeys))
 
 	// Launch goroutines for each hash
-	for i, hash := range inputHashes {
-		go func(index int, hash []byte) {
-			ct := awaitCtResult(storage, hash, tp)
+	for i, key := range inputKeys {
+		go func(index int, key fhe.CiphertextKey) {
+			ct := awaitCtResult(storage, key.Hash, tp)
 			results <- struct {
 				index int
 				ct    *fhe.FheEncrypted
 			}{index, ct}
-		}(i, hash)
+		}(i, key)
 	}
 
 	// Collect results
-	for i := 0; i < len(inputHashes); i++ {
+	for i := 0; i < len(inputKeys); i++ {
 		result := <-results
 		cts[result.index] = result.ct
 		if result.ct == nil {
-			return nil, errors.New("unverified ciphertext handle, hash: " + fhe.Hash(inputHashes[result.index]).Hex())
+			return nil, errors.New("unverified ciphertext handle, hash: " + fhe.Hash(inputKeys[result.index].Hash).Hex())
 		}
 	}
 
@@ -200,19 +193,6 @@ func getCiphertext(state *storage.MultiStore, ciphertextHash fhe.Hash) *fhe.FheE
 	return (*fhe.FheEncrypted)(ct)
 }
 
-func get3VerifiedOperands(storage *storage.MultiStore, controlKeyBz, ifTrueKeyBz, ifFalseKeyBz []byte, tp *TxParams) (control *fhe.FheEncrypted, ifTrue *fhe.FheEncrypted, ifFalse *fhe.FheEncrypted, err error) {
-	controlKey, err := types.DeserializeCiphertextKey(controlKeyBz)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	ifTrueKey, err := types.DeserializeCiphertextKey(ifTrueKeyBz)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	err = nil
-	return
-}
-
 func storeCipherText(storage *storage.MultiStore, ct *fhe.FheEncrypted) error {
 	err := storage.PutCtIfNotExist(types.Hash(ct.GetHash()), (*types.FheEncrypted)(ct))
 	if err != nil {
@@ -221,12 +201,6 @@ func storeCipherText(storage *storage.MultiStore, ct *fhe.FheEncrypted) error {
 	}
 
 	return nil
-}
-func minInt(a int, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }
 
 func evaluateRequire(ct *fhe.FheEncrypted) (bool, error) {
