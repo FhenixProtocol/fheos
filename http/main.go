@@ -636,6 +636,23 @@ func UpdateCTHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(responseData)
 }
 
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		// If it’s a preflight OPTIONS request, respond OK
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		// Proceed with the next handler
+		next.ServeHTTP(w, r)
+	})
+}
+
 func main() {
 	_, err := initFheos()
 	if err != nil {
@@ -661,9 +678,12 @@ func main() {
 	http.HandleFunc("/Cast", CastHandler)
 	log.Printf("Added handler for /Cast")
 
+	// Wrap the default mux in the CORS middleware
+	wrappedMux := corsMiddleware(http.DefaultServeMux)
+
 	// Start the server
 	log.Println("Server listening on port 8448...")
-	if err := http.ListenAndServe(":8448", nil); err != nil {
+	if err := http.ListenAndServe(":8448", wrappedMux); err != nil {
 		log.Fatalf("Server stopped: %v", err)
 	}
 }
