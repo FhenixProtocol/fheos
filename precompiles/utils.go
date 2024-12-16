@@ -183,9 +183,9 @@ func awaitCtResult(storage *storage.MultiStore, lhsHash fhe.Hash, tp *TxParams) 
 }
 
 func getCiphertext(state *storage.MultiStore, ciphertextHash fhe.Hash) *fhe.FheEncrypted {
+	logger.Error("LIORRRRRR getting ciphertext", "hash", ciphertextHash.Hex())
 	ct, err := state.GetCt(types.Hash(ciphertextHash))
 	if err != nil {
-
 		logger.Error("reading ciphertext from State resulted with error", "hash", ciphertextHash.Hex(), "error", err.Error())
 		return nil
 	}
@@ -194,6 +194,7 @@ func getCiphertext(state *storage.MultiStore, ciphertextHash fhe.Hash) *fhe.FheE
 }
 
 func storeCipherText(storage *storage.MultiStore, ct *fhe.FheEncrypted) error {
+	logger.Error("LIORRRRRR Putting ciphertext", "hash", ct.GetHash().Hex())
 	err := storage.PutCtIfNotExist(types.Hash(ct.GetHash()), (*types.FheEncrypted)(ct))
 	if err != nil {
 		logger.Error("failed importing ciphertext to state: ", err)
@@ -201,6 +202,25 @@ func storeCipherText(storage *storage.MultiStore, ct *fhe.FheEncrypted) error {
 	}
 
 	return nil
+}
+
+func ByteToUint256(b byte) []byte {
+	var uint256 [32]byte
+	uint256[31] = b // Place the byte in the least significant position
+	return uint256[:]
+}
+
+func Int32ToUint256(i int32) []byte {
+	var uint256 [32]byte
+
+	// Convert the int32 value to an unsigned 4-byte slice
+	var bytes [4]byte
+	binary.BigEndian.PutUint32(bytes[:], uint32(i))
+
+	// Copy the 4-byte slice into the least significant part of the 32-byte array
+	copy(uint256[28:], bytes[:]) // Place at the end (big-endian)
+
+	return uint256[:]
 }
 
 func evaluateRequire(ct *fhe.FheEncrypted) (bool, error) {
