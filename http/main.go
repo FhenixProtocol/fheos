@@ -44,6 +44,14 @@ type VerifyRequest struct {
 	SecurityZone byte   `json:"securityZone"`
 }
 
+type GetNetworkPublicKeyRequest struct {
+	SecurityZone byte `json:"securityZone"`
+}
+
+type GetNetworkPublicKeyResult struct {
+	PublicKey string `json:"securityZone"`
+}
+
 type VerifyResult struct {
 	CtHash    string `json:"ctHash"`
 	Signature string `json:"signature"`
@@ -681,6 +689,18 @@ func createVerifyResponse(ctHash []byte) ([]byte, error) {
 	return responseData, nil
 }
 
+func createNetworkPublicKeyResponse(PublicKey []byte) ([]byte, error) {
+	result := GetNetworkPublicKeyResult{
+		PublicKey: hex.EncodeToString(PublicKey),
+	}
+
+	responseData, err := json.Marshal(result)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to marshal response: %+v", err)
+	}
+	return responseData, nil
+}
+
 func UpdateCTHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Got a verify request from %s\n", r.RemoteAddr)
 	body, err := ioutil.ReadAll(r.Body)
@@ -741,6 +761,40 @@ func corsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+func GetNetworkPublicKeyHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("Got a getNetworkPublicKey request from %s\n", r.RemoteAddr)
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	var req GetNetworkPublicKeyRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		fmt.Printf("Failed unmarshaling request: %+v body is %+v\n", err, string(body))
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	expectedPk, err := precompiles.GetNetworkPublicKey(int32(req.SecurityZone), &tp)
+	if err != nil {
+		e := fmt.Sprintf("Operation failed: %+v", err)
+		fmt.Println(e)
+		http.Error(w, e, http.StatusBadRequest)
+		return
+	}
+
+	responseData, err := createNetworkPublicKeyResponse(expectedPk)
+	if err != nil {
+		e := fmt.Sprintf("Failed to marshal response: %+v", err)
+		fmt.Println(e)
+		http.Error(w, e, http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(responseData)
+}
+
 func main() {
 	_, err := initFheos()
 	if err != nil {
@@ -765,6 +819,8 @@ func main() {
 	log.Printf("Added handler for /TrivialEncrypt")
 	http.HandleFunc("/Cast", CastHandler)
 	log.Printf("Added handler for /Cast")
+	http.HandleFunc("/GetNetworkPublickKey", GetNetworkPublicKeyHandler)
+	log.Printf("Added handler for /GetNetworkPublickKey")
 
 	// Wrap the default mux in the CORS middleware
 	wrappedMux := corsMiddleware(http.DefaultServeMux)
