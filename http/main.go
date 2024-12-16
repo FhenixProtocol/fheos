@@ -212,7 +212,8 @@ func convertInput(input CiphertextKeyAux) (*fhedriver.CiphertextKey, error) {
 func convertInputs(inputs []CiphertextKeyAux) ([]fhedriver.CiphertextKey, error) {
 	var convertedInputs []fhedriver.CiphertextKey
 	for _, input := range inputs {
-		if len(input.Hash) != 0 {
+		// First two bytes are -x
+		if len(input.Hash) == 66 {
 			convertedInput, err := convertInput(input)
 			if err != nil {
 				return nil, err

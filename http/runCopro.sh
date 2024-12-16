@@ -84,7 +84,7 @@ function runningLocalFhenix {
 }
 
 function buildFheosServer {
-    if [ "$BuildParam" == "build" ]; then
+    if [ "$BuildParam" == "build" ] || [ "$BuildParam" == "debugbuild" ]; then
         step "Building Fheos server"
         cd $FheosDir
         docker build -t $FheosServerImage .
@@ -105,7 +105,11 @@ function runningFheosServer {
         step "Removing existing Fheos server container"
         docker container rm fheos_server
     fi
-    docker run -d --network host --name fheos_server -e COPROCESSOR_MODE=1 -it -p 8448:8448 -p 4002:4002  $FheosServerImage
+    if [ "$BuildParam" == "debug" ] || [ "$BuildParam" == "debugbuild" ]; then
+      docker run -d --network host --name fheos_server -e COPROCESSOR_MODE=1 -e DEBUG_MODE=1 -it -p 8448:8448 -p 4002:4002  $FheosServerImage
+    else
+      docker run -d --network host --name fheos_server -e COPROCESSOR_MODE=1 -it -p 8448:8448 -p 4002:4002  $FheosServerImage
+    fi
     if [ $? -ne 0 ]; then
         err "Error: Failed to run Fheos server"
     fi 
