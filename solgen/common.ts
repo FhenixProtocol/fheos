@@ -76,7 +76,7 @@ export type SealedOutputType = (typeof SealedOutputStructs)[number]
 export type AllTypes =
   | PlaintextType
   | EUintType
-	| SealedOutputType
+  | SealedOutputType
   | "bytes memory"
   | "bytes32"
   | "uint8"
