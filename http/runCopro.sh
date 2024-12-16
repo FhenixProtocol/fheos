@@ -105,7 +105,7 @@ function runningFheosServer {
         step "Removing existing Fheos server container"
         docker container rm fheos_server
     fi
-    docker run -d --network host --name fheos_server -e COPROCESSOR_MODE=1 -it -p 8448:8448 $FheosServerImage
+    docker run -d --network host --name fheos_server -e COPROCESSOR_MODE=1 -it -p 8448:8448 -p 4002:4002  $FheosServerImage
     if [ $? -ne 0 ]; then
         err "Error: Failed to run Fheos server"
     fi 

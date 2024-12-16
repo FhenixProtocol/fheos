@@ -25,25 +25,17 @@ const (
 	maxRetriesForRepost = 3
 )
 
-// Struct to parse the incoming JSON request
-type HashRequest struct {
-	UType        byte   `json:"utype"`
-	LhsHash      string `json:"lhsHash"`
-	RhsHash      string `json:"rhsHash"`
-	RequesterUrl string `json:"requesterUrl"`
-}
-
 type DecryptRequest struct {
-	UType        byte   `json:"utype"`
-	Hash         string `json:"hash"`
-	RequesterUrl string `json:"requesterUrl"`
+	UType        byte                    `json:"utype"`
+	Key          fhedriver.CiphertextKey `json:"key"`
+	RequesterUrl string                  `json:"requesterUrl"`
 }
 
 type SealOutputRequest struct {
-	UType        byte   `json:"utype"`
-	Hash         string `json:"hash"`
-	PKey         string `json:"pkey"`
-	RequesterUrl string `json:"requesterUrl"`
+	UType        byte                    `json:"utype"`
+	Key          fhedriver.CiphertextKey `json:"key"`
+	PKey         string                  `json:"pkey"`
+	RequesterUrl string                  `json:"requesterUrl"`
 }
 
 type VerifyRequest struct {
@@ -65,47 +57,11 @@ type TrivialEncryptRequest struct {
 }
 
 type CastRequest struct {
-	UType        byte   `json:"utype"`
-	Input        string `json:"input"`
-	ToType       string `json:"toType"`
-	RequesterUrl string `json:"requesterUrl"`
+	UType        byte                    `json:"utype"`
+	Input        fhedriver.CiphertextKey `json:"input"`
+	ToType       string                  `json:"toType"`
+	RequesterUrl string                  `json:"requesterUrl"`
 }
-
-func (r *TrivialEncryptRequest) UnmarshalJSON(data []byte) error {
-	// Define a temporary struct to unmarshal JSON into
-	var aux struct {
-		Value        string `json:"value"`        // Temporary string to handle big.Int
-		ToType       byte   `json:"toType"`       // As-is
-		SecurityZone string `json:"securityZone"` // Temporary string for int32 conversion
-		RequesterUrl string `json:"requesterUrl"` // As-is
-	}
-
-	// Unmarshal into the temporary struct
-	if err := json.Unmarshal(data, &aux); err != nil {
-		fmt.Printf("Failed to unmarshal request: %v", err)
-		return err
-	}
-
-	// Parse `value` as *big.Int
-	r.Value = new(big.Int)
-	if _, ok := r.Value.SetString(aux.Value, 16); !ok {
-		return fmt.Errorf("invalid big.Int format: %s", aux.Value)
-	}
-
-	// Parse `securityZone` as int32
-	securityZone, err := strconv.ParseInt(aux.SecurityZone, 10, 32)
-	if err != nil {
-		return fmt.Errorf("invalid securityZone format: %s", aux.SecurityZone)
-	}
-	r.SecurityZone = int32(securityZone)
-
-	// Assign the other fields
-	r.ToType = aux.ToType
-	r.RequesterUrl = aux.RequesterUrl
-
-	return nil
-}
-
 type HashResultUpdate struct {
 	TempKey    []byte `json:"tempKey"`
 	ActualHash []byte `json:"actualHash"`
@@ -226,10 +182,54 @@ type HandlerFunc interface {
 		func(byte, uint64, int32, *precompiles.TxParams, *precompiles.CallbackFunc) ([]byte, uint64, error) // Random
 }
 
+type CiphertextKeyAux struct {
+	IsTriviallyEncrypted bool          `json:"IsTriviallyEncrypted"`
+	UintType             int           `json:"UintType"` // Assuming EncryptionType is an int or compatible
+	SecurityZone         int32         `json:"SecurityZone"`
+	Hash                 []interface{} `json:"Hash"`
+}
 type GenericHashRequest struct {
-	UType        byte     `json:"utype"`
-	Inputs       []string `json:"inputs"`
-	RequesterUrl string   `json:"requesterUrl"`
+	UType        byte                      `json:"uType"`
+	Inputs       []fhedriver.CiphertextKey `json:"inputs"`
+	RequesterUrl string                    `json:"requesterUrl"`
+}
+
+func convertInput(input CiphertextKeyAux) fhedriver.CiphertextKey {
+	return fhedriver.CiphertextKey{
+		IsTriviallyEncrypted: input.IsTriviallyEncrypted,
+		UintType:             fhedriver.EncryptionType(input.UintType),
+		SecurityZone:         input.SecurityZone,
+		Hash:                 [32]byte(input.Hash),
+	}
+}
+
+func convertInputs(inputs []CiphertextKeyAux) []fhedriver.CiphertextKey {
+	var convertedInputs []fhedriver.CiphertextKey
+	for _, input := range inputs {
+		if len(input.Hash) != 0 {
+			convertedInputs = append(convertedInputs, convertInput(input))
+		}
+	}
+
+	return convertedInputs
+}
+
+func (g *GenericHashRequest) UnmarshalJSON(data []byte) error {
+	var aux struct {
+		UType        byte               `json:"UType"`
+		Inputs       []CiphertextKeyAux `json:"Inputs"`
+		RequesterUrl string             `json:"RequesterUrl"`
+	}
+
+	if err := json.Unmarshal(data, &aux); err != nil {
+		log.Printf("Failed to unmarshal GenericHashRequestAux: %v, %+v", err, aux)
+		return err
+	}
+
+	g.UType = aux.UType
+	g.Inputs = convertInputs(aux.Inputs)
+	g.RequesterUrl = aux.RequesterUrl
+	return nil
 }
 
 func handleRequest[T HandlerFunc](w http.ResponseWriter, r *http.Request, handler T) {
@@ -243,10 +243,12 @@ func handleRequest[T HandlerFunc](w http.ResponseWriter, r *http.Request, handle
 
 	var req GenericHashRequest
 	if err := json.Unmarshal(body, &req); err != nil {
-		log.Printf("Failed to unmarshal request: %v", err)
+		log.Printf("Failed to unmarshal GenericHashRequest: %v, %+v", err, req)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	log.Printf("Request: %+v\n", req)
 
 	// Get the number of expected inputs based on handler type
 	handlerType := reflect.TypeOf(handler)
@@ -254,18 +256,8 @@ func handleRequest[T HandlerFunc](w http.ResponseWriter, r *http.Request, handle
 
 	// Convert all hex strings to byte arrays
 	decodedInputs := [][]byte{}
-	for i, hexStr := range req.Inputs {
-		if hexStr == "" {
-			continue
-		}
-		decoded, err := hex.DecodeString(hexStr)
-		if err != nil {
-			e := fmt.Sprintf("Invalid input hex string at position %d: %s %+v", i, hexStr, err)
-			fmt.Println(e)
-			http.Error(w, e, http.StatusBadRequest)
-			return
-		}
-		decodedInputs = append(decodedInputs, decoded)
+	for _, input := range req.Inputs {
+		decodedInputs = append(decodedInputs, fhedriver.SerializeCiphertextKey(input))
 	}
 
 	if len(decodedInputs) != expectedInputs {
@@ -395,6 +387,25 @@ func initFheos() (*precompiles.TxParams, error) {
 	return &tp, nil
 }
 
+func (d *DecryptRequest) UnmarshalJSON(data []byte) error {
+	var aux struct {
+		UType        byte             `json:"utype"`
+		Key          CiphertextKeyAux `json:"key"`
+		RequesterUrl string           `json:"requesterUrl"`
+	}
+
+	if err := json.Unmarshal(data, &aux); err != nil {
+		log.Printf("Failed to unmarshal DecryptRequestAux: %v, %+v", err, aux)
+		return err
+	}
+
+	d.UType = aux.UType
+	d.Key = convertInput(aux.Key)
+	d.RequesterUrl = aux.RequesterUrl
+
+	return nil
+}
+
 func DecryptHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Got a request from %s\n", r.RemoteAddr)
 	body, err := ioutil.ReadAll(r.Body)
@@ -405,26 +416,19 @@ func DecryptHandler(w http.ResponseWriter, r *http.Request) {
 
 	var req DecryptRequest
 	if err := json.Unmarshal(body, &req); err != nil {
-		fmt.Printf("Failed unmarsheling request: %+v body is %+v\n", err, string(body))
+		fmt.Printf("Failed unmarshaling request: %+v body is %+v\n", err, string(body))
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
+	log.Printf("Decrypt Request: %+v\n", req)
 	// Convert the hash strings to byte arrays
-	hash, err := hex.DecodeString(req.Hash)
-	if err != nil {
-		e := fmt.Sprintf("Invalid hash: %s %+v", req.Hash, err)
-		fmt.Println(e)
-		http.Error(w, e, http.StatusBadRequest)
-		return
-	}
-
 	callback := precompiles.DecryptCallbackFunc{
 		CallbackUrl: req.RequesterUrl,
 		Callback:    handleDecryptResult,
 	}
 
-	_, _, err = precompiles.Decrypt(req.UType, hash, nil, &tp, &callback)
+	_, _, err = precompiles.Decrypt(req.UType, fhedriver.SerializeCiphertextKey(req.Key), nil, &tp, &callback)
 	if err != nil {
 		e := fmt.Sprintf("Operation failed: %+v", err)
 		fmt.Println(e)
@@ -432,8 +436,29 @@ func DecryptHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Respond with the result
-	w.Write(hash)
-	fmt.Printf("Received decrypt request for %+v and type %+v\n", hash, req.UType)
+	w.Write(req.Key.Hash[:])
+	fmt.Printf("Received decrypt request for %+v and type %+v\n", req.Key.Hash[:], req.UType)
+}
+
+func (s *SealOutputRequest) UnmarshalJSON(data []byte) error {
+	var aux struct {
+		UType        byte             `json:"utype"`
+		Key          CiphertextKeyAux `json:"key"`
+		PKey         string           `json:"pkey"`
+		RequesterUrl string           `json:"requesterUrl"`
+	}
+
+	if err := json.Unmarshal(data, &aux); err != nil {
+		log.Printf("Failed to unmarshal SealOutputRequestAux: %v, %+v", err, aux)
+		return err
+	}
+
+	s.UType = aux.UType
+	s.Key = convertInput(aux.Key)
+	s.PKey = aux.PKey
+	s.RequesterUrl = aux.RequesterUrl
+
+	return nil
 }
 
 func SealOutputHandler(w http.ResponseWriter, r *http.Request) {
@@ -446,20 +471,12 @@ func SealOutputHandler(w http.ResponseWriter, r *http.Request) {
 
 	var req SealOutputRequest
 	if err := json.Unmarshal(body, &req); err != nil {
-		fmt.Printf("Failed unmarsheling request: %+v body is %+v\n", err, string(body))
+		fmt.Printf("Failed unmarshaling request: %+v body is %+v\n", err, string(body))
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	// Convert the hash strings to byte arrays
-	hash, err := hex.DecodeString(req.Hash)
-	if err != nil {
-		e := fmt.Sprintf("Invalid hash: %s %+v", req.Hash, err)
-		fmt.Println(e)
-		http.Error(w, e, http.StatusBadRequest)
-		return
-	}
-
+	log.Printf("SealOutput Request: %+v\n", req)
 	callback := precompiles.SealOutputCallbackFunc{
 		CallbackUrl: req.RequesterUrl,
 		Callback:    handleSealOutputResult,
@@ -473,7 +490,7 @@ func SealOutputHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, _, err = precompiles.SealOutput(req.UType, hash, pkey, &tp, &callback)
+	_, _, err = precompiles.SealOutput(req.UType, fhedriver.SerializeCiphertextKey(req.Key), pkey, &tp, &callback)
 	if err != nil {
 		e := fmt.Sprintf("Operation failed: %+v", err)
 		fmt.Println(e)
@@ -481,8 +498,8 @@ func SealOutputHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Respond with the result
-	w.Write(hash)
-	fmt.Printf("Received seal output request for %+v and type %+v\n", hash, req.UType)
+	w.Write(req.Key.Hash[:])
+	fmt.Printf("Received seal output request for %+v and type %+v\n", req.Key.Hash[:], req.UType)
 }
 
 func TrivialEncryptHandler(w http.ResponseWriter, r *http.Request) {
@@ -495,11 +512,12 @@ func TrivialEncryptHandler(w http.ResponseWriter, r *http.Request) {
 
 	var req TrivialEncryptRequest
 	if err := json.Unmarshal(body, &req); err != nil {
-		fmt.Printf("Failed unmarsheling request: %+v body is %+v\n", err, string(body))
+		fmt.Printf("Failed unmarshaling TrivialEncryptRequest: %+v body is %+v\n", err, string(body))
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
+	log.Printf("TrivialEncrypt Request: %+v\n", req)
 	callback := precompiles.CallbackFunc{
 		CallbackUrl: req.RequesterUrl,
 		Callback:    handleResult,
@@ -529,6 +547,27 @@ func TrivialEncryptHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Started processing the request for tempkey %s\n", hex.EncodeToString(result))
 }
 
+func (s *CastRequest) UnmarshalJSON(data []byte) error {
+	var aux struct {
+		UType        byte             `json:"utype"`
+		Input        CiphertextKeyAux `json:"input"`
+		ToType       string           `json:"toType"`
+		RequesterUrl string           `json:"requesterUrl"`
+	}
+
+	if err := json.Unmarshal(data, &aux); err != nil {
+		log.Printf("Failed to unmarshal CastRequestAux: %v, %+v", err, aux)
+		return err
+	}
+
+	s.UType = aux.UType
+	s.Input = convertInput(aux.Input)
+	s.ToType = aux.ToType
+	s.RequesterUrl = aux.RequesterUrl
+
+	return nil
+}
+
 func CastHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Got a request from %s\n", r.RemoteAddr)
 	body, err := ioutil.ReadAll(r.Body)
@@ -539,25 +578,18 @@ func CastHandler(w http.ResponseWriter, r *http.Request) {
 
 	var req CastRequest
 	if err := json.Unmarshal(body, &req); err != nil {
-		fmt.Printf("Failed unmarsheling request: %+v body is %+v\n", err, string(body))
+		fmt.Printf("Failed unmarshaling request: %+v body is %+v\n", err, string(body))
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
+	log.Printf("Cast Request: %+v\n", req)
 	callback := precompiles.CallbackFunc{
 		CallbackUrl: req.RequesterUrl,
 		Callback:    handleResult,
 	}
 
 	// Convert the value strings to byte arrays
-	value, err := hex.DecodeString(req.Input)
-	if err != nil {
-		e := fmt.Sprintf("Invalid value: %s %+v", req.Input, err)
-		fmt.Println(e)
-		http.Error(w, e, http.StatusBadRequest)
-		return
-	}
-
 	toTypeInt, err := strconv.Atoi(req.ToType)
 	if err != nil {
 		e := fmt.Sprintf("Invalid toType: %s %+v", req.ToType, err)
@@ -566,7 +598,7 @@ func CastHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, _, err := precompiles.Cast(req.UType, value, byte(toTypeInt), &tp, &callback)
+	result, _, err := precompiles.Cast(req.UType, fhedriver.SerializeCiphertextKey(req.Input), byte(toTypeInt), &tp, &callback)
 	if err != nil {
 		e := fmt.Sprintf("Operation failed: %+v", err)
 		fmt.Println(e)
