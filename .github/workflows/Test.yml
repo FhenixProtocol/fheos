@@ -61,7 +61,7 @@ jobs:
       
       - name: Package Contracts
         run: |
-          tar -cvf contracts.tar solidity/FHE.sol solidity/FheOS.sol
+          tar -cvf contracts.tar solidity/FHE.sol solidity/FheOS.sol solidity/AsyncFHE.sol
       - uses: actions/upload-artifact@v3
         name: Store contracts
         with:
@@ -100,10 +100,12 @@ jobs:
           tar -xvf contracts.tar -C temp_extraction
           rm contracts.tar
           mv temp_extraction/solidity/FHE.sol temp_extraction/solidity/FheOS.sol contracts/
+          mv temp_extraction/solidity/AsyncFHE.sol contracts/
       - name: Commit Changes
         continue-on-error: true
         run: |
           git add contracts/FHE.sol
+          git add contracts/AsyncFHE.sol
           git add contracts/FheOS.sol
           git commit -m "FheOS updated - pushing new contracts and scripts"
       - name: Create Pull Request

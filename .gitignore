@@ -5,3 +5,4 @@ solgen/**/*.js
 build/
 solidity/types/*
 fheosdb/
+.idea/

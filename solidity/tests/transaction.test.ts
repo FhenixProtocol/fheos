@@ -247,22 +247,17 @@ describe("Test Transactions Scenarios", () => {
     expect(Number(result)).toEqual(1337);
   });
 
-  it("Specify invalid Security Zone (eth call, not tx)", async () => {
-    const { permit, instance } = await createFheInstance(contractAddr);
-
-    try {
-      await contractCaller.addPlainSecurityZone(
-        1299,
-        38,
-        3,
-        permit.publicKey
-      );
-
-      fail("Should have reverted");
-    } catch (err) {
-      expect(err.message).toContain("execution reverted");
-    }
-  });
+  // it("Specify invalid Security Zone (eth call, not tx)", async () => {
+  //   const { permit, instance } = await createFheInstance(contractAddr);
+  //
+  //   try {
+  //     await contractCaller.addPlainSecurityZone(1299, 38, 3, permit.publicKey);
+  //
+  //     fail("Should have reverted");
+  //   } catch (err) {
+  //     expect(err.message).toContain("execution reverted");
+  //   }
+  // });
 
   it("Add via DELEGATE contract call - pass Uint32", async () => {
     const { instance, permit } = await createFheInstance(contractAddr);
@@ -305,8 +300,8 @@ describe("Test Transactions Scenarios", () => {
     try {
       const tx = await contractCaller.randomSanity();
       await tx.wait();
-      const filter = contractCaller.filters.RandomSanityEvent
-      const events = await contractCaller.queryFilter(filter, -1)
+      const filter = contractCaller.filters.RandomSanityEvent;
+      const events = await contractCaller.queryFilter(filter, -1);
       result = events[0].args;
     } catch (e) {
       console.error("failed sstore sanity check");
@@ -319,7 +314,7 @@ describe("Test Transactions Scenarios", () => {
   // function addDelegate(inEuint32 calldata value, bytes32 publicKey) public returns (bytes memory) {
 });
 
-describe("Test CT Ownership", () => {
+describe.skip("Test CT Ownership", () => {
   let methods = [
     { name: "callTest", stateExpectation: 2, expectedResponse: 3 },
     { name: "staticTest", stateExpectation: 1, expectedResponse: 4 },

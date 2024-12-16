@@ -15,23 +15,17 @@ export interface FunctionAnalysis {
 
 // helps us know how many input parameters there are
 const specificFunctions = [
-  {
-    name: "get3VerifiedOperands(",
-    amount: 3,
-    paramTypes: ["encrypted", "encrypted", "encrypted"],
-  },
-  {
-    name: "get2VerifiedOperands(",
-    amount: 2,
-    paramTypes: ["encrypted", "uint8", "plaintext"],
-  },
-  { name: "getCiphertext(", amount: 1, paramTypes: ["encrypted"] },
+  { name: "OneOperationFunc", amount: 1, paramTypes: ["encrypted"] },
+  { name: "TwoOperationFunc", amount: 2, paramTypes: ["encrypted", "uint8", "plaintext"] },
+  { name: "ThreeOperationFunc", amount: 3, paramTypes: ["encrypted", "encrypted", "encrypted"] },
+  { name: "ProcessOperation1(", amount: 1, paramTypes: ["encrypted"] },
   { name: "fhedriver.UintType(", amount: 1, paramTypes: ["encrypted"] },
   { name: "GenerateSeedFromEntropy(", amount: 0, paramTypes: [] },
 ];
 
 async function analyzeGoFile(
-  filePath: string
+  filePath: string,
+  isAsyncMode: boolean
 ): Promise<FunctionAnalysis[] | null> {
   const fileContent = await fs.promises.readFile(filePath, "utf-8");
   const lines = fileContent.split("\n");
@@ -68,7 +62,7 @@ async function analyzeGoFile(
           // @ts-ignore
           inputs[1] = trimmedLine.split("input2 ")[1].trim();
         }
-        if (solgenOutputPlaintextComment.test(trimmedLine)) {
+        if (solgenOutputPlaintextComment.test(trimmedLine) && !isAsyncMode) {
           returnType = "plaintext";
         }
         if (solgenBooleanMathOp.test(trimmedLine)) {
@@ -139,10 +133,10 @@ async function analyzeGoFile(
   return specificFunctionAnalysis.length > 0 ? specificFunctionAnalysis : null;
 }
 
-export const getFunctionsFromGo = async (file: string) => {
+export const getFunctionsFromGo = async (file: string, isAsyncMode: boolean = false): Promise<FunctionAnalysis[]> => {
   let goFilePath = path.join(__dirname, file);
 
-  let result = await analyzeGoFile(goFilePath);
+  let result = await analyzeGoFile(goFilePath, isAsyncMode);
   if (result) {
     // console.log(result)
     return result;
