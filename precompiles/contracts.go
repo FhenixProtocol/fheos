@@ -32,7 +32,6 @@ func Log(s string, tp *TxParams) (uint64, error) {
 }
 
 func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
-	logger.Error("LIORRR add")
 	functionName := types.Add
 	addOp := TwoOperationFunc((*fhe.FheEncrypted).Add)
 
@@ -41,8 +40,6 @@ func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *Cal
 		logger.Error(functionName.String()+" failed to deserialize inputs", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-
-	logger.Error("LIORRRRRRRRRRRRRRRRRRRR add", "keys_count", len(keys), "key[0].hash", hex.EncodeToString(keys[0].Hash[:]), "key[1].hash", hex.EncodeToString(keys[1].Hash[:]))
 
 	return ProcessOperation(functionName, addOp, utype, keys[0].SecurityZone, keys, tp, callback)
 }
@@ -455,7 +452,6 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams, callback *Callbac
 // using the server/computation key - obviously this doesn't hide any information as the
 // number was known plaintext
 func TrivialEncrypt(input []byte, toType byte, securityZone int32, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
-	logger.Error("LIORRR trivial")
 	functionName := types.TrivialEncrypt
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
@@ -493,8 +489,6 @@ func TrivialEncrypt(input []byte, toType byte, securityZone int32, tp *TxParams,
 	}
 
 	valueToEncrypt := *new(big.Int).SetBytes(input)
-
-	logger.Error("LIORRRRRRRRRRRRRRRRRRRR trivial", "valueToEncrypt", valueToEncrypt, "ctHash", hex.EncodeToString(placeholderCt.Key.Hash[:]))
 
 	// If value is bigger than the maximal value that is supported by the type
 	if valueToEncrypt.Cmp(maxOfType) > 0 {

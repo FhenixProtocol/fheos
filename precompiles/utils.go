@@ -183,7 +183,6 @@ func awaitCtResult(storage *storage.MultiStore, lhsHash fhe.Hash, tp *TxParams) 
 }
 
 func getCiphertext(state *storage.MultiStore, ciphertextHash fhe.Hash) *fhe.FheEncrypted {
-	logger.Error("LIORRRRRR getting ciphertext", "hash", ciphertextHash.Hex())
 	ct, err := state.GetCt(types.Hash(ciphertextHash))
 	if err != nil {
 		logger.Error("reading ciphertext from State resulted with error", "hash", ciphertextHash.Hex(), "error", err.Error())
@@ -194,7 +193,6 @@ func getCiphertext(state *storage.MultiStore, ciphertextHash fhe.Hash) *fhe.FheE
 }
 
 func storeCipherText(storage *storage.MultiStore, ct *fhe.FheEncrypted) error {
-	logger.Error("LIORRRRRR Putting ciphertext", "hash", ct.GetHash().Hex())
 	err := storage.PutCtIfNotExist(types.Hash(ct.GetHash()), (*types.FheEncrypted)(ct))
 	if err != nil {
 		logger.Error("failed importing ciphertext to state: ", err)
