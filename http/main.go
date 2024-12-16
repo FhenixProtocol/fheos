@@ -68,13 +68,13 @@ type HashResultUpdate struct {
 }
 
 type DecryptResultUpdate struct {
-	CtKey     []byte `json:"ctKey"`
+	CtHash    []byte `json:"ctHash"`
 	Plaintext string `json:"plaintext"`
 }
 
 type SealOutputResultUpdate struct {
-	CtKey []byte `json:"ctKey"`
-	Value string `json:"value"`
+	CtHash []byte `json:"ctHash"`
+	Value  string `json:"value"`
 }
 
 var tp precompiles.TxParams
@@ -151,27 +151,27 @@ func handleResult(url string, tempKey []byte, actualHash []byte) {
 	responseToServer(url, tempKey, jsonData)
 }
 
-func handleDecryptResult(url string, ctKey []byte, plaintext *big.Int) {
-	fmt.Printf("Got result for %s : %s\n", hex.EncodeToString(ctKey), plaintext)
+func handleDecryptResult(url string, ctHash []byte, plaintext *big.Int) {
+	fmt.Printf("Got result for %s : %s\n", hex.EncodeToString(ctHash), plaintext)
 	plaintextString := plaintext.Text(16)
-	jsonData, err := json.Marshal(DecryptResultUpdate{CtKey: ctKey, Plaintext: plaintextString})
+	jsonData, err := json.Marshal(DecryptResultUpdate{CtHash: ctHash, Plaintext: plaintextString})
 	if err != nil {
-		log.Printf("Failed to marshal decrypt result for requester %s with the result of %+v: %v", url, ctKey, err)
+		log.Printf("Failed to marshal decrypt result for requester %s with the result of %+v: %v", url, ctHash, err)
 		return
 	}
 
-	responseToServer(url, ctKey, jsonData)
+	responseToServer(url, ctHash, jsonData)
 }
 
-func handleSealOutputResult(url string, ctKey []byte, value string) {
-	fmt.Printf("Got result for %s : %s\n", hex.EncodeToString(ctKey), value)
-	jsonData, err := json.Marshal(SealOutputResultUpdate{CtKey: ctKey, Value: value})
+func handleSealOutputResult(url string, ctHash []byte, value string) {
+	fmt.Printf("Got result for %s : %s\n", hex.EncodeToString(ctHash), value)
+	jsonData, err := json.Marshal(SealOutputResultUpdate{CtHash: ctHash, Value: value})
 	if err != nil {
-		log.Printf("Failed to marshal seal output result for requester %s with the result of %+v: %v", url, ctKey, err)
+		log.Printf("Failed to marshal seal output result for requester %s with the result of %+v: %v", url, ctHash, err)
 		return
 	}
 
-	responseToServer(url, ctKey, jsonData)
+	responseToServer(url, ctHash, jsonData)
 }
 
 type HandlerFunc interface {
@@ -183,10 +183,10 @@ type HandlerFunc interface {
 }
 
 type CiphertextKeyAux struct {
-	IsTriviallyEncrypted bool          `json:"IsTriviallyEncrypted"`
-	UintType             int           `json:"UintType"` // Assuming EncryptionType is an int or compatible
-	SecurityZone         int32         `json:"SecurityZone"`
-	Hash                 []interface{} `json:"Hash"`
+	IsTriviallyEncrypted bool   `json:"IsTriviallyEncrypted"`
+	UintType             int    `json:"UintType"` // Assuming EncryptionType is an int or compatible
+	SecurityZone         int32  `json:"SecurityZone"`
+	Hash                 string `json:"Hash"`
 }
 type GenericHashRequest struct {
 	UType        byte                      `json:"uType"`
@@ -194,24 +194,35 @@ type GenericHashRequest struct {
 	RequesterUrl string                    `json:"requesterUrl"`
 }
 
-func convertInput(input CiphertextKeyAux) fhedriver.CiphertextKey {
-	return fhedriver.CiphertextKey{
+func convertInput(input CiphertextKeyAux) (*fhedriver.CiphertextKey, error) {
+	decoded, err := hex.DecodeString(input.Hash[2:])
+	if err != nil {
+		e := fmt.Sprintf("Invalid input hex string at position %s %+v", input.Hash, err)
+		return nil, fmt.Errorf(e)
+	}
+
+	return &fhedriver.CiphertextKey{
 		IsTriviallyEncrypted: input.IsTriviallyEncrypted,
 		UintType:             fhedriver.EncryptionType(input.UintType),
 		SecurityZone:         input.SecurityZone,
-		Hash:                 [32]byte(input.Hash),
-	}
+		Hash:                 [32]byte(decoded),
+	}, nil
 }
 
-func convertInputs(inputs []CiphertextKeyAux) []fhedriver.CiphertextKey {
+func convertInputs(inputs []CiphertextKeyAux) ([]fhedriver.CiphertextKey, error) {
 	var convertedInputs []fhedriver.CiphertextKey
 	for _, input := range inputs {
 		if len(input.Hash) != 0 {
-			convertedInputs = append(convertedInputs, convertInput(input))
+			convertedInput, err := convertInput(input)
+			if err != nil {
+				return nil, err
+			}
+
+			convertedInputs = append(convertedInputs, *convertedInput)
 		}
 	}
 
-	return convertedInputs
+	return convertedInputs, nil
 }
 
 func (g *GenericHashRequest) UnmarshalJSON(data []byte) error {
@@ -226,8 +237,13 @@ func (g *GenericHashRequest) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
+	convertedInputs, err := convertInputs(aux.Inputs)
+	if err != nil {
+		return err
+	}
+
 	g.UType = aux.UType
-	g.Inputs = convertInputs(aux.Inputs)
+	g.Inputs = convertedInputs
 	g.RequesterUrl = aux.RequesterUrl
 	return nil
 }
@@ -399,8 +415,13 @@ func (d *DecryptRequest) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
+	convertedInput, err := convertInput(aux.Key)
+	if err != nil {
+		return err
+	}
+
 	d.UType = aux.UType
-	d.Key = convertInput(aux.Key)
+	d.Key = *convertedInput
 	d.RequesterUrl = aux.RequesterUrl
 
 	return nil
@@ -453,14 +474,18 @@ func (s *SealOutputRequest) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
+	convertedInput, err := convertInput(aux.Key)
+	if err != nil {
+		return err
+	}
+
 	s.UType = aux.UType
-	s.Key = convertInput(aux.Key)
+	s.Key = *convertedInput
 	s.PKey = aux.PKey
 	s.RequesterUrl = aux.RequesterUrl
 
 	return nil
 }
-
 func SealOutputHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Got a request from %s\n", r.RemoteAddr)
 	body, err := ioutil.ReadAll(r.Body)
@@ -500,6 +525,31 @@ func SealOutputHandler(w http.ResponseWriter, r *http.Request) {
 	// Respond with the result
 	w.Write(req.Key.Hash[:])
 	fmt.Printf("Received seal output request for %+v and type %+v\n", req.Key.Hash[:], req.UType)
+}
+
+func (t *TrivialEncryptRequest) UnmarshalJSON(data []byte) error {
+	var aux struct {
+		Value        string `json:"value"`
+		ToType       byte   `json:"toType"`
+		SecurityZone int32  `json:"securityZone"`
+		RequesterUrl string `json:"requesterUrl"`
+	}
+	if err := json.Unmarshal(data, &aux); err != nil {
+		log.Printf("Failed to unmarshal SealOutputRequestAux: %v, %+v", err, aux)
+		return err
+	}
+
+	val, ok := new(big.Int).SetString(aux.Value[2:], 16)
+	if !ok {
+		return fmt.Errorf("invalid hex value: %s", aux.Value)
+	}
+
+	t.Value = val
+	t.ToType = aux.ToType
+	t.SecurityZone = aux.SecurityZone
+	t.RequesterUrl = aux.RequesterUrl
+
+	return nil
 }
 
 func TrivialEncryptHandler(w http.ResponseWriter, r *http.Request) {
@@ -560,8 +610,13 @@ func (s *CastRequest) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
+	convertedInput, err := convertInput(aux.Input)
+	if err != nil {
+		return err
+	}
+
 	s.UType = aux.UType
-	s.Input = convertInput(aux.Input)
+	s.Input = *convertedInput
 	s.ToType = aux.ToType
 	s.RequesterUrl = aux.RequesterUrl
 
