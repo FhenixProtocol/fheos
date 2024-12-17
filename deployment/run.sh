@@ -71,7 +71,11 @@ fi
 
 if [[ "${COPROCESSOR_MODE}" -eq 1 ]]; then
     echo "Starting in coprocessor mode"
-    coprocessor
+    if [[ "${DEBUG_MODE}" -eq 1 ]]; then
+      /go/bin/dlv --listen=:4002 --headless=true --log=true --accept-multiclient --api-version=2 exec /usr/local/bin/coprocessor
+    else
+      coprocessor
+    fi
 else
   # Start the faucet server
   node faucet/server.js &
