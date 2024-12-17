@@ -214,7 +214,7 @@ func ProcessOperation(functionName types.PrecompileName, operation OperationFunc
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
-		randomHash := State.GetRandomKeyForGasEstimation()
+		randomHash := State.GetEmptyKeyForGasEstimation()
 		return randomHash[:], gas, nil
 	}
 

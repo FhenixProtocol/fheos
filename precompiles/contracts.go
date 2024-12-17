@@ -57,7 +57,7 @@ func Verify(utype byte, input []byte, securityZone int32, tp *TxParams, _ *Callb
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
-		randomHash := State.GetRandomKeyForGasEstimation()
+		randomHash := State.GetEmptyKeyForGasEstimation()
 		return randomHash[:], gas, nil
 	}
 
@@ -381,7 +381,7 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams, callback *Callbac
 	castToType := fhe.EncryptionType(toType)
 	gas := getGasForPrecompile(functionName, castToType)
 	if tp.GasEstimation {
-		randomHash := State.GetRandomKeyForGasEstimation()
+		randomHash := State.GetEmptyKeyForGasEstimation()
 		return randomHash[:], gas, nil
 	}
 
@@ -464,7 +464,7 @@ func TrivialEncrypt(input []byte, toType byte, securityZone int32, tp *TxParams,
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
-		randomHash := State.GetRandomKeyForGasEstimation()
+		randomHash := State.GetEmptyKeyForGasEstimation()
 		return randomHash[:], gas, nil
 	}
 
@@ -763,7 +763,7 @@ func Random(utype byte, seed uint64, securityZone int32, tp *TxParams, _ *Callba
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
-		randomHash := State.GetRandomKeyForGasEstimation()
+		randomHash := State.GetEmptyKeyForGasEstimation()
 		return randomHash[:], gas, nil
 	}
 

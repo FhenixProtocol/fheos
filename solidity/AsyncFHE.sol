@@ -4,73 +4,67 @@
 pragma solidity >=0.8.19 <0.9.0;
 
 import "@openzeppelin/contracts/utils/Strings.sol";
+import "./CoproDefs.sol";
 
-    struct CiphertextKey {
-        bool     isTriviallyEncrypted;
-        uint32   uintType;
-        int32    securityZone;
-        uint256  hash;
-    }
+struct ebool {
+    bool     isTriviallyEncrypted;
+    uint8    uintType;
+    int32    securityZone;
+    uint256  hash;
+}
 
-    struct ebool {
-        bool     isTriviallyEncrypted;
-        uint32   uintType;
-        int32    securityZone;
-        uint256  hash;
-    }
+struct euint8 {
+    bool     isTriviallyEncrypted;
+    uint8    uintType;
+    int32    securityZone;
+    uint256  hash;
+}
 
-    struct euint8 {
-        bool     isTriviallyEncrypted;
-        uint32   uintType;
-        int32    securityZone;
-        uint256  hash;
-    }
+struct euint16 {
+    bool     isTriviallyEncrypted;
+    uint8    uintType;
+    int32    securityZone;
+    uint256  hash;
+}
 
-    struct euint16 {
-        bool     isTriviallyEncrypted;
-        uint32   uintType;
-        int32    securityZone;
-        uint256  hash;
-    }
+struct euint32 {
+    bool     isTriviallyEncrypted;
+    uint8    uintType;
+    int32    securityZone;
+    uint256  hash;
+}
 
-    struct euint32 {
-        bool     isTriviallyEncrypted;
-        uint32   uintType;
-        int32    securityZone;
-        uint256  hash;
-    }
+struct euint64 {
+    bool     isTriviallyEncrypted;
+    uint8    uintType;
+    int32    securityZone;
+    uint256  hash;
+}
 
-    struct euint64 {
-        bool     isTriviallyEncrypted;
-        uint32   uintType;
-        int32    securityZone;
-        uint256  hash;
-    }
+struct euint128 {
+    bool     isTriviallyEncrypted;
+    uint8    uintType;
+    int32    securityZone;
+    uint256  hash;
+}
 
-    struct euint128 {
-        bool     isTriviallyEncrypted;
-        uint32   uintType;
-        int32    securityZone;
-        uint256  hash;
-    }
+struct euint256 {
+    bool     isTriviallyEncrypted;
+    uint8    uintType;
+    int32    securityZone;
+    uint256  hash;
+}
 
-    struct euint256 {
-        bool     isTriviallyEncrypted;
-        uint32   uintType;
-        int32    securityZone;
-        uint256  hash;
-    }
+struct eaddress {
+    bool     isTriviallyEncrypted;
+    uint32   uintType;
+    int32    securityZone;
+    uint256  hash;
+}
 
-    struct eaddress {
-        bool     isTriviallyEncrypted;
-        uint32   uintType;
-        int32    securityZone;
-        uint256  hash;
-    }
-
-    struct SealedArray {
-        bytes[] data;
-    }
+struct SealedArray {
+    bytes[] data;
+}
 
 /// @dev Utility structure providing clients with type context of a sealed output string.
 /// Return type of `FHE.sealoutputTyped` and `sealTyped` within the binding libraries.
@@ -103,60 +97,12 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 // /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\
 // ================================
 //solhint-disable const-name-snakecase
-address constant TASK_MANAGER_ADDRESS = 0x54245f6371c6ABcc40dde38912D86720Af5e6068;
+address constant TASK_MANAGER_ADDRESS = 0xbeb4eF1fcEa618C6ca38e3828B00f8D481EC2CC2;
 
 library Common {
-    // Values used to communicate types to the runtime.
-    // Must match values defined in warp-drive protobufs for everything to
-    // make sense
-    uint8 internal constant EUINT8_TFHE = 0;
-    uint8 internal constant EUINT16_TFHE = 1;
-    uint8 internal constant EUINT32_TFHE = 2;
-    uint8 internal constant EUINT64_TFHE = 3;
-    uint8 internal constant EUINT128_TFHE = 4;
-    uint8 internal constant EUINT256_TFHE = 5;
-    uint8 internal constant EADDRESS_TFHE = 12;
-    // uint8 internal constant INT_BGV = 12;
-    uint8 internal constant EBOOL_TFHE = 13;
-
     // Default value for temp hash calculation in unary operations
     string private constant DEFAULT_VALUE = "0";
-
-    // Order is set as in fheos/precompiles/types/types.go
-    enum FunctionId {
-        _0,             // 0 - GetNetworkKey
-        _1,             // 1 - Verify
-        cast,           // 2
-        sealoutput,     // 3
-        select,             // 4 - select
-        _5,             // 5 - req
-        decrypt,        // 6
-        sub,            // 7
-        add,            // 8
-        xor,            // 9
-        and,            // 10
-        or,             // 11
-        not,            // 12
-        div,            // 13
-        rem,            // 14
-        mul,            // 15
-        shl,            // 16
-        shr,            // 17
-        gte,            // 18
-        lte,            // 19
-        lt,             // 20
-        gt,             // 21
-        min,            // 22
-        max,            // 23
-        eq,             // 24
-        ne,             // 25
-        trivialEncrypt, // 26
-        random,         // 27
-        rol,            // 28
-        ror,            // 29
-        square          // 30
-    }
-
+    
     function bigIntToBool(uint256 i) internal pure returns (bool) {
         return (i > 0);
     }
@@ -293,131 +239,86 @@ library Common {
         return result;
     }
 
-    /// @notice Calculates the temporary hash for unary operations
-    /// @param value - The value to hash
-    /// @param functionId - The function id
-    /// @return The calculated temporary hash
-    function calcUnaryPlaceholderValueHash(uint8 ctType, int32 securityZone, uint256 value, FunctionId functionId) private pure returns (CiphertextKey memory) {
-        return calcBinaryPlaceholderValueHash(ctType, securityZone, value, 0, functionId);
-    }
-
-    function calcBinaryPlaceholderValueHash(uint8 ctType, int32 securityZone, uint256 first, uint256 second, FunctionId functionId) private pure returns (CiphertextKey memory) {
-        return calcTrinaryPlaceholderValueHash(ctType, securityZone, first, second, 0, functionId);
-    }
-
-    /// @notice Calculates the temporary hash for async operations
-    /// @dev Must result the same temp hash as calculated by warp-drive/fhe-driver/CalcBinaryPlaceholderValueHash
-    /// @param first - first operand hash
-    /// @param second - second operand hash
-    /// @param third - third operand hash
-    /// @param functionId - The function id
-    /// @return The calculated temporary hash
-    function calcTrinaryPlaceholderValueHash(
-        uint8 ctType,
-        int32 securityZone,
-        uint256 first,
-        uint256 second,
-        uint256 third,
-        FunctionId functionId
-    ) private pure returns (CiphertextKey memory) {
-        bytes memory firstBytes = uint256ToBytes32(first);
-        bytes memory secondBytes = uint256ToBytes32(second);
-        bytes memory thirdBytes = uint256ToBytes32(third);
-        bytes1 functionIdByte = bytes1(uint8(functionId));
-        bytes memory combined = bytes.concat(firstBytes, secondBytes, thirdBytes, functionIdByte);
-
-        // Calculate Keccak256 hash
-        bytes memory hash = abi.encodePacked(keccak256(combined));
-
-        return CiphertextKey ({
-            isTriviallyEncrypted: functionId == FunctionId.trivialEncrypt,
-            uintType: ctType,
-            securityZone: securityZone,
-            hash: uint256(bytes32(hash))
-        });
-
-    }
-
     function convertInt32ToUint256(int32 value) internal pure returns (uint256) {
         require(value >= 0, "Value must be non-negative");
         return uint256(uint32(value));
     }
 
     function keyAsEbool(CiphertextKey memory key) internal pure returns (ebool memory) {
-        revert(key.uintType != Common.EBOOL_TFHE, "Key type mismatch");
+        require(key.uintType == Utils.EBOOL_TFHE, "Key type mismatch");
         return ebool({
             isTriviallyEncrypted: key.isTriviallyEncrypted,
-            uintType: Common.EBOOL_TFHE,
+            uintType: Utils.EBOOL_TFHE,
             securityZone: key.securityZone,
             hash: key.hash
         });
     }
 
     function keyAsEuint8(CiphertextKey memory key) internal pure returns (euint8 memory) {
-        revert(key.uintType != Common.EUINT8_TFHE, "Key type mismatch");
+        require(key.uintType == Utils.EUINT8_TFHE, "Key type mismatch");
         return euint8({
             isTriviallyEncrypted: key.isTriviallyEncrypted,
-            uintType: Common.EUINT8_TFHE,
+            uintType: Utils.EUINT8_TFHE,
             securityZone: key.securityZone,
             hash: key.hash
         });
     }
 
     function keyAsEuint16(CiphertextKey memory key) internal pure returns (euint16 memory) {
-        revert(key.uintType != Common.EUINT16_TFHE, "Key type mismatch");
+        require(key.uintType == Utils.EUINT16_TFHE, "Key type mismatch");
         return euint16({
             isTriviallyEncrypted: key.isTriviallyEncrypted,
-            uintType: Common.EUINT16_TFHE,
+            uintType: Utils.EUINT16_TFHE,
             securityZone: key.securityZone,
             hash: key.hash
         });
     }
 
     function keyAsEuint32(CiphertextKey memory key) internal pure returns (euint32 memory) {
-        revert(key.uintType != Common.EUINT32_TFHE, "Key type mismatch");
+        require(key.uintType == Utils.EUINT32_TFHE, "Key type mismatch");
         return euint32({
             isTriviallyEncrypted: key.isTriviallyEncrypted,
-            uintType: Common.EUINT32_TFHE,
+            uintType: Utils.EUINT32_TFHE,
             securityZone: key.securityZone,
             hash: key.hash
         });
     }
 
     function keyAsEuint64(CiphertextKey memory key) internal pure returns (euint64 memory) {
-        revert(key.uintType != Common.EUINT64_TFHE, "Key type mismatch");
+        require(key.uintType == Utils.EUINT64_TFHE, "Key type mismatch");
         return euint64({
             isTriviallyEncrypted: key.isTriviallyEncrypted,
-            uintType: Common.EUINT64_TFHE,
+            uintType: Utils.EUINT64_TFHE,
             securityZone: key.securityZone,
             hash: key.hash
         });
     }
 
     function keyAsEuint128(CiphertextKey memory key) internal pure returns (euint128 memory) {
-        revert(key.uintType != Common.EUINT128_TFHE, "Key type mismatch");
+        require(key.uintType == Utils.EUINT128_TFHE, "Key type mismatch");
         return euint128({
             isTriviallyEncrypted: key.isTriviallyEncrypted,
-            uintType: Common.EUINT128_TFHE,
+            uintType: Utils.EUINT128_TFHE,
             securityZone: key.securityZone,
             hash: key.hash
         });
     }
 
     function keyAsEuint256(CiphertextKey memory key) internal pure returns (euint256 memory) {
-        revert(key.uintType != Common.EUINT256_TFHE, "Key type mismatch");
+        require(key.uintType == Utils.EUINT256_TFHE, "Key type mismatch");
         return euint256({
             isTriviallyEncrypted: key.isTriviallyEncrypted,
-            uintType: Common.EUINT256_TFHE,
+            uintType: Utils.EUINT256_TFHE,
             securityZone: key.securityZone,
             hash: key.hash
         });
     }
 
     function keyAsEaddress(CiphertextKey memory key) internal pure returns (eaddress memory) {
-        revert(key.uintType != Common.EADDRESS_TFHE, "Key type mismatch");
+        require(key.uintType == Utils.EADDRESS_TFHE, "Key type mismatch");
         return eaddress({
             isTriviallyEncrypted: key.isTriviallyEncrypted,
-            uintType: Common.EADDRESS_TFHE,
+            uintType: Utils.EADDRESS_TFHE,
             securityZone: key.securityZone,
             hash: key.hash
         });
@@ -426,7 +327,7 @@ library Common {
     function eboolAsKey(ebool memory value) internal pure returns (CiphertextKey memory) {
         return CiphertextKey({
             isTriviallyEncrypted: value.isTriviallyEncrypted,
-            uintType: Common.EBOOL_TFHE,
+            uintType: Utils.EBOOL_TFHE,
             securityZone: value.securityZone,
             hash: value.hash
         });
@@ -435,7 +336,7 @@ library Common {
     function euint8AsKey(euint8 memory value) internal pure returns (CiphertextKey memory) {
         return CiphertextKey({
             isTriviallyEncrypted: value.isTriviallyEncrypted,
-            uintType: Common.EUINT8_TFHE,
+            uintType: Utils.EUINT8_TFHE,
             securityZone: value.securityZone,
             hash: value.hash
         });
@@ -444,7 +345,7 @@ library Common {
     function euint16AsKey(euint16 memory value) internal pure returns (CiphertextKey memory) {
         return CiphertextKey({
             isTriviallyEncrypted: value.isTriviallyEncrypted,
-            uintType: Common.EUINT16_TFHE,
+            uintType: Utils.EUINT16_TFHE,
             securityZone: value.securityZone,
             hash: value.hash
         });
@@ -453,7 +354,7 @@ library Common {
     function euint32AsKey(euint32 memory value) internal pure returns (CiphertextKey memory) {
         return CiphertextKey({
             isTriviallyEncrypted: value.isTriviallyEncrypted,
-            uintType: Common.EUINT32_TFHE,
+            uintType: Utils.EUINT32_TFHE,
             securityZone: value.securityZone,
             hash: value.hash
         });
@@ -462,7 +363,7 @@ library Common {
     function euint64AsKey(euint64 memory value) internal pure returns (CiphertextKey memory) {
         return CiphertextKey({
             isTriviallyEncrypted: value.isTriviallyEncrypted,
-            uintType: Common.EUINT64_TFHE,
+            uintType: Utils.EUINT64_TFHE,
             securityZone: value.securityZone,
             hash: value.hash
         });
@@ -471,7 +372,7 @@ library Common {
     function euint128AsKey(euint128 memory value) internal pure returns (CiphertextKey memory) {
         return CiphertextKey({
             isTriviallyEncrypted: value.isTriviallyEncrypted,
-            uintType: Common.EUINT128_TFHE,
+            uintType: Utils.EUINT128_TFHE,
             securityZone: value.securityZone,
             hash: value.hash
         });
@@ -480,7 +381,7 @@ library Common {
     function euint256AsKey(euint256 memory value) internal pure returns (CiphertextKey memory) {
         return CiphertextKey({
             isTriviallyEncrypted: value.isTriviallyEncrypted,
-            uintType: Common.EUINT256_TFHE,
+            uintType: Utils.EUINT256_TFHE,
             securityZone: value.securityZone,
             hash: value.hash
         });
@@ -489,7 +390,7 @@ library Common {
     function eaddressAsKey(eaddress memory value) internal pure returns (CiphertextKey memory) {
         return CiphertextKey({
             isTriviallyEncrypted: value.isTriviallyEncrypted,
-            uintType: Common.EADDRESS_TFHE,
+            uintType: Utils.EADDRESS_TFHE,
             securityZone: value.securityZone,
             hash: value.hash
         });
@@ -545,94 +446,92 @@ library Common {
         }
     }
 
-    function functionIdToString(FunctionId _functionId) public pure returns (string memory) {
-        if (_functionId == FunctionId.cast) return "cast";
-        if (_functionId == FunctionId.sealoutput) return "sealoutput";
-        if (_functionId == FunctionId.select) return "select";
-        if (_functionId == FunctionId.decrypt) return "decrypt";
-        if (_functionId == FunctionId.sub) return "sub";
-        if (_functionId == FunctionId.add) return "add";
-        if (_functionId == FunctionId.xor) return "xor";
-        if (_functionId == FunctionId.and) return "and";
-        if (_functionId == FunctionId.or) return "or";
-        if (_functionId == FunctionId.not) return "not";
-        if (_functionId == FunctionId.div) return "div";
-        if (_functionId == FunctionId.rem) return "rem";
-        if (_functionId == FunctionId.mul) return "mul";
-        if (_functionId == FunctionId.shl) return "shl";
-        if (_functionId == FunctionId.shr) return "shr";
-        if (_functionId == FunctionId.gte) return "gte";
-        if (_functionId == FunctionId.lte) return "lte";
-        if (_functionId == FunctionId.lt) return "lt";
-        if (_functionId == FunctionId.gt) return "gt";
-        if (_functionId == FunctionId.min) return "min";
-        if (_functionId == FunctionId.max) return "max";
-        if (_functionId == FunctionId.eq) return "eq";
-        if (_functionId == FunctionId.ne) return "ne";
-        if (_functionId == FunctionId.trivialEncrypt) return "trivialEncrypt";
-        if (_functionId == FunctionId.random) return "random";
-        if (_functionId == FunctionId.rol) return "rol";
-        if (_functionId == FunctionId.ror) return "ror";
-        if (_functionId == FunctionId.square) return "square";
+    function createCiphertextKeyInputs(CiphertextKey memory input1) internal pure returns (CiphertextKey[] memory) {
+        CiphertextKey[] memory inputs = new CiphertextKey[](1);
+        inputs[0] = input1;
+        return inputs;
+    }
 
-        return "";
+    function createCiphertextKeyInputs(CiphertextKey memory input1, CiphertextKey memory input2) internal pure returns (CiphertextKey[] memory) {
+        CiphertextKey[] memory inputs = new CiphertextKey[](2);
+        inputs[0] = input1;
+        inputs[1] = input2;
+        return inputs;
+    }
+
+    function createCiphertextKeyInputs(CiphertextKey memory input1, CiphertextKey memory input2, CiphertextKey memory input3) internal pure returns (CiphertextKey[] memory) {
+        CiphertextKey[] memory inputs = new CiphertextKey[](3);
+        inputs[0] = input1;
+        inputs[1] = input2;
+        inputs[2] = input3;
+        return inputs;
+    }
+
+    function createUint256Inputs(uint256 input1) internal pure returns (uint256[] memory) {
+        uint256[] memory inputs = new uint256[](1);
+        inputs[0] = input1;
+        return inputs;
+    }
+
+    function createUint256Inputs(uint256 input1, uint256 input2) internal pure returns (uint256[] memory) {
+        uint256[] memory inputs = new uint256[](2);
+        inputs[0] = input1;
+        inputs[1] = input2;
+        return inputs;
+    }
+
+    function createUint256Inputs(uint256 input1, uint256 input2, uint256 input3) internal pure returns (uint256[] memory) {
+        uint256[] memory inputs = new uint256[](3);
+        inputs[0] = input1;
+        inputs[1] = input2;
+        inputs[2] = input3;
+        return inputs;
     }
 }
 
 library Impl {
     function trivialEncrypt(uint256 value, uint8 toType, int32 securityZone) internal returns (CiphertextKey memory) {
-        uint256 secZone = Common.convertInt32ToUint256(securityZone);
-        CiphertextKey memory ctKey = Common.calcTrinaryPlaceholderValueHash(toType, secZone, value, toType, secZone, Common.FunctionId.trivialEncrypt);
-        ITaskManager(TASK_MANAGER_ADDRESS).createTask(ctKey.hash, toType, "trivialEncrypt", value, secZone);
-        return ctKey;
+        return ITaskManager(TASK_MANAGER_ADDRESS).createTask(toType, securityZone, FunctionId.trivialEncrypt, new CiphertextKey[](0), Common.createUint256Inputs(value, toType, Common.convertInt32ToUint256(securityZone)));
     }
 
     function cast(CiphertextKey memory key, uint8 toType) internal returns (CiphertextKey memory) {
-        CiphertextKey memory ctKey = Common.calcBinaryPlaceholderValueHash(toType, key.securityZone, key.hash, toType, Common.FunctionId.cast);
-        ITaskManager(TASK_MANAGER_ADDRESS).createTask(ctKey.hash, key.uintType, "cast", key.hash, toType);
-        return ctKey;
+        return ITaskManager(TASK_MANAGER_ADDRESS).createTask(toType, key.securityZone, FunctionId.cast, Common.createCiphertextKeyInputs(key), Common.createUint256Inputs(toType));
     }
 
     function select(ebool memory control, CiphertextKey memory ifTrue, CiphertextKey memory ifFalse) internal returns (CiphertextKey memory result) {
-        revert(ifTrue.uintType != ifFalse.uintType, "Mismatched types");
-        revert(ifTrue.securityZone != ifFalse.securityZone, "Mismatched security zones");
+        require(ifTrue.uintType == ifFalse.uintType, "Mismatched types");
+        require(ifTrue.securityZone == ifFalse.securityZone, "Mismatched security zones");
 
-        CiphertextKey memory ctKey = Common.calcTrinaryPlaceholderValueHash(ifTrue.uintType, ifTrue.securityZone, control.hash, ifTrue.hash, ifFalse.hash, Common.FunctionId.select);
-        ITaskManager(TASK_MANAGER_ADDRESS).createTask(ctKey.hash, ifTrue.uintType, "select",control.hash, ifTrue.hash, ifFalse.hash);
-        return ctKey;
+        return ITaskManager(TASK_MANAGER_ADDRESS).createTask(ifTrue.uintType,
+            ifTrue.securityZone,
+            FunctionId.select,
+            Common.createCiphertextKeyInputs(Common.eboolAsKey(control), ifTrue, ifFalse),
+            new uint256[](0));
     }
 
-    function mathOp(CiphertextKey memory lhs, CiphertextKey memory rhs, Common.FunctionId functionId) internal returns (CiphertextKey memory) {
-        revert(lhs.uintType != rhs.uintType, "Mismatched types");
-        revert(lhs.securityZone != rhs.securityZone, "Mismatched security zones");
+    function mathOp(CiphertextKey memory lhs, CiphertextKey memory rhs, FunctionId functionId) internal returns (CiphertextKey memory) {
+        require(lhs.uintType == rhs.uintType, "Mismatched types");
+        require(lhs.securityZone == rhs.securityZone, "Mismatched security zones");
 
-        CiphertextKey memory ctKey = Common.calcBinaryPlaceholderValueHash(lhs.uintType, lhs.securityZone, lhs.hash, rhs.hash, functionId);
-        ITaskManager(TASK_MANAGER_ADDRESS).createTask(ctKey.hash, lhs.uintType, Common.functionIdToString(functionId), lhs.hash, rhs.hash);
-        return ctKey;
+        return ITaskManager(TASK_MANAGER_ADDRESS).createTask(lhs.uintType, lhs.securityZone, functionId, Common.createCiphertextKeyInputs(lhs, rhs), new uint256[](0));
     }
 
     function sealOutput(CiphertextKey memory value, bytes32 publicKey) internal returns (string memory) {
-        ITaskManager(TASK_MANAGER_ADDRESS).createSealOutputTask(value.hash, publicKey);
+        ITaskManager(TASK_MANAGER_ADDRESS).createSealOutputTask(value, publicKey);
         return Common.bytesToHexString(abi.encodePacked(bytes32(value.hash)));
     }
 
-    function decrypt(CiphertextKey memory input) internal returns (uint256) {
-        ITaskManager(TASK_MANAGER_ADDRESS).createDecryptTask(input.hash);
-        return input.hash;
+    function decrypt(CiphertextKey memory input) internal returns (CiphertextKey memory) {
+        ITaskManager(TASK_MANAGER_ADDRESS).createDecryptTask(input);
+        return input;
     }
 
     function not(CiphertextKey memory input) internal returns (CiphertextKey memory) {
-        CiphertextKey memory ctKey = Common.calcUnaryPlaceholderValueHash(input.uintType, input.securityZone, input.hash, Common.FunctionId.not);
-        ITaskManager(TASK_MANAGER_ADDRESS).createTask(ctKey.hash, input.uintType, "not", input.hash);
-
-        return ctKey;
+        return ITaskManager(TASK_MANAGER_ADDRESS).createTask(input.uintType, input.securityZone, FunctionId.not, Common.createCiphertextKeyInputs(input), new uint256[](0));
     }
 
     function square(CiphertextKey memory input) internal returns (CiphertextKey memory) {
-        CiphertextKey memory ctKey = Common.calcUnaryPlaceholderValueHash(input.uintType, input.securityZone, input.hash, Common.FunctionId.square);
-        ITaskManager(TASK_MANAGER_ADDRESS).createTask(ctKey.hash, input.hash, "square", input.hash);
-
-        return ctKey;
+        return ITaskManager(TASK_MANAGER_ADDRESS).createTask(input.uintType, input.securityZone, FunctionId.square, Common.createCiphertextKeyInputs(input), new uint256[](0));
     }
 
     /// @notice Generates a random value of a given type with the given seed, for the provided securityZone
@@ -641,10 +540,7 @@ library Impl {
     /// @param seed the seed to use to create a random value from
     /// @param securityZone the security zone to use for the random value
     function random(uint8 uintType, uint64 seed, int32 securityZone) internal returns (CiphertextKey memory) {
-        uint256 secZone = Common.convertInt32ToUint256(securityZone);
-        CiphertextKey memory ctKey = Common.calcTrinaryPlaceholderValueHash(uintType, securityZone, uintType, seed, secZone, Common.FunctionId.random);
-        ITaskManager(TASK_MANAGER_ADDRESS).createTask(ctKey.hash, uintType, "random", seed, secZone);
-        return ctKey;
+        return ITaskManager(TASK_MANAGER_ADDRESS).createTask(uintType, securityZone, FunctionId.random, new CiphertextKey[](0), Common.createUint256Inputs(seed, Common.convertInt32ToUint256(securityZone)));
     }
 
     /// @notice Generates a random value of a given type with the given seed
@@ -658,29 +554,10 @@ library Impl {
     /// @notice Generates a random value of a given type
     /// @dev Calls the desired function
     /// @param uintType the type of the random value to generate
-    function random(uint8 uintType) internal returns (uint256) {
+    function random(uint8 uintType) internal returns (CiphertextKey memory) {
         return random(uintType, 0, 0);
     }
 
-}
-
-/// @title Interface for solidity consumers that wanna receive result of decrypt tasks
-/// @notice Implement the callback function in your contract to handle decrypt/sealoutput results
-interface IAsyncFHEReceiver {
-    function handleDecryptResult(bytes memory ctHash, uint256 result) external;
-    function handleSealOutputResult(bytes memory ctHash, string memory result) external;
-}
-
-/// @title Interface for the TaskManager contract
-/// @notice This interface is used to create tasks for the FHE operations through FHE.sol
-interface ITaskManager {
-    function createTask(uint256 ctHash, uint8 utype, string memory operation, uint256 input1) external;
-    function createTask(uint256 ctHash, uint8 utype, string memory operation, uint256 input1, uint256 input2) external;
-    function createTask(uint256 ctHash, uint8 utype, string memory operation, uint256 input1, uint256 input2, uint256 input3) external;
-    function createTask(uint256 ctHash, string memory operation, uint256 input1, uint256 input2) external; //should be reomved
-
-    function createDecryptTask(uint256 ctHash) external;
-    function createSealOutputTask(uint256 ctHash, bytes32 publicKey) external;
 }
 
 library FHE {
@@ -697,7 +574,7 @@ library FHE {
             lhs = asEuint8(0);
         }
 
-        return Common.keyAsEuint8(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), Common.FunctionId.add));
+        return Common.keyAsEuint8(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), FunctionId.add));
     }
 
     /// @notice This function performs the add async operation
@@ -713,7 +590,7 @@ library FHE {
             lhs = asEuint16(0);
         }
 
-        return Common.keyAsEuint16(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), Common.FunctionId.add));
+        return Common.keyAsEuint16(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), FunctionId.add));
     }
 
     /// @notice This function performs the add async operation
@@ -729,7 +606,7 @@ library FHE {
             lhs = asEuint32(0);
         }
 
-        return Common.keyAsEuint32(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), Common.FunctionId.add));
+        return Common.keyAsEuint32(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), FunctionId.add));
     }
 
     /// @notice This function performs the add async operation
@@ -745,7 +622,7 @@ library FHE {
             lhs = asEuint64(0);
         }
 
-        return Common.keyAsEuint64(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), Common.FunctionId.add));
+        return Common.keyAsEuint64(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), FunctionId.add));
     }
 
     /// @notice This function performs the add async operation
@@ -761,7 +638,7 @@ library FHE {
             lhs = asEuint128(0);
         }
 
-        return Common.keyAsEuint128(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), Common.FunctionId.add));
+        return Common.keyAsEuint128(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), FunctionId.add));
     }
 
     /// @notice This function performs the add async operation
@@ -777,7 +654,7 @@ library FHE {
             lhs = asEuint256(0);
         }
 
-        return Common.keyAsEuint256(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), Common.FunctionId.add));
+        return Common.keyAsEuint256(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), FunctionId.add));
     }
 
     /// @notice This function performs the lte async operation
@@ -785,7 +662,7 @@ library FHE {
     /// @param lhs The first input
     /// @param rhs The second input
     /// @return The result of the operation
-    function lte(euint8 memory lhs, euint8 memory rhs) internal returns (euint8 memory) {
+    function lte(euint8 memory lhs, euint8 memory rhs) internal returns (ebool memory) {
         if (!Common.isInitialized(lhs)) {
             lhs = asEuint8(0);
         }
@@ -793,7 +670,7 @@ library FHE {
             lhs = asEuint8(0);
         }
 
-        return Common.keyAsEuint8(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), Common.FunctionId.lte));
+        return Common.keyAsEbool(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), FunctionId.lte));
     }
 
     /// @notice This function performs the lte async operation
@@ -801,7 +678,7 @@ library FHE {
     /// @param lhs The first input
     /// @param rhs The second input
     /// @return The result of the operation
-    function lte(euint16 memory lhs, euint16 memory rhs) internal returns (euint16 memory) {
+    function lte(euint16 memory lhs, euint16 memory rhs) internal returns (ebool memory) {
         if (!Common.isInitialized(lhs)) {
             lhs = asEuint16(0);
         }
@@ -809,7 +686,7 @@ library FHE {
             lhs = asEuint16(0);
         }
 
-        return Common.keyAsEuint16(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), Common.FunctionId.lte));
+        return Common.keyAsEbool(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), FunctionId.lte));
     }
 
     /// @notice This function performs the lte async operation
@@ -817,7 +694,7 @@ library FHE {
     /// @param lhs The first input
     /// @param rhs The second input
     /// @return The result of the operation
-    function lte(euint32 memory lhs, euint32 memory rhs) internal returns (euint32 memory) {
+    function lte(euint32 memory lhs, euint32 memory rhs) internal returns (ebool memory) {
         if (!Common.isInitialized(lhs)) {
             lhs = asEuint32(0);
         }
@@ -825,7 +702,7 @@ library FHE {
             lhs = asEuint32(0);
         }
 
-        return Common.keyAsEuint32(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), Common.FunctionId.lte));
+        return Common.keyAsEbool(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), FunctionId.lte));
     }
 
     /// @notice This function performs the lte async operation
@@ -833,7 +710,7 @@ library FHE {
     /// @param lhs The first input
     /// @param rhs The second input
     /// @return The result of the operation
-    function lte(euint64 memory lhs, euint64 memory rhs) internal returns (euint64 memory) {
+    function lte(euint64 memory lhs, euint64 memory rhs) internal returns (ebool memory) {
         if (!Common.isInitialized(lhs)) {
             lhs = asEuint64(0);
         }
@@ -841,7 +718,7 @@ library FHE {
             lhs = asEuint64(0);
         }
 
-        return Common.keyAsEuint64(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), Common.FunctionId.lte));
+        return Common.keyAsEbool(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), FunctionId.lte));
     }
 
     /// @notice This function performs the lte async operation
@@ -849,7 +726,7 @@ library FHE {
     /// @param lhs The first input
     /// @param rhs The second input
     /// @return The result of the operation
-    function lte(euint128 memory lhs, euint128 memory rhs) internal returns (euint128 memory) {
+    function lte(euint128 memory lhs, euint128 memory rhs) internal returns (ebool memory) {
         if (!Common.isInitialized(lhs)) {
             lhs = asEuint128(0);
         }
@@ -857,7 +734,7 @@ library FHE {
             lhs = asEuint128(0);
         }
 
-        return Common.keyAsEuint128(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), Common.FunctionId.lte));
+        return Common.keyAsEbool(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), FunctionId.lte));
     }
 
     /// @notice This function performs the lte async operation
@@ -865,7 +742,7 @@ library FHE {
     /// @param lhs The first input
     /// @param rhs The second input
     /// @return The result of the operation
-    function lte(euint256 memory lhs, euint256 memory rhs) internal returns (euint256 memory) {
+    function lte(euint256 memory lhs, euint256 memory rhs) internal returns (ebool memory) {
         if (!Common.isInitialized(lhs)) {
             lhs = asEuint256(0);
         }
@@ -873,7 +750,7 @@ library FHE {
             lhs = asEuint256(0);
         }
 
-        return Common.keyAsEuint256(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), Common.FunctionId.lte));
+        return Common.keyAsEbool(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), FunctionId.lte));
     }
 
     /// @notice This function performs the sub async operation
@@ -889,7 +766,7 @@ library FHE {
             lhs = asEuint8(0);
         }
 
-        return Common.keyAsEuint8(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), Common.FunctionId.sub));
+        return Common.keyAsEuint8(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), FunctionId.sub));
     }
 
     /// @notice This function performs the sub async operation
@@ -905,7 +782,7 @@ library FHE {
             lhs = asEuint16(0);
         }
 
-        return Common.keyAsEuint16(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), Common.FunctionId.sub));
+        return Common.keyAsEuint16(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), FunctionId.sub));
     }
 
     /// @notice This function performs the sub async operation
@@ -921,7 +798,7 @@ library FHE {
             lhs = asEuint32(0);
         }
 
-        return Common.keyAsEuint32(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), Common.FunctionId.sub));
+        return Common.keyAsEuint32(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), FunctionId.sub));
     }
 
     /// @notice This function performs the sub async operation
@@ -937,7 +814,7 @@ library FHE {
             lhs = asEuint64(0);
         }
 
-        return Common.keyAsEuint64(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), Common.FunctionId.sub));
+        return Common.keyAsEuint64(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), FunctionId.sub));
     }
 
     /// @notice This function performs the sub async operation
@@ -953,7 +830,7 @@ library FHE {
             lhs = asEuint128(0);
         }
 
-        return Common.keyAsEuint128(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), Common.FunctionId.sub));
+        return Common.keyAsEuint128(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), FunctionId.sub));
     }
 
     /// @notice This function performs the sub async operation
@@ -969,7 +846,7 @@ library FHE {
             lhs = asEuint256(0);
         }
 
-        return Common.keyAsEuint256(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), Common.FunctionId.sub));
+        return Common.keyAsEuint256(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), FunctionId.sub));
     }
 
     /// @notice This function performs the mul async operation
@@ -985,7 +862,7 @@ library FHE {
             lhs = asEuint8(0);
         }
 
-        return Common.keyAsEuint8(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), Common.FunctionId.mul));
+        return Common.keyAsEuint8(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), FunctionId.mul));
     }
 
     /// @notice This function performs the mul async operation
@@ -1001,7 +878,7 @@ library FHE {
             lhs = asEuint16(0);
         }
 
-        return Common.keyAsEuint16(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), Common.FunctionId.mul));
+        return Common.keyAsEuint16(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), FunctionId.mul));
     }
 
     /// @notice This function performs the mul async operation
@@ -1017,7 +894,7 @@ library FHE {
             lhs = asEuint32(0);
         }
 
-        return Common.keyAsEuint32(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), Common.FunctionId.mul));
+        return Common.keyAsEuint32(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), FunctionId.mul));
     }
 
     /// @notice This function performs the mul async operation
@@ -1033,7 +910,7 @@ library FHE {
             lhs = asEuint64(0);
         }
 
-        return Common.keyAsEuint64(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), Common.FunctionId.mul));
+        return Common.keyAsEuint64(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), FunctionId.mul));
     }
 
     /// @notice This function performs the mul async operation
@@ -1049,7 +926,7 @@ library FHE {
             lhs = asEuint128(0);
         }
 
-        return Common.keyAsEuint128(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), Common.FunctionId.mul));
+        return Common.keyAsEuint128(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), FunctionId.mul));
     }
 
     /// @notice This function performs the mul async operation
@@ -1065,7 +942,7 @@ library FHE {
             lhs = asEuint256(0);
         }
 
-        return Common.keyAsEuint256(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), Common.FunctionId.mul));
+        return Common.keyAsEuint256(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), FunctionId.mul));
     }
 
     /// @notice This function performs the lt async operation
@@ -1073,7 +950,7 @@ library FHE {
     /// @param lhs The first input
     /// @param rhs The second input
     /// @return The result of the operation
-    function lt(euint8 memory lhs, euint8 memory rhs) internal returns (euint8 memory) {
+    function lt(euint8 memory lhs, euint8 memory rhs) internal returns (ebool memory) {
         if (!Common.isInitialized(lhs)) {
             lhs = asEuint8(0);
         }
@@ -1081,7 +958,7 @@ library FHE {
             lhs = asEuint8(0);
         }
 
-        return Common.keyAsEuint8(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), Common.FunctionId.lt));
+        return Common.keyAsEbool(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), FunctionId.lt));
     }
 
     /// @notice This function performs the lt async operation
@@ -1089,7 +966,7 @@ library FHE {
     /// @param lhs The first input
     /// @param rhs The second input
     /// @return The result of the operation
-    function lt(euint16 memory lhs, euint16 memory rhs) internal returns (euint16 memory) {
+    function lt(euint16 memory lhs, euint16 memory rhs) internal returns (ebool memory) {
         if (!Common.isInitialized(lhs)) {
             lhs = asEuint16(0);
         }
@@ -1097,7 +974,7 @@ library FHE {
             lhs = asEuint16(0);
         }
 
-        return Common.keyAsEuint16(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), Common.FunctionId.lt));
+        return Common.keyAsEbool(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), FunctionId.lt));
     }
 
     /// @notice This function performs the lt async operation
@@ -1105,7 +982,7 @@ library FHE {
     /// @param lhs The first input
     /// @param rhs The second input
     /// @return The result of the operation
-    function lt(euint32 memory lhs, euint32 memory rhs) internal returns (euint32 memory) {
+    function lt(euint32 memory lhs, euint32 memory rhs) internal returns (ebool memory) {
         if (!Common.isInitialized(lhs)) {
             lhs = asEuint32(0);
         }
@@ -1113,7 +990,7 @@ library FHE {
             lhs = asEuint32(0);
         }
 
-        return Common.keyAsEuint32(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), Common.FunctionId.lt));
+        return Common.keyAsEbool(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), FunctionId.lt));
     }
 
     /// @notice This function performs the lt async operation
@@ -1121,7 +998,7 @@ library FHE {
     /// @param lhs The first input
     /// @param rhs The second input
     /// @return The result of the operation
-    function lt(euint64 memory lhs, euint64 memory rhs) internal returns (euint64 memory) {
+    function lt(euint64 memory lhs, euint64 memory rhs) internal returns (ebool memory) {
         if (!Common.isInitialized(lhs)) {
             lhs = asEuint64(0);
         }
@@ -1129,7 +1006,7 @@ library FHE {
             lhs = asEuint64(0);
         }
 
-        return Common.keyAsEuint64(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), Common.FunctionId.lt));
+        return Common.keyAsEbool(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), FunctionId.lt));
     }
 
     /// @notice This function performs the lt async operation
@@ -1137,7 +1014,7 @@ library FHE {
     /// @param lhs The first input
     /// @param rhs The second input
     /// @return The result of the operation
-    function lt(euint128 memory lhs, euint128 memory rhs) internal returns (euint128 memory) {
+    function lt(euint128 memory lhs, euint128 memory rhs) internal returns (ebool memory) {
         if (!Common.isInitialized(lhs)) {
             lhs = asEuint128(0);
         }
@@ -1145,7 +1022,7 @@ library FHE {
             lhs = asEuint128(0);
         }
 
-        return Common.keyAsEuint128(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), Common.FunctionId.lt));
+        return Common.keyAsEbool(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), FunctionId.lt));
     }
 
     /// @notice This function performs the lt async operation
@@ -1153,7 +1030,7 @@ library FHE {
     /// @param lhs The first input
     /// @param rhs The second input
     /// @return The result of the operation
-    function lt(euint256 memory lhs, euint256 memory rhs) internal returns (euint256 memory) {
+    function lt(euint256 memory lhs, euint256 memory rhs) internal returns (ebool memory) {
         if (!Common.isInitialized(lhs)) {
             lhs = asEuint256(0);
         }
@@ -1161,7 +1038,7 @@ library FHE {
             lhs = asEuint256(0);
         }
 
-        return Common.keyAsEuint256(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), Common.FunctionId.lt));
+        return Common.keyAsEbool(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), FunctionId.lt));
     }
 
     /// @notice This function performs the div async operation
@@ -1177,7 +1054,7 @@ library FHE {
             lhs = asEuint8(0);
         }
 
-        return Common.keyAsEuint8(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), Common.FunctionId.div));
+        return Common.keyAsEuint8(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), FunctionId.div));
     }
 
     /// @notice This function performs the div async operation
@@ -1193,7 +1070,7 @@ library FHE {
             lhs = asEuint16(0);
         }
 
-        return Common.keyAsEuint16(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), Common.FunctionId.div));
+        return Common.keyAsEuint16(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), FunctionId.div));
     }
 
     /// @notice This function performs the div async operation
@@ -1209,7 +1086,7 @@ library FHE {
             lhs = asEuint32(0);
         }
 
-        return Common.keyAsEuint32(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), Common.FunctionId.div));
+        return Common.keyAsEuint32(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), FunctionId.div));
     }
 
     /// @notice This function performs the div async operation
@@ -1225,7 +1102,7 @@ library FHE {
             lhs = asEuint64(0);
         }
 
-        return Common.keyAsEuint64(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), Common.FunctionId.div));
+        return Common.keyAsEuint64(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), FunctionId.div));
     }
 
     /// @notice This function performs the div async operation
@@ -1241,7 +1118,7 @@ library FHE {
             lhs = asEuint128(0);
         }
 
-        return Common.keyAsEuint128(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), Common.FunctionId.div));
+        return Common.keyAsEuint128(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), FunctionId.div));
     }
 
     /// @notice This function performs the div async operation
@@ -1257,7 +1134,7 @@ library FHE {
             lhs = asEuint256(0);
         }
 
-        return Common.keyAsEuint256(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), Common.FunctionId.div));
+        return Common.keyAsEuint256(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), FunctionId.div));
     }
 
     /// @notice This function performs the gt async operation
@@ -1265,7 +1142,7 @@ library FHE {
     /// @param lhs The first input
     /// @param rhs The second input
     /// @return The result of the operation
-    function gt(euint8 memory lhs, euint8 memory rhs) internal returns (euint8 memory) {
+    function gt(euint8 memory lhs, euint8 memory rhs) internal returns (ebool memory) {
         if (!Common.isInitialized(lhs)) {
             lhs = asEuint8(0);
         }
@@ -1273,7 +1150,7 @@ library FHE {
             lhs = asEuint8(0);
         }
 
-        return Common.keyAsEuint8(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), Common.FunctionId.gt));
+        return Common.keyAsEbool(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), FunctionId.gt));
     }
 
     /// @notice This function performs the gt async operation
@@ -1281,7 +1158,7 @@ library FHE {
     /// @param lhs The first input
     /// @param rhs The second input
     /// @return The result of the operation
-    function gt(euint16 memory lhs, euint16 memory rhs) internal returns (euint16 memory) {
+    function gt(euint16 memory lhs, euint16 memory rhs) internal returns (ebool memory) {
         if (!Common.isInitialized(lhs)) {
             lhs = asEuint16(0);
         }
@@ -1289,7 +1166,7 @@ library FHE {
             lhs = asEuint16(0);
         }
 
-        return Common.keyAsEuint16(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), Common.FunctionId.gt));
+        return Common.keyAsEbool(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), FunctionId.gt));
     }
 
     /// @notice This function performs the gt async operation
@@ -1297,7 +1174,7 @@ library FHE {
     /// @param lhs The first input
     /// @param rhs The second input
     /// @return The result of the operation
-    function gt(euint32 memory lhs, euint32 memory rhs) internal returns (euint32 memory) {
+    function gt(euint32 memory lhs, euint32 memory rhs) internal returns (ebool memory) {
         if (!Common.isInitialized(lhs)) {
             lhs = asEuint32(0);
         }
@@ -1305,7 +1182,7 @@ library FHE {
             lhs = asEuint32(0);
         }
 
-        return Common.keyAsEuint32(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), Common.FunctionId.gt));
+        return Common.keyAsEbool(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), FunctionId.gt));
     }
 
     /// @notice This function performs the gt async operation
@@ -1313,7 +1190,7 @@ library FHE {
     /// @param lhs The first input
     /// @param rhs The second input
     /// @return The result of the operation
-    function gt(euint64 memory lhs, euint64 memory rhs) internal returns (euint64 memory) {
+    function gt(euint64 memory lhs, euint64 memory rhs) internal returns (ebool memory) {
         if (!Common.isInitialized(lhs)) {
             lhs = asEuint64(0);
         }
@@ -1321,7 +1198,7 @@ library FHE {
             lhs = asEuint64(0);
         }
 
-        return Common.keyAsEuint64(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), Common.FunctionId.gt));
+        return Common.keyAsEbool(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), FunctionId.gt));
     }
 
     /// @notice This function performs the gt async operation
@@ -1329,7 +1206,7 @@ library FHE {
     /// @param lhs The first input
     /// @param rhs The second input
     /// @return The result of the operation
-    function gt(euint128 memory lhs, euint128 memory rhs) internal returns (euint128 memory) {
+    function gt(euint128 memory lhs, euint128 memory rhs) internal returns (ebool memory) {
         if (!Common.isInitialized(lhs)) {
             lhs = asEuint128(0);
         }
@@ -1337,7 +1214,7 @@ library FHE {
             lhs = asEuint128(0);
         }
 
-        return Common.keyAsEuint128(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), Common.FunctionId.gt));
+        return Common.keyAsEbool(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), FunctionId.gt));
     }
 
     /// @notice This function performs the gt async operation
@@ -1345,7 +1222,7 @@ library FHE {
     /// @param lhs The first input
     /// @param rhs The second input
     /// @return The result of the operation
-    function gt(euint256 memory lhs, euint256 memory rhs) internal returns (euint256 memory) {
+    function gt(euint256 memory lhs, euint256 memory rhs) internal returns (ebool memory) {
         if (!Common.isInitialized(lhs)) {
             lhs = asEuint256(0);
         }
@@ -1353,7 +1230,7 @@ library FHE {
             lhs = asEuint256(0);
         }
 
-        return Common.keyAsEuint256(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), Common.FunctionId.gt));
+        return Common.keyAsEbool(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), FunctionId.gt));
     }
 
     /// @notice This function performs the gte async operation
@@ -1361,7 +1238,7 @@ library FHE {
     /// @param lhs The first input
     /// @param rhs The second input
     /// @return The result of the operation
-    function gte(euint8 memory lhs, euint8 memory rhs) internal returns (euint8 memory) {
+    function gte(euint8 memory lhs, euint8 memory rhs) internal returns (ebool memory) {
         if (!Common.isInitialized(lhs)) {
             lhs = asEuint8(0);
         }
@@ -1369,7 +1246,7 @@ library FHE {
             lhs = asEuint8(0);
         }
 
-        return Common.keyAsEuint8(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), Common.FunctionId.gte));
+        return Common.keyAsEbool(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), FunctionId.gte));
     }
 
     /// @notice This function performs the gte async operation
@@ -1377,7 +1254,7 @@ library FHE {
     /// @param lhs The first input
     /// @param rhs The second input
     /// @return The result of the operation
-    function gte(euint16 memory lhs, euint16 memory rhs) internal returns (euint16 memory) {
+    function gte(euint16 memory lhs, euint16 memory rhs) internal returns (ebool memory) {
         if (!Common.isInitialized(lhs)) {
             lhs = asEuint16(0);
         }
@@ -1385,7 +1262,7 @@ library FHE {
             lhs = asEuint16(0);
         }
 
-        return Common.keyAsEuint16(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), Common.FunctionId.gte));
+        return Common.keyAsEbool(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), FunctionId.gte));
     }
 
     /// @notice This function performs the gte async operation
@@ -1393,7 +1270,7 @@ library FHE {
     /// @param lhs The first input
     /// @param rhs The second input
     /// @return The result of the operation
-    function gte(euint32 memory lhs, euint32 memory rhs) internal returns (euint32 memory) {
+    function gte(euint32 memory lhs, euint32 memory rhs) internal returns (ebool memory) {
         if (!Common.isInitialized(lhs)) {
             lhs = asEuint32(0);
         }
@@ -1401,7 +1278,7 @@ library FHE {
             lhs = asEuint32(0);
         }
 
-        return Common.keyAsEuint32(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), Common.FunctionId.gte));
+        return Common.keyAsEbool(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), FunctionId.gte));
     }
 
     /// @notice This function performs the gte async operation
@@ -1409,7 +1286,7 @@ library FHE {
     /// @param lhs The first input
     /// @param rhs The second input
     /// @return The result of the operation
-    function gte(euint64 memory lhs, euint64 memory rhs) internal returns (euint64 memory) {
+    function gte(euint64 memory lhs, euint64 memory rhs) internal returns (ebool memory) {
         if (!Common.isInitialized(lhs)) {
             lhs = asEuint64(0);
         }
@@ -1417,7 +1294,7 @@ library FHE {
             lhs = asEuint64(0);
         }
 
-        return Common.keyAsEuint64(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), Common.FunctionId.gte));
+        return Common.keyAsEbool(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), FunctionId.gte));
     }
 
     /// @notice This function performs the gte async operation
@@ -1425,7 +1302,7 @@ library FHE {
     /// @param lhs The first input
     /// @param rhs The second input
     /// @return The result of the operation
-    function gte(euint128 memory lhs, euint128 memory rhs) internal returns (euint128 memory) {
+    function gte(euint128 memory lhs, euint128 memory rhs) internal returns (ebool memory) {
         if (!Common.isInitialized(lhs)) {
             lhs = asEuint128(0);
         }
@@ -1433,7 +1310,7 @@ library FHE {
             lhs = asEuint128(0);
         }
 
-        return Common.keyAsEuint128(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), Common.FunctionId.gte));
+        return Common.keyAsEbool(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), FunctionId.gte));
     }
 
     /// @notice This function performs the gte async operation
@@ -1441,7 +1318,7 @@ library FHE {
     /// @param lhs The first input
     /// @param rhs The second input
     /// @return The result of the operation
-    function gte(euint256 memory lhs, euint256 memory rhs) internal returns (euint256 memory) {
+    function gte(euint256 memory lhs, euint256 memory rhs) internal returns (ebool memory) {
         if (!Common.isInitialized(lhs)) {
             lhs = asEuint256(0);
         }
@@ -1449,7 +1326,7 @@ library FHE {
             lhs = asEuint256(0);
         }
 
-        return Common.keyAsEuint256(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), Common.FunctionId.gte));
+        return Common.keyAsEbool(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), FunctionId.gte));
     }
 
     /// @notice This function performs the rem async operation
@@ -1465,7 +1342,7 @@ library FHE {
             lhs = asEuint8(0);
         }
 
-        return Common.keyAsEuint8(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), Common.FunctionId.rem));
+        return Common.keyAsEuint8(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), FunctionId.rem));
     }
 
     /// @notice This function performs the rem async operation
@@ -1481,7 +1358,7 @@ library FHE {
             lhs = asEuint16(0);
         }
 
-        return Common.keyAsEuint16(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), Common.FunctionId.rem));
+        return Common.keyAsEuint16(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), FunctionId.rem));
     }
 
     /// @notice This function performs the rem async operation
@@ -1497,7 +1374,7 @@ library FHE {
             lhs = asEuint32(0);
         }
 
-        return Common.keyAsEuint32(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), Common.FunctionId.rem));
+        return Common.keyAsEuint32(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), FunctionId.rem));
     }
 
     /// @notice This function performs the rem async operation
@@ -1513,7 +1390,7 @@ library FHE {
             lhs = asEuint64(0);
         }
 
-        return Common.keyAsEuint64(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), Common.FunctionId.rem));
+        return Common.keyAsEuint64(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), FunctionId.rem));
     }
 
     /// @notice This function performs the rem async operation
@@ -1529,7 +1406,7 @@ library FHE {
             lhs = asEuint128(0);
         }
 
-        return Common.keyAsEuint128(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), Common.FunctionId.rem));
+        return Common.keyAsEuint128(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), FunctionId.rem));
     }
 
     /// @notice This function performs the rem async operation
@@ -1545,7 +1422,7 @@ library FHE {
             lhs = asEuint256(0);
         }
 
-        return Common.keyAsEuint256(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), Common.FunctionId.rem));
+        return Common.keyAsEuint256(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), FunctionId.rem));
     }
 
     /// @notice This function performs the and async operation
@@ -1561,7 +1438,7 @@ library FHE {
             lhs = asEbool(true);
         }
 
-        return Common.keyAsEbool(Impl.mathOp(Common.eboolAsKey(lhs), Common.eboolAsKey(rhs), Common.FunctionId.and));
+        return Common.keyAsEbool(Impl.mathOp(Common.eboolAsKey(lhs), Common.eboolAsKey(rhs), FunctionId.and));
     }
 
     /// @notice This function performs the and async operation
@@ -1577,7 +1454,7 @@ library FHE {
             lhs = asEuint8(0);
         }
 
-        return Common.keyAsEuint8(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), Common.FunctionId.and));
+        return Common.keyAsEuint8(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), FunctionId.and));
     }
 
     /// @notice This function performs the and async operation
@@ -1593,7 +1470,7 @@ library FHE {
             lhs = asEuint16(0);
         }
 
-        return Common.keyAsEuint16(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), Common.FunctionId.and));
+        return Common.keyAsEuint16(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), FunctionId.and));
     }
 
     /// @notice This function performs the and async operation
@@ -1609,7 +1486,7 @@ library FHE {
             lhs = asEuint32(0);
         }
 
-        return Common.keyAsEuint32(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), Common.FunctionId.and));
+        return Common.keyAsEuint32(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), FunctionId.and));
     }
 
     /// @notice This function performs the and async operation
@@ -1625,7 +1502,7 @@ library FHE {
             lhs = asEuint64(0);
         }
 
-        return Common.keyAsEuint64(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), Common.FunctionId.and));
+        return Common.keyAsEuint64(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), FunctionId.and));
     }
 
     /// @notice This function performs the and async operation
@@ -1641,7 +1518,7 @@ library FHE {
             lhs = asEuint128(0);
         }
 
-        return Common.keyAsEuint128(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), Common.FunctionId.and));
+        return Common.keyAsEuint128(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), FunctionId.and));
     }
 
     /// @notice This function performs the and async operation
@@ -1657,7 +1534,7 @@ library FHE {
             lhs = asEuint256(0);
         }
 
-        return Common.keyAsEuint256(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), Common.FunctionId.and));
+        return Common.keyAsEuint256(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), FunctionId.and));
     }
 
     /// @notice This function performs the or async operation
@@ -1673,7 +1550,7 @@ library FHE {
             lhs = asEbool(true);
         }
 
-        return Common.keyAsEbool(Impl.mathOp(Common.eboolAsKey(lhs), Common.eboolAsKey(rhs), Common.FunctionId.or));
+        return Common.keyAsEbool(Impl.mathOp(Common.eboolAsKey(lhs), Common.eboolAsKey(rhs), FunctionId.or));
     }
 
     /// @notice This function performs the or async operation
@@ -1689,7 +1566,7 @@ library FHE {
             lhs = asEuint8(0);
         }
 
-        return Common.keyAsEuint8(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), Common.FunctionId.or));
+        return Common.keyAsEuint8(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), FunctionId.or));
     }
 
     /// @notice This function performs the or async operation
@@ -1705,7 +1582,7 @@ library FHE {
             lhs = asEuint16(0);
         }
 
-        return Common.keyAsEuint16(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), Common.FunctionId.or));
+        return Common.keyAsEuint16(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), FunctionId.or));
     }
 
     /// @notice This function performs the or async operation
@@ -1721,7 +1598,7 @@ library FHE {
             lhs = asEuint32(0);
         }
 
-        return Common.keyAsEuint32(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), Common.FunctionId.or));
+        return Common.keyAsEuint32(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), FunctionId.or));
     }
 
     /// @notice This function performs the or async operation
@@ -1737,7 +1614,7 @@ library FHE {
             lhs = asEuint64(0);
         }
 
-        return Common.keyAsEuint64(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), Common.FunctionId.or));
+        return Common.keyAsEuint64(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), FunctionId.or));
     }
 
     /// @notice This function performs the or async operation
@@ -1753,7 +1630,7 @@ library FHE {
             lhs = asEuint128(0);
         }
 
-        return Common.keyAsEuint128(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), Common.FunctionId.or));
+        return Common.keyAsEuint128(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), FunctionId.or));
     }
 
     /// @notice This function performs the or async operation
@@ -1769,7 +1646,7 @@ library FHE {
             lhs = asEuint256(0);
         }
 
-        return Common.keyAsEuint256(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), Common.FunctionId.or));
+        return Common.keyAsEuint256(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), FunctionId.or));
     }
 
     /// @notice This function performs the xor async operation
@@ -1785,7 +1662,7 @@ library FHE {
             lhs = asEbool(true);
         }
 
-        return Common.keyAsEbool(Impl.mathOp(Common.eboolAsKey(lhs), Common.eboolAsKey(rhs), Common.FunctionId.xor));
+        return Common.keyAsEbool(Impl.mathOp(Common.eboolAsKey(lhs), Common.eboolAsKey(rhs), FunctionId.xor));
     }
 
     /// @notice This function performs the xor async operation
@@ -1801,7 +1678,7 @@ library FHE {
             lhs = asEuint8(0);
         }
 
-        return Common.keyAsEuint8(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), Common.FunctionId.xor));
+        return Common.keyAsEuint8(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), FunctionId.xor));
     }
 
     /// @notice This function performs the xor async operation
@@ -1817,7 +1694,7 @@ library FHE {
             lhs = asEuint16(0);
         }
 
-        return Common.keyAsEuint16(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), Common.FunctionId.xor));
+        return Common.keyAsEuint16(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), FunctionId.xor));
     }
 
     /// @notice This function performs the xor async operation
@@ -1833,7 +1710,7 @@ library FHE {
             lhs = asEuint32(0);
         }
 
-        return Common.keyAsEuint32(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), Common.FunctionId.xor));
+        return Common.keyAsEuint32(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), FunctionId.xor));
     }
 
     /// @notice This function performs the xor async operation
@@ -1849,7 +1726,7 @@ library FHE {
             lhs = asEuint64(0);
         }
 
-        return Common.keyAsEuint64(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), Common.FunctionId.xor));
+        return Common.keyAsEuint64(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), FunctionId.xor));
     }
 
     /// @notice This function performs the xor async operation
@@ -1865,7 +1742,7 @@ library FHE {
             lhs = asEuint128(0);
         }
 
-        return Common.keyAsEuint128(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), Common.FunctionId.xor));
+        return Common.keyAsEuint128(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), FunctionId.xor));
     }
 
     /// @notice This function performs the xor async operation
@@ -1881,7 +1758,7 @@ library FHE {
             lhs = asEuint256(0);
         }
 
-        return Common.keyAsEuint256(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), Common.FunctionId.xor));
+        return Common.keyAsEuint256(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), FunctionId.xor));
     }
 
     /// @notice This function performs the eq async operation
@@ -1897,7 +1774,7 @@ library FHE {
             lhs = asEbool(true);
         }
 
-        return Common.keyAsEbool(Impl.mathOp(Common.eboolAsKey(lhs), Common.eboolAsKey(rhs), Common.FunctionId.eq));
+        return Common.keyAsEbool(Impl.mathOp(Common.eboolAsKey(lhs), Common.eboolAsKey(rhs), FunctionId.eq));
     }
 
     /// @notice This function performs the eq async operation
@@ -1913,7 +1790,7 @@ library FHE {
             lhs = asEuint8(0);
         }
 
-        return Common.keyAsEuint8(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), Common.FunctionId.eq));
+        return Common.keyAsEbool(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), FunctionId.eq));
     }
 
     /// @notice This function performs the eq async operation
@@ -1929,7 +1806,7 @@ library FHE {
             lhs = asEuint16(0);
         }
 
-        return Common.keyAsEuint16(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), Common.FunctionId.eq));
+        return Common.keyAsEbool(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), FunctionId.eq));
     }
 
     /// @notice This function performs the eq async operation
@@ -1945,7 +1822,7 @@ library FHE {
             lhs = asEuint32(0);
         }
 
-        return Common.keyAsEuint32(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), Common.FunctionId.eq));
+        return Common.keyAsEbool(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), FunctionId.eq));
     }
 
     /// @notice This function performs the eq async operation
@@ -1961,7 +1838,7 @@ library FHE {
             lhs = asEuint64(0);
         }
 
-        return Common.keyAsEuint64(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), Common.FunctionId.eq));
+        return Common.keyAsEbool(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), FunctionId.eq));
     }
 
     /// @notice This function performs the eq async operation
@@ -1977,7 +1854,7 @@ library FHE {
             lhs = asEuint128(0);
         }
 
-        return Common.keyAsEuint128(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), Common.FunctionId.eq));
+        return Common.keyAsEbool(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), FunctionId.eq));
     }
 
     /// @notice This function performs the eq async operation
@@ -1993,7 +1870,7 @@ library FHE {
             lhs = asEuint256(0);
         }
 
-        return Common.keyAsEuint256(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), Common.FunctionId.eq));
+        return Common.keyAsEbool(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), FunctionId.eq));
     }
 
     /// @notice This function performs the eq async operation
@@ -2003,13 +1880,13 @@ library FHE {
     /// @return The result of the operation
     function eq(eaddress memory lhs, eaddress memory rhs) internal returns (ebool memory) {
         if (!Common.isInitialized(lhs)) {
-            lhs = asEaddress(0);
+            lhs = asEaddress(address(0));
         }
         if (!Common.isInitialized(rhs)) {
-            lhs = asEaddress(0);
+            lhs = asEaddress(address(0));
         }
 
-        return Common.keyAsEaddress(Impl.mathOp(Common.eaddressAsKey(lhs), Common.eaddressAsKey(rhs), Common.FunctionId.eq));
+        return Common.keyAsEbool(Impl.mathOp(Common.eaddressAsKey(lhs), Common.eaddressAsKey(rhs), FunctionId.eq));
     }
 
     /// @notice This function performs the ne async operation
@@ -2025,7 +1902,7 @@ library FHE {
             lhs = asEbool(true);
         }
 
-        return Common.keyAsEbool(Impl.mathOp(Common.eboolAsKey(lhs), Common.eboolAsKey(rhs), Common.FunctionId.ne));
+        return Common.keyAsEbool(Impl.mathOp(Common.eboolAsKey(lhs), Common.eboolAsKey(rhs), FunctionId.ne));
     }
 
     /// @notice This function performs the ne async operation
@@ -2041,7 +1918,7 @@ library FHE {
             lhs = asEuint8(0);
         }
 
-        return Common.keyAsEuint8(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), Common.FunctionId.ne));
+        return Common.keyAsEbool(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), FunctionId.ne));
     }
 
     /// @notice This function performs the ne async operation
@@ -2057,7 +1934,7 @@ library FHE {
             lhs = asEuint16(0);
         }
 
-        return Common.keyAsEuint16(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), Common.FunctionId.ne));
+        return Common.keyAsEbool(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), FunctionId.ne));
     }
 
     /// @notice This function performs the ne async operation
@@ -2073,7 +1950,7 @@ library FHE {
             lhs = asEuint32(0);
         }
 
-        return Common.keyAsEuint32(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), Common.FunctionId.ne));
+        return Common.keyAsEbool(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), FunctionId.ne));
     }
 
     /// @notice This function performs the ne async operation
@@ -2089,7 +1966,7 @@ library FHE {
             lhs = asEuint64(0);
         }
 
-        return Common.keyAsEuint64(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), Common.FunctionId.ne));
+        return Common.keyAsEbool(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), FunctionId.ne));
     }
 
     /// @notice This function performs the ne async operation
@@ -2105,7 +1982,7 @@ library FHE {
             lhs = asEuint128(0);
         }
 
-        return Common.keyAsEuint128(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), Common.FunctionId.ne));
+        return Common.keyAsEbool(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), FunctionId.ne));
     }
 
     /// @notice This function performs the ne async operation
@@ -2121,7 +1998,7 @@ library FHE {
             lhs = asEuint256(0);
         }
 
-        return Common.keyAsEuint256(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), Common.FunctionId.ne));
+        return Common.keyAsEbool(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), FunctionId.ne));
     }
 
     /// @notice This function performs the ne async operation
@@ -2131,13 +2008,13 @@ library FHE {
     /// @return The result of the operation
     function ne(eaddress memory lhs, eaddress memory rhs) internal returns (ebool memory) {
         if (!Common.isInitialized(lhs)) {
-            lhs = asEaddress(0);
+            lhs = asEaddress(address(0));
         }
         if (!Common.isInitialized(rhs)) {
-            lhs = asEaddress(0);
+            lhs = asEaddress(address(0));
         }
 
-        return Common.keyAsEaddress(Impl.mathOp(Common.eaddressAsKey(lhs), Common.eaddressAsKey(rhs), Common.FunctionId.ne));
+        return Common.keyAsEbool(Impl.mathOp(Common.eaddressAsKey(lhs), Common.eaddressAsKey(rhs), FunctionId.ne));
     }
 
     /// @notice This function performs the min async operation
@@ -2153,7 +2030,7 @@ library FHE {
             lhs = asEuint8(0);
         }
 
-        return Common.keyAsEuint8(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), Common.FunctionId.min));
+        return Common.keyAsEuint8(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), FunctionId.min));
     }
 
     /// @notice This function performs the min async operation
@@ -2169,7 +2046,7 @@ library FHE {
             lhs = asEuint16(0);
         }
 
-        return Common.keyAsEuint16(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), Common.FunctionId.min));
+        return Common.keyAsEuint16(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), FunctionId.min));
     }
 
     /// @notice This function performs the min async operation
@@ -2185,7 +2062,7 @@ library FHE {
             lhs = asEuint32(0);
         }
 
-        return Common.keyAsEuint32(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), Common.FunctionId.min));
+        return Common.keyAsEuint32(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), FunctionId.min));
     }
 
     /// @notice This function performs the min async operation
@@ -2201,7 +2078,7 @@ library FHE {
             lhs = asEuint64(0);
         }
 
-        return Common.keyAsEuint64(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), Common.FunctionId.min));
+        return Common.keyAsEuint64(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), FunctionId.min));
     }
 
     /// @notice This function performs the min async operation
@@ -2217,7 +2094,7 @@ library FHE {
             lhs = asEuint128(0);
         }
 
-        return Common.keyAsEuint128(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), Common.FunctionId.min));
+        return Common.keyAsEuint128(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), FunctionId.min));
     }
 
     /// @notice This function performs the min async operation
@@ -2233,7 +2110,7 @@ library FHE {
             lhs = asEuint256(0);
         }
 
-        return Common.keyAsEuint256(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), Common.FunctionId.min));
+        return Common.keyAsEuint256(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), FunctionId.min));
     }
 
     /// @notice This function performs the max async operation
@@ -2249,7 +2126,7 @@ library FHE {
             lhs = asEuint8(0);
         }
 
-        return Common.keyAsEuint8(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), Common.FunctionId.max));
+        return Common.keyAsEuint8(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), FunctionId.max));
     }
 
     /// @notice This function performs the max async operation
@@ -2265,7 +2142,7 @@ library FHE {
             lhs = asEuint16(0);
         }
 
-        return Common.keyAsEuint16(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), Common.FunctionId.max));
+        return Common.keyAsEuint16(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), FunctionId.max));
     }
 
     /// @notice This function performs the max async operation
@@ -2281,7 +2158,7 @@ library FHE {
             lhs = asEuint32(0);
         }
 
-        return Common.keyAsEuint32(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), Common.FunctionId.max));
+        return Common.keyAsEuint32(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), FunctionId.max));
     }
 
     /// @notice This function performs the max async operation
@@ -2297,7 +2174,7 @@ library FHE {
             lhs = asEuint64(0);
         }
 
-        return Common.keyAsEuint64(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), Common.FunctionId.max));
+        return Common.keyAsEuint64(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), FunctionId.max));
     }
 
     /// @notice This function performs the max async operation
@@ -2313,7 +2190,7 @@ library FHE {
             lhs = asEuint128(0);
         }
 
-        return Common.keyAsEuint128(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), Common.FunctionId.max));
+        return Common.keyAsEuint128(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), FunctionId.max));
     }
 
     /// @notice This function performs the max async operation
@@ -2329,7 +2206,7 @@ library FHE {
             lhs = asEuint256(0);
         }
 
-        return Common.keyAsEuint256(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), Common.FunctionId.max));
+        return Common.keyAsEuint256(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), FunctionId.max));
     }
 
     /// @notice This function performs the shl async operation
@@ -2345,7 +2222,7 @@ library FHE {
             lhs = asEuint8(0);
         }
 
-        return Common.keyAsEuint8(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), Common.FunctionId.shl));
+        return Common.keyAsEuint8(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), FunctionId.shl));
     }
 
     /// @notice This function performs the shl async operation
@@ -2361,7 +2238,7 @@ library FHE {
             lhs = asEuint16(0);
         }
 
-        return Common.keyAsEuint16(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), Common.FunctionId.shl));
+        return Common.keyAsEuint16(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), FunctionId.shl));
     }
 
     /// @notice This function performs the shl async operation
@@ -2377,7 +2254,7 @@ library FHE {
             lhs = asEuint32(0);
         }
 
-        return Common.keyAsEuint32(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), Common.FunctionId.shl));
+        return Common.keyAsEuint32(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), FunctionId.shl));
     }
 
     /// @notice This function performs the shl async operation
@@ -2393,7 +2270,7 @@ library FHE {
             lhs = asEuint64(0);
         }
 
-        return Common.keyAsEuint64(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), Common.FunctionId.shl));
+        return Common.keyAsEuint64(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), FunctionId.shl));
     }
 
     /// @notice This function performs the shl async operation
@@ -2409,7 +2286,7 @@ library FHE {
             lhs = asEuint128(0);
         }
 
-        return Common.keyAsEuint128(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), Common.FunctionId.shl));
+        return Common.keyAsEuint128(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), FunctionId.shl));
     }
 
     /// @notice This function performs the shl async operation
@@ -2425,7 +2302,7 @@ library FHE {
             lhs = asEuint256(0);
         }
 
-        return Common.keyAsEuint256(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), Common.FunctionId.shl));
+        return Common.keyAsEuint256(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), FunctionId.shl));
     }
 
     /// @notice This function performs the shr async operation
@@ -2441,7 +2318,7 @@ library FHE {
             lhs = asEuint8(0);
         }
 
-        return Common.keyAsEuint8(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), Common.FunctionId.shr));
+        return Common.keyAsEuint8(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), FunctionId.shr));
     }
 
     /// @notice This function performs the shr async operation
@@ -2457,7 +2334,7 @@ library FHE {
             lhs = asEuint16(0);
         }
 
-        return Common.keyAsEuint16(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), Common.FunctionId.shr));
+        return Common.keyAsEuint16(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), FunctionId.shr));
     }
 
     /// @notice This function performs the shr async operation
@@ -2473,7 +2350,7 @@ library FHE {
             lhs = asEuint32(0);
         }
 
-        return Common.keyAsEuint32(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), Common.FunctionId.shr));
+        return Common.keyAsEuint32(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), FunctionId.shr));
     }
 
     /// @notice This function performs the shr async operation
@@ -2489,7 +2366,7 @@ library FHE {
             lhs = asEuint64(0);
         }
 
-        return Common.keyAsEuint64(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), Common.FunctionId.shr));
+        return Common.keyAsEuint64(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), FunctionId.shr));
     }
 
     /// @notice This function performs the shr async operation
@@ -2505,7 +2382,7 @@ library FHE {
             lhs = asEuint128(0);
         }
 
-        return Common.keyAsEuint128(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), Common.FunctionId.shr));
+        return Common.keyAsEuint128(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), FunctionId.shr));
     }
 
     /// @notice This function performs the shr async operation
@@ -2521,7 +2398,7 @@ library FHE {
             lhs = asEuint256(0);
         }
 
-        return Common.keyAsEuint256(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), Common.FunctionId.shr));
+        return Common.keyAsEuint256(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), FunctionId.shr));
     }
 
     /// @notice This function performs the rol async operation
@@ -2537,7 +2414,7 @@ library FHE {
             lhs = asEuint8(0);
         }
 
-        return Common.keyAsEuint8(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), Common.FunctionId.rol));
+        return Common.keyAsEuint8(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), FunctionId.rol));
     }
 
     /// @notice This function performs the rol async operation
@@ -2553,7 +2430,7 @@ library FHE {
             lhs = asEuint16(0);
         }
 
-        return Common.keyAsEuint16(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), Common.FunctionId.rol));
+        return Common.keyAsEuint16(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), FunctionId.rol));
     }
 
     /// @notice This function performs the rol async operation
@@ -2569,7 +2446,7 @@ library FHE {
             lhs = asEuint32(0);
         }
 
-        return Common.keyAsEuint32(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), Common.FunctionId.rol));
+        return Common.keyAsEuint32(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), FunctionId.rol));
     }
 
     /// @notice This function performs the rol async operation
@@ -2585,7 +2462,7 @@ library FHE {
             lhs = asEuint64(0);
         }
 
-        return Common.keyAsEuint64(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), Common.FunctionId.rol));
+        return Common.keyAsEuint64(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), FunctionId.rol));
     }
 
     /// @notice This function performs the rol async operation
@@ -2601,7 +2478,7 @@ library FHE {
             lhs = asEuint128(0);
         }
 
-        return Common.keyAsEuint128(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), Common.FunctionId.rol));
+        return Common.keyAsEuint128(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), FunctionId.rol));
     }
 
     /// @notice This function performs the rol async operation
@@ -2617,7 +2494,7 @@ library FHE {
             lhs = asEuint256(0);
         }
 
-        return Common.keyAsEuint256(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), Common.FunctionId.rol));
+        return Common.keyAsEuint256(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), FunctionId.rol));
     }
 
     /// @notice This function performs the ror async operation
@@ -2633,7 +2510,7 @@ library FHE {
             lhs = asEuint8(0);
         }
 
-        return Common.keyAsEuint8(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), Common.FunctionId.ror));
+        return Common.keyAsEuint8(Impl.mathOp(Common.euint8AsKey(lhs), Common.euint8AsKey(rhs), FunctionId.ror));
     }
 
     /// @notice This function performs the ror async operation
@@ -2649,7 +2526,7 @@ library FHE {
             lhs = asEuint16(0);
         }
 
-        return Common.keyAsEuint16(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), Common.FunctionId.ror));
+        return Common.keyAsEuint16(Impl.mathOp(Common.euint16AsKey(lhs), Common.euint16AsKey(rhs), FunctionId.ror));
     }
 
     /// @notice This function performs the ror async operation
@@ -2665,7 +2542,7 @@ library FHE {
             lhs = asEuint32(0);
         }
 
-        return Common.keyAsEuint32(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), Common.FunctionId.ror));
+        return Common.keyAsEuint32(Impl.mathOp(Common.euint32AsKey(lhs), Common.euint32AsKey(rhs), FunctionId.ror));
     }
 
     /// @notice This function performs the ror async operation
@@ -2681,7 +2558,7 @@ library FHE {
             lhs = asEuint64(0);
         }
 
-        return Common.keyAsEuint64(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), Common.FunctionId.ror));
+        return Common.keyAsEuint64(Impl.mathOp(Common.euint64AsKey(lhs), Common.euint64AsKey(rhs), FunctionId.ror));
     }
 
     /// @notice This function performs the ror async operation
@@ -2697,7 +2574,7 @@ library FHE {
             lhs = asEuint128(0);
         }
 
-        return Common.keyAsEuint128(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), Common.FunctionId.ror));
+        return Common.keyAsEuint128(Impl.mathOp(Common.euint128AsKey(lhs), Common.euint128AsKey(rhs), FunctionId.ror));
     }
 
     /// @notice This function performs the ror async operation
@@ -2713,7 +2590,7 @@ library FHE {
             lhs = asEuint256(0);
         }
 
-        return Common.keyAsEuint256(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), Common.FunctionId.ror));
+        return Common.keyAsEuint256(Impl.mathOp(Common.euint256AsKey(lhs), Common.euint256AsKey(rhs), FunctionId.ror));
     }
 
     /// @notice performs the sealoutput async function on a ebool ciphertext. This operation returns the plaintext value, sealed for the public key provided
@@ -2722,10 +2599,10 @@ library FHE {
     /// @return Plaintext input, sealed for the owner of `publicKey`
     function sealoutput(ebool memory value, bytes32 publicKey) internal returns (string memory) {
         if (!Common.isInitialized(value)) {
-            value = asEbool(0);
+            value = asEbool(false);
         }
 
-        return Impl.sealoutput(Common.eboolAsKey(value), publicKey);
+        return Impl.sealOutput(Common.eboolAsKey(value), publicKey);
     }
     /// @notice performs the sealoutput async function on a euint8 ciphertext. This operation returns the plaintext value, sealed for the public key provided
     /// @param value Ciphertext to decrypt and seal
@@ -2736,7 +2613,7 @@ library FHE {
             value = asEuint8(0);
         }
 
-        return Impl.sealoutput(Common.euint8AsKey(value), publicKey);
+        return Impl.sealOutput(Common.euint8AsKey(value), publicKey);
     }
     /// @notice performs the sealoutput async function on a euint16 ciphertext. This operation returns the plaintext value, sealed for the public key provided
     /// @param value Ciphertext to decrypt and seal
@@ -2747,7 +2624,7 @@ library FHE {
             value = asEuint16(0);
         }
 
-        return Impl.sealoutput(Common.euint16AsKey(value), publicKey);
+        return Impl.sealOutput(Common.euint16AsKey(value), publicKey);
     }
     /// @notice performs the sealoutput async function on a euint32 ciphertext. This operation returns the plaintext value, sealed for the public key provided
     /// @param value Ciphertext to decrypt and seal
@@ -2758,7 +2635,7 @@ library FHE {
             value = asEuint32(0);
         }
 
-        return Impl.sealoutput(Common.euint32AsKey(value), publicKey);
+        return Impl.sealOutput(Common.euint32AsKey(value), publicKey);
     }
     /// @notice performs the sealoutput async function on a euint64 ciphertext. This operation returns the plaintext value, sealed for the public key provided
     /// @param value Ciphertext to decrypt and seal
@@ -2769,7 +2646,7 @@ library FHE {
             value = asEuint64(0);
         }
 
-        return Impl.sealoutput(Common.euint64AsKey(value), publicKey);
+        return Impl.sealOutput(Common.euint64AsKey(value), publicKey);
     }
     /// @notice performs the sealoutput async function on a euint128 ciphertext. This operation returns the plaintext value, sealed for the public key provided
     /// @param value Ciphertext to decrypt and seal
@@ -2780,7 +2657,7 @@ library FHE {
             value = asEuint128(0);
         }
 
-        return Impl.sealoutput(Common.euint128AsKey(value), publicKey);
+        return Impl.sealOutput(Common.euint128AsKey(value), publicKey);
     }
     /// @notice performs the sealoutput async function on a euint256 ciphertext. This operation returns the plaintext value, sealed for the public key provided
     /// @param value Ciphertext to decrypt and seal
@@ -2791,7 +2668,7 @@ library FHE {
             value = asEuint256(0);
         }
 
-        return Impl.sealoutput(Common.euint256AsKey(value), publicKey);
+        return Impl.sealOutput(Common.euint256AsKey(value), publicKey);
     }
     /// @notice performs the sealoutput async function on a eaddress ciphertext. This operation returns the plaintext value, sealed for the public key provided
     /// @param value Ciphertext to decrypt and seal
@@ -2799,66 +2676,66 @@ library FHE {
     /// @return Plaintext input, sealed for the owner of `publicKey`
     function sealoutput(eaddress memory value, bytes32 publicKey) internal returns (string memory) {
         if (!Common.isInitialized(value)) {
-            value = asEaddress(0);
+            value = asEaddress(address(0));
         }
 
-        return Impl.sealoutput(Common.eadressAsKey(value), publicKey);
+        return Impl.sealOutput(Common.eaddressAsKey(value), publicKey);
     }
     /// @notice performs the sealoutputTyped async function on a ebool ciphertext. This operation returns the plaintext value, sealed for the public key provided
     /// @param value Ciphertext to decrypt and seal
     /// @param publicKey Public Key that will receive the sealed plaintext
-    /// @return SealedBool({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Common.EBOOL_TFHE })
+    /// @return SealedBool({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Utils.EBOOL_TFHE })
     function sealoutputTyped(ebool memory value, bytes32 publicKey) internal returns (SealedBool memory) {
-        return SealedBool({ data: sealoutput(value, publicKey), utype: Common.EBOOL_TFHE });
+        return SealedBool({ data: sealoutput(value, publicKey), utype: Utils.EBOOL_TFHE });
     }
     /// @notice performs the sealoutputTyped async function on a euint8 ciphertext. This operation returns the plaintext value, sealed for the public key provided
     /// @param value Ciphertext to decrypt and seal
     /// @param publicKey Public Key that will receive the sealed plaintext
-    /// @return SealedUint({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Common.EUINT8_TFHE })
+    /// @return SealedUint({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Utils.EUINT8_TFHE })
     function sealoutputTyped(euint8 memory value, bytes32 publicKey) internal returns (SealedUint memory) {
-        return SealedUint({ data: sealoutput(value, publicKey), utype: Common.EUINT8_TFHE });
+        return SealedUint({ data: sealoutput(value, publicKey), utype: Utils.EUINT8_TFHE });
     }
     /// @notice performs the sealoutputTyped async function on a euint16 ciphertext. This operation returns the plaintext value, sealed for the public key provided
     /// @param value Ciphertext to decrypt and seal
     /// @param publicKey Public Key that will receive the sealed plaintext
-    /// @return SealedUint({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Common.EUINT16_TFHE })
+    /// @return SealedUint({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Utils.EUINT16_TFHE })
     function sealoutputTyped(euint16 memory value, bytes32 publicKey) internal returns (SealedUint memory) {
-        return SealedUint({ data: sealoutput(value, publicKey), utype: Common.EUINT16_TFHE });
+        return SealedUint({ data: sealoutput(value, publicKey), utype: Utils.EUINT16_TFHE });
     }
     /// @notice performs the sealoutputTyped async function on a euint32 ciphertext. This operation returns the plaintext value, sealed for the public key provided
     /// @param value Ciphertext to decrypt and seal
     /// @param publicKey Public Key that will receive the sealed plaintext
-    /// @return SealedUint({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Common.EUINT32_TFHE })
+    /// @return SealedUint({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Utils.EUINT32_TFHE })
     function sealoutputTyped(euint32 memory value, bytes32 publicKey) internal returns (SealedUint memory) {
-        return SealedUint({ data: sealoutput(value, publicKey), utype: Common.EUINT32_TFHE });
+        return SealedUint({ data: sealoutput(value, publicKey), utype: Utils.EUINT32_TFHE });
     }
     /// @notice performs the sealoutputTyped async function on a euint64 ciphertext. This operation returns the plaintext value, sealed for the public key provided
     /// @param value Ciphertext to decrypt and seal
     /// @param publicKey Public Key that will receive the sealed plaintext
-    /// @return SealedUint({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Common.EUINT64_TFHE })
+    /// @return SealedUint({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Utils.EUINT64_TFHE })
     function sealoutputTyped(euint64 memory value, bytes32 publicKey) internal returns (SealedUint memory) {
-        return SealedUint({ data: sealoutput(value, publicKey), utype: Common.EUINT64_TFHE });
+        return SealedUint({ data: sealoutput(value, publicKey), utype: Utils.EUINT64_TFHE });
     }
     /// @notice performs the sealoutputTyped async function on a euint128 ciphertext. This operation returns the plaintext value, sealed for the public key provided
     /// @param value Ciphertext to decrypt and seal
     /// @param publicKey Public Key that will receive the sealed plaintext
-    /// @return SealedUint({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Common.EUINT128_TFHE })
+    /// @return SealedUint({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Utils.EUINT128_TFHE })
     function sealoutputTyped(euint128 memory value, bytes32 publicKey) internal returns (SealedUint memory) {
-        return SealedUint({ data: sealoutput(value, publicKey), utype: Common.EUINT128_TFHE });
+        return SealedUint({ data: sealoutput(value, publicKey), utype: Utils.EUINT128_TFHE });
     }
     /// @notice performs the sealoutputTyped async function on a euint256 ciphertext. This operation returns the plaintext value, sealed for the public key provided
     /// @param value Ciphertext to decrypt and seal
     /// @param publicKey Public Key that will receive the sealed plaintext
-    /// @return SealedUint({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Common.EUINT256_TFHE })
+    /// @return SealedUint({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Utils.EUINT256_TFHE })
     function sealoutputTyped(euint256 memory value, bytes32 publicKey) internal returns (SealedUint memory) {
-        return SealedUint({ data: sealoutput(value, publicKey), utype: Common.EUINT256_TFHE });
+        return SealedUint({ data: sealoutput(value, publicKey), utype: Utils.EUINT256_TFHE });
     }
     /// @notice performs the sealoutputTyped async function on a eaddress ciphertext. This operation returns the plaintext value, sealed for the public key provided
     /// @param value Ciphertext to decrypt and seal
     /// @param publicKey Public Key that will receive the sealed plaintext
-    /// @return SealedAddress({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Common.EADDRESS_TFHE })
+    /// @return SealedAddress({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Utils.EADDRESS_TFHE })
     function sealoutputTyped(eaddress memory value, bytes32 publicKey) internal returns (SealedAddress memory) {
-        return SealedAddress({ data: sealoutput(value, publicKey), utype: Common.EADDRESS_TFHE });
+        return SealedAddress({ data: sealoutput(value, publicKey), utype: Utils.EADDRESS_TFHE });
     }
     /// @notice Performs the async decrypt operation on a ciphertext
     /// @dev The decrypted output should be asynchronously handled by the IAsyncFHEReceiver implementation
@@ -2866,21 +2743,21 @@ library FHE {
     /// @return the input ciphertext
     function decrypt(ebool memory input1) internal returns (ebool memory) {
         if (!Common.isInitialized(input1)) {
-            input1 = asEbool(0);
+            input1 = asEbool(false);
         }
 
-        return Impl.decrypt(Common.eboolAsKey(input1));
+        return Common.keyAsEbool(Impl.decrypt(Common.eboolAsKey(input1)));
     }
     /// @notice Performs the async decrypt operation on a ciphertext
     /// @dev The decrypted output should be asynchronously handled by the IAsyncFHEReceiver implementation
     /// @param input1 the input ciphertext
     /// @return the input ciphertext
-    function decrypt(euint8 memory input1) internal returns (uint256) {
+    function decrypt(euint8 memory input1) internal returns (euint8 memory) {
         if (!Common.isInitialized(input1)) {
             input1 = asEuint8(0);
         }
 
-        return Impl.decrypt(Common.euint8AsKey(input1));
+        return Common.keyAsEuint8(Impl.decrypt(Common.euint8AsKey(input1)));
     }
     /// @notice Performs the async decrypt operation on a ciphertext
     /// @dev The decrypted output should be asynchronously handled by the IAsyncFHEReceiver implementation
@@ -2891,7 +2768,7 @@ library FHE {
             input1 = asEuint16(0);
         }
 
-        return Impl.decrypt(Common.euint16AsKey(input1));
+        return Common.keyAsEuint16(Impl.decrypt(Common.euint16AsKey(input1)));
     }
     /// @notice Performs the async decrypt operation on a ciphertext
     /// @dev The decrypted output should be asynchronously handled by the IAsyncFHEReceiver implementation
@@ -2902,7 +2779,7 @@ library FHE {
             input1 = asEuint32(0);
         }
 
-        return Impl.decrypt(Common.euint32AsKey(input1));
+        return Common.keyAsEuint32(Impl.decrypt(Common.euint32AsKey(input1)));
     }
     /// @notice Performs the async decrypt operation on a ciphertext
     /// @dev The decrypted output should be asynchronously handled by the IAsyncFHEReceiver implementation
@@ -2913,7 +2790,7 @@ library FHE {
             input1 = asEuint64(0);
         }
 
-        return Impl.decrypt(Common.euint64AsKey(input1));
+        return Common.keyAsEuint64(Impl.decrypt(Common.euint64AsKey(input1)));
     }
     /// @notice Performs the async decrypt operation on a ciphertext
     /// @dev The decrypted output should be asynchronously handled by the IAsyncFHEReceiver implementation
@@ -2924,7 +2801,7 @@ library FHE {
             input1 = asEuint128(0);
         }
 
-        return Impl.decrypt(Common.euint128AsKey(input1));
+        return Common.keyAsEuint128(Impl.decrypt(Common.euint128AsKey(input1)));
     }
     /// @notice Performs the async decrypt operation on a ciphertext
     /// @dev The decrypted output should be asynchronously handled by the IAsyncFHEReceiver implementation
@@ -2935,7 +2812,7 @@ library FHE {
             input1 = asEuint256(0);
         }
 
-        return Impl.decrypt(Common.euint256AsKey(input1));
+        return Common.keyAsEuint256(Impl.decrypt(Common.euint256AsKey(input1)));
     }
     /// @notice Performs the async decrypt operation on a ciphertext
     /// @dev The decrypted output should be asynchronously handled by the IAsyncFHEReceiver implementation
@@ -2943,21 +2820,21 @@ library FHE {
     /// @return the input ciphertext
     function decrypt(eaddress memory input1) internal returns (eaddress memory) {
         if (!Common.isInitialized(input1)) {
-            input1 = asEaddress(0);
+            input1 = asEaddress(address(0));
         }
 
-        return Impl.decrypt(Common.eaddressAsKey(input1));
+        return Common.keyAsEaddress(Impl.decrypt(Common.eaddressAsKey(input1)));
     }
 
     function select(ebool memory input1, ebool memory input2, ebool memory input3) internal returns (ebool memory) {
         if (!Common.isInitialized(input1)) {
-            input1 = asEbool(0);
+            input1 = asEbool(false);
         }
         if (!Common.isInitialized(input2)) {
-            input2 = asEbool(0);
+            input2 = asEbool(false);
         }
         if (!Common.isInitialized(input3)) {
-            input3 = asEbool(0);
+            input3 = asEbool(false);
         }
 
         return Common.keyAsEbool(Impl.select(input1, Common.eboolAsKey(input2), Common.eboolAsKey(input3)));
@@ -2965,7 +2842,7 @@ library FHE {
 
     function select(ebool memory input1, euint8 memory input2, euint8 memory input3) internal returns (euint8 memory) {
         if (!Common.isInitialized(input1)) {
-            input1 = asEbool(0);
+            input1 = asEbool(false);
         }
         if (!Common.isInitialized(input2)) {
             input2 = asEuint8(0);
@@ -2979,7 +2856,7 @@ library FHE {
 
     function select(ebool memory input1, euint16 memory input2, euint16 memory input3) internal returns (euint16 memory) {
         if (!Common.isInitialized(input1)) {
-            input1 = asEbool(0);
+            input1 = asEbool(false);
         }
         if (!Common.isInitialized(input2)) {
             input2 = asEuint16(0);
@@ -2993,7 +2870,7 @@ library FHE {
 
     function select(ebool memory input1, euint32 memory input2, euint32 memory input3) internal returns (euint32 memory) {
         if (!Common.isInitialized(input1)) {
-            input1 = asEbool(0);
+            input1 = asEbool(false);
         }
         if (!Common.isInitialized(input2)) {
             input2 = asEuint32(0);
@@ -3007,7 +2884,7 @@ library FHE {
 
     function select(ebool memory input1, euint64 memory input2, euint64 memory input3) internal returns (euint64 memory) {
         if (!Common.isInitialized(input1)) {
-            input1 = asEbool(0);
+            input1 = asEbool(false);
         }
         if (!Common.isInitialized(input2)) {
             input2 = asEuint64(0);
@@ -3016,12 +2893,12 @@ library FHE {
             input3 = asEuint64(0);
         }
 
-        return Common.keyAsEuint64(Impl.select(input1, Common.euint64AsKey(input2), Common.euint64sKey(input3)));
+        return Common.keyAsEuint64(Impl.select(input1, Common.euint64AsKey(input2), Common.euint64AsKey(input3)));
     }
 
     function select(ebool memory input1, euint128 memory input2, euint128 memory input3) internal returns (euint128 memory) {
         if (!Common.isInitialized(input1)) {
-            input1 = asEbool(0);
+            input1 = asEbool(false);
         }
         if (!Common.isInitialized(input2)) {
             input2 = asEuint128(0);
@@ -3030,12 +2907,12 @@ library FHE {
             input3 = asEuint128(0);
         }
 
-        return Common.keyAsEuint128(Impl.select(input1, Common.euint128AsKey(input2), Common.euint128sKey(input3)));
+        return Common.keyAsEuint128(Impl.select(input1, Common.euint128AsKey(input2), Common.euint128AsKey(input3)));
     }
 
     function select(ebool memory input1, euint256 memory input2, euint256 memory input3) internal returns (euint256 memory) {
         if (!Common.isInitialized(input1)) {
-            input1 = asEbool(0);
+            input1 = asEbool(false);
         }
         if (!Common.isInitialized(input2)) {
             input2 = asEuint256(0);
@@ -3044,18 +2921,18 @@ library FHE {
             input3 = asEuint256(0);
         }
 
-        return Common.keyAsEuint256(Impl.select(input1, Common.euint256AsKey(input2), Common.euint256sKey(input3)));
+        return Common.keyAsEuint256(Impl.select(input1, Common.euint256AsKey(input2), Common.euint256AsKey(input3)));
     }
 
     function select(ebool memory input1, eaddress memory input2, eaddress memory input3) internal returns (eaddress memory) {
         if (!Common.isInitialized(input1)) {
-            input1 = asEbool(0);
+            input1 = asEbool(false);
         }
         if (!Common.isInitialized(input2)) {
-            input2 = asEaddress(0);
+            input2 = asEaddress(address(0));
         }
         if (!Common.isInitialized(input3)) {
-            input3 = asEaddress(0);
+            input3 = asEaddress(address(0));
         }
 
         return Common.keyAsEaddress(Impl.select(input1, Common.eaddressAsKey(input2), Common.eaddressAsKey(input3)));
@@ -3066,7 +2943,7 @@ library FHE {
     /// @param input1 the input ciphertext
     function not(ebool memory input1) internal returns (ebool memory) {
         if (!Common.isInitialized(input1)) {
-            input1 = asEbool(0);
+            input1 = asEbool(false);
         }
 
         return Common.keyAsEbool(Impl.not(Common.eboolAsKey(input1)));
@@ -3197,7 +3074,7 @@ library FHE {
     /// @dev Calls the desired function
     /// @param securityZone the security zone to use for the random value
     function randomEuint8(int32 securityZone) internal returns (euint8 memory) {
-        CiphertextKey memory ctKey = Impl.random(Common.EUINT8_TFHE, 0, securityZone);
+        CiphertextKey memory ctKey = Impl.random(Utils.EUINT8_TFHE, 0, securityZone);
         return Common.keyAsEuint8(ctKey);
     }
     /// @notice Generates a random value of a euint8 type
@@ -3209,7 +3086,7 @@ library FHE {
     /// @dev Calls the desired function
     /// @param securityZone the security zone to use for the random value
     function randomEuint16(int32 securityZone) internal returns (euint16 memory) {
-        CiphertextKey memory ctKey = Impl.random(Common.EUINT16_TFHE, 0, securityZone);
+        CiphertextKey memory ctKey = Impl.random(Utils.EUINT16_TFHE, 0, securityZone);
         return Common.keyAsEuint16(ctKey);
     }
     /// @notice Generates a random value of a euint16 type
@@ -3221,7 +3098,7 @@ library FHE {
     /// @dev Calls the desired function
     /// @param securityZone the security zone to use for the random value
     function randomEuint32(int32 securityZone) internal returns (euint32 memory) {
-        CiphertextKey memory ctKey = Impl.random(Common.EUINT32_TFHE, 0, securityZone);
+        CiphertextKey memory ctKey = Impl.random(Utils.EUINT32_TFHE, 0, securityZone);
         return Common.keyAsEuint32(ctKey);
     }
     /// @notice Generates a random value of a euint32 type
@@ -3233,7 +3110,7 @@ library FHE {
     /// @dev Calls the desired function
     /// @param securityZone the security zone to use for the random value
     function randomEuint64(int32 securityZone) internal returns (euint64 memory) {
-        CiphertextKey memory ctKey = Impl.random(Common.EUINT64_TFHE, 0, securityZone);
+        CiphertextKey memory ctKey = Impl.random(Utils.EUINT64_TFHE, 0, securityZone);
         return Common.keyAsEuint64(ctKey);
     }
     /// @notice Generates a random value of a euint64 type
@@ -3245,7 +3122,7 @@ library FHE {
     /// @dev Calls the desired function
     /// @param securityZone the security zone to use for the random value
     function randomEuint128(int32 securityZone) internal returns (euint128 memory) {
-        CiphertextKey memory ctKey = Impl.random(Common.EUINT128_TFHE, 0, securityZone);
+        CiphertextKey memory ctKey = Impl.random(Utils.EUINT128_TFHE, 0, securityZone);
         return Common.keyAsEuint128(ctKey);
     }
     /// @notice Generates a random value of a euint128 type
@@ -3257,7 +3134,7 @@ library FHE {
     /// @dev Calls the desired function
     /// @param securityZone the security zone to use for the random value
     function randomEuint256(int32 securityZone) internal returns (euint256 memory) {
-        CiphertextKey memory ctKey = Impl.random(Common.EUINT256_TFHE, 0, securityZone);
+        CiphertextKey memory ctKey = Impl.random(Utils.EUINT256_TFHE, 0, securityZone);
         return Common.keyAsEuint256(ctKey);
     }
     /// @notice Generates a random value of a euint256 type
@@ -3269,27 +3146,27 @@ library FHE {
     // ********** TYPE CASTING ************* //
     /// @notice Converts a ebool to an euint8
     function asEuint8(ebool memory value) internal returns (euint8 memory) {
-        return Common.keyAsEuint8(Impl.cast(Common.eboolAsKey(value), Common.EUINT8_TFHE));
+        return Common.keyAsEuint8(Impl.cast(Common.eboolAsKey(value), Utils.EUINT8_TFHE));
     }
     /// @notice Converts a ebool to an euint16
     function asEuint16(ebool memory value) internal returns (euint16 memory) {
-        return Common.keyAsEuint16(Impl.cast(Common.eboolAsKey(value), Common.EUINT16_TFHE));
+        return Common.keyAsEuint16(Impl.cast(Common.eboolAsKey(value), Utils.EUINT16_TFHE));
     }
     /// @notice Converts a ebool to an euint32
     function asEuint32(ebool memory value) internal returns (euint32 memory) {
-        return Common.keyAsEuint32(Impl.cast(Common.eboolAsKey(value), Common.EUINT32_TFHE));
+        return Common.keyAsEuint32(Impl.cast(Common.eboolAsKey(value), Utils.EUINT32_TFHE));
     }
     /// @notice Converts a ebool to an euint64
     function asEuint64(ebool memory value) internal returns (euint64 memory) {
-        return Common.keyAsEuint64(Impl.cast(Common.eboolAsKey(value), Common.EUINT64_TFHE));
+        return Common.keyAsEuint64(Impl.cast(Common.eboolAsKey(value), Utils.EUINT64_TFHE));
     }
     /// @notice Converts a ebool to an euint128
     function asEuint128(ebool memory value) internal returns (euint128 memory) {
-        return Common.keyAsEuint128(Impl.cast(Common.eboolAsKey(value), Common.EUINT128_TFHE));
+        return Common.keyAsEuint128(Impl.cast(Common.eboolAsKey(value), Utils.EUINT128_TFHE));
     }
     /// @notice Converts a ebool to an euint256
     function asEuint256(ebool memory value) internal returns (euint256 memory) {
-        return Common.keyAsEuint256(Impl.cast(Common.eboolAsKey(value), Common.EUINT256_TFHE));
+        return Common.keyAsEuint256(Impl.cast(Common.eboolAsKey(value), Utils.EUINT256_TFHE));
     }
 
     /// @notice Converts a euint8 to an ebool
@@ -3298,23 +3175,23 @@ library FHE {
     }
     /// @notice Converts a euint8 to an euint16
     function asEuint16(euint8 memory value) internal returns (euint16 memory) {
-        return Common.keyAsEuint16(Impl.cast(Common.euint8AsKey(value), Common.EUINT16_TFHE));
+        return Common.keyAsEuint16(Impl.cast(Common.euint8AsKey(value), Utils.EUINT16_TFHE));
     }
     /// @notice Converts a euint8 to an euint32
     function asEuint32(euint8 memory value) internal returns (euint32 memory) {
-        return Common.keyAsEuint32(Impl.cast(Common.euint8AsKey(value), Common.EUINT32_TFHE));
+        return Common.keyAsEuint32(Impl.cast(Common.euint8AsKey(value), Utils.EUINT32_TFHE));
     }
     /// @notice Converts a euint8 to an euint64
     function asEuint64(euint8 memory value) internal returns (euint64 memory) {
-        return Common.keyAsEuint16(Impl.cast(Common.euint8AsKey(value), Common.EUINT64_TFHE));
+        return Common.keyAsEuint64(Impl.cast(Common.euint8AsKey(value), Utils.EUINT64_TFHE));
     }
     /// @notice Converts a euint8 to an euint128
     function asEuint128(euint8 memory value) internal returns (euint128 memory) {
-        return Common.keyAsEuint16(Impl.cast(Common.euint8AsKey(value), Common.EUINT128_TFHE));
+        return Common.keyAsEuint128(Impl.cast(Common.euint8AsKey(value), Utils.EUINT128_TFHE));
     }
     /// @notice Converts a euint8 to an euint256
     function asEuint256(euint8 memory value) internal returns (euint256 memory) {
-        return Common.keyAsEuint256(Impl.cast(Common.euint8AsKey(value), Common.EUINT256_TFHE));
+        return Common.keyAsEuint256(Impl.cast(Common.euint8AsKey(value), Utils.EUINT256_TFHE));
     }
 
     /// @notice Converts a euint16 to an ebool
@@ -3323,23 +3200,23 @@ library FHE {
     }
     /// @notice Converts a euint16 to an euint8
     function asEuint8(euint16 memory value) internal returns (euint8 memory) {
-        return Common.keyAsEuint8(Impl.cast(Common.euint16AsKey(value), Common.EUINT8_TFHE));
+        return Common.keyAsEuint8(Impl.cast(Common.euint16AsKey(value), Utils.EUINT8_TFHE));
     }
     /// @notice Converts a euint16 to an euint32
     function asEuint32(euint16 memory value) internal returns (euint32 memory) {
-        return Common.keyAsEuint32(Impl.cast(Common.euint16AsKey(value), Common.EUINT32_TFHE));
+        return Common.keyAsEuint32(Impl.cast(Common.euint16AsKey(value), Utils.EUINT32_TFHE));
     }
     /// @notice Converts a euint16 to an euint64
     function asEuint64(euint16 memory value) internal returns (euint64 memory) {
-        return Common.keyAsEuint64(Impl.cast(Common.euint16AsKey(value), Common.EUINT64_TFHE));
+        return Common.keyAsEuint64(Impl.cast(Common.euint16AsKey(value), Utils.EUINT64_TFHE));
     }
     /// @notice Converts a euint16 to an euint128
     function asEuint128(euint16 memory value) internal returns (euint128 memory) {
-        return Common.keyAsEuint128(Impl.cast(Common.euint16AsKey(value), Common.EUINT128_TFHE));
+        return Common.keyAsEuint128(Impl.cast(Common.euint16AsKey(value), Utils.EUINT128_TFHE));
     }
     /// @notice Converts a euint16 to an euint256
     function asEuint256(euint16 memory value) internal returns (euint256 memory) {
-        return Common.keyAsEuint256(Impl.cast(Common.euint16AsKey(value), Common.EUINT256_TFHE));
+        return Common.keyAsEuint256(Impl.cast(Common.euint16AsKey(value), Utils.EUINT256_TFHE));
     }
 
     /// @notice Converts a euint32 to an ebool
@@ -3348,23 +3225,23 @@ library FHE {
     }
     /// @notice Converts a euint32 to an euint8
     function asEuint8(euint32 memory value) internal returns (euint8 memory) {
-        return Common.keyAsEuint8(Impl.cast(Common.euint32AsKey(value), Common.EUINT8_TFHE));
+        return Common.keyAsEuint8(Impl.cast(Common.euint32AsKey(value), Utils.EUINT8_TFHE));
     }
     /// @notice Converts a euint32 to an euint16
     function asEuint16(euint32 memory value) internal returns (euint16 memory) {
-        return Common.keyAsEuint16(Impl.cast(Common.euint32AsKey(value), Common.EUINT16_TFHE));
+        return Common.keyAsEuint16(Impl.cast(Common.euint32AsKey(value), Utils.EUINT16_TFHE));
     }
     /// @notice Converts a euint32 to an euint64
     function asEuint64(euint32 memory value) internal returns (euint64 memory) {
-        return Common.keyAsEuint64(Impl.cast(Common.euint32AsKey(value), Common.EUINT64_TFHE));
+        return Common.keyAsEuint64(Impl.cast(Common.euint32AsKey(value), Utils.EUINT64_TFHE));
     }
     /// @notice Converts a euint32 to an euint128
     function asEuint128(euint32 memory value) internal returns (euint128 memory) {
-        return Common.keyAsEuint128(Impl.cast(Common.euint32AsKey(value), Common.EUINT128_TFHE));
+        return Common.keyAsEuint128(Impl.cast(Common.euint32AsKey(value), Utils.EUINT128_TFHE));
     }
     /// @notice Converts a euint32 to an euint256
     function asEuint256(euint32 memory value) internal returns (euint256 memory) {
-        return Common.keyAsEuint256(Impl.cast(Common.euint32AsKey(value), Common.EUINT256_TFHE));
+        return Common.keyAsEuint256(Impl.cast(Common.euint32AsKey(value), Utils.EUINT256_TFHE));
     }
 
     /// @notice Converts a euint64 to an ebool
@@ -3373,23 +3250,23 @@ library FHE {
     }
     /// @notice Converts a euint64 to an euint8
     function asEuint8(euint64 memory value) internal returns (euint8 memory) {
-        return Common.keyAsEuint8(Impl.cast(Common.euint64AsKey(value), Common.EUINT8_TFHE));
+        return Common.keyAsEuint8(Impl.cast(Common.euint64AsKey(value), Utils.EUINT8_TFHE));
     }
     /// @notice Converts a euint64 to an euint16
     function asEuint16(euint64 memory value) internal returns (euint16 memory) {
-        return Common.keyAsEuint16(Impl.cast(Common.euint64AsKey(value), Common.EUINT16_TFHE));
+        return Common.keyAsEuint16(Impl.cast(Common.euint64AsKey(value), Utils.EUINT16_TFHE));
     }
     /// @notice Converts a euint64 to an euint32
     function asEuint32(euint64 memory value) internal returns (euint32 memory) {
-        return Common.keyAsEuint32(Impl.cast(Common.euint64AsKey(value), Common.EUINT32_TFHE));
+        return Common.keyAsEuint32(Impl.cast(Common.euint64AsKey(value), Utils.EUINT32_TFHE));
     }
     /// @notice Converts a euint64 to an euint128
     function asEuint128(euint64 memory value) internal returns (euint128 memory) {
-        return Common.keyAsEuint128(Impl.cast(Common.euint64AsKey(value), Common.EUINT128_TFHE));
+        return Common.keyAsEuint128(Impl.cast(Common.euint64AsKey(value), Utils.EUINT128_TFHE));
     }
     /// @notice Converts a euint64 to an euint256
     function asEuint256(euint64 memory value) internal returns (euint256 memory) {
-        return Common.keyAsEuint256(Impl.cast(Common.euint64AsKey(value), Common.EUINT256_TFHE));
+        return Common.keyAsEuint256(Impl.cast(Common.euint64AsKey(value), Utils.EUINT256_TFHE));
     }
 
     /// @notice Converts a euint128 to an ebool
@@ -3398,23 +3275,23 @@ library FHE {
     }
     /// @notice Converts a euint128 to an euint8
     function asEuint8(euint128 memory value) internal returns (euint8 memory) {
-        return Common.keyAsEuint8(Impl.cast(Common.euint128AsKey(value), Common.EUINT8_TFHE));
+        return Common.keyAsEuint8(Impl.cast(Common.euint128AsKey(value), Utils.EUINT8_TFHE));
     }
     /// @notice Converts a euint128 to an euint16
     function asEuint16(euint128 memory value) internal returns (euint16 memory) {
-        return Common.keyAsEuint16(Impl.cast(Common.euint128AsKey(value), Common.EUINT16_TFHE));
+        return Common.keyAsEuint16(Impl.cast(Common.euint128AsKey(value), Utils.EUINT16_TFHE));
     }
     /// @notice Converts a euint128 to an euint32
     function asEuint32(euint128 memory value) internal returns (euint32 memory) {
-        return Common.keyAsEuint32(Impl.cast(Common.euint128AsKey(value), Common.EUINT32_TFHE));
+        return Common.keyAsEuint32(Impl.cast(Common.euint128AsKey(value), Utils.EUINT32_TFHE));
     }
     /// @notice Converts a euint128 to an euint64
     function asEuint64(euint128 memory value) internal returns (euint64 memory) {
-        return Common.keyAsEuint64(Impl.cast(Common.euint128AsKey(value), Common.EUINT64_TFHE));
+        return Common.keyAsEuint64(Impl.cast(Common.euint128AsKey(value), Utils.EUINT64_TFHE));
     }
     /// @notice Converts a euint128 to an euint256
     function asEuint256(euint128 memory value) internal returns (euint256 memory) {
-        return Common.keyAsEuint256(Impl.cast(Common.euint128AsKey(value), Common.EUINT256_TFHE));
+        return Common.keyAsEuint256(Impl.cast(Common.euint128AsKey(value), Utils.EUINT256_TFHE));
     }
 
     /// @notice Converts a euint256 to an ebool
@@ -3423,56 +3300,56 @@ library FHE {
     }
     /// @notice Converts a euint256 to an euint8
     function asEuint8(euint256 memory value) internal returns (euint8 memory) {
-        return Common.keyAsEuint8(Impl.cast(Common.euint256AsKey(value), Common.EUINT8_TFHE));
+        return Common.keyAsEuint8(Impl.cast(Common.euint256AsKey(value), Utils.EUINT8_TFHE));
     }
     /// @notice Converts a euint256 to an euint16
     function asEuint16(euint256 memory value) internal returns (euint16 memory) {
-        return Common.keyAsEuint16(Impl.cast(Common.euint256AsKey(value), Common.EUINT16_TFHE));
+        return Common.keyAsEuint16(Impl.cast(Common.euint256AsKey(value), Utils.EUINT16_TFHE));
     }
     /// @notice Converts a euint256 to an euint32
     function asEuint32(euint256 memory value) internal returns (euint32 memory) {
-        return Common.keyAsEuint32(Impl.cast(Common.euint256AsKey(value), Common.EUINT32_TFHE));
+        return Common.keyAsEuint32(Impl.cast(Common.euint256AsKey(value), Utils.EUINT32_TFHE));
     }
     /// @notice Converts a euint256 to an euint64
     function asEuint64(euint256 memory value) internal returns (euint64 memory) {
-        return Common.keyAsEuint64(Impl.cast(Common.euint256AsKey(value), Common.EUINT64_TFHE));
+        return Common.keyAsEuint64(Impl.cast(Common.euint256AsKey(value), Utils.EUINT64_TFHE));
     }
     /// @notice Converts a euint256 to an euint128
     function asEuint128(euint256 memory value) internal returns (euint128 memory) {
-        return Common.keyAsEuint128(Impl.cast(Common.euint256AsKey(value), Common.EUINT128_TFHE));
+        return Common.keyAsEuint128(Impl.cast(Common.euint256AsKey(value), Utils.EUINT128_TFHE));
     }
     /// @notice Converts a euint256 to an eaddress
     function asEaddress(euint256 memory value) internal returns (eaddress memory) {
-        return Common.keyAsEaddress(Impl.cast(Common.euint256AsKey(value), Common.EADDRESS_TFHE));
+        return Common.keyAsEaddress(Impl.cast(Common.euint256AsKey(value), Utils.EADDRESS_TFHE));
     }
 
     /// @notice Converts a eaddress to an ebool
     function asEbool(eaddress memory value) internal returns (ebool memory) {
-        return ne(value, asEaddress(0));
+        return ne(value, asEaddress(address(0)));
     }
     /// @notice Converts a eaddress to an euint8
     function asEuint8(eaddress memory value) internal returns (euint8 memory) {
-        return Common.keyAsEuint8(Impl.cast(Common.eaddressAsKey(value), Common.EUINT8_TFHE));
+        return Common.keyAsEuint8(Impl.cast(Common.eaddressAsKey(value), Utils.EUINT8_TFHE));
     }
     /// @notice Converts a eaddress to an euint16
     function asEuint16(eaddress memory value) internal returns (euint16 memory) {
-        return Common.keyAsEuint16(Impl.cast(Common.eaddressAsKey(value), Common.EUINT16_TFHE));
+        return Common.keyAsEuint16(Impl.cast(Common.eaddressAsKey(value), Utils.EUINT16_TFHE));
     }
     /// @notice Converts a eaddress to an euint32
     function asEuint32(eaddress memory value) internal returns (euint32 memory) {
-        return Common.keyAsEuint32(Impl.cast(Common.eaddressAsKey(value), Common.EUINT32_TFHE));
+        return Common.keyAsEuint32(Impl.cast(Common.eaddressAsKey(value), Utils.EUINT32_TFHE));
     }
     /// @notice Converts a eaddress to an euint64
     function asEuint64(eaddress memory value) internal returns (euint64 memory) {
-        return Common.keyAsEuint64(Impl.cast(Common.eaddressAsKey(value), Common.EUINT64_TFHE));
+        return Common.keyAsEuint64(Impl.cast(Common.eaddressAsKey(value), Utils.EUINT64_TFHE));
     }
     /// @notice Converts a eaddress to an euint128
     function asEuint128(eaddress memory value) internal returns (euint128 memory) {
-        return Common.keyAsEuint128(Impl.cast(Common.eaddressAsKey(value), Common.EUINT128_TFHE));
+        return Common.keyAsEuint128(Impl.cast(Common.eaddressAsKey(value), Utils.EUINT128_TFHE));
     }
     /// @notice Converts a eaddress to an euint256
     function asEuint256(eaddress memory value) internal returns (euint256 memory) {
-        return Common.keyAsEuint256(Impl.cast(Common.eaddressAsKey(value), Common.EUINT256_TFHE));
+        return Common.keyAsEuint256(Impl.cast(Common.eaddressAsKey(value), Utils.EUINT256_TFHE));
     }
     /// @notice Converts a plaintext boolean value to a ciphertext ebool
     /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
@@ -3488,7 +3365,7 @@ library FHE {
         if (value) {
             sVal = 1;
         }
-        CiphertextKey memory ct = Impl.trivialEncrypt(sVal, Common.EBOOL_TFHE, securityZone);
+        CiphertextKey memory ct = Impl.trivialEncrypt(sVal, Utils.EBOOL_TFHE, securityZone);
         return Common.keyAsEbool(ct);
     }
     /// @notice Converts a uint256 to an euint8
@@ -3499,7 +3376,7 @@ library FHE {
     /// @notice Converts a uint256 to an euint8, specifying security zone
     /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
     function asEuint8(uint256 value, int32 securityZone) internal returns (euint8 memory) {
-        CiphertextKey memory ct = Impl.trivialEncrypt(value, Common.EUINT8_TFHE, securityZone);
+        CiphertextKey memory ct = Impl.trivialEncrypt(value, Utils.EUINT8_TFHE, securityZone);
         return Common.keyAsEuint8(ct);
     }
     /// @notice Converts a uint256 to an euint16
@@ -3510,7 +3387,7 @@ library FHE {
     /// @notice Converts a uint256 to an euint16, specifying security zone
     /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
     function asEuint16(uint256 value, int32 securityZone) internal returns (euint16 memory) {
-        CiphertextKey memory ct = Impl.trivialEncrypt(value, Common.EUINT16_TFHE, securityZone);
+        CiphertextKey memory ct = Impl.trivialEncrypt(value, Utils.EUINT16_TFHE, securityZone);
         return Common.keyAsEuint16(ct);
     }
     /// @notice Converts a uint256 to an euint32
@@ -3521,7 +3398,7 @@ library FHE {
     /// @notice Converts a uint256 to an euint32, specifying security zone
     /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
     function asEuint32(uint256 value, int32 securityZone) internal returns (euint32 memory) {
-        CiphertextKey memory ct = Impl.trivialEncrypt(value, Common.EUINT32_TFHE, securityZone);
+        CiphertextKey memory ct = Impl.trivialEncrypt(value, Utils.EUINT32_TFHE, securityZone);
         return Common.keyAsEuint32(ct);
     }
     /// @notice Converts a uint256 to an euint64
@@ -3532,7 +3409,7 @@ library FHE {
     /// @notice Converts a uint256 to an euint64, specifying security zone
     /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
     function asEuint64(uint256 value, int32 securityZone) internal returns (euint64 memory) {
-        CiphertextKey memory ct = Impl.trivialEncrypt(value, Common.EUINT64_TFHE, securityZone);
+        CiphertextKey memory ct = Impl.trivialEncrypt(value, Utils.EUINT64_TFHE, securityZone);
         return Common.keyAsEuint64(ct);
     }
     /// @notice Converts a uint256 to an euint128
@@ -3543,7 +3420,7 @@ library FHE {
     /// @notice Converts a uint256 to an euint128, specifying security zone
     /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
     function asEuint128(uint256 value, int32 securityZone) internal returns (euint128 memory) {
-        CiphertextKey memory ct = Impl.trivialEncrypt(value, Common.EUINT128_TFHE, securityZone);
+        CiphertextKey memory ct = Impl.trivialEncrypt(value, Utils.EUINT128_TFHE, securityZone);
         return Common.keyAsEuint128(ct);
     }
     /// @notice Converts a uint256 to an euint256
@@ -3554,7 +3431,7 @@ library FHE {
     /// @notice Converts a uint256 to an euint256, specifying security zone
     /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
     function asEuint256(uint256 value, int32 securityZone) internal returns (euint256 memory) {
-        CiphertextKey memory ct = Impl.trivialEncrypt(value, Common.EUINT256_TFHE, securityZone);
+        CiphertextKey memory ct = Impl.trivialEncrypt(value, Utils.EUINT256_TFHE, securityZone);
         return Common.keyAsEuint256(ct);
     }
     /// @notice Converts a address to an eaddress
@@ -3567,28 +3444,8 @@ library FHE {
     /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
     /// Allows for a better user experience when working with eaddresses
     function asEaddress(address value, int32 securityZone) internal returns (eaddress memory) {
-        CiphertextKey memory ct = Impl.trivialEncrypt(uint256(uint160(value)), Common.EADDRESS_TFHE, securityZone);
+        CiphertextKey memory ct = Impl.trivialEncrypt(uint256(uint160(value)), Utils.EADDRESS_TFHE, securityZone);
         return Common.keyAsEaddress(ct);
-    }
-    /// @notice Converts a plaintext boolean value to a ciphertext ebool
-    /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
-    /// @return A ciphertext representation of the input
-    function asEbool(bool value) internal returns (ebool memory) {
-        uint256 sVal = 0;
-        if (value) {
-            sVal = 1;
-        }
-        return asEbool(sVal);
-    }
-    /// @notice Converts a plaintext boolean value to a ciphertext ebool, specifying security zone
-    /// @dev Privacy: The input value is public, therefore the resulting ciphertext should be considered public until involved in an fhe operation
-    /// @return A ciphertext representation of the input
-    function asEbool(bool value, int32 securityZone) internal returns (ebool memory) {
-        uint256 sVal = 0;
-        if (value) {
-            sVal = 1;
-        }
-        return asEbool(sVal, securityZone);
     }
 }
 // ********** BINDING DEFS ************* //

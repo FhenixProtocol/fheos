@@ -5,14 +5,6 @@ pragma solidity >=0.8.19 <0.9.0;
 
 import {Precompiles, FheOps} from "./FheOS.sol";
 
-
-struct CiphertextKey {
-  bool     isTriviallyEncrypted;
-  uint32   uintType;
-  int32    securityZone;
-  uint256  hash;
-}
-
 type ebool is uint256;
 type euint8 is uint256;
 type euint16 is uint256;

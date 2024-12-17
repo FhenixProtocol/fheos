@@ -22,7 +22,7 @@ type FheosState struct {
 	//MaxUintValue *big.Int // This should contain the max value of the supported uint type
 }
 
-func (fs *FheosState) GetRandomKeyForGasEstimation() []byte {
+func (fs *FheosState) GetEmptyKeyForGasEstimation() []byte {
 	return types.SerializeCiphertextKey(types.GetEmptyCiphertextKey())
 }
 
