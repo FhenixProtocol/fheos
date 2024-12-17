@@ -70,7 +70,7 @@ func validateAllSameType(inputs []*fhe.FheEncrypted, utype byte) error {
 	expectedType := fhe.EncryptionType(utype)
 	for i, ct := range inputs {
 		if ct.UintType != expectedType {
-			return fmt.Errorf("input %d type mismatch: expected %v, got %v", i, expectedType, ct.UintType)
+			return fmt.Errorf("input %d type mismatch: expected %v, got %v", i, expectedType.ToString(), ct.UintType.ToString())
 		}
 	}
 	return nil

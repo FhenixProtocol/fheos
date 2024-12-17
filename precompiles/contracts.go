@@ -240,7 +240,7 @@ func Select(utype byte, controlHash []byte, ifTrueHash []byte, ifFalseHash []byt
 			// Only validate that ifTrue and ifFalse have matching types
 			if inputs[1].UintType != inputs[2].UintType {
 				return fmt.Errorf("operands type mismatch: ifTrue=%v, ifFalse=%v",
-					inputs[1].UintType, inputs[2].UintType)
+					inputs[1].UintType.ToString(), inputs[2].UintType.ToString())
 			}
 			return nil
 		},
