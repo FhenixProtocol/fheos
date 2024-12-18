@@ -684,7 +684,7 @@ func createVerifyResponse(ctHash []byte) ([]byte, error) {
 
 	responseData, err := json.Marshal(verifyResult)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to marshal response: %+v", err)
+		return nil, fmt.Errorf("failed to marshal response: %+v", err)
 	}
 	return responseData, nil
 }
@@ -696,7 +696,7 @@ func createNetworkPublicKeyResponse(PublicKey []byte) ([]byte, error) {
 
 	responseData, err := json.Marshal(result)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to marshal response: %+v", err)
+		return nil, fmt.Errorf("failed to marshal response: %+v", err)
 	}
 	return responseData, nil
 }
@@ -785,9 +785,8 @@ func GetNetworkPublicKeyHandler(w http.ResponseWriter, r *http.Request) {
 
 	responseData, err := createNetworkPublicKeyResponse(expectedPk)
 	if err != nil {
-		e := fmt.Sprintf("Failed to marshal response: %+v", err)
-		fmt.Println(e)
-		http.Error(w, e, http.StatusInternalServerError)
+		fmt.Println(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
