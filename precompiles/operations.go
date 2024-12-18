@@ -36,8 +36,12 @@ func (f OneOperationFunc) Execute(inputs []*fhe.FheEncrypted) (*fhe.FheEncrypted
 	return f(inputs[0])
 }
 
-func (f OneOperationFunc) ValidateTypes(inputs []*fhe.FheEncrypted, utype byte) error {
-	return validateAllSameType(inputs, utype) // Default validation
+func (f OneOperationFunc) ValidateTypes(inputs []*fhe.FheEncrypted, _ byte) error {
+	if len(inputs) != 1 {
+		return fmt.Errorf("expected 1 input, got %d", len(inputs))
+	}
+
+	return nil
 }
 
 func (f TwoOperationFunc) Execute(inputs []*fhe.FheEncrypted) (*fhe.FheEncrypted, error) {
@@ -47,8 +51,16 @@ func (f TwoOperationFunc) Execute(inputs []*fhe.FheEncrypted) (*fhe.FheEncrypted
 	return f(inputs[0], inputs[1])
 }
 
-func (f TwoOperationFunc) ValidateTypes(inputs []*fhe.FheEncrypted, utype byte) error {
-	return validateAllSameType(inputs, utype) // Default validation
+func (f TwoOperationFunc) ValidateTypes(inputs []*fhe.FheEncrypted, _ byte) error {
+	if len(inputs) != 2 {
+		return fmt.Errorf("expected 2 inputs, got %d", len(inputs))
+	}
+
+	if inputs[0].Key.UintType != inputs[1].Key.UintType {
+		return fmt.Errorf("inputs type mismatch: expected %v, got %v", inputs[0].Key.UintType.ToString(), inputs[1].Key.UintType.ToString())
+	}
+
+	return nil
 }
 
 func (f ThreeOperationFunc) Execute(inputs []*fhe.FheEncrypted) (*fhe.FheEncrypted, error) {
@@ -130,7 +142,6 @@ func SealOutputHelper(storage *storage2.MultiStore, ctHash fhe.Hash, pk []byte, 
 
 	return string(sealed), nil
 }
-
 func createPlaceholder(utype byte, securityZone int32, functionName types.PrecompileName, inputKeys ...[]byte) (*fhe.FheEncrypted, error) {
 	placeholderCt := fhe.CreateFheEncryptedWithData(CreatePlaceHolderData(), fhe.EncryptionType(utype), true)
 
@@ -182,16 +193,26 @@ func SolidityInputsToCiphertextKeys(inputs ...[]byte) ([]fhe.CiphertextKey, erro
 func keysToHashes(keys []fhe.CiphertextKey) [][]byte {
 	hashes := make([][]byte, len(keys))
 	for i, key := range keys {
-		hashes[i] = key.Hash[:]
+		hashes[i] = make([]byte, len(key.Hash))
+		copy(hashes[i], key.Hash[:])
 	}
 	return hashes
+}
+
+func getUtypeForFunctionName(functionName types.PrecompileName, currentType byte) byte {
+	switch functionName {
+	case types.Lte, types.Lt, types.Gte, types.Gt, types.Eq, types.Ne:
+		return byte(fhe.Bool)
+	default:
+		return currentType
+	}
 }
 
 // ProcessOperation handles operations with variable number of inputs
 func ProcessOperation(functionName types.PrecompileName, operation OperationFunc, utype byte, securtiyZone int32, inputKeys []fhe.CiphertextKey, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 
-	placeholderCt, err := createPlaceholder(utype, securtiyZone, functionName, keysToHashes(inputKeys)...)
+	placeholderCt, err := createPlaceholder(getUtypeForFunctionName(functionName, utype), securtiyZone, functionName, keysToHashes(inputKeys)...)
 	if err != nil {
 		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted

@@ -391,7 +391,7 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams, callback *Callbac
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	placeholderCt, err := createPlaceholder(utype, keys[0].SecurityZone, functionName, keys[0].Hash[:], ByteToUint256(toType))
+	placeholderCt, err := createPlaceholder(toType, keys[0].SecurityZone, functionName, keys[0].Hash[:], ByteToUint256(toType))
 	if err != nil {
 		logger.Error(functionName.String()+" failed to create placeholder", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
