@@ -5,7 +5,7 @@ AggregatorDir="$(pwd)/copro-aggregator"
 TaskManagerDir="$(pwd)/copro-task-manager-hardhat"
 CtRegistryDir="$(pwd)/ct-registry"
 FheosDir="$(pwd)/nitro/fheos/"
-FheosImage="ghcr.io/fhenixprotocol/localfhenix:v0.2.4"
+FheosImage="ghcr.io/fhenixprotocol/nitro/localfhenix:v0.3.2-alpha.17"
 FheosServerImage="fheosserver"
 
 BuildParam=$1
