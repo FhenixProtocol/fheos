@@ -38,6 +38,7 @@ fhe-engine-server -c /home/user/fhenix/fhe_engine.toml &
 sleep 2
 
 if [[ "${DETACH_MODE}" -eq 1 ]]; then
+  coprocessor &
   exec /bin/bash
 fi
 
