@@ -202,6 +202,13 @@ func storeCipherText(storage *storage.MultiStore, ct *fhe.FheEncrypted) error {
 	return nil
 }
 
+func deleteCipherText(storage *storage.MultiStore, ciphertextHash fhe.Hash) {
+	err := storage.DeleteCt(types.Hash(ciphertextHash))
+	if err != nil {
+		logger.Error("failed deleting ciphertext from state: ", err)
+	}
+}
+
 func ByteToUint256(b byte) []byte {
 	var uint256 [32]byte
 	uint256[31] = b // Place the byte in the least significant position

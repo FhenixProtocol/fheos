@@ -222,14 +222,14 @@ func ProcessOperation(functionName types.PrecompileName, operation OperationFunc
 		logger.Debug(functionName.String(), inputsToString(inputKeys), "placeholderKey", hex.EncodeToString(placeholderCt.Key.Hash[:]))
 	}
 
-	if err := storeCipherText(storage, placeholderCt); err != nil {
-		logger.Error(functionName.String()+" failed to store async ciphertext", "err", err)
-		return nil, 0, vm.ErrExecutionReverted
-	}
-
 	uintType := fhe.EncryptionType(utype)
 	if !types.IsValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	if err := storeCipherText(storage, placeholderCt); err != nil {
+		logger.Error(functionName.String()+" failed to store async ciphertext", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -245,12 +245,12 @@ func ProcessOperation(functionName types.PrecompileName, operation OperationFunc
 
 	// Make copies for goroutine
 	copiedInputs := make([]fhe.CiphertextKey, len(inputKeys))
-	for i, key := range inputKeys {
-		copiedInputs[i] = key
-	}
+	copy(copiedInputs, inputKeys)
 	placeholderKeyCopy := placeholderCt.Key
 
 	go func(inputs []fhe.CiphertextKey, resultKey fhe.CiphertextKey) {
+		cleanup := func() { deleteCipherText(storage, resultKey.Hash) }
+		defer cleanup()
 		cts, err := blockUntilInputsAvailable(storage, tp, inputs...)
 		if err != nil || len(cts) != len(inputs) {
 			logger.Error(functionName.String() + ": inputs not verified")
@@ -289,6 +289,7 @@ func ProcessOperation(functionName types.PrecompileName, operation OperationFunc
 			logger.Error(functionName.String()+" failed", "err", err)
 			return
 		}
+		defer func() { cleanup = func() {} }() // Cancel the cleanup
 
 		if callback != nil {
 			url := (*callback).CallbackUrl
