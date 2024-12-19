@@ -76,37 +76,23 @@ function listenDockerLogs {
 }
 
 # Placeholder functions for each task
-function runningLocalFhenix {
-    step "Running Local Fhenix (consumer chain)"
+function runLocalFhenix {
+    local name=$1
+    local portRpc=$2
+    local portWs=$3
+    local portFaucet=$4
+
     cd $TaskManagerDir
     pnpm install
-    local name=localfhenix_copro_consumer
     if docker ps | grep $name; then
-        success "Local Fhenix (consumer) is already running"
+        success "$name is already running"
     else
         success "localfhenix is not running"
-        docker run -d --name $name -p 42069:8547 -p 42070:8548 -p 42000:3000 -it $FheosImage
+        docker run -d --name $name -p $portRpc:8547 -p $portWs:8548 -p $portFaucet:3000 -it $FheosImage
         if [ $? -ne 0 ]; then
-            err "Error: Failed to run Local Fhenix for consumer chain"
+            err "Error: Failed to run Local Fhenix: $name"
         fi 
-        success "Local Fhenix (consumer) is started"
-        listenDockerLogs $name
-    fi
-}
-
-function runningLocalFhenixSecondInstance {
-    step "Running 2nd Local Fhenix (fhenix chain as DA)"
-    cd $TaskManagerDir
-    pnpm install
-    local name=localfhenix_copro_da
-    if docker ps | grep $name; then
-        success "Local Fhenix (da chain) is already running"
-    else
-        docker run -d --name $name -p 42169:8547 -p 42170:8548 -p 42100:3000 -it $FheosImage
-        if [ $? -ne 0 ]; then
-            err "Error: Failed to run Local Fhenix for DA chain"
-        fi
-        success "Local Fhenix (DA chain) is started"
+        success "Local Fhenix ($name) is started"
         listenDockerLogs $name
     fi
 }
@@ -123,7 +109,7 @@ function buildFheosServer {
     fi
 }
 
-function runningFheosServer {
+function runFheosServer {
     step "Running Fheos server"
     if docker ps | grep $FheosServerImage; then
             success "Fheos server is already running"
@@ -203,8 +189,10 @@ fi
 # Main Script Logic - Run tasks
 echo "Starting the script with configured directories"
 current_directory=$(pwd)
-runningLocalFhenix
-runningLocalFhenixSecondInstance
+step "Running Local Fhenix (consumer chain)"
+runLocalFhenix localfhenix_copro_da 42069 42070 42000
+step "Running Local Fhenix (da chain)"
+runLocalFhenix localfhenix_copro_consumer 42169 42170 42100
 buildFheosServer
 runningFheosServer
 deployContracts
