@@ -131,38 +131,21 @@ function runFheosServer {
 }
 
 function deployContracts {
-    deployContractTM
-    deployContractCtRegistry 
-}
+    local contractRepo=$1
 
-function deployContractTM {
-    step "Running deploy TaskManager and Example contracts"
-    cd $TaskManagerDir
+    step "Running deploy $(basename "$contractRepo")"
+    cd $contractRepo
     pnpm pnpm clean
     output=$(pnpm task:deploy)
     if [ $? -ne 0 ]; then
-        err "Error: Failed to deploy TaskManager contracts"
+        err "Error: Failed to deploy $(basename "$contractRepo") contracts"
     fi
 }
 
-function deployContractCtRegistry {
-    step "Running deploy Ct Registry contracts"
-    cd $CtRegistryDir
-    pnpm clean
-    output=$(pnpm task:deploy)
-    if [ $? -ne 0 ]; then
-        err "Error: Failed to deploy CtRegistry contract"
-    fi
-}
-
-function copyDeployedTM {
-    step "Copying the deployed TaskManager to the AggregatorDir: $AggregatorDir"
-    cp $TaskManagerDir/deployments/localfhenix/TaskManager.json $AggregatorDir
-}
-
-function copyDeployedCtRegistry {
-    step "Copying the deployed CtRegistry to the AggregatorDir: $AggregatorDir"
-    cp $CtRegistryDir/deployments/localfhenix/CiphertextRegistry.json $AggregatorDir
+function copyDeployedContract {
+    local contractPath=$1
+    step "Copying the deployed Contract to the AggregatorDir: $(basename $contractPath)"
+    cp $contractPath $AggregatorDir
 }
 
 function startAggregator {
@@ -194,9 +177,12 @@ runLocalFhenix localfhenix_copro_da 42069 42070 42000
 step "Running Local Fhenix (da chain)"
 runLocalFhenix localfhenix_copro_consumer 42169 42170 42100
 buildFheosServer
-runningFheosServer
-deployContracts
-copyDeployedTM
+runFheosServer
+deployContracts $TaskManagerDir
+deployContracts $CtRegistryDir
+copyDeployedContract $CtRegistryDir/deployments/localfhenix/CiphertextRegistry.json
+copyDeployedContract $TaskManagerDir/deployments/localfhenix/TaskManager.json
+
 copyDeployedCtRegistry
 if [ "$BuildParam" != "NA" ]; then
     startAggregator
