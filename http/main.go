@@ -395,20 +395,6 @@ func initFheos() (*precompiles.TxParams, error) {
 		ParallelTxHooks: nil,
 	}
 
-	var trivialHash []byte
-	for i := 0; i <= 50; i++ {
-
-		// Create a byte slice of size 32
-		toEncrypt := make([]byte, 32)
-
-		// Convert the integer to bytes and store it in the byte slice
-		toEncrypt[31] = uint8(i)
-		trivialHash, _, err = precompiles.TrivialEncrypt(toEncrypt, 2, 0, &tp, nil)
-		if err != nil {
-			return nil, fmt.Errorf("failed to generate trivial hash for %d: %v", i, err)
-		}
-		fmt.Printf("Trivial hash for %d: %x\n", i, trivialHash)
-	}
 	return &tp, nil
 }
 
@@ -804,22 +790,16 @@ func main() {
 	handlers := getHandlers()
 	log.Printf("Got %d handlers", len(handlers))
 	// iterate handlers
-	for i, handler := range handlers {
+	for _, handler := range handlers {
 		http.HandleFunc(handler.Name, handler.Handler)
-		log.Printf("Added handler for %s in index %d", handler.Name, i)
 	}
 
 	http.HandleFunc("/Decrypt", DecryptHandler)
-	log.Printf("Added handler for /Decrypt")
 	http.HandleFunc("/SealOutput", SealOutputHandler)
 	http.HandleFunc("/UpdateCT", UpdateCTHandler)
-	log.Printf("Added handler for /SealOutput")
 	http.HandleFunc("/TrivialEncrypt", TrivialEncryptHandler)
-	log.Printf("Added handler for /TrivialEncrypt")
 	http.HandleFunc("/Cast", CastHandler)
-	log.Printf("Added handler for /Cast")
 	http.HandleFunc("/GetNetworkPublickKey", GetNetworkPublicKeyHandler)
-	log.Printf("Added handler for /GetNetworkPublickKey")
 
 	// Wrap the default mux in the CORS middleware
 	wrappedMux := corsMiddleware(http.DefaultServeMux)

@@ -25,7 +25,6 @@ COPY warp-drive/sealing warp-drive/sealing
 
 # Update rust version & install packages
 RUN cd warp-drive/fhe-engine && cargo update
-#RUN cd warp-drive/renault-server && cargo update
 
 # Copy the rest of the stuff so we can actually build it
 COPY warp-drive/ warp-drive/
@@ -34,6 +33,10 @@ WORKDIR /workspace/warp-drive/fhe-engine
 
 # Todo: fix arm support
 RUN RUSTFLAGS=$EXTRA_RUSTFLAGS cargo build --profile=release-lto
+
+#WORKDIR /workspace/warp-drive/renault-server
+# Todo: fix arm support
+#RUN RUSTFLAGS=$EXTRA_RUSTFLAGS cargo build --profile=release-lto
 
 FROM $DOCKER_NAME as winning
 
@@ -69,18 +72,19 @@ RUN mkdir -p fheos/solidity
 
 WORKDIR fheos
 
-#RUN ./gen.sh
+RUN ./gen.sh
 
 WORKDIR /workspace
 
 RUN go mod tidy
 
 RUN CGO_ENABLED=0 go install -ldflags "-s -w -extldflags '-static'" github.com/go-delve/delve/cmd/dlv@latest
+
 RUN go build -gcflags "all=-N -l" -ldflags="-X github.com/offchainlabs/nitro/cmd/util/confighelpers.version= -X github.com/offchainlabs/nitro/cmd/util/confighelpers.datetime= -X github.com/offchainlabs/nitro/cmd/util/confighelpers.modified=" -o target/bin/nitro "/workspace/cmd/nitro"
 
 COPY Makefile fheos/
 
-RUN cd fheos && make build-coprocessor
+RUN cd fheos && make build
 
 FROM ghcr.io/fhenixprotocol/localfhenix:v0.1.0-beta5
 
@@ -90,7 +94,7 @@ ENV GOROOT=/usr/local/go
 ENV GOPATH=/go/
 ENV PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
 
-ADD https://go.dev/dl/go1.20.linux-amd64.tar.gz go.linux-amd64.tar.gz
+ADD https://go.dev/dl/go1.21.3.linux-amd64.tar.gz go.linux-amd64.tar.gz
 RUN sudo tar -C /usr/local -xzf go.linux-amd64.tar.gz
 
 RUN sudo chown user:user /usr/local/go
@@ -109,19 +113,17 @@ COPY --from=warp-drive-builder /workspace/warp-drive/fhe-engine/target/release-l
 COPY --from=warp-drive-builder /workspace/warp-drive/fhe-engine/config/fhe_engine.toml /home/user/fhenix/fhe_engine.toml
 
 COPY --from=winning /workspace/target/bin/nitro /usr/local/bin/
-COPY --from=winning /workspace/fheos/build/coprocessor /usr/local/bin/coprocessor
+COPY --from=winning /workspace/fheos/build/main /usr/local/bin/fheos
 
 # **************** setup scripts and configs
 
-COPY deployment/runFheosServer.sh runFheosServer.sh
+COPY deployment/runLocalFhenix.sh runLocalFhenix.sh
 
-RUN sudo chmod +x ./runFheosServer.sh
+RUN sudo chmod +x ./runLocalFhenix.sh
 RUN sudo chown -R user:user /home/user/keys
 RUN sed -i '/^keys_folder *=.*/s//keys_folder = "\/home\/user\/keys" /' /home/user/fhenix/fhe_engine.toml
-#RUN sed -i '/^keys_folder *=.*/s//keys_folder = "\/home\/user\/keys" /' /home/user/fhenix/renault-server.toml
-#RUN #sudo jq '.conf |= (.fhenix = .tfhe | del(.tfhe))' /config/sequencer_config.json > temp.json && sudo mv temp.json /config/sequencer_config.json
 COPY deployment/sequencer_config.json /config/sequencer_config.json
 
 # **************** Run
 
-ENTRYPOINT ["/bin/bash", "runFheosServer.sh"]
+ENTRYPOINT ["/bin/bash", "runLocalFhenix.sh"]
