@@ -33,7 +33,7 @@ if [ ! -d "$FheosDir" ]; then
   missing_dirs+=("Fheos Directory: $FheosDir")
 fi
 
-if [ ! -d "$FheosDir" ]; then
+if [ ! -d "$CtRegistryDir" ]; then
   missing_dirs+=("Ct Registry Directory: $CtRegistryDir")
 fi
 
