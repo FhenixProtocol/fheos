@@ -395,20 +395,6 @@ func initFheos() (*precompiles.TxParams, error) {
 		ParallelTxHooks: nil,
 	}
 
-	var trivialHash []byte
-	for i := 0; i <= 50; i++ {
-
-		// Create a byte slice of size 32
-		toEncrypt := make([]byte, 32)
-
-		// Convert the integer to bytes and store it in the byte slice
-		toEncrypt[31] = uint8(i)
-		trivialHash, _, err = precompiles.TrivialEncrypt(toEncrypt, 2, 0, &tp, nil)
-		if err != nil {
-			return nil, fmt.Errorf("failed to generate trivial hash for %d: %v", i, err)
-		}
-		fmt.Printf("Trivial hash for %d: %x\n", i, trivialHash)
-	}
 	return &tp, nil
 }
 
