@@ -3,6 +3,7 @@
 
 AggregatorDir="$(pwd)/copro-aggregator"
 TaskManagerDir="$(pwd)/copro-task-manager-hardhat"
+CtRegistryDir="$(pwd)/ct-registry"
 FheosDir="$(pwd)/nitro/fheos/"
 FheosImage="ghcr.io/fhenixprotocol/localfhenix:v0.2.4"
 FheosServerImage="fheosserver"
@@ -32,6 +33,10 @@ if [ ! -d "$FheosDir" ]; then
   missing_dirs+=("Fheos Directory: $FheosDir")
 fi
 
+if [ ! -d "$CtRegistryDir" ]; then
+  missing_dirs+=("Ct Registry Directory: $CtRegistryDir")
+fi
+
 # If any directories are missing, print them and exit
 if [ ${#missing_dirs[@]} -ne 0 ]; then
   echo -e "\n${RED}Error: One or more directories do not exist. Please check the paths in the configuration file.${NC}"
@@ -57,29 +62,38 @@ function success(){
 }
 
 function listenDockerLogs {
+    local name=$1
     echo -e "${YELLOW}Listening to Docker container logs for 'localfhenix_copro'${NC}"
-    docker logs -f localfhenix_copro | while read line; do
+    local didStart=$(docker logs -f $name | while read line; do
         if echo "$line" | grep -q "HTTP server started"; then
             echo -e "${GREEN}Started successfully${NC}"
             break
         fi
-    done
+    done)
+    if [ -z "$didStart" ]; then
+        err "Error: Failed to start Local Fhenix $name"
+    fi
 }
 
 # Placeholder functions for each task
-function runningLocalFhenix {
-    step "Running Local Fhenix"
+function runLocalFhenix {
+    local name=$1
+    local portRpc=$2
+    local portWs=$3
+    local portFaucet=$4
+
     cd $TaskManagerDir
     pnpm install
-    if docker ps | grep $FheosImage; then
-            success "Local Fhenix is already running"
+    if docker ps | grep $name; then
+        success "$name is already running"
     else
-        docker run -d --name localfhenix_copro -p 42069:8547 -p 42070:8548 -p 42000:3000 -it $FheosImage 
+        success "localfhenix is not running"
+        docker run -d --name $name -p $portRpc:8547 -p $portWs:8548 -p $portFaucet:3000 -it $FheosImage
         if [ $? -ne 0 ]; then
-            err "Error: Failed to run Local Fhenix"
+            err "Error: Failed to run Local Fhenix: $name"
         fi 
-        success "Local Fhenix is started"
-        listenDockerLogs
+        success "Local Fhenix ($name) is started"
+        listenDockerLogs $name
     fi
 }
 
@@ -95,7 +109,7 @@ function buildFheosServer {
     fi
 }
 
-function runningFheosServer {
+function runFheosServer {
     step "Running Fheos server"
     if docker ps | grep $FheosServerImage; then
             success "Fheos server is already running"
@@ -117,18 +131,21 @@ function runningFheosServer {
 }
 
 function deployContracts {
-    step "Running deploy TaskManager and Example contracts"
-    cd $TaskManagerDir
+    local contractRepo=$1
+
+    step "Running deploy $(basename "$contractRepo")"
+    cd $contractRepo
     pnpm pnpm clean
     output=$(pnpm task:deploy)
     if [ $? -ne 0 ]; then
-        err "Error: Failed to deploy contracts"
+        err "Error: Failed to deploy $(basename "$contractRepo") contracts"
     fi
 }
 
-function copyDeployedTM {
-    step "Copying the deployed TaskManager to the AggregatorDir: $AggregatorDir"
-    cp $TaskManagerDir/deployments/localfhenix/TaskManager.json $AggregatorDir
+function copyDeployedContract {
+    local contractPath=$1
+    step "Copying the deployed Contract to the AggregatorDir: $(basename $contractPath)"
+    cp $contractPath $AggregatorDir
 }
 
 function startAggregator {
@@ -155,11 +172,18 @@ fi
 # Main Script Logic - Run tasks
 echo "Starting the script with configured directories"
 current_directory=$(pwd)
-runningLocalFhenix
+step "Running Local Fhenix (consumer chain)"
+runLocalFhenix localfhenix_copro_da 42069 42070 42000
+step "Running Local Fhenix (da chain)"
+runLocalFhenix localfhenix_copro_consumer 42169 42170 42100
 buildFheosServer
-runningFheosServer
-deployContracts
-copyDeployedTM
+runFheosServer
+deployContracts $TaskManagerDir
+deployContracts $CtRegistryDir
+copyDeployedContract $CtRegistryDir/deployments/localfhenix/CiphertextRegistry.json
+copyDeployedContract $TaskManagerDir/deployments/localfhenix/TaskManager.json
+
+copyDeployedCtRegistry
 if [ "$BuildParam" != "NA" ]; then
     startAggregator
 fi
