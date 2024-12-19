@@ -49,7 +49,7 @@ jobs:
       - name: Build Local Dev Image
         uses: docker/build-push-action@v4
         with:
-          file: Dockerfile
+          file: Dockerfile.localfhenix
           context: .
           tags: ghcr.io/fhenixprotocol/localfhenix:v0.0.0
       - name: Run Local Dev Image

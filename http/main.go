@@ -804,22 +804,16 @@ func main() {
 	handlers := getHandlers()
 	log.Printf("Got %d handlers", len(handlers))
 	// iterate handlers
-	for i, handler := range handlers {
+	for _, handler := range handlers {
 		http.HandleFunc(handler.Name, handler.Handler)
-		log.Printf("Added handler for %s in index %d", handler.Name, i)
 	}
 
 	http.HandleFunc("/Decrypt", DecryptHandler)
-	log.Printf("Added handler for /Decrypt")
 	http.HandleFunc("/SealOutput", SealOutputHandler)
 	http.HandleFunc("/UpdateCT", UpdateCTHandler)
-	log.Printf("Added handler for /SealOutput")
 	http.HandleFunc("/TrivialEncrypt", TrivialEncryptHandler)
-	log.Printf("Added handler for /TrivialEncrypt")
 	http.HandleFunc("/Cast", CastHandler)
-	log.Printf("Added handler for /Cast")
 	http.HandleFunc("/GetNetworkPublickKey", GetNetworkPublicKeyHandler)
-	log.Printf("Added handler for /GetNetworkPublickKey")
 
 	// Wrap the default mux in the CORS middleware
 	wrappedMux := corsMiddleware(http.DefaultServeMux)

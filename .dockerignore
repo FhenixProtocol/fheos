@@ -5,3 +5,6 @@ Dockerfile
 Dockerfile.debug
 target
 node_modules
+go-ethereum/tests/testdata/
+precompiles/node_modules/
+solidity/
