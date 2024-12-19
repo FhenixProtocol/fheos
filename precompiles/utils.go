@@ -169,7 +169,7 @@ func blockUntilInputsAvailable(storage *storage.MultiStore, tp *TxParams, inputK
 	return cts, nil
 }
 
-func awaitCtResult(storage *storage.MultiStore, lhsHash fhe.Hash, tp *TxParams) *fhe.FheEncrypted {
+func awaitCtResult(storage *storage.MultiStore, lhsHash fhe.Hash, _ *TxParams) *fhe.FheEncrypted {
 	lhsValue := getCiphertext(storage, lhsHash)
 	if lhsValue == nil {
 		return nil
@@ -177,6 +177,9 @@ func awaitCtResult(storage *storage.MultiStore, lhsHash fhe.Hash, tp *TxParams) 
 
 	for lhsValue.IsPlaceholderValue() {
 		lhsValue = getCiphertext(storage, lhsHash)
+		if lhsValue == nil {
+			return nil
+		}
 		time.Sleep(1 * time.Millisecond)
 	}
 	return lhsValue
