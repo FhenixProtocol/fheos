@@ -3,6 +3,7 @@
 
 AggregatorDir="$(pwd)/copro-aggregator"
 TaskManagerDir="$(pwd)/copro-task-manager-hardhat"
+CtRegistryDir="$(pwd)/ct-registry"
 FheosDir="$(pwd)/nitro/fheos/"
 FheosImage="ghcr.io/fhenixprotocol/localfhenix:v0.2.4"
 FheosServerImage="fheosserver"
@@ -32,6 +33,10 @@ if [ ! -d "$FheosDir" ]; then
   missing_dirs+=("Fheos Directory: $FheosDir")
 fi
 
+if [ ! -d "$FheosDir" ]; then
+  missing_dirs+=("Ct Registry Directory: $CtRegistryDir")
+fi
+
 # If any directories are missing, print them and exit
 if [ ${#missing_dirs[@]} -ne 0 ]; then
   echo -e "\n${RED}Error: One or more directories do not exist. Please check the paths in the configuration file.${NC}"
@@ -57,29 +62,52 @@ function success(){
 }
 
 function listenDockerLogs {
+    local name=$1
     echo -e "${YELLOW}Listening to Docker container logs for 'localfhenix_copro'${NC}"
-    docker logs -f localfhenix_copro | while read line; do
+    local didStart=$(docker logs -f $name | while read line; do
         if echo "$line" | grep -q "HTTP server started"; then
             echo -e "${GREEN}Started successfully${NC}"
             break
         fi
-    done
+    done)
+    if [ -z "$didStart" ]; then
+        err "Error: Failed to start Local Fhenix $name"
+    fi
 }
 
 # Placeholder functions for each task
 function runningLocalFhenix {
-    step "Running Local Fhenix"
+    step "Running Local Fhenix (consumer chain)"
     cd $TaskManagerDir
     pnpm install
-    if docker ps | grep $FheosImage; then
-            success "Local Fhenix is already running"
+    local name=localfhenix_copro_consumer
+    if docker ps | grep $name; then
+        success "Local Fhenix (consumer) is already running"
     else
-        docker run -d --name localfhenix_copro -p 42069:8547 -p 42070:8548 -p 42000:3000 -it $FheosImage 
+        success "localfhenix is not running"
+        docker run -d --name $name -p 42069:8547 -p 42070:8548 -p 42000:3000 -it $FheosImage
         if [ $? -ne 0 ]; then
-            err "Error: Failed to run Local Fhenix"
+            err "Error: Failed to run Local Fhenix for consumer chain"
         fi 
-        success "Local Fhenix is started"
-        listenDockerLogs
+        success "Local Fhenix (consumer) is started"
+        listenDockerLogs $name
+    fi
+}
+
+function runningLocalFhenixSecondInstance {
+    step "Running 2nd Local Fhenix (fhenix chain as DA)"
+    cd $TaskManagerDir
+    pnpm install
+    local name=localfhenix_copro_da
+    if docker ps | grep $name; then
+        success "Local Fhenix (da chain) is already running"
+    else
+        docker run -d --name $name -p 42169:8547 -p 42170:8548 -p 42100:3000 -it $FheosImage
+        if [ $? -ne 0 ]; then
+            err "Error: Failed to run Local Fhenix for DA chain"
+        fi
+        success "Local Fhenix (DA chain) is started"
+        listenDockerLogs $name
     fi
 }
 
@@ -117,18 +145,38 @@ function runningFheosServer {
 }
 
 function deployContracts {
+    deployContractTM
+    deployContractCtRegistry 
+}
+
+function deployContractTM {
     step "Running deploy TaskManager and Example contracts"
     cd $TaskManagerDir
     pnpm pnpm clean
     output=$(pnpm task:deploy)
     if [ $? -ne 0 ]; then
-        err "Error: Failed to deploy contracts"
+        err "Error: Failed to deploy TaskManager contracts"
+    fi
+}
+
+function deployContractCtRegistry {
+    step "Running deploy Ct Registry contracts"
+    cd $CtRegistryDir
+    pnpm clean
+    output=$(pnpm task:deploy)
+    if [ $? -ne 0 ]; then
+        err "Error: Failed to deploy CtRegistry contract"
     fi
 }
 
 function copyDeployedTM {
     step "Copying the deployed TaskManager to the AggregatorDir: $AggregatorDir"
     cp $TaskManagerDir/deployments/localfhenix/TaskManager.json $AggregatorDir
+}
+
+function copyDeployedCtRegistry {
+    step "Copying the deployed CtRegistry to the AggregatorDir: $AggregatorDir"
+    cp $CtRegistryDir/deployments/localfhenix/CiphertextRegistry.json $AggregatorDir
 }
 
 function startAggregator {
@@ -156,10 +204,12 @@ fi
 echo "Starting the script with configured directories"
 current_directory=$(pwd)
 runningLocalFhenix
+runningLocalFhenixSecondInstance
 buildFheosServer
 runningFheosServer
 deployContracts
 copyDeployedTM
+copyDeployedCtRegistry
 if [ "$BuildParam" != "NA" ]; then
     startAggregator
 fi
