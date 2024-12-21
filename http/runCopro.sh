@@ -47,8 +47,13 @@ if [ ${#missing_dirs[@]} -ne 0 ]; then
   exit 1
 fi
 
+
+function yellow() {
+    echo -e "${YELLOW}$1${NC}"
+}
+
 function step() {
-    echo -e "\n${YELLOW}[${step_index}] $1${NC}"
+    yellow "\n[${step_index}] $1"
     step_index=$((step_index + 1))
 }
 
@@ -63,13 +68,17 @@ function success(){
 
 function listenDockerLogs {
     local name=$1
-    echo -e "${YELLOW}Listening to Docker container logs for 'localfhenix_copro'${NC}"
-    local didStart=$(docker logs -f $name | while read line; do
-        if echo "$line" | grep -q "HTTP server started"; then
-            echo -e "${GREEN}Started successfully${NC}"
-            break
-        fi
-    done)
+    yellow "Listening to Docker container logs for '$name'"
+    local didStart=$(
+        while read line; do
+            if [[ "$line" == *"HTTP server started"* ]]; then
+                echo -e "${GREEN}Started successfully${NC}"
+                break
+            fi
+        done < <(docker logs -f localfhenix_copro_consumer)
+    )
+
+
     if [ -z "$didStart" ]; then
         err "Error: Failed to start Local Fhenix $name"
     fi
@@ -173,9 +182,9 @@ fi
 echo "Starting the script with configured directories"
 current_directory=$(pwd)
 step "Running Local Fhenix (consumer chain)"
-runLocalFhenix localfhenix_copro_da 42069 42070 42000
+runLocalFhenix localfhenix_copro_consumer 42069 42070 42000
 step "Running Local Fhenix (da chain)"
-runLocalFhenix localfhenix_copro_consumer 42169 42170 42100
+runLocalFhenix localfhenix_copro_da 42169 42170 42100
 buildFheosServer
 runFheosServer
 deployContracts $TaskManagerDir
