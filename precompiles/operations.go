@@ -249,8 +249,13 @@ func ProcessOperation(functionName types.PrecompileName, operation OperationFunc
 	placeholderKeyCopy := placeholderCt.Key
 
 	go func(inputs []fhe.CiphertextKey, resultKey fhe.CiphertextKey) {
-		cleanup := func() { deleteCipherText(storage, resultKey.Hash) }
-		defer cleanup()
+		ctReady := false
+		defer func() {
+			if !ctReady {
+				logger.Error(functionName.String() + ": failed, deleting placeholder ciphertext " + hex.EncodeToString(resultKey.Hash[:]))
+				deleteCipherText(storage, resultKey.Hash)
+			}
+		}()
 		cts, err := blockUntilInputsAvailable(storage, tp, inputs...)
 		if err != nil || len(cts) != len(inputs) {
 			logger.Error(functionName.String() + ": inputs not verified")
@@ -289,7 +294,7 @@ func ProcessOperation(functionName types.PrecompileName, operation OperationFunc
 			logger.Error(functionName.String()+" failed", "err", err)
 			return
 		}
-		defer func() { cleanup = func() {} }() // Cancel the cleanup
+		ctReady = true // Mark as ready
 
 		if callback != nil {
 			url := (*callback).CallbackUrl

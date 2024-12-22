@@ -407,6 +407,7 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams, callback *Callbac
 		logger.Error(functionName.String()+" failed to store async ciphertext", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
+	logger.Info(functionName.String(), "stored async ciphertext", "placeholderKey", hex.EncodeToString(placeholderCt.Key.Hash[:]))
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Debug("Starting new async precompiled contract function: " + functionName.String())
@@ -416,8 +417,13 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams, callback *Callbac
 	placeholderKeyCopy := placeholderCt.Key
 
 	go func(inputKey, placeholderKey fhe.CiphertextKey, toType byte) {
-		cleanup := func() { deleteCipherText(storage, placeholderKey.Hash) }
-		defer cleanup()
+		ctReady := false
+		defer func() {
+			if !ctReady {
+				logger.Error(functionName.String() + ": failed, deleting placeholder ciphertext " + hex.EncodeToString(placeholderKey.Hash[:]))
+				deleteCipherText(storage, placeholderKey.Hash)
+			}
+		}()
 		ct, err := blockUntilInputsAvailable(storage, tp, inputKey)
 		input := ct[0]
 		if err != nil {
@@ -440,7 +446,7 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams, callback *Callbac
 			logger.Error(functionName.String()+" failed to store result", "err", err)
 			return
 		}
-		defer func() { cleanup = func() {} }() // Cancel the cleanup
+		ctReady = true // Mark as ready
 
 		if callback != nil {
 			url := (*callback).CallbackUrl
@@ -503,12 +509,18 @@ func TrivialEncrypt(input []byte, toType byte, securityZone int32, tp *TxParams,
 		logger.Error(functionName.String()+" failed to store async ciphertext", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
+	logger.Info(functionName.String(), "stored async ciphertext", "placeholderKey", hex.EncodeToString(placeholderCt.Key.Hash[:]))
 
 	placeholderKeyCopy := placeholderCt.Key
 
 	go func(resultKey fhe.CiphertextKey, toType byte) {
-		cleanup := func() { deleteCipherText(storage, resultKey.Hash) }
-		defer cleanup()
+		ctReady := false
+		defer func() {
+			if !ctReady {
+				logger.Error(functionName.String() + ": failed, deleting placeholder ciphertext " + hex.EncodeToString(resultKey.Hash[:]))
+				deleteCipherText(storage, resultKey.Hash)
+			}
+		}()
 		// we encrypt this using the computation key not the public key. Also, compact to save space in case this gets saved directly
 		// to storage
 		result, err := fhe.EncryptPlainText(valueToEncrypt, uintType, securityZone)
@@ -530,7 +542,7 @@ func TrivialEncrypt(input []byte, toType byte, securityZone int32, tp *TxParams,
 			return
 		}
 
-		defer func() { cleanup = func() {} }() // Cancel the cleanup
+		ctReady = true // Mark as ready
 
 		if callback != nil {
 			url := (*callback).CallbackUrl

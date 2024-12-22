@@ -206,9 +206,13 @@ func storeCipherText(storage *storage.MultiStore, ct *fhe.FheEncrypted) error {
 }
 
 func deleteCipherText(storage *storage.MultiStore, ciphertextHash fhe.Hash) {
-	err := storage.DeleteCt(types.Hash(ciphertextHash))
-	if err != nil {
-		logger.Error("failed deleting ciphertext from state: ", err)
+	if storage.Has(types.Hash(ciphertextHash)) {
+		err := storage.DeleteCt(types.Hash(ciphertextHash))
+		if err != nil {
+			logger.Error("failed deleting ciphertext from state: ", err)
+		}
+	} else {
+		logger.Warn("ciphertext not found in storage", "hash", ciphertextHash.Hex())
 	}
 }
 
