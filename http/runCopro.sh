@@ -153,8 +153,13 @@ function deployContracts {
 
 function copyDeployedContract {
     local contractPath=$1
-    step "Copying the deployed Contract to the AggregatorDir: $(basename $contractPath)"
-    cp $contractPath $AggregatorDir
+    name=$(basename $contractPath)
+
+    # remove everything up to and including a hashtag (that's the format of new artifact)
+    local finalName="${name#*#}"
+
+    step "Copying the deployed Contract to the AggregatorDir: $finalName"
+    cp $contractPath $AggregatorDir/$finalName
 }
 
 function startAggregator {
