@@ -178,6 +178,7 @@ func awaitCtResult(storage *storage.MultiStore, lhsHash fhe.Hash, _ *TxParams) *
 	for lhsValue.IsPlaceholderValue() {
 		lhsValue = getCiphertext(storage, lhsHash)
 		if lhsValue == nil {
+			logger.Error("Suddenly failed to get ciphertext from storage", "hash", lhsHash.Hex())
 			return nil
 		}
 		time.Sleep(1 * time.Millisecond)
