@@ -197,7 +197,6 @@ deployContracts $CtRegistryDir
 copyDeployedContract $CtRegistryDir/deployments/localfhenix/CiphertextRegistry.json
 copyDeployedContract $TaskManagerDir/ignition/deployments/chain-420105/artifacts/TaskManager#TaskManager.json
 
-copyDeployedCtRegistry
 if [ "$BuildParam" != "NA" ]; then
     startAggregator
 fi
