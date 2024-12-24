@@ -508,7 +508,7 @@ func TrivialEncrypt(input []byte, toType byte, securityZone int32, tp *TxParams,
 		logger.Error(functionName.String()+" failed to store async ciphertext", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-	logger.Info(functionName.String(), "stored async ciphertext", "placeholderKey", hex.EncodeToString(placeholderCt.Key.Hash[:]))
+	logger.Info(functionName.String()+" stored async ciphertext", "placeholderKey", hex.EncodeToString(placeholderCt.Key.Hash[:]))
 
 	placeholderKeyCopy := placeholderCt.Key
 

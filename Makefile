@@ -1,56 +1,7 @@
-.PHONY: install
-install:
-	cd precompiles && pnpm install --frozen-lockfile=false
-	cd solgen && pnpm install --frozen-lockfile=false
-	cd solidity && pnpm install --frozen-lockfile=false
-
-.PHONY: gen
-gen:
-	./gen.sh
-	#cd solgen && pnpm build
-
-.PHONY: gen-fheops
-gen-fheops:
-	./gen.sh -g true -n true
-	cd solgen && pnpm build
-
-.PHONY: compile
-compile:
-	cp solidity/.env.example solidity/.env
-	cd solidity && pnpm compile
-
-.PHONY: gencompile
-gencompile: gen compile
-
 check_network_is_running:
 	@echo "Checking connection to 127.0.0.1:8547..."
 	@nc -z -v 127.0.0.1 8547 2>/dev/null || (echo "Connection failed to localfhenix" && false)
 	@echo "connected"
-
-.PHONY: test
-test: check_network_is_running gen compile
-	#cd solidity && pnpm install
-	#cd solidity && pnpm test
-
-.PHONY: test-precomp
-test-precomp: check_network_is_running
-	cp solidity/.env.example solidity/.env
-	cd solidity && pnpm test -- precompiles.test.ts
-
-.PHONY: test-tx
-test-tx: check_network_is_running
-	cp solidity/.env.example solidity/.env
-	cd solidity && pnpm test -- transaction.test.ts
-
-.PHONY: test-werc
-test-werc: check_network_is_running
-	cp solidity/.env.example solidity/.env
-	cd solidity && pnpm test -- werc20.test.ts
-
-.PHONY: test-uninit
-test-uninit: check_network_is_running
-	cp solidity/.env.example solidity/.env
-	cd solidity && pnpm test -- uninit.test.ts
 
 .PHONY: build
 build:
@@ -59,6 +10,10 @@ build:
 .PHONY: run-engine
 run-engine:
 	cd warp-drive/fhe-engine && make server-no-sgx & echo $$! > engine.pid
+	for i in {1..20}; do \
+		if nc -z localhost 50051; then echo "Engine is up!"; break; fi; \
+		echo "Waiting for engine..."; sleep 1; \
+	done
 
 .PHONY: stop-engine
 stop-engine:
@@ -68,12 +23,6 @@ stop-engine:
 unit-test:
 	go test -failfast ./precompiles/
 
-.PHONY: unit-test-engine
-unit-test-engine: run-engine
-	go test -failfast ./precompiles/ || { make stop-engine; exit 1; }
-	make stop-engine
-
-
 .PHONY: build-coprocessor
 build-coprocessor:
 	go build -o build/coprocessor ./http/
@@ -82,15 +31,3 @@ build-coprocessor:
 .PHONY: clean
 clean:
 	rm -r build/*
-
-.PHONY: clean-gen
-clean-gen:
-	find solidity/tests/contracts -type f \
-	-not -name 'Counter.sol' \
-	-not -name 'Ownership.sol' \
-	-not -name 'Tx.sol' \
-	-not -name 'wERC20.sol' \
-	-not -name 'Utils.sol' \
-	-delete
-	rm solidity/FHE.sol
-	rm solidity/FheOS.sol
