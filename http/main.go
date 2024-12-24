@@ -526,7 +526,7 @@ func (t *TrivialEncryptRequest) UnmarshalJSON(data []byte) error {
 		RequesterUrl string `json:"requesterUrl"`
 	}
 	if err := json.Unmarshal(data, &aux); err != nil {
-		log.Printf("Failed to unmarshal SealOutputRequestAux: %v, %+v", err, aux)
+		log.Printf("Failed to unmarshal TrivialEncryptRequestAux: %v, %+v", err, aux)
 		return err
 	}
 

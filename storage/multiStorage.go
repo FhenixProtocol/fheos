@@ -34,6 +34,10 @@ func (ms *MultiStore) Has(h types.Hash) bool {
 	return ms.disk.HasCt(h)
 }
 
+func (ms *MultiStore) DeleteCt(h types.Hash) error {
+	return ms.disk.DeleteCt(h)
+}
+
 func NewMultiStore(db *memorydb.Database, disk *FheosStorage) *MultiStore {
 	return &MultiStore{
 		disk: disk,
