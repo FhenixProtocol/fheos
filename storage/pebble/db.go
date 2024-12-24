@@ -5,11 +5,12 @@ package pebble
 import (
 	"bytes"
 	"encoding/gob"
+	"log"
+	"sync"
+
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
-	"log"
-	"sync"
 )
 
 var (
@@ -95,4 +96,8 @@ func (p *EthDbWrapper) GetCt(h types.Hash) (*types.FheEncrypted, error) {
 	}
 
 	return &cipher, nil
+}
+
+func (p *EthDbWrapper) DeleteCt(h types.Hash) error {
+	return p.db.Delete(h[:])
 }

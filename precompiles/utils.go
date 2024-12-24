@@ -169,7 +169,7 @@ func blockUntilInputsAvailable(storage *storage.MultiStore, tp *TxParams, inputK
 	return cts, nil
 }
 
-func awaitCtResult(storage *storage.MultiStore, lhsHash fhe.Hash, tp *TxParams) *fhe.FheEncrypted {
+func awaitCtResult(storage *storage.MultiStore, lhsHash fhe.Hash, _ *TxParams) *fhe.FheEncrypted {
 	lhsValue := getCiphertext(storage, lhsHash)
 	if lhsValue == nil {
 		return nil
@@ -177,6 +177,10 @@ func awaitCtResult(storage *storage.MultiStore, lhsHash fhe.Hash, tp *TxParams) 
 
 	for lhsValue.IsPlaceholderValue() {
 		lhsValue = getCiphertext(storage, lhsHash)
+		if lhsValue == nil {
+			logger.Error("failed to get ciphertext from storage, Placeholder was deleted while awaiting", "hash", lhsHash.Hex())
+			return nil
+		}
 		time.Sleep(1 * time.Millisecond)
 	}
 	return lhsValue
@@ -192,7 +196,7 @@ func getCiphertext(state *storage.MultiStore, ciphertextHash fhe.Hash) *fhe.FheE
 	return (*fhe.FheEncrypted)(ct)
 }
 
-func storeCipherText(storage *storage.MultiStore, ct *fhe.FheEncrypted) error {
+func storeCiphertext(storage *storage.MultiStore, ct *fhe.FheEncrypted) error {
 	err := storage.PutCtIfNotExist(types.Hash(ct.GetHash()), (*types.FheEncrypted)(ct))
 	if err != nil {
 		logger.Error("failed importing ciphertext to state: ", err)
@@ -200,6 +204,18 @@ func storeCipherText(storage *storage.MultiStore, ct *fhe.FheEncrypted) error {
 	}
 
 	return nil
+}
+
+func deleteCiphertext(storage *storage.MultiStore, ciphertextHash fhe.Hash) {
+	hash := types.Hash(ciphertextHash)
+	if storage.Has(hash) {
+		err := storage.DeleteCt(hash)
+		if err != nil {
+			logger.Error("failed deleting ciphertext from state: ", err)
+		}
+	} else {
+		logger.Info("ciphertext not found in storage", "hash", ciphertextHash.Hex())
+	}
 }
 
 func ByteToUint256(b byte) []byte {
