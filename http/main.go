@@ -380,10 +380,6 @@ func initFheos() (*precompiles.TxParams, error) {
 		return nil, fmt.Errorf("failed to initialize FHEOS state: %v", err)
 	}
 
-	if err := os.Setenv("FHEOS_DB_PATH", ""); err != nil {
-		return nil, fmt.Errorf("failed to clear FHEOS_DB_PATH: %v", err)
-	}
-
 	tp = precompiles.TxParams{
 		Commit:          true,
 		GasEstimation:   false,
