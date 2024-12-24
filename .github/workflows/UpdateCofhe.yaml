@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@v4
         with: 
           repository: fhenixprotocol/cofhe
-          token: ${{ secrets.GH_PAT }}
+          token: ${{ secrets.GH_PAT_LIOR }}
           submodules: true
       - name: Pull & update submodules
         run: |
@@ -34,7 +34,7 @@ jobs:
         continue-on-error: true
         uses: peter-evans/create-pull-request@v5
         with:
-          token: ${{ secrets.GH_PAT }}
+          token: ${{ secrets.GH_PAT_LIOR }}
           commit-message: Updated Submodule from FheOS
           committer: GitHub <noreply@github.com>
           author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
