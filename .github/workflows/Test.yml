@@ -38,6 +38,7 @@ jobs:
       - name: Start Engine
         run: |
           make start-engine
+          sleep 180 # wait for the engine to start - usually takes 3 minutes
           while ! nc -z localhost 50051; do
             echo "Waiting for the engine to be available on port 50051..."
             sleep 1

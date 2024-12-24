@@ -27,6 +27,27 @@ func getenvInt(key string, defaultValue int) (int, error) {
 	return v, nil
 }
 
+func generateKeys(securityZones int32) error {
+	if _, err := os.Stat("./keys/"); os.IsNotExist(err) {
+		if err := os.Mkdir("./keys/", 0755); err != nil {
+			return fmt.Errorf("failed to create keys directory: %v", err)
+		}
+	}
+
+	if _, err := os.Stat("./keys/tfhe/"); os.IsNotExist(err) {
+		if err := os.Mkdir("./keys/tfhe/", 0755); err != nil {
+			return fmt.Errorf("failed to create tfhe directory: %v", err)
+		}
+	}
+
+	for i := int32(0); i < securityZones; i++ {
+		if err := fhedriver.GenerateFheKeys(i); err != nil {
+			return fmt.Errorf("error generating FheKeys for securityZone %d: %v", i, err)
+		}
+	}
+	return nil
+}
+
 func init() {
 	if os.Getenv("FHEOS_DB_PATH") == "" {
 		if err := os.Setenv("FHEOS_DB_PATH", "./fheosdb"); err != nil {
@@ -35,6 +56,10 @@ func init() {
 	}
 
 	if err := InitFheConfig(&fhedriver.ConfigDefault); err != nil {
+		panic(err)
+	}
+
+	if err := generateKeys(2); err != nil {
 		panic(err)
 	}
 
