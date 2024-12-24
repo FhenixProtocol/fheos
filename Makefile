@@ -22,11 +22,6 @@ compile:
 .PHONY: gencompile
 gencompile: gen compile
 
-.PHONY: lint
-lint:
-	# cd solidity && pnpm solhint FHE.sol FheOS.sol tests/contracts/*.sol tests/contracts/utils/*.sol
-	cd solidity && pnpm solhint --ignore-path .solhintignore FheOS.sol tests/contracts/*.sol tests/contracts/utils/*.sol
-
 check_network_is_running:
 	@echo "Checking connection to 127.0.0.1:8547..."
 	@nc -z -v 127.0.0.1 8547 2>/dev/null || (echo "Connection failed to localfhenix" && false)

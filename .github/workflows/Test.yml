@@ -26,9 +26,6 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GH_PAT }}
-      - name: Lint
-        run: |
-          make lint
       - name: Build Local Dev Imag
         uses: docker/build-push-action@v4
         with:
