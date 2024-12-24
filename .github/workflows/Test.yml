@@ -37,11 +37,8 @@ jobs:
           sudo apt-get install -y netcat
       - name: Start Engine
         run: |
-          make start-engine
-          for i in {1..20}; do
-            if nc -z localhost 50051; then echo "Engine is up!"; break; fi;
-            echo "Waiting for engine..."; sleep 1;
-          done
-          
-          make uint-test
-          make stop-engine
+          docker run -p 50051:50051 ghcr.io/fhenixprotocol/fhe-engine:v0.3.1 &
+
+      - name: Run Tests
+        run: |
+            make unit-test
