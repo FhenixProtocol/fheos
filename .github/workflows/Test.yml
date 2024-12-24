@@ -26,11 +26,11 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GH_PAT }}
-#      - name: Build Coprocessor Image
-#        uses: docker/build-push-action@v4
-#        with:
-#          file: Dockerfile
-#          context: .
+      - name: Build Coprocessor Image
+        uses: docker/build-push-action@v4
+        with:
+          file: Dockerfile
+          context: .
       - name: Install Dependencies
         run: |
           sudo apt-get update
