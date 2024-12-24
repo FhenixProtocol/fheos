@@ -61,6 +61,24 @@ test-uninit: check_network_is_running
 build:
 	go build -o build/main ./cmd/
 
+.PHONY: run-engine
+run-engine:
+	cd warp-drive/fhe-engine && make server-no-sgx & echo $$! > engine.pid
+
+.PHONY: stop-engine
+stop-engine:
+	if [ -f engine.pid ]; then kill `cat engine.pid` && rm -f engine.pid; fi
+
+.PHONY: unit-test
+unit-test:
+	go test -failfast ./precompiles/
+
+.PHONY: unit-test-engine
+unit-test-engine: run-engine
+	go test -failfast ./precompiles/ || { make stop-engine; exit 1; }
+	make stop-engine
+
+
 .PHONY: build-coprocessor
 build-coprocessor:
 	go build -o build/coprocessor ./http/

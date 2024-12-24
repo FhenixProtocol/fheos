@@ -30,100 +30,21 @@ jobs:
         uses: "pnpm/action-setup@v2"
         with:
           version: "8"
-#      - name: Build fhe-engine
+#      - name: Install Dependencies
 #        run: |
-#          cd warp-drive/fhe-engine && RUSTFLAGS="-C target-cpu=native" cargo build --release
-      - name: Install Dependencies
-        run: |
-          make install
-      - name: Make gen
-        run: |
-          make gen
-      - name: Compile
+#          make install
+      - name: Compile contracts
         run: |
           cp solidity/.env.example solidity/.env
           make compile
       - name: Lint
         run: |
           make lint
-      - name: Build Local Dev Image
+      - name: Build Local Dev Imag
         uses: docker/build-push-action@v4
         with:
-          file: Dockerfile.localfhenix
+          file: Dockerfile
           context: .
-          tags: ghcr.io/fhenixprotocol/localfhenix:v0.0.0
-      - name: Run Local Dev Image
+      - name: Run Unit-Tests
         run: |
-          docker run -p 8547:8547 -p 8548:8548 -p 3000:3000 -e FHEOS_SECURITY_ZONES=2 ghcr.io/fhenixprotocol/localfhenix:v0.0.0 &
-      - name: Run tests
-        run: |
-          make test
-      
-      - name: Package Contracts
-        run: |
-          tar -cvf contracts.tar solidity/FHE.sol solidity/FheOS.sol solidity/AsyncFHE.sol
-      - uses: actions/upload-artifact@v3
-        name: Store contracts
-        with:
-          name: contracts.tar
-          path: contracts.tar
-
-  push-to-contracts-repo:
-    needs: [build]
-    runs-on: ubuntu-latest
-
-    if: ${{ github.ref == 'refs/heads/master' }}
-    steps:
-      - uses: actions/checkout@v4
-        name: Checkout Fhenix-Contracts
-        with:
-          repository: FhenixProtocol/fhenix-contracts
-          ref: 'main'
-          token:  ${{ secrets.GH_PAT }}
-      - name: Parse GH Commit Hash
-        shell: bash
-        run: |
-          echo "sha_short=$(git rev-parse --short "$GITHUB_SHA")" >> "$GITHUB_ENV"
-      - uses: actions/download-artifact@v3
-        with:
-          name: contracts.tar
-          path: .
-      - name: setup git config
-        run: |
-          git config user.name "GitHub Actions Bot"
-          git config user.email "noreply@github.com"
-      - name: Copy test contracts & Generated libs
-        run: |
-          ls -l
-          mkdir -p test/automated/contracts
-          mkdir temp_extraction
-          tar -xvf contracts.tar -C temp_extraction
-          rm contracts.tar
-          mv temp_extraction/solidity/FHE.sol temp_extraction/solidity/FheOS.sol contracts/
-          mv temp_extraction/solidity/AsyncFHE.sol contracts/
-      - name: Commit Changes
-        continue-on-error: true
-        run: |
-          git add contracts/FHE.sol
-          git add contracts/AsyncFHE.sol
-          git add contracts/FheOS.sol
-          git commit -m "FheOS updated - pushing new contracts and scripts"
-      - name: Create Pull Request
-        id: cpr
-        continue-on-error: true
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.GH_PAT }}
-          commit-message: Updated Contracts from FheOS
-          committer: GitHub <noreply@github.com>
-          author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
-          signoff: false
-          branch: fheos-${{ env.sha_short }}
-          delete-branch: true
-          title: 'Update Contracts from FheOS'
-          body: |
-            Updated contracts from FheOS push to [master](https://github.com/fhenixprotocol/fheos/commit/${{ github.sha }})
-          labels: |
-            report
-            automated pr
-          draft: false
+          make unit-test-engine

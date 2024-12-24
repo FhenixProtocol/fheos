@@ -70,26 +70,24 @@ func Verify(utype byte, input []byte, securityZone int32, tp *TxParams, _ *Callb
 		false,
 	)
 
-	go func() {
-		if shouldPrintPrecompileInfo(tp) {
-			logger.Info("Starting new precompiled contract function: " + functionName.String())
-		}
+	if shouldPrintPrecompileInfo(tp) {
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
+	}
 
-		storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
+	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 
-		err := ct.Verify()
-		if err != nil {
-			logger.Info(fmt.Sprintf("failed to verify ciphertext %s for type %d - was input corrupted?", ct.GetHash().Hex(), uintType))
-			return
-		}
+	err := ct.Verify()
+	if err != nil {
+		logger.Info(fmt.Sprintf("failed to verify ciphertext %s for type %d - was input corrupted?", ct.GetHash().Hex(), uintType))
+		return nil, 0, vm.ErrExecutionReverted
+	}
 
-		err = storeCipherText(storage, &ct)
-		if err != nil {
-			logger.Error(functionName.String()+" failed", "err", err)
-			return
-		}
-		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "ctHash", ct.GetHash().Hex())
-	}()
+	err = storeCipherText(storage, &ct)
+	if err != nil {
+		logger.Error(functionName.String()+" failed", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "ctHash", ct.GetHash().Hex())
 
 	return ct.GetKeyBytes(), gas, nil
 }
@@ -469,6 +467,7 @@ func TrivialEncrypt(input []byte, toType byte, securityZone int32, tp *TxParams,
 	}
 
 	placeholderCt, err := createPlaceholder(toType, securityZone, functionName, input, ByteToUint256(toType), Int32ToUint256(securityZone))
+	placeholderCt.Key.IsTriviallyEncrypted = true
 
 	if err != nil {
 		logger.Error(functionName.String()+" failed to create placeholder", "err", err)
