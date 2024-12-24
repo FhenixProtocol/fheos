@@ -7,10 +7,6 @@ check_network_is_running:
 build:
 	go build -o build/main ./cmd/
 
-.PHONY: start-engine
-start-engine:
-	cd warp-drive/fhe-engine && make server-no-sgx echo $$! > engine.pid
-
 .PHONY: start-engine-async
 start-engine-async:
 	cd warp-drive/fhe-engine && make server-no-sgx & echo $$! > engine.pid

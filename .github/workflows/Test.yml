@@ -38,14 +38,10 @@ jobs:
       - name: Start Engine
         run: |
           make start-engine
-      - name: Wait for engine
-        run: |
           for i in {1..20}; do
             if nc -z localhost 50051; then echo "Engine is up!"; break; fi;
             echo "Waiting for engine..."; sleep 1;
           done
-      - name: Run Unit-Tests
-        run: |
-          make unit-test
-      - name: Stop engine
-        run: make stop-engine
+          
+          make uint-test
+          make stop-engine
