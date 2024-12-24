@@ -26,21 +26,18 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GH_PAT }}
-      - name: Build Coprocessor Image
-        uses: docker/build-push-action@v4
-        with:
-          file: Dockerfile
-          context: .
-
+#      - name: Build Coprocessor Image
+#        uses: docker/build-push-action@v4
+#        with:
+#          file: Dockerfile
+#          context: .
       - name: Install Dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y netcat
-
       - name: Start Engine
         run: |
-          make run-engine
-
+          make start-engine
       - name: Wait for engine
         run: |
           for i in {1..20}; do
