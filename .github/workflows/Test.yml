@@ -37,8 +37,15 @@ jobs:
           sudo apt-get install -y netcat
       - name: Start Engine
         run: |
-          docker run -p 50051:50051 ghcr.io/fhenixprotocol/fhe-engine:v0.3.1 &
-
+          make start-engine
+          while ! nc -z localhost 50051; do
+            echo "Waiting for the engine to be available on port 50051..."
+            sleep 1
+          done
+          echo "Engine is now available on port 50051."
       - name: Run Tests
         run: |
             make unit-test
+      - name: Stop Engine
+        run: |
+          make stop-engine
