@@ -83,7 +83,7 @@ func Verify(utype byte, input []byte, securityZone int32, tp *TxParams, _ *Callb
 			return
 		}
 
-		err = storeCipherText(storage, &ct)
+		err = storeCiphertext(storage, &ct)
 		if err != nil {
 			logger.Error(functionName.String()+" failed", "err", err)
 			return
@@ -402,7 +402,7 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams, callback *Callbac
 	}
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
-	err = storeCipherText(storage, placeholderCt)
+	err = storeCiphertext(storage, placeholderCt)
 	if err != nil {
 		logger.Error(functionName.String()+" failed to store async ciphertext", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -421,7 +421,7 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams, callback *Callbac
 		defer func() {
 			if !ctReady {
 				logger.Error(functionName.String() + ": failed, deleting placeholder ciphertext " + hex.EncodeToString(placeholderKey.Hash[:]))
-				deleteCipherText(storage, placeholderKey.Hash)
+				deleteCiphertext(storage, placeholderKey.Hash)
 			}
 		}()
 		ct, err := blockUntilInputsAvailable(storage, tp, inputKey)
@@ -441,7 +441,7 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams, callback *Callbac
 			return
 		}
 		result.Key = placeholderKey
-		err = storeCipherText(storage, result)
+		err = storeCiphertext(storage, result)
 		if err != nil {
 			logger.Error(functionName.String()+" failed to store result", "err", err)
 			return
@@ -504,7 +504,7 @@ func TrivialEncrypt(input []byte, toType byte, securityZone int32, tp *TxParams,
 		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
-	err = storeCipherText(storage, placeholderCt)
+	err = storeCiphertext(storage, placeholderCt)
 	if err != nil {
 		logger.Error(functionName.String()+" failed to store async ciphertext", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -518,7 +518,7 @@ func TrivialEncrypt(input []byte, toType byte, securityZone int32, tp *TxParams,
 		defer func() {
 			if !ctReady {
 				logger.Error(functionName.String() + ": failed, deleting placeholder ciphertext " + hex.EncodeToString(resultKey.Hash[:]))
-				deleteCipherText(storage, resultKey.Hash)
+				deleteCiphertext(storage, resultKey.Hash)
 			}
 		}()
 		// we encrypt this using the computation key not the public key. Also, compact to save space in case this gets saved directly
@@ -536,7 +536,7 @@ func TrivialEncrypt(input []byte, toType byte, securityZone int32, tp *TxParams,
 		}
 		result.Key = resultKey
 
-		err = storeCipherText(storage, result)
+		err = storeCiphertext(storage, result)
 		if err != nil {
 			logger.Error(functionName.String()+" failed to store result", "err", err)
 			return
@@ -816,7 +816,7 @@ func Random(utype byte, seed uint64, securityZone int32, tp *TxParams, _ *Callba
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	err = storeCipherText(storage, result)
+	err = storeCiphertext(storage, result)
 	if err != nil {
 		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted

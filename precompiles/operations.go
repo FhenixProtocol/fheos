@@ -228,7 +228,7 @@ func ProcessOperation(functionName types.PrecompileName, operation OperationFunc
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	if err := storeCipherText(storage, placeholderCt); err != nil {
+	if err := storeCiphertext(storage, placeholderCt); err != nil {
 		logger.Error(functionName.String()+" failed to store async ciphertext", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
@@ -253,7 +253,7 @@ func ProcessOperation(functionName types.PrecompileName, operation OperationFunc
 		defer func() {
 			if !ctReady {
 				logger.Error(functionName.String() + ": failed, deleting placeholder ciphertext " + hex.EncodeToString(resultKey.Hash[:]))
-				deleteCipherText(storage, resultKey.Hash)
+				deleteCiphertext(storage, resultKey.Hash)
 			}
 		}()
 		cts, err := blockUntilInputsAvailable(storage, tp, inputs...)
@@ -289,7 +289,7 @@ func ProcessOperation(functionName types.PrecompileName, operation OperationFunc
 
 		result.Key = resultKey
 
-		err = storeCipherText(storage, result)
+		err = storeCiphertext(storage, result)
 		if err != nil {
 			logger.Error(functionName.String()+" failed", "err", err)
 			return
