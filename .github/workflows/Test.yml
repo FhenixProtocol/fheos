@@ -26,17 +26,6 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GH_PAT }}
-      - name: "Install Pnpm"
-        uses: "pnpm/action-setup@v2"
-        with:
-          version: "8"
-#      - name: Install Dependencies
-#        run: |
-#          make install
-      - name: Compile contracts
-        run: |
-          cp solidity/.env.example solidity/.env
-          make compile
       - name: Lint
         run: |
           make lint
