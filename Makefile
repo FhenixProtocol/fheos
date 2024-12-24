@@ -7,8 +7,8 @@ check_network_is_running:
 build:
 	go build -o build/main ./cmd/
 
-.PHONY: start-engine-async
-start-engine-async:
+.PHONY: start-engine
+start-engine:
 	cd warp-drive/fhe-engine && make server-no-sgx & echo $$! > engine.pid
 	for i in {1..20}; do \
 		if nc -z localhost 50051; then echo "Engine is up!"; break; fi; \
