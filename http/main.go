@@ -53,7 +53,7 @@ type GetNetworkPublicKeyResult struct {
 }
 
 type VerifyResult struct {
-	CtHash    string `json:"ctHash"`
+	CtHash    []byte `json:"ctHash"`
 	Signature string `json:"signature"`
 }
 
@@ -660,7 +660,7 @@ func CastHandler(w http.ResponseWriter, r *http.Request) {
 
 func createVerifyResponse(ctHash []byte) ([]byte, error) {
 	verifyResult := VerifyResult{
-		CtHash:    hex.EncodeToString(ctHash),
+		CtHash:    ctHash[:],
 		Signature: "Haim",
 	}
 
