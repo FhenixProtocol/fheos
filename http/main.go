@@ -660,7 +660,7 @@ func CastHandler(w http.ResponseWriter, r *http.Request) {
 
 func createVerifyResponse(ctHash []byte) ([]byte, error) {
 	verifyResult := VerifyResult{
-		CtHash:    ctHash[:],
+		CtHash:    ctHash,
 		Signature: "Haim",
 	}
 
