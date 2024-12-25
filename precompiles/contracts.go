@@ -89,7 +89,8 @@ func Verify(utype byte, input []byte, securityZone int32, tp *TxParams, _ *Callb
 	}
 	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "ctHash", ct.GetHash().Hex())
 
-	return ct.GetKeyBytes(), gas, nil
+	retValue := ct.GetKey().Hash
+	return retValue[:], gas, nil
 }
 
 func SealOutput(utype byte, inputBz []byte, pk []byte, tp *TxParams, onResultCallback *SealOutputCallbackFunc) (string, uint64, error) {
