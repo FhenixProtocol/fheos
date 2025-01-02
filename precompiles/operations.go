@@ -100,7 +100,7 @@ type DecryptCallbackFunc struct {
 
 type SealOutputCallbackFunc struct {
 	CallbackUrl string
-	Callback    func(url string, ctKey []byte, value string)
+	Callback    func(url string, ctKey []byte, pk []byte, value string)
 }
 
 func inputsToString(inputKeys []fhe.CiphertextKey) string {

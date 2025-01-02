@@ -82,6 +82,7 @@ type DecryptResultUpdate struct {
 
 type SealOutputResultUpdate struct {
 	CtHash []byte `json:"ctHash"`
+	PK     string `json:"pk"`
 	Value  string `json:"value"`
 }
 
@@ -171,9 +172,9 @@ func handleDecryptResult(url string, ctHash []byte, plaintext *big.Int) {
 	responseToServer(url, ctHash, jsonData)
 }
 
-func handleSealOutputResult(url string, ctHash []byte, value string) {
+func handleSealOutputResult(url string, ctHash []byte, pk []byte, value string) {
 	fmt.Printf("Got result for %s : %s\n", hex.EncodeToString(ctHash), value)
-	jsonData, err := json.Marshal(SealOutputResultUpdate{CtHash: ctHash, Value: value})
+	jsonData, err := json.Marshal(SealOutputResultUpdate{CtHash: ctHash, PK: hex.EncodeToString(pk), Value: value})
 	if err != nil {
 		log.Printf("Failed to marshal seal output result for requester %s with the result of %+v: %v", url, ctHash, err)
 		return
@@ -183,11 +184,11 @@ func handleSealOutputResult(url string, ctHash []byte, value string) {
 }
 
 type HandlerFunc interface {
-	func(byte, []byte, *precompiles.TxParams, *precompiles.CallbackFunc) ([]byte, uint64, error) |                 // 1 operand
-	func(byte, []byte, []byte, *precompiles.TxParams, *precompiles.CallbackFunc) ([]byte, uint64, error) |         // 2 operands
-	func(byte, []byte, []byte, []byte, *precompiles.TxParams, *precompiles.CallbackFunc) ([]byte, uint64, error) | // 3 operands
-	func([]byte, byte, int32, *precompiles.TxParams, *precompiles.CallbackFunc) ([]byte, uint64, error) |          // TrivialEncrypt
-	func(byte, uint64, int32, *precompiles.TxParams, *precompiles.CallbackFunc) ([]byte, uint64, error) // Random
+	func(byte, []byte, *precompiles.TxParams, *precompiles.CallbackFunc) ([]byte, uint64, error) | // 1 operand
+		func(byte, []byte, []byte, *precompiles.TxParams, *precompiles.CallbackFunc) ([]byte, uint64, error) | // 2 operands
+		func(byte, []byte, []byte, []byte, *precompiles.TxParams, *precompiles.CallbackFunc) ([]byte, uint64, error) | // 3 operands
+		func([]byte, byte, int32, *precompiles.TxParams, *precompiles.CallbackFunc) ([]byte, uint64, error) | // TrivialEncrypt
+		func(byte, uint64, int32, *precompiles.TxParams, *precompiles.CallbackFunc) ([]byte, uint64, error) // Random
 }
 
 type CiphertextKeyAux struct {
