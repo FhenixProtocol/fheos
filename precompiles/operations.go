@@ -228,6 +228,7 @@ func ProcessOperation(functionName types.PrecompileName, operation OperationFunc
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
+	logger.Info(functionName.String()+" storing placeholder", "utype", utype, "placeholderKey", hex.EncodeToString(placeholderCt.Key.Hash[:]))
 	if err := storeCiphertext(storage, placeholderCt); err != nil {
 		logger.Error(functionName.String()+" failed to store async ciphertext", "err", err)
 		return nil, 0, vm.ErrExecutionReverted

@@ -149,7 +149,7 @@ func responseToServer(url string, tempKey []byte, json []byte) {
 }
 
 func handleResult(url string, tempKey []byte, actualHash []byte) {
-	fmt.Printf("Got result for %s : %s\n", hex.EncodeToString(tempKey), hex.EncodeToString(actualHash))
+	fmt.Printf("Got hash result for %s : %s\n", hex.EncodeToString(tempKey), hex.EncodeToString(actualHash))
 	// JSON data to be sent in the request body
 	jsonData, err := json.Marshal(HashResultUpdate{TempKey: tempKey, ActualHash: actualHash})
 	if err != nil {
@@ -161,7 +161,7 @@ func handleResult(url string, tempKey []byte, actualHash []byte) {
 }
 
 func handleDecryptResult(url string, ctHash []byte, plaintext *big.Int) {
-	fmt.Printf("Got result for %s : %s\n", hex.EncodeToString(ctHash), plaintext)
+	fmt.Printf("Got decrypt result for %s : %s\n", hex.EncodeToString(ctHash), plaintext)
 	plaintextString := plaintext.Text(16)
 	jsonData, err := json.Marshal(DecryptResultUpdate{CtHash: ctHash, Plaintext: plaintextString})
 	if err != nil {
@@ -173,7 +173,7 @@ func handleDecryptResult(url string, ctHash []byte, plaintext *big.Int) {
 }
 
 func handleSealOutputResult(url string, ctHash []byte, pk []byte, value string) {
-	fmt.Printf("Got result for %s : %s\n", hex.EncodeToString(ctHash), value)
+	fmt.Printf("Got sealoutput result for %s : %s\n", hex.EncodeToString(ctHash), value)
 	jsonData, err := json.Marshal(SealOutputResultUpdate{CtHash: ctHash, PK: hex.EncodeToString(pk), Value: value})
 	if err != nil {
 		log.Printf("Failed to marshal seal output result for requester %s with the result of %+v: %v", url, ctHash, err)
