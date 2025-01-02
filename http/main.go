@@ -204,7 +204,7 @@ type GenericHashRequest struct {
 }
 
 func convertInput(input CiphertextKeyAux) (*fhedriver.CiphertextKey, error) {
-	decoded, err := hex.DecodeString(input.Hash[2:])
+	decoded, err := hex.DecodeString(hexOnly(input.Hash[2:]))
 	if err != nil {
 		e := fmt.Sprintf("Invalid input hex string at position %s %+v", input.Hash, err)
 		return nil, fmt.Errorf(e)
@@ -499,7 +499,7 @@ func SealOutputHandler(w http.ResponseWriter, r *http.Request) {
 		Callback:    handleSealOutputResult,
 	}
 
-	pkey, err := hex.DecodeString(req.PKey)
+	pkey, err := hex.DecodeString(hexOnly(req.PKey))
 	if err != nil {
 		e := fmt.Sprintf("Invalid pkey: %s %+v", req.PKey, err)
 		fmt.Println(e)
@@ -567,7 +567,7 @@ func TrivialEncryptHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Convert the value strings to byte arrays
 	hexStr := fmt.Sprintf("%064x", req.Value)
-	value, err := hex.DecodeString(hexStr)
+	value, err := hex.DecodeString(hexOnly(hexStr))
 	if err != nil {
 		e := fmt.Sprintf("Invalid value: %s %+v", req.Value, err)
 		fmt.Println(e)
