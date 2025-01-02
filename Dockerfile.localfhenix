@@ -86,7 +86,7 @@ COPY Makefile fheos/
 
 RUN cd fheos && make build
 
-FROM ghcr.io/fhenixprotocol/localfhenix:v0.1.0-beta5
+FROM ghcr.io/fhenixprotocol/nitro/localfhenix:v0.2.4
 
 # **************** setup dlv
 
@@ -94,8 +94,14 @@ ENV GOROOT=/usr/local/go
 ENV GOPATH=/go/
 ENV PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
 
-ADD https://go.dev/dl/go1.21.3.linux-amd64.tar.gz go.linux-amd64.tar.gz
-RUN sudo tar -C /usr/local -xzf go.linux-amd64.tar.gz
+RUN echo "Target Architecture: $TARGETARCH" && \
+    if [ "$TARGETARCH" = "amd64" ]; then \
+        curl -fsSL https://go.dev/dl/go1.21.3.linux-amd64.tar.gz -o go.tar.gz; \
+    else \
+        curl -fsSL https://go.dev/dl/go1.21.3.linux-arm64.tar.gz -o go.tar.gz; \
+    fi \
+
+RUN sudo tar -C /usr/local -xzf go.tar.gz
 
 RUN sudo chown user:user /usr/local/go
 
