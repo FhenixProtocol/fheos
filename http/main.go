@@ -684,6 +684,17 @@ func createNetworkPublicKeyResponse(PublicKey []byte) ([]byte, error) {
 	return responseData, nil
 }
 
+func has0xPrefix(str string) bool {
+	return len(str) >= 2 && str[0] == '0' && (str[1] == 'x' || str[1] == 'X')
+}
+
+func hexOnly(value string) string {
+	if has0xPrefix(value) {
+		return value[2:]
+	}
+	return value
+}
+
 func UpdateCTHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Got a verify request from %s\n", r.RemoteAddr)
 	body, err := ioutil.ReadAll(r.Body)
@@ -699,7 +710,7 @@ func UpdateCTHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// fmt.Printf("Verify Request Value: %s\n", req.Value)
-	value, err := hex.DecodeString(req.Value)
+	value, err := hex.DecodeString(hexOnly(req.Value))
 	if err != nil {
 		e := fmt.Sprintf("Invalid Value: %s %+v", req.Value, err)
 		fmt.Println(e)
