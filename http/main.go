@@ -145,7 +145,7 @@ func responseToServer(url string, tempKey []byte, json []byte) {
 		return
 	}
 
-	fmt.Printf("Update requester %s with the result of %+v\n", url, tempKey)
+	fmt.Printf("Update requester %s with the result of %+v\n", url, hex.EncodeToString(tempKey))
 }
 
 func handleResult(url string, tempKey []byte, actualHash []byte) {
@@ -259,7 +259,7 @@ func (g *GenericHashRequest) UnmarshalJSON(data []byte) error {
 }
 
 func handleRequest[T HandlerFunc](w http.ResponseWriter, r *http.Request, handler T) {
-	fmt.Printf("Got a request from %s\n", r.RemoteAddr)
+	fmt.Printf("Got a FHE operation request from %s\n", r.RemoteAddr)
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Printf("Failed to read request body: %v", err)
@@ -420,7 +420,7 @@ func (d *DecryptRequest) UnmarshalJSON(data []byte) error {
 }
 
 func DecryptHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("Got a request from %s\n", r.RemoteAddr)
+	fmt.Printf("Got a decrypt request from %s\n", r.RemoteAddr)
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -450,7 +450,7 @@ func DecryptHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// Respond with the result
 	w.Write(req.Key.Hash[:])
-	fmt.Printf("Received decrypt request for %+v and type %+v\n", req.Key.Hash[:], req.UType)
+	fmt.Printf("Received decrypt request for %+v and type %+v\n", hex.EncodeToString(req.Key.Hash[:]), req.UType)
 }
 
 func (s *SealOutputRequest) UnmarshalJSON(data []byte) error {
@@ -479,7 +479,7 @@ func (s *SealOutputRequest) UnmarshalJSON(data []byte) error {
 	return nil
 }
 func SealOutputHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("Got a request from %s\n", r.RemoteAddr)
+	fmt.Printf("Got a sealoutput request from %s\n", r.RemoteAddr)
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -516,7 +516,7 @@ func SealOutputHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// Respond with the result
 	w.Write(req.Key.Hash[:])
-	fmt.Printf("Received seal output request for %+v and type %+v\n", req.Key.Hash[:], req.UType)
+	fmt.Printf("Received seal output request for %+v and type %+v\n", hex.EncodeToString(req.Key.Hash[:]), req.UType)
 }
 
 func (t *TrivialEncryptRequest) UnmarshalJSON(data []byte) error {
@@ -545,7 +545,7 @@ func (t *TrivialEncryptRequest) UnmarshalJSON(data []byte) error {
 }
 
 func TrivialEncryptHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("Got a request from %s\n", r.RemoteAddr)
+	fmt.Printf("Got a trivial encrypt request from %s\n", r.RemoteAddr)
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -616,7 +616,7 @@ func (s *CastRequest) UnmarshalJSON(data []byte) error {
 }
 
 func CastHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("Got a request from %s\n", r.RemoteAddr)
+	fmt.Printf("Got a cast request from %s\n", r.RemoteAddr)
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)

@@ -115,7 +115,7 @@ func DecryptHelper(storage *storage2.MultiStore, ctHash fhe.Hash, tp *TxParams, 
 	ct := awaitCtResult(storage, ctHash, tp)
 	if ct == nil {
 		msg := "decrypt unverified ciphertext handle"
-		logger.Error(msg, " ctHash ", ctHash)
+		logger.Error(msg, " ctHash ", ctHash.Hex())
 		return defaultValue, vm.ErrExecutionReverted
 	}
 	plaintext, err := fhe.Decrypt(*ct)
