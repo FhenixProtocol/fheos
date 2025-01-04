@@ -1,11 +1,13 @@
 package precompiles
 
 import (
+	"context"
 	"encoding/binary"
 	"errors"
 	"fmt"
 	"math/big"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -169,15 +171,57 @@ func blockUntilInputsAvailable(storage *storage.MultiStore, tp *TxParams, inputK
 	return cts, nil
 }
 
+func awaitPlaceholderCreation(storage *storage.MultiStore, hash fhe.Hash) *fhe.FheEncrypted {
+	timeout := 5 * time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	onlyOnce := false
+
+	for {
+		select {
+		case <-ctx.Done():
+			// Return nil if the timeout elapses
+			return nil
+		default:
+			// Attempt to get the ciphertext
+			ct, err := getCiphertext(storage, hash, false)
+			if err == nil {
+				if onlyOnce {
+					logger.Info("Placeholder creation completed", "hash", hash.Hex())
+				}
+				return ct
+			}
+
+			if !strings.Contains(err.Error(), "not found") {
+				logger.Error("failed to get ciphertext from storage", "hash", hash.Hex(), "error", err.Error())
+				return nil
+			}
+
+			if !onlyOnce {
+				logger.Warn("Waiting for placeholder creation", "hash", hash.Hex(), "timeout", timeout)
+				onlyOnce = true
+			}
+
+			// Sleep for 1 millisecond before retrying
+			time.Sleep(1 * time.Millisecond)
+		}
+	}
+}
+
 func awaitCtResult(storage *storage.MultiStore, lhsHash fhe.Hash, _ *TxParams) *fhe.FheEncrypted {
-	lhsValue := getCiphertext(storage, lhsHash)
+	// In CoFHE the aggregator might not send the operations in the right order (based on ethersjs event listener)
+	// So we want to make sure, before we dramitaclly fail, that the placeholder won't be present in a matter of time
+	lhsValue := awaitPlaceholderCreation(storage, lhsHash)
 	if lhsValue == nil {
 		return nil
 	}
 
+	var err error
+
 	for lhsValue.IsPlaceholderValue() {
-		lhsValue = getCiphertext(storage, lhsHash)
-		if lhsValue == nil {
+		lhsValue, err = getCiphertext(storage, lhsHash, true)
+		if err != nil {
 			logger.Error("failed to get ciphertext from storage, Placeholder was deleted while awaiting", "hash", lhsHash.Hex())
 			return nil
 		}
@@ -186,14 +230,17 @@ func awaitCtResult(storage *storage.MultiStore, lhsHash fhe.Hash, _ *TxParams) *
 	return lhsValue
 }
 
-func getCiphertext(state *storage.MultiStore, ciphertextHash fhe.Hash) *fhe.FheEncrypted {
+func getCiphertext(state *storage.MultiStore, ciphertextHash fhe.Hash, shouldPrintError bool) (*fhe.FheEncrypted, error) {
 	ct, err := state.GetCt(types.Hash(ciphertextHash))
 	if err != nil {
-		logger.Error("reading ciphertext from State resulted with error", "hash", ciphertextHash.Hex(), "error", err.Error())
-		return nil
+		if shouldPrintError {
+			logger.Error("reading ciphertext from State resulted with error", "hash", ciphertextHash.Hex(), "error", err.Error())
+		}
+
+		return nil, err
 	}
 
-	return (*fhe.FheEncrypted)(ct)
+	return (*fhe.FheEncrypted)(ct), nil
 }
 
 func storeCiphertext(storage *storage.MultiStore, ct *fhe.FheEncrypted) error {
