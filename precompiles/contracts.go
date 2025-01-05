@@ -127,7 +127,7 @@ func SealOutput(utype byte, inputBz []byte, pk []byte, tp *TxParams, onResultCal
 			}
 
 			url := (*onResultCallback).CallbackUrl
-			(*onResultCallback).Callback(url, ctHash[:], string(sealed))
+			(*onResultCallback).Callback(url, ctHash[:], pk, string(sealed))
 		}(input.Hash)
 		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "ctHash", hex.EncodeToString(input.Hash[:]))
 	}
