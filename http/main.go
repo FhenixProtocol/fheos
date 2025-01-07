@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
+	"strings"
 	"fmt"
 	"io/ioutil"
 	"log"
