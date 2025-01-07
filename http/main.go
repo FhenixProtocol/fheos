@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
+	"strings"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -204,7 +205,7 @@ type GenericHashRequest struct {
 }
 
 func convertInput(input CiphertextKeyAux) (*fhedriver.CiphertextKey, error) {
-	decoded, err := hex.DecodeString(input.Hash[2:])
+	decoded, err := hex.DecodeString(hexOnly(input.Hash[2:]))
 	if err != nil {
 		e := fmt.Sprintf("Invalid input hex string at position %s %+v", input.Hash, err)
 		return nil, fmt.Errorf(e)
@@ -499,7 +500,7 @@ func SealOutputHandler(w http.ResponseWriter, r *http.Request) {
 		Callback:    handleSealOutputResult,
 	}
 
-	pkey, err := hex.DecodeString(req.PKey)
+	pkey, err := hex.DecodeString(hexOnly(req.PKey))
 	if err != nil {
 		e := fmt.Sprintf("Invalid pkey: %s %+v", req.PKey, err)
 		fmt.Println(e)
@@ -567,7 +568,7 @@ func TrivialEncryptHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Convert the value strings to byte arrays
 	hexStr := fmt.Sprintf("%064x", req.Value)
-	value, err := hex.DecodeString(hexStr)
+	value, err := hex.DecodeString(hexOnly(hexStr))
 	if err != nil {
 		e := fmt.Sprintf("Invalid value: %s %+v", req.Value, err)
 		fmt.Println(e)
@@ -684,6 +685,17 @@ func createNetworkPublicKeyResponse(PublicKey []byte) ([]byte, error) {
 	return responseData, nil
 }
 
+func hasHexPrefix(str string) bool {
+	return len(str) >= 2 && strings.HasPrefix(strings.ToLower(str), "0x")
+}
+
+func hexOnly(value string) string {
+	if hasHexPrefix(value) {
+		return value[2:]
+	}
+	return value
+}
+
 func UpdateCTHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Got a verify request from %s\n", r.RemoteAddr)
 	body, err := ioutil.ReadAll(r.Body)
@@ -699,7 +711,7 @@ func UpdateCTHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// fmt.Printf("Verify Request Value: %s\n", req.Value)
-	value, err := hex.DecodeString(req.Value)
+	value, err := hex.DecodeString(hexOnly(req.Value))
 	if err != nil {
 		e := fmt.Sprintf("Invalid Value: %s %+v", req.Value, err)
 		fmt.Println(e)
