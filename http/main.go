@@ -777,6 +777,11 @@ func GetNetworkPublicKeyHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(responseData)
 }
 
+func HealthHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("Got a health request from %s\n", r.RemoteAddr)
+	w.WriteHeader(http.StatusOK)
+}
+
 func main() {
 	_, err := initFheos()
 	if err != nil {
@@ -797,6 +802,7 @@ func main() {
 	http.HandleFunc("/TrivialEncrypt", TrivialEncryptHandler)
 	http.HandleFunc("/Cast", CastHandler)
 	http.HandleFunc("/GetNetworkPublickKey", GetNetworkPublicKeyHandler)
+	http.HandleFunc("/Health", HealthHandler)
 
 	// Wrap the default mux in the CORS middleware
 	wrappedMux := corsMiddleware(http.DefaultServeMux)
