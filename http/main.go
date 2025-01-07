@@ -779,7 +779,16 @@ func GetNetworkPublicKeyHandler(w http.ResponseWriter, r *http.Request) {
 
 func HealthHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Got a health request from %s\n", r.RemoteAddr)
-	w.WriteHeader(http.StatusOK)
+	response := map[string]bool{"success": true}
+
+	value, err := json.Marshal(response)
+	if err != nil {
+		fmt.Println(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(value)
 }
 
 func main() {
