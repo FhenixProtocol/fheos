@@ -689,7 +689,7 @@ func has0xPrefix(str string) bool {
 }
 
 func hexOnly(value string) string {
-	if has0xPrefix(value) {
+	if hasHexPrefix(value) {
 		return value[2:]
 	}
 	return value
