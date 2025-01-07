@@ -685,7 +685,7 @@ func createNetworkPublicKeyResponse(PublicKey []byte) ([]byte, error) {
 }
 
 func hasHexPrefix(str string) bool {
-	return len(str) >= 2 && strings.HasPrefix(strings.ToLower(str), '0x')
+	return len(str) >= 2 && strings.HasPrefix(strings.ToLower(str), "0x")
 }
 
 func hexOnly(value string) string {
