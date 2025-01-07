@@ -684,7 +684,7 @@ func createNetworkPublicKeyResponse(PublicKey []byte) ([]byte, error) {
 	return responseData, nil
 }
 
-func has0xPrefix(str string) bool {
+func hasHexPrefix(str string) bool {
 	return len(str) >= 2 && str[0] == '0' && (str[1] == 'x' || str[1] == 'X')
 }
 
