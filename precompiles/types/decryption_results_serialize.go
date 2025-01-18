@@ -12,7 +12,7 @@ import (
 
 // GetSerializedDecryptionResult returns a byte-serialization of a decryption result.
 func (dr *DecryptionResults) GetSerializedDecryptionResult(key PendingDecryption) ([]byte, error) {
-	// The structure the encoded message is:
+	// The structure of the encoded message is:
 	//	encoded_result = key | result_req OR result_seal OR result_decrypt
 	// see DecryptionRecord.Serialize for the format of each result type
 	result, ok := dr.Get(key)
