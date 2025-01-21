@@ -465,6 +465,92 @@ func DecryptHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Received decrypt request for %+v and type %+v\n", hex.EncodeToString(req.Key.Hash[:]), req.UType)
 }
 
+func (d *MockDecryptRequest) UnmarshalJSON(data []byte) error {
+	var aux struct {
+		CtHash string `json:"ctHash"`
+		Permit string `json:"permit"`
+	}
+
+	if err := json.Unmarshal(data, &aux); err != nil {
+		log.Printf("Failed to unmarshal MockDecryptRequestAux: %v, %+v", err, aux)
+		return err
+	}
+
+	d.CtHash = aux.CtHash
+	d.Permit = aux.Permit
+
+	return nil
+}
+
+func DecryptHandlerMock(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("Got a decrypt request (currently mocked) from %s\n", r.RemoteAddr)
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var req MockDecryptRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		fmt.Printf("Failed unmarshaling request: %+v body is %+v\n", err, string(body))
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	response := []byte("42")
+	_, err = w.Write(response)
+	if err != nil {
+		fmt.Printf("Failed to write response: %v\n", err)
+		return
+	}
+
+	fmt.Printf("Received mock decrypt request for %+v and permit %+v\n", req.CtHash, req.Permit)
+}
+
+func (d *MockSealOutputRequest) UnmarshalJSON(data []byte) error {
+	var aux struct {
+		CtHash    string `json:"ctHash"`
+		Permit    string `json:"permit"`
+		PublicKey string `json:"publicKey"`
+	}
+
+	if err := json.Unmarshal(data, &aux); err != nil {
+		log.Printf("Failed to unmarshal MockSealOutputRequestAux: %v, %+v", err, aux)
+		return err
+	}
+
+	d.CtHash = aux.CtHash
+	d.Permit = aux.Permit
+	d.PublicKey = aux.PublicKey
+
+	return nil
+}
+
+func SealOutputHandlerMock(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("Got a sealoutput request (currently mocked) from %s\n", r.RemoteAddr)
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var req MockSealOutputRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		fmt.Printf("Failed unmarshaling request: %+v body is %+v\n", err, string(body))
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	response := []byte("")
+	_, err = w.Write(response)
+	if err != nil {
+		fmt.Printf("Failed to write response: %v\n", err)
+		return
+	}
+
+	fmt.Printf("Received mock seal output request for %+v and permit %+v and pubkey %+v\n", req.CtHash, req.Permit, req.PublicKey)
+}
+
 func (s *SealOutputRequest) UnmarshalJSON(data []byte) error {
 	var aux struct {
 		UType        byte             `json:"utype"`
@@ -828,8 +914,10 @@ func main() {
 		http.HandleFunc(handler.Name, handler.Handler)
 	}
 
-	http.HandleFunc("/Decrypt", DecryptHandler)
-	http.HandleFunc("/SealOutput", SealOutputHandler)
+	//http.HandleFunc("/Decrypt", DecryptHandler)
+	//http.HandleFunc("/SealOutput", SealOutputHandler)
+	http.HandleFunc("/decrypt", DecryptHandlerMock)
+	http.HandleFunc("/sealoutput", SealOutputHandlerMock)
 	http.HandleFunc("/UpdateCT", UpdateCTHandler)
 	http.HandleFunc("/TrivialEncrypt", TrivialEncryptHandler)
 	http.HandleFunc("/Cast", CastHandler)
