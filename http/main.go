@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
-	"strings"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -13,6 +12,7 @@ import (
 	"os"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -37,6 +37,17 @@ type SealOutputRequest struct {
 	Key          fhedriver.CiphertextKey `json:"key"`
 	PKey         string                  `json:"pkey"`
 	RequesterUrl string                  `json:"requesterUrl"`
+}
+
+type MockDecryptRequest struct {
+	CtHash string `json:"ctHash"`
+	Permit string `json:"permit"`
+}
+
+type MockSealOutputRequest struct {
+	CtHash    string `json:"ctHash"`
+	Permit    string `json:"permit"`
+	PublicKey string `json:"publicKey"`
 }
 
 type VerifyRequest struct {
