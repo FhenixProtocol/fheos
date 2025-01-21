@@ -916,8 +916,8 @@ func main() {
 
 	//http.HandleFunc("/Decrypt", DecryptHandler)
 	//http.HandleFunc("/SealOutput", SealOutputHandler)
-	http.HandleFunc("/decrypt", DecryptHandlerMock)
-	http.HandleFunc("/sealoutput", SealOutputHandlerMock)
+	http.HandleFunc("/Decrypt", DecryptHandlerMock)
+	http.HandleFunc("/SealOutput", SealOutputHandlerMock)
 	http.HandleFunc("/UpdateCT", UpdateCTHandler)
 	http.HandleFunc("/TrivialEncrypt", TrivialEncryptHandler)
 	http.HandleFunc("/Cast", CastHandler)
