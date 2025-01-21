@@ -31,10 +31,6 @@ jobs:
         with:
           file: Dockerfile
           context: .
-      - name: Install Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y netcat
       - name: Start Engine
         run: |
           make start-engine
