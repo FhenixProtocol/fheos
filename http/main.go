@@ -914,10 +914,10 @@ func main() {
 		http.HandleFunc(handler.Name, handler.Handler)
 	}
 
-	//http.HandleFunc("/Decrypt", DecryptHandler)
-	//http.HandleFunc("/SealOutput", SealOutputHandler)
-	http.HandleFunc("/Decrypt", DecryptHandlerMock)
-	http.HandleFunc("/SealOutput", SealOutputHandlerMock)
+	http.HandleFunc("/Decrypt", DecryptHandler)
+	http.HandleFunc("/SealOutput", SealOutputHandler)
+	http.HandleFunc("/QueryDecrypt", DecryptHandlerMock)
+	http.HandleFunc("/QuerySealOutput", SealOutputHandlerMock)
 	http.HandleFunc("/UpdateCT", UpdateCTHandler)
 	http.HandleFunc("/TrivialEncrypt", TrivialEncryptHandler)
 	http.HandleFunc("/Cast", CastHandler)
