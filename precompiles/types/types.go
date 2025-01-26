@@ -14,7 +14,14 @@ var GetEmptyCiphertextKey = fhe.GetEmptyCiphertextKey
 var SerializeCiphertextKey = fhe.SerializeCiphertextKey
 
 func IsValidType(t fhe.EncryptionType) bool {
-	return t >= fhe.Uint8 && t <= fhe.Bool
+	switch t {
+	case fhe.Bool,
+		fhe.Uint8, fhe.Uint16, fhe.Uint32, fhe.Uint64, fhe.Uint128, fhe.Uint256,
+		fhe.Int8, fhe.Int16, fhe.Int32, fhe.Int64, fhe.Int128, fhe.Int256,
+		fhe.Address:
+		return true
+	}
+	return false
 }
 
 type Storage interface {

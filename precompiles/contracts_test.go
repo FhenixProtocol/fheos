@@ -2,15 +2,16 @@ package precompiles
 
 import (
 	"fmt"
+	"math/big"
+	"os"
+	"strconv"
+	"testing"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/ethdb/memorydb"
 	fhedriver "github.com/fhenixprotocol/warp-drive/fhe-driver"
 	"github.com/stretchr/testify/assert"
-	"math/big"
-	"os"
-	"strconv"
-	"testing"
 )
 
 var tp TxParams
@@ -125,7 +126,7 @@ func expectPlaintext(t *testing.T, ct []byte, uintType uint8, expected *big.Int)
 	plaintext, _, err := Decrypt(uintType, ct, nil, &tp, nil)
 	assert.NoError(t, err)
 	assert.NotEqual(t, plaintext, nil)
-	assert.Equal(t, plaintext, expected)
+	assert.Equal(t, expected, plaintext)
 }
 
 func generalTwoOpTest(t *testing.T, lhs, rhs *big.Int, uintType uint8, plaintextFunc func(*big.Int, *big.Int) *big.Int, encryptedFunc func(byte, []byte, []byte, *TxParams, *CallbackFunc) ([]byte, uint64, error)) {
@@ -493,7 +494,10 @@ func TestNot(t *testing.T) {
 			if uintType == uint8(fhedriver.Bool) {
 				return big.NewInt(0)
 			}
-			return new(big.Int).Sub(maxBigInt(1<<(3+uintType)), val)
+			if uintType == uint8(fhedriver.Uint256) {
+				return new(big.Int).Sub(maxBigInt(1<<(uintType)), val)
+			}
+			return new(big.Int).Sub(maxBigInt(1<<(1+uintType)), val)
 		}, Not)
 	})
 }
