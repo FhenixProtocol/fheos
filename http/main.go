@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
-	"strings"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -13,6 +12,7 @@ import (
 	"os"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -50,7 +50,7 @@ type GetNetworkPublicKeyRequest struct {
 }
 
 type GetNetworkPublicKeyResult struct {
-	PublicKey string `json:"securityZone"`
+	PublicKey string `json:"publicKey"`
 }
 
 type VerifyResult struct {
@@ -822,7 +822,7 @@ func main() {
 	http.HandleFunc("/UpdateCT", UpdateCTHandler)
 	http.HandleFunc("/TrivialEncrypt", TrivialEncryptHandler)
 	http.HandleFunc("/Cast", CastHandler)
-	http.HandleFunc("/GetNetworkPublickKey", GetNetworkPublicKeyHandler)
+	http.HandleFunc("/GetNetworkPublicKey", GetNetworkPublicKeyHandler)
 	http.HandleFunc("/Health", HealthHandler)
 
 	// Wrap the default mux in the CORS middleware
