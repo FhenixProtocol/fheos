@@ -1,7 +1,9 @@
 ARG BRANCH=v0.3.3-alpha.1
 ARG DOCKER_NAME=ghcr.io/fhenixprotocol/nitro/fhenix-node-builder:$BRANCH
 
-FROM rust:1.74-slim-bullseye as warp-drive-builder
+FROM rust:1.84.0-slim-bullseye as warp-drive-builder
+RUN rustup default nightly && rustup update nightly
+RUN rustc --version && cargo --version
 
 WORKDIR /workspace
 RUN export DEBIAN_FRONTEND=noninteractive && \
@@ -11,7 +13,6 @@ RUN wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add - && \
     add-apt-repository 'deb http://apt.llvm.org/bullseye/ llvm-toolchain-bullseye-12 main' && \
     apt-get update && \
     apt-get install -y llvm-12-dev libclang-common-12-dev
-
 ARG EXTRA_RUSTFLAGS="-C target-feature=+aes"
 ENV EXTRA_RUSTFLAGS=$EXTRA_RUSTFLAGS
 
