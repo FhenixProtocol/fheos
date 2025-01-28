@@ -491,6 +491,8 @@ func TestNot(t *testing.T) {
 	val := big.NewInt(16)
 	forEveryUintTypeAndBool(t, "Not", func(t *testing.T, uintType uint8) {
 		generalOneOpTest(t, val, uintType, func(val *big.Int) *big.Int {
+			// 1 << uintType + 1 is the number of bits for the uintType
+			// TFHEUint256 is 2**8 which is 256 bits, while TFHEUint8 is 2**(2 + 1) which is 8 bits
 			if uintType == uint8(fhedriver.Bool) {
 				return big.NewInt(0)
 			}
