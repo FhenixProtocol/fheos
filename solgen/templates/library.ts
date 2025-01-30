@@ -87,18 +87,18 @@ struct ${struct} {
 
 library Common {
     // Values used to communicate types to the runtime.
-    // Must match values defined in warp-drive protobufs for everything to 
+    // Must match values defined in warp-drive protobufs for everything to
     // make sense
-    uint8 internal constant EUINT8_TFHE = 0;
-    uint8 internal constant EUINT16_TFHE = 1;
-    uint8 internal constant EUINT32_TFHE = 2;
-    uint8 internal constant EUINT64_TFHE = 3;
-    uint8 internal constant EUINT128_TFHE = 4;
-    uint8 internal constant EUINT256_TFHE = 5;
-    uint8 internal constant EADDRESS_TFHE = 12;
+    uint8 internal constant EUINT8_TFHE = 2;
+    uint8 internal constant EUINT16_TFHE = 3;
+    uint8 internal constant EUINT32_TFHE = 4;
+    uint8 internal constant EUINT64_TFHE = 5;
+    uint8 internal constant EUINT128_TFHE = 6;
+    uint8 internal constant EUINT256_TFHE = 8;
+    uint8 internal constant EADDRESS_TFHE = 7;
+    uint8 internal constant EBOOL_TFHE = 0;
     // uint8 internal constant INT_BGV = 12;
-    uint8 internal constant EBOOL_TFHE = 13;
-    
+
     function bigIntToBool(uint256 i) internal pure returns (bool) {
         return (i > 0);
     }
@@ -130,7 +130,7 @@ library Common {
     function bigIntToAddress(uint256 i) internal pure returns (address) {
         return address(uint160(i));
     }
-    
+
     function toBytes(uint256 x) internal pure returns (bytes memory b) {
         b = new bytes(32);
         assembly { mstore(add(b, 32), x) }
@@ -206,17 +206,17 @@ library FHE {
     function isInitialized(euint32 v) internal pure returns (bool) {
         return euint32.unwrap(v) != 0;
     }
-    
+
     // Return true if the encrypted integer is initialized and false otherwise.
     function isInitialized(euint64 v) internal pure returns (bool) {
         return euint64.unwrap(v) != 0;
     }
-    
+
         // Return true if the encrypted integer is initialized and false otherwise.
     function isInitialized(euint128 v) internal pure returns (bool) {
         return euint128.unwrap(v) != 0;
     }
-    
+
         // Return true if the encrypted integer is initialized and false otherwise.
     function isInitialized(euint256 v) internal pure returns (bool) {
         return euint256.unwrap(v) != 0;
@@ -231,7 +231,7 @@ library FHE {
             value := mload(add(a, 0x20))
         }
     }
-    
+
     function mathHelper(
         uint8 utype,
         uint256 lhs,
@@ -419,7 +419,7 @@ export function SolTemplate2Arg(
     /// @notice This function performs the ${name} operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
     ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
-    /// @param lhs The first input 
+    /// @param lhs The first input
     /// @param rhs The second input
     /// @return The result of the operation
     `;
@@ -427,7 +427,7 @@ export function SolTemplate2Arg(
   // reencrypt (seal)
   if (name === SEALING_FUNCTION_NAME || name === SEALING_TYPED_FUNCTION_NAME) {
     docString = `
-    /// @notice performs the ${name} function on a ${input1} ciphertext. This operation returns the plaintext value, sealed for the public key provided 
+    /// @notice performs the ${name} function on a ${input1} ciphertext. This operation returns the plaintext value, sealed for the public key provided
     /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param value Ciphertext to decrypt and seal
     /// @param publicKey Public Key that will receive the sealed plaintext
