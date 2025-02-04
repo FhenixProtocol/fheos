@@ -69,6 +69,7 @@ func Verify(utype byte, input []byte, securityZone int32, tp *TxParams, _ *Callb
 		securityZone,
 		false,
 	)
+	copy(ct.Key.Hash[:], adjustHashForMetadata(ct.Key.Hash[:], utype, securityZone))
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function: " + functionName.String())
