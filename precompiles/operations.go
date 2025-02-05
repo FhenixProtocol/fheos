@@ -143,11 +143,15 @@ func SealOutputHelper(storage *storage2.MultiStore, ctHash fhe.Hash, pk []byte, 
 	return string(sealed), nil
 }
 
-func adjustHashForMetadata(hash []byte, uintType byte, securityZone int32) []byte {
+func adjustHashForMetadata(hash []byte, uintType byte, securityZone int32, isTriviallyEncrypted bool) []byte {
 	if len(hash) < 32 {
 		panic(fmt.Sprintf("Invalid hash length for adjustHashForMetadata: %d", len(hash)))
 	}
-	hash[30] = byte(uintType & 0x7f) // 7 bits for uintType, 1 bit for isTriviallyEncrypted which is always false here
+	// Set byte[30]: lowest 7 bits for uintType, highest bit for isTriviallyEncrypted flag
+	hash[30] = byte(uintType & 0x7f)
+	if isTriviallyEncrypted {
+		hash[30] |= 0x80  // Set MSB to 1 if trivially encrypted
+	}
 	hash[31] = byte(securityZone)
 	return hash
 }
@@ -157,7 +161,7 @@ func createPlaceholder(utype byte, securityZone int32, functionName types.Precom
 
 	// Calculate placeholder based on number of inputs
 	placeholderKey := fhe.CalcPlaceholderValueHash(int(functionName), fhe.EncryptionType(utype), securityZone, inputKeys...)
-	copy(placeholderKey.Hash[:], adjustHashForMetadata(placeholderKey.Hash[:], utype, securityZone))
+	copy(placeholderKey.Hash[:], adjustHashForMetadata(placeholderKey.Hash[:], utype, securityZone, functionName == types.TrivialEncrypt))
 
 	placeholderCt.Key = placeholderKey
 	return placeholderCt, nil
