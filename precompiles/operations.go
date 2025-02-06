@@ -145,8 +145,8 @@ func SealOutputHelper(storage *storage2.MultiStore, ctHash fhe.Hash, pk []byte, 
 }
 
 func adjustHashForMetadata(hash []byte, uintType byte, securityZone int32, isTriviallyEncrypted bool) []byte {
-	if len(hash) == common.HashLength {
-		logger.Error("Invalid hash length for adjustHashForMetadata", "len", len(hash))
+	if len(hash) != common.HashLength {
+		logger.Error("Invalid hash length for adjustHashForMetadata", "len", len(hash), "hash", hex.EncodeToString(hash), "common.HashLength", common.HashLength)
 		return nil
 	}
 	// Add sanity checks for uintType and securityZone
