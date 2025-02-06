@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
@@ -142,11 +143,41 @@ func SealOutputHelper(storage *storage2.MultiStore, ctHash fhe.Hash, pk []byte, 
 
 	return string(sealed), nil
 }
+
+func adjustHashForMetadata(hash []byte, uintType byte, securityZone int32, isTriviallyEncrypted bool) []byte {
+	if len(hash) != common.HashLength {
+		logger.Error("Invalid hash length for adjustHashForMetadata", "len", len(hash), "hash", hex.EncodeToString(hash), "common.HashLength", common.HashLength)
+		return nil
+	}
+	// Add sanity checks for uintType and securityZone
+	if !types.IsValidType(fhe.EncryptionType(uintType)) {
+		logger.Error("Invalid uintType for adjustHashForMetadata", "uintType", uintType)
+		return nil
+	}
+	if securityZone < 0 || securityZone > 256 {
+		logger.Error("Invalid securityZone for adjustHashForMetadata", "securityZone", securityZone)
+		return nil
+	}
+
+	// Set byte[TrivialEncryptAndTypeByte]: lowest 7 bits for uintType, highest bit for isTriviallyEncrypted flag
+	hash[types.TrivialEncryptAndTypeByte] = byte(uintType & types.TypeMask)
+	if isTriviallyEncrypted {
+		hash[types.TrivialEncryptAndTypeByte] |= types.TrivialEncryptFlag  // Set MSB to 1 if trivially encrypted
+	}
+	hash[types.SecurityZoneByte] = byte(securityZone)
+	return hash
+}
+
 func createPlaceholder(utype byte, securityZone int32, functionName types.PrecompileName, inputKeys ...[]byte) (*fhe.FheEncrypted, error) {
 	placeholderCt := fhe.CreateFheEncryptedWithData(CreatePlaceHolderData(), fhe.EncryptionType(utype), true)
 
 	// Calculate placeholder based on number of inputs
 	placeholderKey := fhe.CalcPlaceholderValueHash(int(functionName), fhe.EncryptionType(utype), securityZone, inputKeys...)
+	hash := adjustHashForMetadata(placeholderKey.Hash[:], utype, securityZone, functionName == types.TrivialEncrypt)
+	if hash == nil {
+		return nil, vm.ErrExecutionReverted
+	}
+	copy(placeholderKey.Hash[:], hash)
 
 	placeholderCt.Key = placeholderKey
 	return placeholderCt, nil

@@ -160,3 +160,11 @@ type ParallelTxProcessingHook interface {
 	NotifyDecryptRes(*PendingDecryption) error
 	NotifyExistingRes(*PendingDecryption)
 }
+
+
+const (
+	TrivialEncryptAndTypeByte = 30
+	SecurityZoneByte          = 31
+	TypeMask                  = 0x7f
+	TrivialEncryptFlag        = 0x80
+)
