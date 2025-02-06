@@ -18,6 +18,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.GH_PAT_LIOR }}
 
       - name: Log in to the Container registry
         uses: docker/login-action@v3
