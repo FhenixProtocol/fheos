@@ -437,6 +437,8 @@ func (d *DecryptRequest) UnmarshalJSON(data []byte) error {
 	d.UType = aux.UType
 	d.Key = *convertedInput
 	d.RequesterUrl = aux.RequesterUrl
+	d.TransactionHash = aux.TransactionHash
+	d.ChainId = int(aux.ChainId)
 
 	return nil
 }
@@ -461,6 +463,8 @@ func DecryptHandler(w http.ResponseWriter, r *http.Request) {
 	callback := precompiles.DecryptCallbackFunc{
 		CallbackUrl: req.RequesterUrl,
 		Callback:    handleDecryptResult,
+		TransactionHash: req.TransactionHash,
+		ChainId: req.ChainId,
 	}
 
 	_, _, err = precompiles.Decrypt(req.UType, fhedriver.SerializeCiphertextKey(req.Key), nil, &tp, &callback)
@@ -585,6 +589,8 @@ func (s *SealOutputRequest) UnmarshalJSON(data []byte) error {
 	s.Key = *convertedInput
 	s.PKey = aux.PKey
 	s.RequesterUrl = aux.RequesterUrl
+	s.TransactionHash = aux.TransactionHash
+	s.ChainId = int(aux.ChainId)
 
 	return nil
 }
@@ -608,9 +614,9 @@ func SealOutputHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("ChainId: %+v\n", req.ChainId)
 	callback := precompiles.SealOutputCallbackFunc{
 		CallbackUrl: req.RequesterUrl,
+		Callback:    handleSealOutputResult,
 		TransactionHash: req.TransactionHash,
 		ChainId: req.ChainId,
-		Callback:    handleSealOutputResult,
 	}
 
 	pkey, err := hex.DecodeString(hexOnly(req.PKey))
