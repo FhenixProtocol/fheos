@@ -27,20 +27,20 @@ const (
 )
 
 type DecryptRequest struct {
-	UType        byte                    `json:"utype"`
-	Key          fhedriver.CiphertextKey `json:"key"`
-	RequesterUrl string                  `json:"requesterUrl"`
-	TransactionHash string                `json:"transactionHash"`
-	ChainId         int                   `json:"chainId"`
+	UType        	byte                    `json:"utype"`
+	Key          	fhedriver.CiphertextKey `json:"key"`
+	RequesterUrl 	string                  `json:"requesterUrl"`
+	TransactionHash string                	`json:"transactionHash"`
+	ChainId         int                   	`json:"chainId"`
 }
 
 type SealOutputRequest struct {
-	UType        byte                    `json:"utype"`
-	Key          fhedriver.CiphertextKey `json:"key"`
-	PKey         string                  `json:"pkey"`
-	RequesterUrl string                  `json:"requesterUrl"`
-	TransactionHash string                `json:"transactionHash"`
-	ChainId         int                   `json:"chainId"`
+	UType        	byte                    `json:"utype"`
+	Key          	fhedriver.CiphertextKey `json:"key"`
+	PKey         	string                  `json:"pkey"`
+	RequesterUrl 	string                  `json:"requesterUrl"`
+	TransactionHash string                	`json:"transactionHash"`
+	ChainId         int                   	`json:"chainId"`
 }
 
 type MockDecryptRequest struct {
@@ -92,16 +92,16 @@ type HashResultUpdate struct {
 }
 
 type DecryptResultUpdate struct {
-	CtHash    []byte `json:"ctHash"`
-	Plaintext string `json:"plaintext"`
+	CtHash    		[]byte `json:"ctHash"`
+	Plaintext 		string `json:"plaintext"`
 	TransactionHash string `json:"transactionHash"`
 	ChainId         int    `json:"chainId"`
 }
 
 type SealOutputResultUpdate struct {
-	CtHash []byte `json:"ctHash"`
-	PK     string `json:"pk"`
-	Value  string `json:"value"`
+	CtHash 			[]byte `json:"ctHash"`
+	PK     			string `json:"pk"`
+	Value  			string `json:"value"`
 	TransactionHash string `json:"transactionHash"`
 	ChainId         int    `json:"chainId"`
 }
@@ -417,9 +417,11 @@ func initFheos() (*precompiles.TxParams, error) {
 
 func (d *DecryptRequest) UnmarshalJSON(data []byte) error {
 	var aux struct {
-		UType        byte             `json:"utype"`
-		Key          CiphertextKeyAux `json:"key"`
-		RequesterUrl string           `json:"requesterUrl"`
+		UType        	byte             	`json:"utype"`
+		Key          	CiphertextKeyAux 	`json:"key"`
+		RequesterUrl 	string           	`json:"requesterUrl"`
+		TransactionHash string				`json:"transactionHash"`
+		ChainId 		int32 				`json:"chainId"`
 	}
 
 	if err := json.Unmarshal(data, &aux); err != nil {
@@ -561,10 +563,12 @@ func SealOutputHandlerMock(w http.ResponseWriter, r *http.Request) {
 
 func (s *SealOutputRequest) UnmarshalJSON(data []byte) error {
 	var aux struct {
-		UType        byte             `json:"utype"`
-		Key          CiphertextKeyAux `json:"key"`
-		PKey         string           `json:"pkey"`
-		RequesterUrl string           `json:"requesterUrl"`
+		UType        	byte             	`json:"utype"`
+		Key          	CiphertextKeyAux 	`json:"key"`
+		PKey         	string           	`json:"pkey"`
+		RequesterUrl 	string           	`json:"requesterUrl"`
+		TransactionHash string 				`json:"transactionHash"`
+		ChainId 		int32  				`json:"chainId"`
 	}
 
 	if err := json.Unmarshal(data, &aux); err != nil {
