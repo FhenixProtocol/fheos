@@ -30,6 +30,8 @@ type DecryptRequest struct {
 	UType        byte                    `json:"utype"`
 	Key          fhedriver.CiphertextKey `json:"key"`
 	RequesterUrl string                  `json:"requesterUrl"`
+	TransactionHash string                `json:"transactionHash"`
+	ChainId         int                   `json:"chainId"`
 }
 
 type SealOutputRequest struct {
@@ -37,6 +39,8 @@ type SealOutputRequest struct {
 	Key          fhedriver.CiphertextKey `json:"key"`
 	PKey         string                  `json:"pkey"`
 	RequesterUrl string                  `json:"requesterUrl"`
+	TransactionHash string                `json:"transactionHash"`
+	ChainId         int                   `json:"chainId"`
 }
 
 type MockDecryptRequest struct {
@@ -90,12 +94,16 @@ type HashResultUpdate struct {
 type DecryptResultUpdate struct {
 	CtHash    []byte `json:"ctHash"`
 	Plaintext string `json:"plaintext"`
+	TransactionHash string `json:"transactionHash"`
+	ChainId         int    `json:"chainId"`
 }
 
 type SealOutputResultUpdate struct {
 	CtHash []byte `json:"ctHash"`
 	PK     string `json:"pk"`
 	Value  string `json:"value"`
+	TransactionHash string `json:"transactionHash"`
+	ChainId         int    `json:"chainId"`
 }
 
 var tp precompiles.TxParams
@@ -172,10 +180,10 @@ func handleResult(url string, tempKey []byte, actualHash []byte) {
 	responseToServer(url, tempKey, jsonData)
 }
 
-func handleDecryptResult(url string, ctHash []byte, plaintext *big.Int) {
+func handleDecryptResult(url string, ctHash []byte, plaintext *big.Int, transactionHash string, chainId int) {
 	fmt.Printf("Got decrypt result for %s : %s\n", hex.EncodeToString(ctHash), plaintext)
 	plaintextString := plaintext.Text(16)
-	jsonData, err := json.Marshal(DecryptResultUpdate{CtHash: ctHash, Plaintext: plaintextString})
+	jsonData, err := json.Marshal(DecryptResultUpdate{CtHash: ctHash, Plaintext: plaintextString, TransactionHash: transactionHash, ChainId: chainId})
 	if err != nil {
 		log.Printf("Failed to marshal decrypt result for requester %s with the result of %+v: %v", url, ctHash, err)
 		return
@@ -184,9 +192,9 @@ func handleDecryptResult(url string, ctHash []byte, plaintext *big.Int) {
 	responseToServer(url, ctHash, jsonData)
 }
 
-func handleSealOutputResult(url string, ctHash []byte, pk []byte, value string) {
+func handleSealOutputResult(url string, ctHash []byte, pk []byte, value string, transactionHash string, chainId int) {
 	fmt.Printf("Got sealoutput result for %s : %s\n", hex.EncodeToString(ctHash), value)
-	jsonData, err := json.Marshal(SealOutputResultUpdate{CtHash: ctHash, PK: hex.EncodeToString(pk), Value: value})
+	jsonData, err := json.Marshal(SealOutputResultUpdate{CtHash: ctHash, PK: hex.EncodeToString(pk), Value: value, TransactionHash: transactionHash, ChainId: chainId})
 	if err != nil {
 		log.Printf("Failed to marshal seal output result for requester %s with the result of %+v: %v", url, ctHash, err)
 		return
@@ -592,8 +600,12 @@ func SealOutputHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("SealOutput Request: %+v\n", req)
+	log.Printf("TransactionHash: %+v\n", req.TransactionHash)
+	log.Printf("ChainId: %+v\n", req.ChainId)
 	callback := precompiles.SealOutputCallbackFunc{
 		CallbackUrl: req.RequesterUrl,
+		TransactionHash: req.TransactionHash,
+		ChainId: req.ChainId,
 		Callback:    handleSealOutputResult,
 	}
 
