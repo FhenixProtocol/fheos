@@ -114,7 +114,7 @@ var precompileNameToString = map[PrecompileName]string{
 
 var stringToPrecompileName = map[string]PrecompileName{
 	"getNetworkKey":  GetNetworkKey,
-	"verify":         Verify,
+	"storeCt":         StoreCt,
 	"cast":           Cast,
 	"sealOutput":     SealOutput,
 	"select":         Select,
