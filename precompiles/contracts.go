@@ -855,3 +855,16 @@ func Square(utype byte, value []byte, tp *TxParams, callback *CallbackFunc) ([]b
 	// Please don't delete the below comment, this is intentionally left here for code generation.
 	//ct := ProcessOperation1(storage, fhe.BytesToHash(value), tp.ContractAddress)
 }
+
+func GetCT(hash []byte, tp *TxParams) (*fhe.FheEncrypted, error) {
+	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
+	ctHash := fhe.Hash(hash)
+	ct := awaitCtResult(storage, ctHash, tp)
+	if ct == nil {
+		msg := "GetCT unverified ciphertext handle"
+		logger.Error(msg, " ctHash ", ctHash)
+		return nil, vm.ErrExecutionReverted
+	}
+
+	return ct, nil
+}
