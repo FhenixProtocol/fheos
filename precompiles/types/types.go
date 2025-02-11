@@ -80,7 +80,7 @@ const (
 
 var precompileNameToString = map[PrecompileName]string{
 	GetNetworkKey:  "getNetworkKey",
-	StoreCt:         "verify",
+	StoreCt:        "verify",
 	Cast:           "cast",
 	SealOutput:     "sealOutput",
 	Select:         "select",
@@ -114,7 +114,7 @@ var precompileNameToString = map[PrecompileName]string{
 
 var stringToPrecompileName = map[string]PrecompileName{
 	"getNetworkKey":  GetNetworkKey,
-	"storeCt":         StoreCt,
+	"storeCt":        StoreCt,
 	"cast":           Cast,
 	"sealOutput":     SealOutput,
 	"select":         Select,
@@ -160,7 +160,6 @@ type ParallelTxProcessingHook interface {
 	NotifyDecryptRes(*PendingDecryption) error
 	NotifyExistingRes(*PendingDecryption)
 }
-
 
 const (
 	TrivialEncryptAndTypeByte = 30
