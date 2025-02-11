@@ -178,7 +178,7 @@ func handleResult(url string, tempKey []byte, actualHash []byte) {
 	responseToServer(url, tempKey, jsonData)
 }
 
-func handleDecryptResult(url string, ctHash []byte, plaintext *big.Int, transactionHash string, chainId int) {
+func handleDecryptResult(url string, ctHash []byte, plaintext *big.Int, transactionHash string, chainId uint) {
 	fmt.Printf("Got decrypt result for %s : %s\n", hex.EncodeToString(ctHash), plaintext)
 	plaintextString := plaintext.Text(16)
 	jsonData, err := json.Marshal(DecryptResultUpdate{CtHash: ctHash, Plaintext: plaintextString, TransactionHash: transactionHash})
@@ -190,7 +190,7 @@ func handleDecryptResult(url string, ctHash []byte, plaintext *big.Int, transact
 	responseToServer(url, ctHash, jsonData)
 }
 
-func handleSealOutputResult(url string, ctHash []byte, pk []byte, value string, transactionHash string, chainId int) {
+func handleSealOutputResult(url string, ctHash []byte, pk []byte, value string, transactionHash string, chainId uint) {
 	fmt.Printf("Got sealoutput result for %s : %s\n", hex.EncodeToString(ctHash), value)
 	jsonData, err := json.Marshal(SealOutputResultUpdate{CtHash: ctHash, PK: hex.EncodeToString(pk), Value: value, TransactionHash: transactionHash})
 	if err != nil {
@@ -608,8 +608,6 @@ func SealOutputHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("SealOutput Request: %+v\n", req)
-	log.Printf("TransactionHash: %+v\n", req.TransactionHash)
-	log.Printf("ChainId: %+v\n", req.ChainId)
 	callback := precompiles.SealOutputCallbackFunc{
 		CallbackUrl: req.RequesterUrl,
 		Callback:    handleSealOutputResult,
