@@ -31,7 +31,7 @@ type DecryptRequest struct {
 	Key          	fhedriver.CiphertextKey `json:"key"`
 	RequesterUrl 	string                  `json:"requesterUrl"`
 	TransactionHash string                	`json:"transactionHash"`
-	ChainId         int                   	`json:"chainId"`
+	ChainId         uint                   	`json:"chainId"`
 }
 
 type SealOutputRequest struct {
@@ -40,7 +40,7 @@ type SealOutputRequest struct {
 	PKey         	string                  `json:"pkey"`
 	RequesterUrl 	string                  `json:"requesterUrl"`
 	TransactionHash string                	`json:"transactionHash"`
-	ChainId         int                   	`json:"chainId"`
+	ChainId         uint                   	`json:"chainId"`
 }
 
 type MockDecryptRequest struct {
@@ -95,7 +95,6 @@ type DecryptResultUpdate struct {
 	CtHash    		[]byte `json:"ctHash"`
 	Plaintext 		string `json:"plaintext"`
 	TransactionHash string `json:"transactionHash"`
-	ChainId         int    `json:"chainId"`
 }
 
 type SealOutputResultUpdate struct {
@@ -103,7 +102,6 @@ type SealOutputResultUpdate struct {
 	PK     			string `json:"pk"`
 	Value  			string `json:"value"`
 	TransactionHash string `json:"transactionHash"`
-	ChainId         int    `json:"chainId"`
 }
 
 var tp precompiles.TxParams
@@ -183,7 +181,7 @@ func handleResult(url string, tempKey []byte, actualHash []byte) {
 func handleDecryptResult(url string, ctHash []byte, plaintext *big.Int, transactionHash string, chainId int) {
 	fmt.Printf("Got decrypt result for %s : %s\n", hex.EncodeToString(ctHash), plaintext)
 	plaintextString := plaintext.Text(16)
-	jsonData, err := json.Marshal(DecryptResultUpdate{CtHash: ctHash, Plaintext: plaintextString, TransactionHash: transactionHash, ChainId: chainId})
+	jsonData, err := json.Marshal(DecryptResultUpdate{CtHash: ctHash, Plaintext: plaintextString, TransactionHash: transactionHash})
 	if err != nil {
 		log.Printf("Failed to marshal decrypt result for requester %s with the result of %+v: %v", url, ctHash, err)
 		return
@@ -194,7 +192,7 @@ func handleDecryptResult(url string, ctHash []byte, plaintext *big.Int, transact
 
 func handleSealOutputResult(url string, ctHash []byte, pk []byte, value string, transactionHash string, chainId int) {
 	fmt.Printf("Got sealoutput result for %s : %s\n", hex.EncodeToString(ctHash), value)
-	jsonData, err := json.Marshal(SealOutputResultUpdate{CtHash: ctHash, PK: hex.EncodeToString(pk), Value: value, TransactionHash: transactionHash, ChainId: chainId})
+	jsonData, err := json.Marshal(SealOutputResultUpdate{CtHash: ctHash, PK: hex.EncodeToString(pk), Value: value, TransactionHash: transactionHash})
 	if err != nil {
 		log.Printf("Failed to marshal seal output result for requester %s with the result of %+v: %v", url, ctHash, err)
 		return
@@ -421,7 +419,7 @@ func (d *DecryptRequest) UnmarshalJSON(data []byte) error {
 		Key          	CiphertextKeyAux 	`json:"key"`
 		RequesterUrl 	string           	`json:"requesterUrl"`
 		TransactionHash string				`json:"transactionHash"`
-		ChainId 		int32 				`json:"chainId"`
+		ChainId 		uint				`json:"chainId"`
 	}
 
 	if err := json.Unmarshal(data, &aux); err != nil {
@@ -572,7 +570,7 @@ func (s *SealOutputRequest) UnmarshalJSON(data []byte) error {
 		PKey         	string           	`json:"pkey"`
 		RequesterUrl 	string           	`json:"requesterUrl"`
 		TransactionHash string 				`json:"transactionHash"`
-		ChainId 		int32  				`json:"chainId"`
+		ChainId 		uint  				`json:"chainId"`
 	}
 
 	if err := json.Unmarshal(data, &aux); err != nil {

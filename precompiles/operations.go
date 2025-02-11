@@ -96,16 +96,16 @@ type CallbackFunc struct {
 
 type DecryptCallbackFunc struct {
 	CallbackUrl string
-	Callback    func(url string, ctKey []byte, plaintext *big.Int, transactionHash string, chainId int)
+	Callback    func(url string, ctKey []byte, plaintext *big.Int, transactionHash string, chainId uint)
 	TransactionHash string
-	ChainId         int
+	ChainId         uint
 }
 
 type SealOutputCallbackFunc struct {
 	CallbackUrl string
-	Callback    func(url string, ctKey []byte, pk []byte, value string, transactionHash string, chainId int)
+	Callback    func(url string, ctKey []byte, pk []byte, value string, transactionHash string, chainId uint)
 	TransactionHash string
-	ChainId         int
+	ChainId         uint
 }
 
 func inputsToString(inputKeys []fhe.CiphertextKey) string {
