@@ -128,11 +128,15 @@ func SealOutput(utype byte, inputBz []byte, pk []byte, tp *TxParams, onResultCal
 		go func(ctHash [common.HashLength]byte) {
 			sealed, err := SealOutputHelper(storage, ctHash, pk, tp)
 			if err != nil {
+				logger.Error("failed sealing output", "error", err)
 				return
 			}
 
 			url := (*onResultCallback).CallbackUrl
-			(*onResultCallback).Callback(url, ctHash[:], pk, string(sealed))
+			transactionHash := (*onResultCallback).TransactionHash
+			chainId := (*onResultCallback).ChainId
+			logger.Info("SealOutput callback", "url", url, "ctHash", hex.EncodeToString(ctHash[:]), "pk", hex.EncodeToString(pk), "value", string(sealed), "transactionHash", transactionHash, "chainId", chainId)
+			(*onResultCallback).Callback(url, ctHash[:], pk, string(sealed), transactionHash, chainId)
 		}(input.Hash)
 		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "ctHash", hex.EncodeToString(input.Hash[:]))
 	}
@@ -169,11 +173,9 @@ func Decrypt(utype byte, inputBz []byte, defaultValue *big.Int, tp *TxParams, on
 			}
 
 			url := (*onResultCallback).CallbackUrl
-			(*onResultCallback).Callback(url, ctHash[:], plaintext)
-			if err != nil {
-				logger.Error("failed decrypting ciphertext", "error", err)
-				return
-			}
+			transactionHash := (*onResultCallback).TransactionHash
+			chainId := (*onResultCallback).ChainId
+			(*onResultCallback).Callback(url, ctHash[:], plaintext, transactionHash, chainId)
 		}(input.Hash)
 		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "input", hex.EncodeToString(input.Hash[:]))
 	}
