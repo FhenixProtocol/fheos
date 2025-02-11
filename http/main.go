@@ -50,10 +50,15 @@ type MockSealOutputRequest struct {
 	PublicKey string `json:"publicKey"`
 }
 
-type VerifyRequest struct {
+type UpdateCtEntry struct {
 	UType        byte   `json:"utype"`
 	Value        string `json:"value"`
 	SecurityZone byte   `json:"securityZone"`
+}
+
+type UpdateCtRequest struct {
+	Cts       []UpdateCtEntry `json:"cts"`
+	Signature string          `json:"signature"`
 }
 
 type GetNetworkPublicKeyRequest struct {
@@ -62,11 +67,6 @@ type GetNetworkPublicKeyRequest struct {
 
 type GetNetworkPublicKeyResult struct {
 	PublicKey string `json:"publicKey"`
-}
-
-type VerifyResult struct {
-	CtHash    string `json:"ctHash"`
-	Signature string `json:"signature"`
 }
 
 type TrivialEncryptRequest struct {
@@ -757,19 +757,6 @@ func CastHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Started processing the request for tempkey %s\n", hex.EncodeToString(result))
 }
 
-func createVerifyResponse(ctHash []byte) ([]byte, error) {
-	verifyResult := VerifyResult{
-		CtHash:    hex.EncodeToString(ctHash),
-		Signature: "Haim",
-	}
-
-	responseData, err := json.Marshal(verifyResult)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal response: %+v", err)
-	}
-	return responseData, nil
-}
-
 func createNetworkPublicKeyResponse(PublicKey []byte) ([]byte, error) {
 	result := GetNetworkPublicKeyResult{
 		PublicKey: hex.EncodeToString(PublicKey),
@@ -800,40 +787,48 @@ func UpdateCTHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	var req VerifyRequest
+
+	var req UpdateCtRequest
 	if err := json.Unmarshal(body, &req); err != nil {
 		fmt.Printf("Failed unmarshaling request: %+v body is %+v\n", err, string(body))
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	// fmt.Printf("Verify Request Value: %s\n", req.Value)
-	value, err := hex.DecodeString(hexOnly(req.Value))
-	if err != nil {
-		e := fmt.Sprintf("Invalid Value: %s %+v", req.Value, err)
-		fmt.Println(e)
-		http.Error(w, e, http.StatusBadRequest)
+	if req.Signature != "toml" {
+		http.Error(w, "Invalid signature", http.StatusBadRequest)
 		return
 	}
 
-	ctHash, _, err := precompiles.Verify(req.UType, value, int32(req.SecurityZone), &tp, nil)
-	if err != nil {
-		e := fmt.Sprintf("Operation failed: %+v", err)
-		fmt.Println(e)
-		http.Error(w, e, http.StatusBadRequest)
-		return
+	hashes := []string{}
+
+	for _, ct := range req.Cts {
+		value, err := hex.DecodeString(hexOnly(ct.Value))
+		if err != nil {
+			e := fmt.Sprintf("Invalid Value: %s %+v", ct.Value, err)
+			fmt.Println(e)
+			http.Error(w, e, http.StatusBadRequest)
+			return
+		}
+
+		hash, _, err := precompiles.StoreCt(ct.UType, value, int32(ct.SecurityZone), &tp, nil)
+		if err != nil {
+			e := fmt.Sprintf("Operation failed: %+v", err)
+			fmt.Println(e)
+			http.Error(w, e, http.StatusBadRequest)
+			return
+		}
+		hashes = append(hashes, hex.EncodeToString(hash))
 	}
 
-	responseData, err := createVerifyResponse(ctHash)
+	fmt.Printf("Updated %d cts: %+v\n", len(hashes), hashes)
+
+	response := []byte("")
+	_, err = w.Write(response)
 	if err != nil {
-		e := fmt.Sprintf("Failed to marshal response: %+v", err)
-		fmt.Println(e)
-		http.Error(w, e, http.StatusInternalServerError)
+		fmt.Printf("Failed to write response: %v\n", err)
 		return
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(responseData)
 }
 
 func corsMiddleware(next http.Handler) http.Handler {

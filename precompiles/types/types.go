@@ -46,7 +46,7 @@ type PrecompileName int
 
 const (
 	GetNetworkKey PrecompileName = iota
-	Verify
+	StoreCt
 	Cast
 	SealOutput
 	Select
@@ -80,7 +80,7 @@ const (
 
 var precompileNameToString = map[PrecompileName]string{
 	GetNetworkKey:  "getNetworkKey",
-	Verify:         "verify",
+	StoreCt:         "verify",
 	Cast:           "cast",
 	SealOutput:     "sealOutput",
 	Select:         "select",

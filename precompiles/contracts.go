@@ -44,10 +44,8 @@ func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *Cal
 	return ProcessOperation(functionName, addOp, utype, keys[0].SecurityZone, keys, tp, callback)
 }
 
-// Verify takes inputs from the user and runs them through verification. Note that we will always get ciphertexts that
-// are public-key encrypted and compressed. Anything else will fail
-func Verify(utype byte, input []byte, securityZone int32, tp *TxParams, _ *CallbackFunc) ([]byte, uint64, error) {
-	functionName := types.Verify
+func StoreCt(utype byte, input []byte, securityZone int32, tp *TxParams, _ *CallbackFunc) ([]byte, uint64, error) {
+	functionName := types.StoreCt
 
 	uintType := fhe.EncryptionType(utype)
 	if !types.IsValidType(uintType) {
@@ -81,13 +79,7 @@ func Verify(utype byte, input []byte, securityZone int32, tp *TxParams, _ *Callb
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 
-	err := ct.Verify()
-	if err != nil {
-		logger.Info(fmt.Sprintf("failed to verify ciphertext %s for type %d - was input corrupted?", ct.GetHash().Hex(), uintType))
-		return nil, 0, vm.ErrExecutionReverted
-	}
-
-	err = storeCiphertext(storage, &ct)
+	err := storeCiphertext(storage, &ct)
 	if err != nil {
 		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
