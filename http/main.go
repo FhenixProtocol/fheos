@@ -436,7 +436,7 @@ func (d *DecryptRequest) UnmarshalJSON(data []byte) error {
 	d.Key = *convertedInput
 	d.RequesterUrl = aux.RequesterUrl
 	d.TransactionHash = aux.TransactionHash
-	d.ChainId = int(aux.ChainId)
+	d.ChainId = aux.ChainId
 
 	return nil
 }
@@ -588,7 +588,7 @@ func (s *SealOutputRequest) UnmarshalJSON(data []byte) error {
 	s.PKey = aux.PKey
 	s.RequesterUrl = aux.RequesterUrl
 	s.TransactionHash = aux.TransactionHash
-	s.ChainId = int(aux.ChainId)
+	s.ChainId = aux.ChainId
 
 	return nil
 }
