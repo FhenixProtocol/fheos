@@ -112,7 +112,7 @@ type CTResponse struct {
 	CiphertextData 			string `json:"ciphertextData"`
 	SecurityZone   			uint8  `json:"securityZone"`
 	IsTriviallyEncrypted 	bool   `json:"isTriviallyEncrypted"`
-	UintType             	uint32  `json:"uintType"` 
+	UintType             	uint8  `json:"uintType"` 
 	Compact              	bool   `json:"compact"`
 	Compressed           	bool   `json:"compressed"`
 }
@@ -970,7 +970,7 @@ func GetCTHandler(w http.ResponseWriter, r *http.Request) {
 		CiphertextData: hex.EncodeToString(ct.Data),
 		SecurityZone:   uint8(ct.Key.SecurityZone),
 		IsTriviallyEncrypted: ct.Key.IsTriviallyEncrypted,
-		UintType:           uint32(ct.Key.UintType),
+		UintType:           uint8(ct.Key.UintType),
 		Compact:            ct.Compact,
 		Compressed:         ct.Compressed,
 	}
