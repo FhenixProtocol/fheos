@@ -112,7 +112,7 @@ type CTResponse struct {
 	CiphertextData 			string `json:"ciphertextData"`
 	SecurityZone   			uint8  `json:"securityZone"`
 	IsTriviallyEncrypted 	bool   `json:"isTriviallyEncrypted"`
-	UintType             	uint8  `json:"uintType"` 
+	UintType             	uint8  `json:"uintType"`
 	Compact              	bool   `json:"compact"`
 	Compressed           	bool   `json:"compressed"`
 }
@@ -948,6 +948,11 @@ func GetCTHandler(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("GetCT Request: %+v\n", req)
 
+	if req.Hash == "" {
+		http.Error(w, "Hash is not supported yet", http.StatusBadRequest)
+		return
+	}
+
 	// Decode the hash from hex
 	hash, err := hex.DecodeString(hexOnly(req.Hash))
 	if err != nil {
@@ -962,7 +967,11 @@ func GetCTHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		e := fmt.Sprintf("Failed to get ciphertext: %+v", err)
 		fmt.Println(e)
-		http.Error(w, e, http.StatusInternalServerError)
+		if strings.Contains(err.Error(), "placeholder") {
+			http.Error(w, e, http.StatusPreconditionRequired)
+		} else {
+			http.Error(w, e, http.StatusBadRequest)
+		}
 		return
 	}
 

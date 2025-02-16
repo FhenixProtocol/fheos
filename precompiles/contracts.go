@@ -2,6 +2,7 @@ package precompiles
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"math/big"
 	"strings"
@@ -859,11 +860,13 @@ func Square(utype byte, value []byte, tp *TxParams, callback *CallbackFunc) ([]b
 func GetCT(hash []byte, tp *TxParams) (*fhe.FheEncrypted, error) {
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 	ctHash := fhe.Hash(hash)
-	ct := awaitCtResult(storage, ctHash, tp)
-	if ct == nil {
-		msg := "GetCT unverified ciphertext handle"
-		logger.Error(msg, " ctHash ", ctHash)
-		return nil, vm.ErrExecutionReverted
+	ct, err := getCiphertext(storage, ctHash, true)
+	if err != nil {
+		return nil, err
+	}
+
+	if ct.IsPlaceholderValue() {
+		return nil, errors.New("ciphertext is a placeholder value")
 	}
 
 	return ct, nil
