@@ -50,17 +50,20 @@ type MockSealOutputRequest struct {
 	PublicKey string `json:"publicKey"`
 }
 
-type UpdateCtEntry struct {
+type StoreCtsEntry struct {
 	UType        byte   `json:"utype"`
 	Value        string `json:"value"`
 	SecurityZone byte   `json:"securityZone"`
 }
 
-type UpdateCtRequest struct {
-	Cts       []UpdateCtEntry `json:"cts"`
+type StoreCtsRequest struct {
+	Cts       []StoreCtsEntry `json:"cts"`
 	Signature string          `json:"signature"`
 }
 
+type StoreCtsResult struct {
+	Hashes []string `json:"hashes"`
+}
 type GetNetworkPublicKeyRequest struct {
 	SecurityZone byte `json:"securityZone"`
 }
@@ -780,7 +783,7 @@ func hexOnly(value string) string {
 	return value
 }
 
-func UpdateCTHandler(w http.ResponseWriter, r *http.Request) {
+func StoreCtsHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Got a verify request from %s\n", r.RemoteAddr)
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -788,7 +791,7 @@ func UpdateCTHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req UpdateCtRequest
+	var req StoreCtsRequest
 	if err := json.Unmarshal(body, &req); err != nil {
 		fmt.Printf("Failed unmarshaling request: %+v body is %+v\n", err, string(body))
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -821,12 +824,23 @@ func UpdateCTHandler(w http.ResponseWriter, r *http.Request) {
 		hashes = append(hashes, hex.EncodeToString(hash))
 	}
 
-	fmt.Printf("Updated %d cts: %+v\n", len(hashes), hashes)
+	fmt.Printf("Stored %d cts: %+v\n", len(hashes), hashes)
 
-	response := []byte("")
-	_, err = w.Write(response)
+	result := StoreCtsResult{
+		Hashes: hashes,
+	}
+
+	responseData, err := json.Marshal(result)
+	if err != nil {
+		fmt.Printf("Failed to marshal response: %+v\n", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return;
+	}
+	
+	_, err = w.Write(responseData)
 	if err != nil {
 		fmt.Printf("Failed to write response: %v\n", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 }
@@ -913,7 +927,7 @@ func main() {
 	http.HandleFunc("/SealOutput", SealOutputHandler)
 	http.HandleFunc("/QueryDecrypt", DecryptHandlerMock)
 	http.HandleFunc("/QuerySealOutput", SealOutputHandlerMock)
-	http.HandleFunc("/UpdateCT", UpdateCTHandler)
+	http.HandleFunc("/StoreCts", StoreCtsHandler)
 	http.HandleFunc("/TrivialEncrypt", TrivialEncryptHandler)
 	http.HandleFunc("/Cast", CastHandler)
 	http.HandleFunc("/GetNetworkPublicKey", GetNetworkPublicKeyHandler)
