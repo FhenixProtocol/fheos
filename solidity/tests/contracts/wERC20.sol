@@ -74,7 +74,7 @@ contract WrappingERC20 is ERC20, Permissioned {
         // Make sure the sender has enough tokens.
         euint32 amountToSend = FHE.select(amount.lt(_encBalances[from]), amount, FHE.asEuint32(0));
 
-        // Add to the balance of `to` and subract from the balance of `from`.
+        // Add to the balance of `to` and subtract from the balance of `from`.
         _encBalances[to] = _encBalances[to] + amountToSend;
         _encBalances[from] = _encBalances[from] - amountToSend;
     }

@@ -45,7 +45,7 @@ export const deployContract = async (contractName: string, args?: any[]) => {
     deployedContract = await deployContractFromSigner(con, signer, undefined, args);
   } catch (e) {
     if (`${e}`.includes('nonce too')) {
-      // find last occurence of ": " in e and get the number that comes after
+      // find last occurrence of ": " in e and get the number that comes after
       const match = `${e}`.match(/state: (\d+)/);
       const stateNonce = match ? parseInt(match[1], 10) : null;
       if (stateNonce === null) {

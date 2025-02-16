@@ -22,7 +22,7 @@ type FheOSHooksImpl struct {
 // StoreCiphertextHook The purpose of this hook is to mark the ciphertext as LTS if the tx is successful and update reference counts
 // contract - The address of the contract in which the ciphertext is stored
 // loc - the location (starting from 0) in the storage of the contract
-// commited - The previous value (ct hash) that was present in the said location
+// committed - The previous value (ct hash) that was present in the said location
 // val - The new value that is being stored
 func (h *FheOSHooksImpl) StoreCiphertextHook(_ common.Address, _ [32]byte, _ common.Hash, _ [32]byte) error {
 	return nil
