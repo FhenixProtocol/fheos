@@ -1,2 +1,5 @@
-# These owners will be the default owners for everything in the repo
-* @FhenixProtocol/Protocol-Team
+# These owners will be the default owners for everything in
+# the repo. Unless a later match takes precedence,
+# @fhenixprotocol/protocol-team team will be requested for review when someone 
+# opens a pull request.
+*       @fhenixprotocol/protocol-team
