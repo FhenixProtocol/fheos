@@ -96,16 +96,16 @@ type CallbackFunc struct {
 
 type DecryptCallbackFunc struct {
 	CallbackUrl string
-	Callback    func(url string, ctKey []byte, plaintext *big.Int, transactionHash string, chainId uint)
+	Callback    func(url string, ctKey []byte, plaintext *big.Int, transactionHash string, chainId uint64)
 	TransactionHash string
-	ChainId         uint
+	ChainId        uint64
 }
 
 type SealOutputCallbackFunc struct {
 	CallbackUrl string
-	Callback    func(url string, ctKey []byte, pk []byte, value string, transactionHash string, chainId uint)
+	Callback    func(url string, ctKey []byte, pk []byte, value string, transactionHash string, chainId uint64)
 	TransactionHash string
-	ChainId         uint
+	ChainId         uint64
 }
 
 func inputsToString(inputKeys []fhe.CiphertextKey) string {
@@ -116,14 +116,14 @@ func inputsToString(inputKeys []fhe.CiphertextKey) string {
 	return concatenated
 }
 
-func DecryptHelper(storage *storage2.MultiStore, ctHash fhe.Hash, tp *TxParams, defaultValue *big.Int) (*big.Int, error) {
+func DecryptHelper(storage *storage2.MultiStore, ctHash fhe.Hash, tp *TxParams, defaultValue *big.Int, chainId uint64, transactionHash string) (*big.Int, error) {
 	ct := awaitCtResult(storage, ctHash, tp)
 	if ct == nil {
 		msg := "decrypt unverified ciphertext handle"
 		logger.Error(msg, " ctHash ", ctHash.Hex())
 		return defaultValue, vm.ErrExecutionReverted
 	}
-	plaintext, err := fhe.Decrypt(*ct)
+	plaintext, err := fhe.Decrypt(*ct, chainId, transactionHash)
 	if err != nil {
 		logger.Error("decrypt failed for ciphertext", "error", err)
 		return defaultValue, vm.ErrExecutionReverted

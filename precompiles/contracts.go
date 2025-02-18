@@ -163,19 +163,21 @@ func Decrypt(utype byte, inputBz []byte, defaultValue *big.Int, tp *TxParams, on
 	if !tp.GasEstimation {
 		storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 		if onResultCallback == nil {
-			plaintext, err := DecryptHelper(storage, input.Hash, tp, defaultValue)
+			plaintext, err := DecryptHelper(storage, input.Hash, tp, defaultValue, 0, "")
 			return plaintext, gas, err
 		}
 		go func(ctHash [common.HashLength]byte) {
-			plaintext, err := DecryptHelper(storage, ctHash, tp, defaultValue)
+			url := (*onResultCallback).CallbackUrl
+			transactionHash := (*onResultCallback).TransactionHash
+			chainId := (*onResultCallback).ChainId
+
+			plaintext, err := DecryptHelper(storage, ctHash, tp, defaultValue, chainId, transactionHash)
 			if err != nil {
 				logger.Error("failed decrypting ciphertext", "error", err)
 				return
 			}
 
-			url := (*onResultCallback).CallbackUrl
-			transactionHash := (*onResultCallback).TransactionHash
-			chainId := (*onResultCallback).ChainId
+
 			(*onResultCallback).Callback(url, ctHash[:], plaintext, transactionHash, chainId)
 		}(input.Hash)
 		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "input", hex.EncodeToString(input.Hash[:]))
