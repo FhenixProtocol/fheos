@@ -404,7 +404,7 @@ func initFheos() (*precompiles.TxParams, error) {
 	}
 
 	config := fhedriver.ConfigDefault
-	config.OracleType = getEnvOrDefault("FHEOS_ORACLE_TYPE", "network")
+	config.OracleType = getEnvOrDefault("FHEOS_ORACLE_TYPE", "local")
 	if err := precompiles.InitFheConfig(&config); err != nil {
 		return nil, fmt.Errorf("failed to init FHE config: %v", err)
 	}
