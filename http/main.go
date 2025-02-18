@@ -388,6 +388,14 @@ func generateKeys(securityZones int32) error {
 	return nil
 }
 
+func getEnvOrDefault(key string, defaultValue string) string {
+	str := os.Getenv(key)
+	if str == "" {
+		return defaultValue
+	}
+	return str
+}
+
 func initFheos() (*precompiles.TxParams, error) {
 	if os.Getenv("FHEOS_DB_PATH") == "" {
 		if err := os.Setenv("FHEOS_DB_PATH", "./fheosdb"); err != nil {
@@ -395,7 +403,9 @@ func initFheos() (*precompiles.TxParams, error) {
 		}
 	}
 
-	if err := precompiles.InitFheConfig(&fhedriver.ConfigDefault); err != nil {
+	config := fhedriver.ConfigDefault
+	config.OracleType = getEnvOrDefault("FHEOS_ORACLE_TYPE", "network")
+	if err := precompiles.InitFheConfig(&config); err != nil {
 		return nil, fmt.Errorf("failed to init FHE config: %v", err)
 	}
 
