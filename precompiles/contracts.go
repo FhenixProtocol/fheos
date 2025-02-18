@@ -122,20 +122,21 @@ func SealOutput(utype byte, inputBz []byte, pk []byte, tp *TxParams, onResultCal
 	if !tp.GasEstimation {
 		storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 		if onResultCallback == nil {
-			sealed, err := SealOutputHelper(storage, input.Hash, pk, tp)
+			sealed, err := SealOutputHelper(storage, input.Hash, pk, tp, 0, "")
 			return sealed, gas, err
 		}
 
 		go func(ctHash [common.HashLength]byte) {
-			sealed, err := SealOutputHelper(storage, ctHash, pk, tp)
+			url := (*onResultCallback).CallbackUrl
+			transactionHash := (*onResultCallback).TransactionHash
+			chainId := (*onResultCallback).ChainId
+			sealed, err := SealOutputHelper(storage, ctHash, pk, tp, chainId, transactionHash)
 			if err != nil {
 				logger.Error("failed sealing output", "error", err)
 				return
 			}
 
-			url := (*onResultCallback).CallbackUrl
-			transactionHash := (*onResultCallback).TransactionHash
-			chainId := (*onResultCallback).ChainId
+
 			logger.Info("SealOutput callback", "url", url, "ctHash", hex.EncodeToString(ctHash[:]), "pk", hex.EncodeToString(pk), "value", string(sealed), "transactionHash", transactionHash, "chainId", chainId)
 			(*onResultCallback).Callback(url, ctHash[:], pk, string(sealed), transactionHash, chainId)
 		}(input.Hash)

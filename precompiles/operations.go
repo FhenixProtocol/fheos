@@ -132,14 +132,14 @@ func DecryptHelper(storage *storage2.MultiStore, ctHash fhe.Hash, tp *TxParams, 
 	return plaintext, nil
 }
 
-func SealOutputHelper(storage *storage2.MultiStore, ctHash fhe.Hash, pk []byte, tp *TxParams) (string, error) {
+func SealOutputHelper(storage *storage2.MultiStore, ctHash fhe.Hash, pk []byte, tp *TxParams, chainId uint64, transactionHash string) (string, error) {
 	ct := awaitCtResult(storage, ctHash, tp)
 	if ct == nil {
 		msg := "sealOutput unverified ciphertext handle"
 		logger.Error(msg, " ctHash ", ctHash)
 		return "", vm.ErrExecutionReverted
 	}
-	sealed, err := fhe.SealOutput(*ct, pk)
+	sealed, err := fhe.SealOutput(*ct, pk, chainId, transactionHash)
 	if err != nil {
 		logger.Error("sealOutput failed for ciphertext", "error", err)
 		return "", vm.ErrExecutionReverted
