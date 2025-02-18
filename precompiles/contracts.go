@@ -2,6 +2,7 @@ package precompiles
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"math/big"
 	"strings"
@@ -854,4 +855,19 @@ func Square(utype byte, value []byte, tp *TxParams, callback *CallbackFunc) ([]b
 	return Mul(utype, value, value, tp, callback)
 	// Please don't delete the below comment, this is intentionally left here for code generation.
 	//ct := ProcessOperation1(storage, fhe.BytesToHash(value), tp.ContractAddress)
+}
+
+func GetCT(hash []byte, tp *TxParams) (*fhe.FheEncrypted, error) {
+	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
+	ctHash := fhe.Hash(hash)
+	ct, err := getCiphertext(storage, ctHash, true)
+	if err != nil {
+		return nil, err
+	}
+
+	if ct.IsPlaceholderValue() {
+		return nil, errors.New("ciphertext is a placeholder value")
+	}
+
+	return ct, nil
 }

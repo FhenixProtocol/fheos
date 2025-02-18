@@ -104,6 +104,19 @@ type SealOutputResultUpdate struct {
 	TransactionHash string `json:"transactionHash"`
 }
 
+type CTRequest struct {
+	Hash string `json:"hash"`
+}
+
+type CTResponse struct {
+	CiphertextData 			string `json:"ciphertextData"`
+	SecurityZone   			uint8  `json:"securityZone"`
+	IsTriviallyEncrypted 	bool   `json:"isTriviallyEncrypted"`
+	UintType             	uint8  `json:"uintType"`
+	Compact              	bool   `json:"compact"`
+	Compressed           	bool   `json:"compressed"`
+}
+
 var tp precompiles.TxParams
 
 func doWithRetry(operation func() error) error {
@@ -918,6 +931,71 @@ func HealthHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(value)
 }
 
+func GetCTHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("Got a GetCT request from %s\n", r.RemoteAddr)
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var req CTRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		fmt.Printf("Failed unmarshaling request: %+v body is %+v\n", err, string(body))
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	log.Printf("GetCT Request: %+v\n", req)
+
+	if req.Hash == "" {
+		http.Error(w, "Hash is not supported yet", http.StatusBadRequest)
+		return
+	}
+
+	// Decode the hash from hex
+	hash, err := hex.DecodeString(hexOnly(req.Hash))
+	if err != nil {
+		e := fmt.Sprintf("Invalid hash: %s %+v", req.Hash, err)
+		fmt.Println(e)
+		http.Error(w, e, http.StatusBadRequest)
+		return
+	}
+
+	// Get the ciphertext from the ciphertext database
+	ct, err := precompiles.GetCT(hash, &tp)
+	if err != nil {
+		e := fmt.Sprintf("Failed to get ciphertext: %+v", err)
+		fmt.Println(e)
+		if strings.Contains(err.Error(), "placeholder") {
+			http.Error(w, e, http.StatusPreconditionRequired)
+		} else {
+			http.Error(w, e, http.StatusBadRequest)
+		}
+		return
+	}
+
+	response := CTResponse{
+		CiphertextData: hex.EncodeToString(ct.Data),
+		SecurityZone:   uint8(ct.Key.SecurityZone),
+		IsTriviallyEncrypted: ct.Key.IsTriviallyEncrypted,
+		UintType:           uint8(ct.Key.UintType),
+		Compact:            ct.Compact,
+		Compressed:         ct.Compressed,
+	}
+
+	responseData, err := json.Marshal(response)
+	if err != nil {
+		e := fmt.Sprintf("Failed to marshal response: %+v", err)
+		fmt.Println(e)
+		http.Error(w, e, http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(responseData)
+}
+
 func main() {
 	_, err := initFheos()
 	if err != nil {
@@ -941,6 +1019,7 @@ func main() {
 	http.HandleFunc("/Cast", CastHandler)
 	http.HandleFunc("/GetNetworkPublicKey", GetNetworkPublicKeyHandler)
 	http.HandleFunc("/Health", HealthHandler)
+	http.HandleFunc("/GetCT", GetCTHandler)
 
 	// Wrap the default mux in the CORS middleware
 	wrappedMux := corsMiddleware(http.DefaultServeMux)
