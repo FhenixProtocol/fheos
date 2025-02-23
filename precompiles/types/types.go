@@ -46,7 +46,7 @@ type PrecompileName int
 
 const (
 	GetNetworkKey PrecompileName = iota
-	Verify
+	StoreCt
 	Cast
 	SealOutput
 	Select
@@ -80,7 +80,7 @@ const (
 
 var precompileNameToString = map[PrecompileName]string{
 	GetNetworkKey:  "getNetworkKey",
-	Verify:         "verify",
+	StoreCt:        "verify",
 	Cast:           "cast",
 	SealOutput:     "sealOutput",
 	Select:         "select",
@@ -114,7 +114,7 @@ var precompileNameToString = map[PrecompileName]string{
 
 var stringToPrecompileName = map[string]PrecompileName{
 	"getNetworkKey":  GetNetworkKey,
-	"verify":         Verify,
+	"storeCt":        StoreCt,
 	"cast":           Cast,
 	"sealOutput":     SealOutput,
 	"select":         Select,
@@ -160,7 +160,6 @@ type ParallelTxProcessingHook interface {
 	NotifyDecryptRes(*PendingDecryption) error
 	NotifyExistingRes(*PendingDecryption)
 }
-
 
 const (
 	TrivialEncryptAndTypeByte = 30
