@@ -31,7 +31,7 @@ type DecryptRequest struct {
 	Key          	fhedriver.CiphertextKey `json:"key"`
 	RequesterUrl 	string                  `json:"requesterUrl"`
 	TransactionHash string                	`json:"transactionHash"`
-	ChainId         uint                   	`json:"chainId"`
+	ChainId         uint64                  `json:"chainId"`
 }
 
 type SealOutputRequest struct {
@@ -40,7 +40,7 @@ type SealOutputRequest struct {
 	PKey         	string                  `json:"pkey"`
 	RequesterUrl 	string                  `json:"requesterUrl"`
 	TransactionHash string                	`json:"transactionHash"`
-	ChainId         uint                   	`json:"chainId"`
+	ChainId         uint64                  `json:"chainId"`
 }
 
 type MockDecryptRequest struct {
@@ -191,7 +191,7 @@ func handleResult(url string, tempKey []byte, actualHash []byte) {
 	responseToServer(url, tempKey, jsonData)
 }
 
-func handleDecryptResult(url string, ctHash []byte, plaintext *big.Int, transactionHash string, chainId uint) {
+func handleDecryptResult(url string, ctHash []byte, plaintext *big.Int, transactionHash string, chainId uint64) {
 	fmt.Printf("Got decrypt result for %s : %s\n", hex.EncodeToString(ctHash), plaintext)
 	plaintextString := plaintext.Text(16)
 	jsonData, err := json.Marshal(DecryptResultUpdate{CtHash: ctHash, Plaintext: plaintextString, TransactionHash: transactionHash})
@@ -203,7 +203,7 @@ func handleDecryptResult(url string, ctHash []byte, plaintext *big.Int, transact
 	responseToServer(url, ctHash, jsonData)
 }
 
-func handleSealOutputResult(url string, ctHash []byte, pk []byte, value string, transactionHash string, chainId uint) {
+func handleSealOutputResult(url string, ctHash []byte, pk []byte, value string, transactionHash string, chainId uint64) {
 	fmt.Printf("Got sealoutput result for %s : %s\n", hex.EncodeToString(ctHash), value)
 	jsonData, err := json.Marshal(SealOutputResultUpdate{CtHash: ctHash, PK: hex.EncodeToString(pk), Value: value, TransactionHash: transactionHash})
 	if err != nil {
@@ -388,6 +388,14 @@ func generateKeys(securityZones int32) error {
 	return nil
 }
 
+func getEnvOrDefault(key string, defaultValue string) string {
+	str := os.Getenv(key)
+	if str == "" {
+		return defaultValue
+	}
+	return str
+}
+
 func initFheos() (*precompiles.TxParams, error) {
 	if os.Getenv("FHEOS_DB_PATH") == "" {
 		if err := os.Setenv("FHEOS_DB_PATH", "./fheosdb"); err != nil {
@@ -395,7 +403,9 @@ func initFheos() (*precompiles.TxParams, error) {
 		}
 	}
 
-	if err := precompiles.InitFheConfig(&fhedriver.ConfigDefault); err != nil {
+	config := fhedriver.ConfigDefault
+	config.OracleType = getEnvOrDefault("FHEOS_ORACLE_TYPE", "local")
+	if err := precompiles.InitFheConfig(&config); err != nil {
 		return nil, fmt.Errorf("failed to init FHE config: %v", err)
 	}
 
@@ -432,7 +442,7 @@ func (d *DecryptRequest) UnmarshalJSON(data []byte) error {
 		Key          	CiphertextKeyAux 	`json:"key"`
 		RequesterUrl 	string           	`json:"requesterUrl"`
 		TransactionHash string				`json:"transactionHash"`
-		ChainId 		uint				`json:"chainId"`
+		ChainId 		uint64				`json:"chainId"`
 	}
 
 	if err := json.Unmarshal(data, &aux); err != nil {
@@ -449,7 +459,7 @@ func (d *DecryptRequest) UnmarshalJSON(data []byte) error {
 	d.Key = *convertedInput
 	d.RequesterUrl = aux.RequesterUrl
 	d.TransactionHash = aux.TransactionHash
-	d.ChainId = aux.ChainId
+	d.ChainId = uint64(aux.ChainId)
 
 	return nil
 }
@@ -583,7 +593,7 @@ func (s *SealOutputRequest) UnmarshalJSON(data []byte) error {
 		PKey         	string           	`json:"pkey"`
 		RequesterUrl 	string           	`json:"requesterUrl"`
 		TransactionHash string 				`json:"transactionHash"`
-		ChainId 		uint  				`json:"chainId"`
+		ChainId 		uint64  			`json:"chainId"`
 	}
 
 	if err := json.Unmarshal(data, &aux); err != nil {
@@ -601,7 +611,7 @@ func (s *SealOutputRequest) UnmarshalJSON(data []byte) error {
 	s.PKey = aux.PKey
 	s.RequesterUrl = aux.RequesterUrl
 	s.TransactionHash = aux.TransactionHash
-	s.ChainId = aux.ChainId
+	s.ChainId = uint64(aux.ChainId)
 
 	return nil
 }
