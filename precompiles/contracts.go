@@ -62,8 +62,8 @@ func StoreCt(utype byte, input []byte, securityZone int32, tp *TxParams, _ *Call
 	ct := fhe.NewFheEncryptedFromBytes(
 		input,
 		uintType,
+		false,
 		true,
-		false, // TODO: not sure + shouldn't be hardcoded
 		securityZone,
 		false,
 	)
