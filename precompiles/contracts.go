@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
+	bridge_types "github.com/fhenixprotocol/warp-drive/fhe-bridge/go/bridgetypes"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 )
 
@@ -860,7 +861,7 @@ func Square(utype byte, value []byte, tp *TxParams, callback *CallbackFunc) ([]b
 	//ct := ProcessOperation1(storage, fhe.BytesToHash(value), tp.ContractAddress)
 }
 
-func GetCT(hash []byte, tp *TxParams) (*fhe.FheEncrypted, error) {
+func GetCT(hash []byte, tp *TxParams) (*bridge_types.FheEncrypted, error) {
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 	ctHash := fhe.Hash(hash)
 	ct, err := getCiphertext(storage, ctHash, true)
@@ -872,5 +873,10 @@ func GetCT(hash []byte, tp *TxParams) (*fhe.FheEncrypted, error) {
 		return nil, errors.New("ciphertext is a placeholder value")
 	}
 
-	return ct, nil
+	bct, err := fhe.ExpandCompressedValue(ct)
+	if err != nil {
+		return nil, err
+	}
+
+	return bct, nil
 }
