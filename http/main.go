@@ -109,12 +109,11 @@ type CTRequest struct {
 }
 
 type CTResponse struct {
-	CiphertextData 			string `json:"ciphertextData"`
-	SecurityZone   			uint8  `json:"securityZone"`
-	IsTriviallyEncrypted 	bool   `json:"isTriviallyEncrypted"`
-	UintType             	uint8  `json:"uintType"`
+	Data 					string `json:"data"`
+	SecurityZone   			uint8  `json:"security_zone"`
+	UintType             	uint8  `json:"uint_type"`
 	Compact              	bool   `json:"compact"`
-	Compressed           	bool   `json:"compressed"`
+	Gzipped           		bool   `json:"gzipped"`
 }
 
 var tp precompiles.TxParams
@@ -985,13 +984,13 @@ func GetCTHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+
 	response := CTResponse{
-		CiphertextData: hex.EncodeToString(ct.Data),
-		SecurityZone:   uint8(ct.Key.SecurityZone),
-		IsTriviallyEncrypted: ct.Key.IsTriviallyEncrypted,
-		UintType:           uint8(ct.Key.UintType),
-		Compact:            ct.Compact,
-		Compressed:         ct.Compressed,
+		Data: 				hex.EncodeToString(ct.Data),
+		SecurityZone:   	uint8(ct.SecurityZone),
+		UintType:           uint8(ct.Properties.EncryptionType),
+		Compact:            ct.Properties.Compact,
+		Gzipped:         	ct.Properties.Gzipped,
 	}
 
 	responseData, err := json.Marshal(response)
