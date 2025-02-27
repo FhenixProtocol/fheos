@@ -123,7 +123,7 @@ func DecryptHelper(storage *storage2.MultiStore, ctHash fhe.Hash, tp *TxParams, 
 		logger.Error(msg, " ctHash ", ctHash.Hex())
 		return defaultValue, vm.ErrExecutionReverted
 	}
-	plaintext, err := fhe.Decrypt(*ct, chainId, transactionHash)
+	plaintext, err := fhe.Decrypt(*ct, chainId, transactionHash, ctHash.Hex())
 	if err != nil {
 		logger.Error("decrypt failed for ciphertext", "error", err)
 		return defaultValue, vm.ErrExecutionReverted
