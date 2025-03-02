@@ -804,7 +804,7 @@ func Random(utype byte, seed uint64, securityZone int32, tp *TxParams, callback 
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Debug("fn", functionName.String(), "Storing async ciphertext", "placeholderKey", hex.EncodeToString(placeholderCt.Hash))
+		logger.Debug("fn", functionName.String(), "Storing async ciphertext", "placeholderKey", hex.EncodeToString(placeholderCt.Key.Hash[:]))
 	}
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
