@@ -532,3 +532,29 @@ func TestSelect(t *testing.T) {
 		expectPlaintext(t, ctResult, uintType, plaintextResult)
 	})
 }
+
+func TestRandom(t *testing.T) {
+	forEveryUintType(t, "Random", func(t *testing.T, uintType uint8) {
+		seed := uint64(123123123) // arbitrary seed
+		ctResult, _, err := Random(uintType, seed, 0, &tp, nil)
+		assert.NoError(t, err)
+
+		plaintext, _, err := Decrypt(uintType, ctResult, nil, &tp, nil)
+		assert.NoError(t, err)
+		assert.NotEqual(t, plaintext, nil)
+		println("Expecting max value for type %d: %d", uintType, maxBigInt(1<<(1+uintType)))
+		assert.LessOrEqual(t, maxBigInt(1<<(1+uintType)), plaintext)
+
+		// test different seeds produce different results
+		seed = uint64(123123124) // another arbitrary seed
+		ctResult, _, err = Random(uintType, seed, 0, &tp, nil)
+		assert.NoError(t, err)
+
+		plaintext2, _, err := Decrypt(uintType, ctResult, nil, &tp, nil)
+		assert.NoError(t, err)
+		assert.NotEqual(t, plaintext, nil)
+		println("Expecting max value for type %d: %d", uintType, maxBigInt(1<<(1+uintType)))
+		assert.LessOrEqual(t, maxBigInt(1<<(1+uintType)), plaintext)
+		assert.NotEqual(t, plaintext2, plaintext)
+	})
+}
