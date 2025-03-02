@@ -137,7 +137,6 @@ func SealOutput(utype byte, inputBz []byte, pk []byte, tp *TxParams, onResultCal
 				return
 			}
 
-
 			logger.Info("SealOutput callback", "url", url, "ctHash", hex.EncodeToString(ctHash[:]), "pk", hex.EncodeToString(pk), "value", string(sealed), "transactionHash", transactionHash, "chainId", chainId)
 			(*onResultCallback).Callback(url, ctHash[:], pk, string(sealed), transactionHash, chainId)
 		}(input.Hash)
@@ -178,7 +177,6 @@ func Decrypt(utype byte, inputBz []byte, defaultValue *big.Int, tp *TxParams, on
 				logger.Error("failed decrypting ciphertext", "error", err)
 				return
 			}
-
 
 			(*onResultCallback).Callback(url, ctHash[:], plaintext, transactionHash, chainId)
 		}(input.Hash)
@@ -798,7 +796,8 @@ func Random(utype byte, seed uint64, securityZone int32, tp *TxParams, callback 
 		return randomHash[:], gas, nil
 	}
 
-	placeholderCt, err := createPlaceholder(utype, functionName, []byte{byte(uintType)}, []byte{byte(seed)}, []byte{byte(securityZone)})
+	// todo (eshel) verify that the task manager creates the same placeholder
+	placeholderCt, err := createPlaceholder(getUtypeForFunctionName(functionName, utype), securityZone, functionName, []byte{byte(uintType)}, []byte{byte(seed)}, []byte{byte(securityZone)})
 	if err != nil {
 		logger.Error(functionName.String()+" failed to create placeholder", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -809,31 +808,34 @@ func Random(utype byte, seed uint64, securityZone int32, tp *TxParams, callback 
 	}
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
-	if err = storeCipherText(storage, placeholderCt, tp.ContractAddress); err != nil {
+	if err = storeCiphertext(storage, placeholderCt); err != nil {
 		logger.Error(functionName.String()+" failed to store async ciphertext", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	// ====== eshel: verified up to here =======
 
-	err = storage.SetAsyncCtStart(types.Hash(placeholderCt.Hash))
-	if err != nil {
-		logger.Error(functionName.String()+" failed to set async value start", "err", err)
-		return nil, 0, vm.ErrExecutionReverted
-	}
-
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new async precompiled contract function: " + functionName.String())
 	}
 
-	placeholderKeyCopy := CopySlice(placeholderCt.Hash)
+	placeholderKeyCopy := placeholderCt.Key
 
-	go func(placeholderKey []byte, securityZone int32, uintType fhe.EncryptionType) {
+	go func(securityZone int32, uintType fhe.EncryptionType, seed uint64, resultKey fhe.CiphertextKey) {
+		ctReady := false
+		defer func() {
+			if !ctReady {
+				logger.Error(functionName.String() + ": failed, deleting placeholder ciphertext " + hex.EncodeToString(resultKey.Hash[:]))
+				deleteCiphertext(storage, resultKey.Hash)
+			}
+		}()
+
 		var finalSeed uint64
 		if seed != 0 {
 			finalSeed = seed
 		} else {
-			// Leaving this here for backwards compatibility, in practice the seed shoul always be provided
+			// Deprecated: Leaving this here for backwards compatibility,
+			// in practice the seed should always be provided
 			var randomCounter uint64
 			var hash common.Hash
 			if tp.Commit {
@@ -860,25 +862,26 @@ func Random(utype byte, seed uint64, securityZone int32, tp *TxParams, callback 
 			logger.Error(functionName.String()+" failed to decode result hash", "err", err)
 			return
 		}
-		result.Hash = placeholderKeyCopy
 
-		err = storeCipherText(storage, result, tp.ContractAddress)
+		result.Key = resultKey
+
+		err = storeCiphertext(storage, result)
 		if err != nil {
 			logger.Error(functionName.String()+" failed to store result", "err", err)
 			return
 		}
 
-		_ = storage.SetAsyncCtDone(types.Hash(realResultHash))
+		ctReady = true // Mark as ready
 
 		if callback != nil {
 			url := (*callback).CallbackUrl
-			(*callback).Callback(url, placeholderKeyCopy, realResultHash)
+			(*callback).Callback(url, placeholderKeyCopy.Hash[:], realResultHash)
 		}
 
-		logger.Info(functionName.String()+" success", "contractAddress", tp.ContractAddress, "seed", finalSeed, "securityZone", securityZone, "result", hex.EncodeToString(realResultHash))
-	}(placeholderKeyCopy, securityZone, uintType)
+		logger.Info(functionName.String()+" success", "seed", finalSeed, "securityZone", securityZone, "result", hex.EncodeToString(realResultHash))
+	}(securityZone, uintType, seed, placeholderKeyCopy)
 
-	return placeholderCt.Hash[:], gas, nil
+	return types.SerializeCiphertextKey(placeholderCt.Key), gas, nil
 }
 
 func GetNetworkPublicKey(securityZone int32, tp *TxParams) ([]byte, error) {
