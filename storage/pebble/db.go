@@ -5,11 +5,12 @@ package pebble
 import (
 	"bytes"
 	"encoding/gob"
+	"log"
+	"sync"
+
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
-	"log"
-	"sync"
 )
 
 var (
@@ -22,7 +23,7 @@ type EthDbWrapper struct {
 	db ethdb.Database
 }
 
-// NewPebbleStorage ensures a single EthDbWrapper instance
+// NewStorage ensures a single EthDbWrapper instance
 func NewStorage(path string) (*EthDbWrapper, error) {
 	once.Do(func() {
 		db, err := rawdb.NewPebbleDBDatabase(path, 128, 128, "fheos", false, false, nil)
@@ -33,28 +34,6 @@ func NewStorage(path string) (*EthDbWrapper, error) {
 	})
 	return instance, nil
 }
-
-//func (p *Storage) Put(t types.DataType, key []byte, val []byte) error {
-//	// Use DataType as part of the key to differentiate data types
-//	prefixedKey := append([]byte(fmt.Sprintf("%d_", t)), key...)
-//	return p.db.Set(prefixedKey, val, pebble.Sync)
-//}
-//
-//func (p *Storage) Get(t types.DataType, key []byte) ([]byte, error) {
-//	prefixedKey := append([]byte(fmt.Sprintf("%d_", t)), key...)
-//	val, closer, err := p.db.Get(prefixedKey)
-//	if err != nil {
-//		return nil, err
-//	}
-//	defer closer.Close()
-//
-//	// Make a copy of the data since val becomes invalid after the closer is called
-//	valCopy := make([]byte, len(val))
-//	copy(valCopy, val)
-//
-//	return valCopy, nil
-//}
-
 func (p *EthDbWrapper) GetVersion() (uint64, error) {
 	key := []byte("version")
 	val, err := p.db.Get(key)
@@ -83,11 +62,7 @@ func (p *EthDbWrapper) PutVersion(v uint64) error {
 	return p.db.Put(key, buf.Bytes())
 }
 
-func (p *EthDbWrapper) DeleteCt(h types.Hash) error {
-	return p.db.Delete(h[:])
-}
-
-func (p *EthDbWrapper) PutCt(h types.Hash, cipher *types.CipherTextRepresentation) error {
+func (p *EthDbWrapper) PutCt(h types.Hash, cipher *types.FheEncrypted) error {
 	// Serialize Ciphertext
 	var buf bytes.Buffer
 	err := gob.NewEncoder(&buf).Encode(cipher)
@@ -99,17 +74,30 @@ func (p *EthDbWrapper) PutCt(h types.Hash, cipher *types.CipherTextRepresentatio
 	return p.db.Put(h[:], buf.Bytes())
 }
 
-func (p *EthDbWrapper) GetCt(h types.Hash) (*types.CipherTextRepresentation, error) {
+func (p *EthDbWrapper) HasCt(h types.Hash) bool {
+	isPresent, err := p.db.Has(h[:])
+	if err != nil {
+		return false
+	}
+
+	return isPresent
+}
+
+func (p *EthDbWrapper) GetCt(h types.Hash) (*types.FheEncrypted, error) {
 	val, err := p.db.Get(h[:])
 	if err != nil {
 		return nil, err
 	}
 
-	var cipher types.CipherTextRepresentation
+	var cipher types.FheEncrypted
 	err = gob.NewDecoder(bytes.NewBuffer(val)).Decode(&cipher)
 	if err != nil {
 		return nil, err
 	}
 
 	return &cipher, nil
+}
+
+func (p *EthDbWrapper) DeleteCt(h types.Hash) error {
+	return p.db.Delete(h[:])
 }

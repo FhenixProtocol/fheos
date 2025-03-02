@@ -1,7 +1,7 @@
 import { Counter } from "../types/tests/contracts/Counter";
 import { createFheInstance, deployContract } from "./utils";
 
-describe("Test Unitialized Variables", () => {
+describe("Test Uninitialized Variables", () => {
   let contract: Counter;
   let contractAddr: string;
 

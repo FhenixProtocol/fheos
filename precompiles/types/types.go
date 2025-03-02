@@ -1,7 +1,6 @@
 package types
 
 import (
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 )
 
@@ -10,14 +9,19 @@ type DataType uint64
 type Hash fhe.Hash
 type FheEncrypted fhe.FheEncrypted
 
-func IsValidType(t fhe.EncryptionType) bool {
-	return t >= fhe.Uint8 && t <= fhe.Bool
-}
+var DeserializeCiphertextKey = fhe.DeserializeCiphertextKey
+var GetEmptyCiphertextKey = fhe.GetEmptyCiphertextKey
+var SerializeCiphertextKey = fhe.SerializeCiphertextKey
 
-type CipherTextRepresentation struct {
-	Data     *FheEncrypted
-	Owners   []common.Address
-	RefCount uint64
+func IsValidType(t fhe.EncryptionType) bool {
+	switch t {
+	case fhe.Bool,
+		fhe.Uint8, fhe.Uint16, fhe.Uint32, fhe.Uint64, fhe.Uint128, fhe.Uint256,
+		fhe.Int8, fhe.Int16, fhe.Int32, fhe.Int64, fhe.Int128, fhe.Int256,
+		fhe.Address:
+		return true
+	}
+	return false
 }
 
 type Storage interface {
@@ -30,16 +34,12 @@ type Storage interface {
 }
 
 type FheCipherTextStorage interface {
-	PutCt(h Hash, cipher *CipherTextRepresentation) error
-	GetCt(h Hash) (*CipherTextRepresentation, error)
+	PutCt(h Hash, cipher *FheEncrypted) error
+	GetCt(h Hash) (*FheEncrypted, error)
 
 	HasCt(h Hash) bool
 
 	DeleteCt(h Hash) error
-
-	SetAsyncCtStart(h Hash) error
-	SetAsyncCtDone(h Hash) error
-	IsAsyncCtDone() (bool, error)
 }
 
 type PrecompileName int
@@ -160,3 +160,11 @@ type ParallelTxProcessingHook interface {
 	NotifyDecryptRes(*PendingDecryption) error
 	NotifyExistingRes(*PendingDecryption)
 }
+
+
+const (
+	TrivialEncryptAndTypeByte = 30
+	SecurityZoneByte          = 31
+	TypeMask                  = 0x7f
+	TrivialEncryptFlag        = 0x80
+)

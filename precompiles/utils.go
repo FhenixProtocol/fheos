@@ -1,11 +1,13 @@
 package precompiles
 
 import (
+	"context"
 	"encoding/binary"
 	"errors"
 	"fmt"
 	"math/big"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -139,85 +141,110 @@ func CreatePlaceHolderData() []byte {
 	return make([]byte, 32)[:]
 }
 
-func blockUntilInputsAvailable(storage *storage.MultiStore, tp *TxParams, inputHashes ...[]byte) ([]*fhe.FheEncrypted, error) {
-	// Check validity of all input hashes before awaiting results
-	for _, hash := range inputHashes {
-		if len(hash) != 32 {
-			return nil, errors.New("ciphertext's hashes need to be 32 bytes long, hash: " + fhe.Hash(hash).Hex())
-		}
-	}
-
-	cts := make([]*fhe.FheEncrypted, len(inputHashes))
+func blockUntilInputsAvailable(storage *storage.MultiStore, tp *TxParams, inputKeys ...fhe.CiphertextKey) ([]*fhe.FheEncrypted, error) {
+	cts := make([]*fhe.FheEncrypted, len(inputKeys))
 	results := make(chan struct {
 		index int
 		ct    *fhe.FheEncrypted
-	}, len(inputHashes))
+	}, len(inputKeys))
 
 	// Launch goroutines for each hash
-	for i, hash := range inputHashes {
-		go func(index int, hash []byte) {
-			ct := awaitCtResult(storage, hash, tp)
+	for i, key := range inputKeys {
+		go func(index int, key fhe.CiphertextKey) {
+			ct := awaitCtResult(storage, key.Hash, tp)
 			results <- struct {
 				index int
 				ct    *fhe.FheEncrypted
 			}{index, ct}
-		}(i, hash)
+		}(i, key)
 	}
 
 	// Collect results
-	for i := 0; i < len(inputHashes); i++ {
+	for i := 0; i < len(inputKeys); i++ {
 		result := <-results
 		cts[result.index] = result.ct
 		if result.ct == nil {
-			return nil, errors.New("unverified ciphertext handle, hash: " + fhe.Hash(inputHashes[result.index]).Hex())
+			return nil, errors.New("unverified ciphertext handle, hash: " + fhe.Hash(inputKeys[result.index].Hash).Hex())
 		}
 	}
 
 	return cts, nil
 }
 
-func awaitCtResult(storage *storage.MultiStore, lhsHash []byte, tp *TxParams) *fhe.FheEncrypted {
-	lhsValue := getCiphertext(storage, fhe.Hash(lhsHash), tp.ContractAddress)
+func awaitPlaceholderCreation(storage *storage.MultiStore, hash fhe.Hash) *fhe.FheEncrypted {
+	timeout := 5 * time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	onlyOnce := false
+
+	for {
+		select {
+		case <-ctx.Done():
+			// Return nil if the timeout elapses
+			return nil
+		default:
+			// Attempt to get the ciphertext
+			ct, err := getCiphertext(storage, hash, false)
+			if err == nil {
+				if onlyOnce {
+					logger.Info("Placeholder creation completed", "hash", hash.Hex())
+				}
+				return ct
+			}
+
+			if !strings.Contains(err.Error(), "not found") {
+				logger.Error("failed to get ciphertext from storage", "hash", hash.Hex(), "error", err.Error())
+				return nil
+			}
+
+			if !onlyOnce {
+				logger.Warn("Waiting for placeholder creation", "hash", hash.Hex(), "timeout", timeout)
+				onlyOnce = true
+			}
+
+			// Sleep for 1 millisecond before retrying
+			time.Sleep(1 * time.Millisecond)
+		}
+	}
+}
+
+func awaitCtResult(storage *storage.MultiStore, lhsHash fhe.Hash, _ *TxParams) *fhe.FheEncrypted {
+	// In CoFHE the aggregator might not send the operations in the right order (based on ethersjs event listener)
+	// So we want to make sure, before we dramitaclly fail, that the placeholder won't be present in a matter of time
+	lhsValue := awaitPlaceholderCreation(storage, lhsHash)
 	if lhsValue == nil {
 		return nil
 	}
 
+	var err error
+
 	for lhsValue.IsPlaceholderValue() {
-		lhsValue = getCiphertext(storage, fhe.Hash(lhsHash), tp.ContractAddress)
+		lhsValue, err = getCiphertext(storage, lhsHash, true)
+		if err != nil {
+			logger.Error("failed to get ciphertext from storage, Placeholder was deleted while awaiting", "hash", lhsHash.Hex())
+			return nil
+		}
 		time.Sleep(1 * time.Millisecond)
 	}
 	return lhsValue
 }
 
-func getCiphertext(state *storage.MultiStore, ciphertextHash fhe.Hash, caller common.Address) *fhe.FheEncrypted {
-	ct, err := state.GetCt(types.Hash(ciphertextHash), caller)
+func getCiphertext(state *storage.MultiStore, ciphertextHash fhe.Hash, shouldPrintError bool) (*fhe.FheEncrypted, error) {
+	ct, err := state.GetCt(types.Hash(ciphertextHash))
 	if err != nil {
+		if shouldPrintError {
+			logger.Error("reading ciphertext from State resulted with error", "hash", ciphertextHash.Hex(), "error", err.Error())
+		}
 
-		logger.Error("reading ciphertext from State resulted with error", "hash", ciphertextHash.Hex(), "error", err.Error())
-		return nil
-	}
-
-	return (*fhe.FheEncrypted)(ct)
-}
-func get2VerifiedOperands(storage *storage.MultiStore, lhsHash []byte, rhsHash []byte, caller common.Address) (lhs *fhe.FheEncrypted, rhs *fhe.FheEncrypted, err error) {
-	if len(lhsHash) != 32 || len(rhsHash) != 32 {
-		return nil, nil, errors.New("ciphertext's hashes need to be 32 bytes long")
+		return nil, err
 	}
 
-	lhs = getCiphertext(storage, fhe.BytesToHash(lhsHash), caller)
-	if lhs == nil {
-		return nil, nil, errors.New("unverified ciphertext handle")
-	}
-	rhs = getCiphertext(storage, fhe.BytesToHash(rhsHash), caller)
-	if rhs == nil {
-		return nil, nil, errors.New("unverified ciphertext handle")
-	}
-	err = nil
-	return
+	return (*fhe.FheEncrypted)(ct), nil
 }
 
-func storeCipherText(storage *storage.MultiStore, ct *fhe.FheEncrypted, owner common.Address) error {
-	err := storage.AppendCt(types.Hash(ct.GetHash()), (*types.FheEncrypted)(ct), owner)
+func storeCiphertext(storage *storage.MultiStore, ct *fhe.FheEncrypted) error {
+	err := storage.PutCtIfNotExist(types.Hash(ct.GetHash()), (*types.FheEncrypted)(ct))
 	if err != nil {
 		logger.Error("failed importing ciphertext to state: ", err)
 		return err
@@ -225,11 +252,36 @@ func storeCipherText(storage *storage.MultiStore, ct *fhe.FheEncrypted, owner co
 
 	return nil
 }
-func minInt(a int, b int) int {
-	if a < b {
-		return a
+
+func deleteCiphertext(storage *storage.MultiStore, ciphertextHash fhe.Hash) {
+	hash := types.Hash(ciphertextHash)
+	if storage.Has(hash) {
+		err := storage.DeleteCt(hash)
+		if err != nil {
+			logger.Error("failed deleting ciphertext from state: ", err)
+		}
+	} else {
+		logger.Info("ciphertext not found in storage", "hash", ciphertextHash.Hex())
 	}
-	return b
+}
+
+func ByteToUint256(b byte) []byte {
+	var uint256 [32]byte
+	uint256[31] = b // Place the byte in the least significant position
+	return uint256[:]
+}
+
+func Int32ToUint256(i int32) []byte {
+	var uint256 [32]byte
+
+	// Convert the int32 value to an unsigned 4-byte slice
+	var bytes [4]byte
+	binary.BigEndian.PutUint32(bytes[:], uint32(i))
+
+	// Copy the 4-byte slice into the least significant part of the 32-byte array
+	copy(uint256[28:], bytes[:]) // Place at the end (big-endian)
+
+	return uint256[:]
 }
 
 func evaluateRequire(ct *fhe.FheEncrypted) (bool, error) {

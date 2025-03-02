@@ -12,8 +12,8 @@ jobs:
     steps:   
       - uses: actions/checkout@v4
         with: 
-          repository: fhenixprotocol/nitro
-          token: ${{ secrets.GH_PAT }}
+          repository: fhenixprotocol/cofhe
+          token: ${{ secrets.GH_PAT_LIOR }}
           submodules: true
       - name: Pull & update submodules
         run: |
@@ -24,7 +24,6 @@ jobs:
           git config user.email "actions@github.com"
           git config user.name "GitHub Actions - update submodules"
           git add --all
-          cp fheos/nitro-overrides/precompiles/FheOps.go precompiles/FheOps.go
           git commit -m "Update submodules" || echo "No changes to commit"
       - name: Parse GH Commit Hash
         shell: bash
@@ -35,16 +34,16 @@ jobs:
         continue-on-error: true
         uses: peter-evans/create-pull-request@v5
         with:
-          token: ${{ secrets.GH_PAT }}
+          token: ${{ secrets.GH_PAT_LIOR }}
           commit-message: Updated Submodule from FheOS
           committer: GitHub <noreply@github.com>
           author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
           signoff: false
           branch: fheos-${{ env.sha_short }}
           delete-branch: true
-          title: 'Update Submodule from FheOS'
+          title: 'Update Submodule from fheos'
           body: |
-            Updated submodule from FheOS push to [master](https://github.com/fhenixprotocol/fheos/commit/${{ github.sha }})
+            Updated submodule from fheos push to [master](https://github.com/fhenixprotocol/fheos/commit/${{ github.sha }})
           labels: |
             report
             automated pr

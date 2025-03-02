@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
@@ -36,8 +37,12 @@ func (f OneOperationFunc) Execute(inputs []*fhe.FheEncrypted) (*fhe.FheEncrypted
 	return f(inputs[0])
 }
 
-func (f OneOperationFunc) ValidateTypes(inputs []*fhe.FheEncrypted, utype byte) error {
-	return validateAllSameType(inputs, utype) // Default validation
+func (f OneOperationFunc) ValidateTypes(inputs []*fhe.FheEncrypted, _ byte) error {
+	if len(inputs) != 1 {
+		return fmt.Errorf("expected 1 input, got %d", len(inputs))
+	}
+
+	return nil
 }
 
 func (f TwoOperationFunc) Execute(inputs []*fhe.FheEncrypted) (*fhe.FheEncrypted, error) {
@@ -47,8 +52,16 @@ func (f TwoOperationFunc) Execute(inputs []*fhe.FheEncrypted) (*fhe.FheEncrypted
 	return f(inputs[0], inputs[1])
 }
 
-func (f TwoOperationFunc) ValidateTypes(inputs []*fhe.FheEncrypted, utype byte) error {
-	return validateAllSameType(inputs, utype) // Default validation
+func (f TwoOperationFunc) ValidateTypes(inputs []*fhe.FheEncrypted, _ byte) error {
+	if len(inputs) != 2 {
+		return fmt.Errorf("expected 2 inputs, got %d", len(inputs))
+	}
+
+	if inputs[0].Key.UintType != inputs[1].Key.UintType {
+		return fmt.Errorf("inputs type mismatch: expected %v, got %v", inputs[0].Key.UintType.ToString(), inputs[1].Key.UintType.ToString())
+	}
+
+	return nil
 }
 
 func (f ThreeOperationFunc) Execute(inputs []*fhe.FheEncrypted) (*fhe.FheEncrypted, error) {
@@ -70,7 +83,7 @@ func validateAllSameType(inputs []*fhe.FheEncrypted, utype byte) error {
 	expectedType := fhe.EncryptionType(utype)
 	for i, ct := range inputs {
 		if ct.UintType != expectedType {
-			return fmt.Errorf("input %d type mismatch: expected %v, got %v", i, expectedType, ct.UintType)
+			return fmt.Errorf("input %d type mismatch: expected %v, got %v", i, expectedType.ToString(), ct.UintType.ToString())
 		}
 	}
 	return nil
@@ -83,30 +96,34 @@ type CallbackFunc struct {
 
 type DecryptCallbackFunc struct {
 	CallbackUrl string
-	Callback    func(url string, ctKey []byte, plaintext *big.Int)
+	Callback    func(url string, ctKey []byte, plaintext *big.Int, transactionHash string, chainId uint64)
+	TransactionHash string
+	ChainId        uint64
 }
 
 type SealOutputCallbackFunc struct {
 	CallbackUrl string
-	Callback    func(url string, ctKey []byte, value string)
+	Callback    func(url string, ctKey []byte, pk []byte, value string, transactionHash string, chainId uint64)
+	TransactionHash string
+	ChainId         uint64
 }
 
-func inputsToString(inputHashes [][]byte) string {
+func inputsToString(inputKeys []fhe.CiphertextKey) string {
 	var concatenated string
-	for i, hash := range inputHashes {
-		concatenated += fmt.Sprintf("input%d: %s, ", i, hex.EncodeToString(hash))
+	for i, key := range inputKeys {
+		concatenated += fmt.Sprintf("input%d: %s, ", i, hex.EncodeToString(key.Hash[:]))
 	}
 	return concatenated
 }
 
-func DecryptHelper(storage *storage2.MultiStore, ctHash []byte, tp *TxParams, defaultValue *big.Int) (*big.Int, error) {
+func DecryptHelper(storage *storage2.MultiStore, ctHash fhe.Hash, tp *TxParams, defaultValue *big.Int, chainId uint64, transactionHash string) (*big.Int, error) {
 	ct := awaitCtResult(storage, ctHash, tp)
 	if ct == nil {
 		msg := "decrypt unverified ciphertext handle"
-		logger.Error(msg, " ctHash ", ctHash)
+		logger.Error(msg, " ctHash ", ctHash.Hex())
 		return defaultValue, vm.ErrExecutionReverted
 	}
-	plaintext, err := fhe.Decrypt(*ct)
+	plaintext, err := fhe.Decrypt(*ct, chainId, transactionHash)
 	if err != nil {
 		logger.Error("decrypt failed for ciphertext", "error", err)
 		return defaultValue, vm.ErrExecutionReverted
@@ -115,14 +132,14 @@ func DecryptHelper(storage *storage2.MultiStore, ctHash []byte, tp *TxParams, de
 	return plaintext, nil
 }
 
-func SealOutputHelper(storage *storage2.MultiStore, ctHash []byte, pk []byte, tp *TxParams) (string, error) {
+func SealOutputHelper(storage *storage2.MultiStore, ctHash fhe.Hash, pk []byte, tp *TxParams, chainId uint64, transactionHash string) (string, error) {
 	ct := awaitCtResult(storage, ctHash, tp)
 	if ct == nil {
 		msg := "sealOutput unverified ciphertext handle"
 		logger.Error(msg, " ctHash ", ctHash)
 		return "", vm.ErrExecutionReverted
 	}
-	sealed, err := fhe.SealOutput(*ct, pk)
+	sealed, err := fhe.SealOutput(*ct, pk, chainId, transactionHash)
 	if err != nil {
 		logger.Error("sealOutput failed for ciphertext", "error", err)
 		return "", vm.ErrExecutionReverted
@@ -131,59 +148,113 @@ func SealOutputHelper(storage *storage2.MultiStore, ctHash []byte, pk []byte, tp
 	return string(sealed), nil
 }
 
-func createPlaceholder(utype byte, functionName types.PrecompileName, inputHashes ...[]byte) (*fhe.FheEncrypted, error) {
+func adjustHashForMetadata(hash []byte, uintType byte, securityZone int32, isTriviallyEncrypted bool) []byte {
+	if len(hash) != common.HashLength {
+		logger.Error("Invalid hash length for adjustHashForMetadata", "len", len(hash), "hash", hex.EncodeToString(hash), "common.HashLength", common.HashLength)
+		return nil
+	}
+	// Add sanity checks for uintType and securityZone
+	if !types.IsValidType(fhe.EncryptionType(uintType)) {
+		logger.Error("Invalid uintType for adjustHashForMetadata", "uintType", uintType)
+		return nil
+	}
+	if securityZone < 0 || securityZone > 256 {
+		logger.Error("Invalid securityZone for adjustHashForMetadata", "securityZone", securityZone)
+		return nil
+	}
+
+	// Set byte[TrivialEncryptAndTypeByte]: lowest 7 bits for uintType, highest bit for isTriviallyEncrypted flag
+	hash[types.TrivialEncryptAndTypeByte] = byte(uintType & types.TypeMask)
+	if isTriviallyEncrypted {
+		hash[types.TrivialEncryptAndTypeByte] |= types.TrivialEncryptFlag  // Set MSB to 1 if trivially encrypted
+	}
+	hash[types.SecurityZoneByte] = byte(securityZone)
+	return hash
+}
+
+func createPlaceholder(utype byte, securityZone int32, functionName types.PrecompileName, inputKeys ...[]byte) (*fhe.FheEncrypted, error) {
 	placeholderCt := fhe.CreateFheEncryptedWithData(CreatePlaceHolderData(), fhe.EncryptionType(utype), true)
 
 	// Calculate placeholder based on number of inputs
-	placeholderKey := fhe.CalcPlaceholderValueHash(int(functionName), inputHashes...)
+	placeholderKey := fhe.CalcPlaceholderValueHash(int(functionName), fhe.EncryptionType(utype), securityZone, inputKeys...)
+	hash := adjustHashForMetadata(placeholderKey.Hash[:], utype, securityZone, functionName == types.TrivialEncrypt)
+	if hash == nil {
+		return nil, vm.ErrExecutionReverted
+	}
+	copy(placeholderKey.Hash[:], hash)
 
-	placeholderCt.Hash = placeholderKey[:]
+	placeholderCt.Key = placeholderKey
 	return placeholderCt, nil
 }
 
-func PreProcessOperation1(functionName types.PrecompileName, utype byte, input []byte, tp *TxParams) (uint64, error) {
+func PreProcessOperation1(functionName types.PrecompileName, utype byte, inputBz []byte, tp *TxParams) (fhe.CiphertextKey, uint64, error) {
+	input, err := types.DeserializeCiphertextKey(inputBz)
+	if err != nil {
+		logger.Error(functionName.String()+" failed to deserialize input ciphertext key", "err", err)
+		return types.GetEmptyCiphertextKey(), 0, vm.ErrExecutionReverted
+	}
+
 	uintType := fhe.EncryptionType(utype)
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
-		return gas, nil
+		return types.GetEmptyCiphertextKey(), gas, nil
 	}
 
 	if !types.IsValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
-		return gas, vm.ErrExecutionReverted
+		return types.GetEmptyCiphertextKey(), gas, vm.ErrExecutionReverted
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
-	if len(input) != 32 {
-		msg := functionName.String() + " ct hash len must be 32 bytes"
-		logger.Error(msg, "ctHash", hex.EncodeToString(input), "len", len(input))
-		return gas, vm.ErrExecutionReverted
-	}
+	return input, gas, nil
+}
 
-	return gas, nil
+func SolidityInputsToCiphertextKeys(inputs ...[]byte) ([]fhe.CiphertextKey, error) {
+	var inputKeys []fhe.CiphertextKey
+	for _, input := range inputs {
+		key, err := types.DeserializeCiphertextKey(input)
+		if err != nil {
+			return nil, err
+		}
+		inputKeys = append(inputKeys, key)
+	}
+	return inputKeys, nil
+}
+
+func keysToHashes(keys []fhe.CiphertextKey) [][]byte {
+	hashes := make([][]byte, len(keys))
+	for i, key := range keys {
+		hashes[i] = make([]byte, len(key.Hash))
+		copy(hashes[i], key.Hash[:])
+	}
+	return hashes
+}
+
+func getUtypeForFunctionName(functionName types.PrecompileName, currentType byte) byte {
+	switch functionName {
+	case types.Lte, types.Lt, types.Gte, types.Gt, types.Eq, types.Ne:
+		return byte(fhe.Bool)
+	default:
+		return currentType
+	}
 }
 
 // ProcessOperation handles operations with variable number of inputs
-func ProcessOperation(functionName types.PrecompileName, operation OperationFunc, utype byte, inputHashes [][]byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
+func ProcessOperation(functionName types.PrecompileName, operation OperationFunc, utype byte, securtiyZone int32, inputKeys []fhe.CiphertextKey, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 
-	placeholderCt, err := createPlaceholder(utype, functionName, inputHashes...)
+	placeholderCt, err := createPlaceholder(getUtypeForFunctionName(functionName, utype), securtiyZone, functionName, keysToHashes(inputKeys)...)
 	if err != nil {
 		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Debug(functionName.String(), inputsToString(inputHashes), "placeholderKey", hex.EncodeToString(placeholderCt.Hash))
-	}
-
-	if err := storeCipherText(storage, placeholderCt, tp.ContractAddress); err != nil {
-		logger.Error(functionName.String()+" failed to store async ciphertext", "err", err)
-		return nil, 0, vm.ErrExecutionReverted
+		logger.Debug(functionName.String(), inputsToString(inputKeys), "placeholderKey", hex.EncodeToString(placeholderCt.Key.Hash[:]))
 	}
 
 	uintType := fhe.EncryptionType(utype)
@@ -192,29 +263,35 @@ func ProcessOperation(functionName types.PrecompileName, operation OperationFunc
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
+	logger.Info(functionName.String()+" storing placeholder", "utype", utype, "placeholderKey", hex.EncodeToString(placeholderCt.Key.Hash[:]))
+	if err := storeCiphertext(storage, placeholderCt); err != nil {
+		logger.Error(functionName.String()+" failed to store async ciphertext", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
-		randomHash := State.GetRandomForGasEstimation()
+		randomHash := State.GetEmptyKeyForGasEstimation()
 		return randomHash[:], gas, nil
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Debug("fn", functionName.String(), "Storing async ciphertext", "placeholderKey", hex.EncodeToString(placeholderCt.Hash))
-	}
-	err = storage.SetAsyncCtStart(types.Hash(placeholderCt.Hash))
-	if err != nil {
-		logger.Error(functionName.String()+" failed to set async value start", "err", err)
-		return nil, 0, vm.ErrExecutionReverted
+		logger.Debug("fn", functionName.String(), "Storing async ciphertext", "placeholderKey", hex.EncodeToString(placeholderCt.Key.Hash[:]))
 	}
 
 	// Make copies for goroutine
-	copiedInputs := make([][]byte, len(inputHashes))
-	for i, hash := range inputHashes {
-		copiedInputs[i] = CopySlice(hash)
-	}
-	placeholderKeyCopy := CopySlice(placeholderCt.Hash)
+	copiedInputs := make([]fhe.CiphertextKey, len(inputKeys))
+	copy(copiedInputs, inputKeys)
+	placeholderKeyCopy := placeholderCt.Key
 
-	go func(inputs [][]byte, resultHash []byte) {
+	go func(inputs []fhe.CiphertextKey, resultKey fhe.CiphertextKey) {
+		ctReady := false
+		defer func() {
+			if !ctReady {
+				logger.Error(functionName.String() + ": failed, deleting placeholder ciphertext " + hex.EncodeToString(resultKey.Hash[:]))
+				deleteCiphertext(storage, resultKey.Hash)
+			}
+		}()
 		cts, err := blockUntilInputsAvailable(storage, tp, inputs...)
 		if err != nil || len(cts) != len(inputs) {
 			logger.Error(functionName.String() + ": inputs not verified")
@@ -246,18 +323,18 @@ func ProcessOperation(functionName types.PrecompileName, operation OperationFunc
 			return
 		}
 
-		result.Hash = resultHash
+		result.Key = resultKey
 
-		err = storeCipherText(storage, result, tp.ContractAddress)
+		err = storeCiphertext(storage, result)
 		if err != nil {
 			logger.Error(functionName.String()+" failed", "err", err)
 			return
 		}
+		ctReady = true // Mark as ready
 
-		_ = storage.SetAsyncCtDone(types.Hash(resultHash))
 		if callback != nil {
 			url := (*callback).CallbackUrl
-			(*callback).Callback(url, placeholderKeyCopy, realResultHash)
+			(*callback).Callback(url, placeholderKeyCopy.Hash[:], realResultHash)
 		}
 
 		// Log success with all input hashes and result
@@ -271,5 +348,5 @@ func ProcessOperation(functionName types.PrecompileName, operation OperationFunc
 		logger.Info("["+functionName.String()+"]: success", logFields...)
 	}(copiedInputs, placeholderKeyCopy)
 
-	return placeholderCt.Hash[:], gas, nil
+	return types.SerializeCiphertextKey(placeholderCt.Key), gas, nil
 }

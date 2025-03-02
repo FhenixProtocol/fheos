@@ -29,9 +29,22 @@ pragma solidity >=0.8.19 <0.9.0;
 
 import {Precompiles, FheOps} from "./FheOS.sol";
 
+
+struct CiphertextKey {
+  bool     isTriviallyEncrypted;
+  uint32   uintType;
+  int32    securityZone;
+  uint256  hash;
+}
+
 ${EInputType.map((type) => {
-  return `type ${type} is uint256;`;
-}).join("\n")}
+  return `struct ${type} {
+  bool     isTriviallyEncrypted;
+  uint32   uintType;
+  int32    securityZone;
+  uint256  hash;
+}`;
+}).join("\n\n")}
 
 ${EInputType.map((type) => {
   return `struct in${capitalize(type)} {
@@ -47,10 +60,10 @@ struct SealedArray {
 ${SealedOutputStructs.map((struct) => {
   let docstring = `
 /// @dev Utility structure providing clients with type context of a sealed output string.
-/// Return type of \`FHE.sealoutputTyped\` and \`sealTyped\` within the binding libraries.`
+/// Return type of \`FHE.sealoutputTyped\` and \`sealTyped\` within the binding libraries.`;
 
   if (struct === `SealedBool`) {
-    docstring +=  `
+    docstring += `
 /// \`utype\` representing Bool is 13. See \`FHE.sol\` for more.`;
   }
   if (struct === `SealedUint`) {
@@ -60,7 +73,7 @@ ${SealedOutputStructs.map((struct) => {
 /// \`utype\` map: {uint8: 0} {uint16: 1} {uint32: 2} {uint64: 3} {uint128: 4} {uint256: 5}.`;
   }
   if (struct === `SealedAddress`) {
-    docstring +=  `
+    docstring += `
 /// \`utype\` representing Address is 12. See \`FHE.sol\` for more.`;
   }
 
@@ -74,18 +87,18 @@ struct ${struct} {
 
 library Common {
     // Values used to communicate types to the runtime.
-    // Must match values defined in warp-drive protobufs for everything to 
+    // Must match values defined in warp-drive protobufs for everything to
     // make sense
-    uint8 internal constant EUINT8_TFHE = 0;
-    uint8 internal constant EUINT16_TFHE = 1;
-    uint8 internal constant EUINT32_TFHE = 2;
-    uint8 internal constant EUINT64_TFHE = 3;
-    uint8 internal constant EUINT128_TFHE = 4;
-    uint8 internal constant EUINT256_TFHE = 5;
-    uint8 internal constant EADDRESS_TFHE = 12;
+    uint8 internal constant EUINT8_TFHE = 2;
+    uint8 internal constant EUINT16_TFHE = 3;
+    uint8 internal constant EUINT32_TFHE = 4;
+    uint8 internal constant EUINT64_TFHE = 5;
+    uint8 internal constant EUINT128_TFHE = 6;
+    uint8 internal constant EUINT256_TFHE = 8;
+    uint8 internal constant EADDRESS_TFHE = 7;
+    uint8 internal constant EBOOL_TFHE = 0;
     // uint8 internal constant INT_BGV = 12;
-    uint8 internal constant EBOOL_TFHE = 13;
-    
+
     function bigIntToBool(uint256 i) internal pure returns (bool) {
         return (i > 0);
     }
@@ -117,7 +130,7 @@ library Common {
     function bigIntToAddress(uint256 i) internal pure returns (address) {
         return address(uint160(i));
     }
-    
+
     function toBytes(uint256 x) internal pure returns (bytes memory b) {
         b = new bytes(32);
         assembly { mstore(add(b, 32), x) }
@@ -174,10 +187,6 @@ library Impl {
 }
 
 library FHE {
-    euint8 public constant NIL8 = euint8.wrap(0);
-    euint16 public constant NIL16 = euint16.wrap(0);
-    euint32 public constant NIL32 = euint32.wrap(0);
-
     // Return true if the encrypted integer is initialized and false otherwise.
     function isInitialized(ebool v) internal pure returns (bool) {
         return ebool.unwrap(v) != 0;
@@ -197,17 +206,17 @@ library FHE {
     function isInitialized(euint32 v) internal pure returns (bool) {
         return euint32.unwrap(v) != 0;
     }
-    
+
     // Return true if the encrypted integer is initialized and false otherwise.
     function isInitialized(euint64 v) internal pure returns (bool) {
         return euint64.unwrap(v) != 0;
     }
-    
+
         // Return true if the encrypted integer is initialized and false otherwise.
     function isInitialized(euint128 v) internal pure returns (bool) {
         return euint128.unwrap(v) != 0;
     }
-    
+
         // Return true if the encrypted integer is initialized and false otherwise.
     function isInitialized(euint256 v) internal pure returns (bool) {
         return euint256.unwrap(v) != 0;
@@ -222,7 +231,7 @@ library FHE {
             value := mload(add(a, 0x20))
         }
     }
-    
+
     function mathHelper(
         uint8 utype,
         uint256 lhs,
@@ -410,7 +419,7 @@ export function SolTemplate2Arg(
     /// @notice This function performs the ${name} operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
     ///Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
-    /// @param lhs The first input 
+    /// @param lhs The first input
     /// @param rhs The second input
     /// @return The result of the operation
     `;
@@ -418,7 +427,7 @@ export function SolTemplate2Arg(
   // reencrypt (seal)
   if (name === SEALING_FUNCTION_NAME || name === SEALING_TYPED_FUNCTION_NAME) {
     docString = `
-    /// @notice performs the ${name} function on a ${input1} ciphertext. This operation returns the plaintext value, sealed for the public key provided 
+    /// @notice performs the ${name} function on a ${input1} ciphertext. This operation returns the plaintext value, sealed for the public key provided
     /// @dev Pure in this function is marked as a hack/workaround - note that this function is NOT pure as fetches of ciphertexts require state access
     /// @param value Ciphertext to decrypt and seal
     /// @param publicKey Public Key that will receive the sealed plaintext
@@ -432,7 +441,9 @@ export function SolTemplate2Arg(
     if (name === SEALING_TYPED_FUNCTION_NAME) {
       // Example Output: "/// @return SealedBool({ data: Plaintext input, sealed for the owner of `publicKey`, utype: Common.EBOOL_TFHE })"
       const returnTypeClean = returnType.replace(" memory", "");
-      docString += `/// @return ${returnTypeClean}({ data: Plaintext input, sealed for the owner of \`publicKey\`, utype: ${UintTypes[input1 as EUintType]} })
+      docString += `/// @return ${returnTypeClean}({ data: Plaintext input, sealed for the owner of \`publicKey\`, utype: ${
+        UintTypes[input1 as EUintType]
+      } })
     `;
     }
   }
@@ -499,7 +510,9 @@ export function SolTemplate2Arg(
     } else if (name === SEALING_TYPED_FUNCTION_NAME) {
       const returnTypeClean = returnType.replace(" memory", "");
       funcBody += `
-        return ${returnTypeClean}({ data: sealoutput(${variableName1}, ${variableName2}), utype: ${UintTypes[input1 as EUintType]} });`;
+        return ${returnTypeClean}({ data: sealoutput(${variableName1}, ${variableName2}), utype: ${
+        UintTypes[input1 as EUintType]
+      } });`;
     }
   } else {
     // don't support input 1 is plaintext
@@ -831,10 +844,10 @@ export const SealFromType = (thisType: string) => {
 };
 
 export const SealTypedFromType = (thisType: string) => {
-  let returnType: string
-  if (thisType === 'ebool') returnType = 'SealedBool'
-  else if (thisType === 'eaddress') returnType = 'SealedAddress'
-  else returnType = 'SealedUint'
+  let returnType: string;
+  if (thisType === "ebool") returnType = "SealedBool";
+  else if (thisType === "eaddress") returnType = "SealedAddress";
+  else returnType = "SealedUint";
 
   return `
     function ${LOCAL_SEAL_TYPED_FUNCTION_NAME}(${thisType} value, bytes32 publicKey) internal pure returns (${returnType} memory) {
@@ -873,7 +886,6 @@ export const DecryptBinding = (thisType: string) => {
     }`;
 };
 
-
 export const RandomGenericFunction = () => {
   return `
     /// @notice Generates a random value of a given type with the given seed, for the provided securityZone
@@ -909,16 +921,14 @@ const RandomFunctionForType = (type: string) => {
     /// @dev Calls the desired precompile and returns the hash of the ciphertext
     /// @param securityZone the security zone to use for the random value
     function random${capitalize(
-    type
-  )}(int32 securityZone) internal pure returns (${type}) {
+      type
+    )}(int32 securityZone) internal pure returns (${type}) {
         uint256 result = random(Common.${type.toUpperCase()}_TFHE, 0, securityZone);
         return ${type}.wrap(result);
     }
     /// @notice Generates a random value of a ${type} type
     /// @dev Calls the desired precompile and returns the hash of the ciphertext
-    function random${capitalize(
-    type
-  )}() internal pure returns (${type}) {
+    function random${capitalize(type)}() internal pure returns (${type}) {
         return random${capitalize(type)}(0);
     }
     `;

@@ -81,18 +81,18 @@ address constant TASK_MANAGER_ADDRESS = address(129);
 
 library Common {
     // Values used to communicate types to the runtime.
-    // Must match values defined in warp-drive protobufs for everything to 
+    // Must match values defined in warp-drive protobufs for everything to
     // make sense
-    uint8 internal constant EUINT8_TFHE = 0;
-    uint8 internal constant EUINT16_TFHE = 1;
-    uint8 internal constant EUINT32_TFHE = 2;
-    uint8 internal constant EUINT64_TFHE = 3;
-    uint8 internal constant EUINT128_TFHE = 4;
-    uint8 internal constant EUINT256_TFHE = 5;
-    uint8 internal constant EADDRESS_TFHE = 12;
+    uint8 internal constant EUINT8_TFHE = 2;
+    uint8 internal constant EUINT16_TFHE = 3;
+    uint8 internal constant EUINT32_TFHE = 4;
+    uint8 internal constant EUINT64_TFHE = 5;
+    uint8 internal constant EUINT128_TFHE = 6;
+    uint8 internal constant EUINT256_TFHE = 8;
+    uint8 internal constant EADDRESS_TFHE = 7;
+    uint8 internal constant EBOOL_TFHE = 0;
     // uint8 internal constant INT_BGV = 12;
-    uint8 internal constant EBOOL_TFHE = 13;
-    
+
     function bigIntToBool(uint256 i) internal pure returns (bool) {
         return (i > 0);
     }
@@ -124,12 +124,12 @@ library Common {
     function bigIntToAddress(uint256 i) internal pure returns (address) {
         return address(uint160(i));
     }
-    
+
     function toBytes(uint256 x) internal pure returns (bytes memory b) {
         b = new bytes(32);
         assembly { mstore(add(b, 32), x) }
     }
-    
+
     function bytesToUint256(bytes memory b) internal pure returns (uint256) {
         require(b.length == 32, string(abi.encodePacked("Input bytes length must be 32, but got ", Strings.toString(b.length))));
 
@@ -202,13 +202,13 @@ library Common {
     function bytesToHexString(bytes memory buffer) internal pure returns (string memory) {
         // Each byte takes 2 characters
         bytes memory hexChars = new bytes(buffer.length * 2);
-        
+
         for(uint i = 0; i < buffer.length; i++) {
             uint8 value = uint8(buffer[i]);
             hexChars[i * 2] = byteToChar(value / 16);
             hexChars[i * 2 + 1] = byteToChar(value % 16);
         }
-        
+
         return string(hexChars);
     }
 
@@ -300,7 +300,7 @@ library FHE {
     euint8 public constant NIL8 = euint8.wrap(0);
     euint16 public constant NIL16 = euint16.wrap(0);
     euint32 public constant NIL32 = euint32.wrap(0);
-    
+
     // Default value for temp hash calculation in unary operations
     string private constant DEFAULT_VALUE = "0";
 
@@ -393,17 +393,17 @@ library FHE {
     function isInitialized(euint32 v) internal pure returns (bool) {
         return euint32.unwrap(v) != 0;
     }
-    
+
     // Return true if the encrypted integer is initialized and false otherwise.
     function isInitialized(euint64 v) internal pure returns (bool) {
         return euint64.unwrap(v) != 0;
     }
-    
+
         // Return true if the encrypted integer is initialized and false otherwise.
     function isInitialized(euint128 v) internal pure returns (bool) {
         return euint128.unwrap(v) != 0;
     }
-    
+
         // Return true if the encrypted integer is initialized and false otherwise.
     function isInitialized(euint256 v) internal pure returns (bool) {
         return euint256.unwrap(v) != 0;
@@ -598,7 +598,7 @@ export function SolTemplate2Arg(
   let docString = `
     /// @notice This function performs the ${name} async operation
     /// @dev If any of the inputs are expected to be a ciphertext, it verifies that the value matches a valid ciphertext
-    /// @param lhs The first input 
+    /// @param lhs The first input
     /// @param rhs The second input
     /// @return The result of the operation
     `;
@@ -606,7 +606,7 @@ export function SolTemplate2Arg(
   // reencrypt (seal)
   if (name === SEALING_FUNCTION_NAME || name === SEALING_TYPED_FUNCTION_NAME) {
     docString = `
-    /// @notice performs the ${name} async function on a ${input1} ciphertext. This operation returns the plaintext value, sealed for the public key provided 
+    /// @notice performs the ${name} async function on a ${input1} ciphertext. This operation returns the plaintext value, sealed for the public key provided
     /// @param value Ciphertext to decrypt and seal
     /// @param publicKey Public Key that will receive the sealed plaintext
     `;

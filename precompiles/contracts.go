@@ -2,17 +2,18 @@ package precompiles
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"math/big"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/fhenixprotocol/fheos/precompiles/types"
-	storage2 "github.com/fhenixprotocol/fheos/storage"
-	"github.com/fhenixprotocol/warp-drive/fhe-driver"
-
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/fhenixprotocol/fheos/precompiles/types"
+	storage2 "github.com/fhenixprotocol/fheos/storage"
+	bridge_types "github.com/fhenixprotocol/warp-drive/fhe-bridge/go/bridgetypes"
+	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 )
 
 var logger log.Logger
@@ -35,7 +36,14 @@ func Log(s string, tp *TxParams) (uint64, error) {
 func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	functionName := types.Add
 	addOp := TwoOperationFunc((*fhe.FheEncrypted).Add)
-	return ProcessOperation(functionName, addOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
+
+	keys, err := SolidityInputsToCiphertextKeys(lhsHash, rhsHash)
+	if err != nil {
+		logger.Error(functionName.String()+" failed to deserialize inputs", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	return ProcessOperation(functionName, addOp, utype, keys[0].SecurityZone, keys, tp, callback)
 }
 
 // Verify takes inputs from the user and runs them through verification. Note that we will always get ciphertexts that
@@ -43,7 +51,6 @@ func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *Cal
 func Verify(utype byte, input []byte, securityZone int32, tp *TxParams, _ *CallbackFunc) ([]byte, uint64, error) {
 	functionName := types.Verify
 
-	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 	uintType := fhe.EncryptionType(utype)
 	if !types.IsValidType(uintType) {
 		logger.Error("invalid ciphertext", "type", utype)
@@ -52,12 +59,8 @@ func Verify(utype byte, input []byte, securityZone int32, tp *TxParams, _ *Callb
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
-		randomHash := State.GetRandomForGasEstimation()
+		randomHash := State.GetEmptyKeyForGasEstimation()
 		return randomHash[:], gas, nil
-	}
-
-	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
 	ct := fhe.NewFheEncryptedFromBytes(
@@ -68,6 +71,17 @@ func Verify(utype byte, input []byte, securityZone int32, tp *TxParams, _ *Callb
 		securityZone,
 		false,
 	)
+	hash := adjustHashForMetadata(ct.Key.Hash[:], utype, securityZone, false)
+	if hash == nil {
+		return nil, 0, vm.ErrExecutionReverted
+	}
+	copy(ct.Key.Hash[:], hash)
+
+	if shouldPrintPrecompileInfo(tp) {
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
+	}
+
+	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 
 	err := ct.Verify()
 	if err != nil {
@@ -75,20 +89,21 @@ func Verify(utype byte, input []byte, securityZone int32, tp *TxParams, _ *Callb
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	err = storeCipherText(storage, &ct, tp.ContractAddress)
+	err = storeCiphertext(storage, &ct)
 	if err != nil {
 		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-
 	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "ctHash", ct.GetHash().Hex())
-	return ct.GetHashBytes(), gas, nil
+
+	retValue := ct.GetKey().Hash
+	return retValue[:], gas, nil
 }
 
-func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams, onResultCallback *SealOutputCallbackFunc) (string, uint64, error) {
+func SealOutput(utype byte, inputBz []byte, pk []byte, tp *TxParams, onResultCallback *SealOutputCallbackFunc) (string, uint64, error) {
 	//solgen: bool math
 	functionName := types.SealOutput
-	gas, err := PreProcessOperation1(functionName, utype, ctHash, tp)
+	input, gas, err := PreProcessOperation1(functionName, utype, inputBz, tp)
 	if err != nil {
 		return "", gas, vm.ErrExecutionReverted
 	}
@@ -108,30 +123,35 @@ func SealOutput(utype byte, ctHash []byte, pk []byte, tp *TxParams, onResultCall
 	if !tp.GasEstimation {
 		storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 		if onResultCallback == nil {
-			sealed, err := SealOutputHelper(storage, ctHash, pk, tp)
+			sealed, err := SealOutputHelper(storage, input.Hash, pk, tp, 0, "")
 			return sealed, gas, err
 		}
 
-		go func(ctHash []byte) {
-			sealed, err := SealOutputHelper(storage, ctHash, pk, tp)
+		go func(ctHash [common.HashLength]byte) {
+			url := (*onResultCallback).CallbackUrl
+			transactionHash := (*onResultCallback).TransactionHash
+			chainId := (*onResultCallback).ChainId
+			sealed, err := SealOutputHelper(storage, ctHash, pk, tp, chainId, transactionHash)
 			if err != nil {
+				logger.Error("failed sealing output", "error", err)
 				return
 			}
 
-			url := (*onResultCallback).CallbackUrl
-			(*onResultCallback).Callback(url, ctHash, string(sealed))
-		}(ctHash)
-		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "ctHash", hex.EncodeToString(ctHash))
+
+			logger.Info("SealOutput callback", "url", url, "ctHash", hex.EncodeToString(ctHash[:]), "pk", hex.EncodeToString(pk), "value", string(sealed), "transactionHash", transactionHash, "chainId", chainId)
+			(*onResultCallback).Callback(url, ctHash[:], pk, string(sealed), transactionHash, chainId)
+		}(input.Hash)
+		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "ctHash", hex.EncodeToString(input.Hash[:]))
 	}
 
 	return "0x" + strings.Repeat("00", 370), gas, nil
 }
 
-func Decrypt(utype byte, input []byte, defaultValue *big.Int, tp *TxParams, onResultCallback *DecryptCallbackFunc) (*big.Int, uint64, error) {
+func Decrypt(utype byte, inputBz []byte, defaultValue *big.Int, tp *TxParams, onResultCallback *DecryptCallbackFunc) (*big.Int, uint64, error) {
 	//solgen: output plaintext
 	functionName := types.Decrypt
 
-	gas, err := PreProcessOperation1(functionName, utype, input, tp)
+	input, gas, err := PreProcessOperation1(functionName, utype, inputBz, tp)
 	if err != nil {
 		return nil, gas, vm.ErrExecutionReverted
 	}
@@ -145,20 +165,24 @@ func Decrypt(utype byte, input []byte, defaultValue *big.Int, tp *TxParams, onRe
 	if !tp.GasEstimation {
 		storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 		if onResultCallback == nil {
-			plaintext, err := DecryptHelper(storage, input, tp, defaultValue)
+			plaintext, err := DecryptHelper(storage, input.Hash, tp, defaultValue, 0, "")
 			return plaintext, gas, err
 		}
-		go func(ctHash []byte) {
-			plaintext, err := DecryptHelper(storage, ctHash, tp, defaultValue)
+		go func(ctHash [common.HashLength]byte) {
+			url := (*onResultCallback).CallbackUrl
+			transactionHash := (*onResultCallback).TransactionHash
+			chainId := (*onResultCallback).ChainId
+
+			plaintext, err := DecryptHelper(storage, ctHash, tp, defaultValue, chainId, transactionHash)
 			if err != nil {
 				logger.Error("failed decrypting ciphertext", "error", err)
 				return
 			}
 
-			url := (*onResultCallback).CallbackUrl
-			(*onResultCallback).Callback(url, input, plaintext)
-		}(input)
-		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "input", hex.EncodeToString(input))
+
+			(*onResultCallback).Callback(url, ctHash[:], plaintext, transactionHash, chainId)
+		}(input.Hash)
+		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "input", hex.EncodeToString(input.Hash[:]))
 	}
 
 	return defaultValue, gas, nil
@@ -168,26 +192,54 @@ func Lte(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *Cal
 	//solgen: return ebool
 	functionName := types.Lte
 	lteOp := TwoOperationFunc((*fhe.FheEncrypted).Lte)
-	return ProcessOperation(functionName, lteOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
+
+	keys, err := SolidityInputsToCiphertextKeys(lhsHash, rhsHash)
+	if err != nil {
+		logger.Error(functionName.String()+" failed to deserialize inputs", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	return ProcessOperation(functionName, lteOp, utype, keys[0].SecurityZone, keys, tp, callback)
 }
 
 func Sub(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	functionName := types.Sub
 	subOp := TwoOperationFunc((*fhe.FheEncrypted).Sub)
-	return ProcessOperation(functionName, subOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
+
+	keys, err := SolidityInputsToCiphertextKeys(lhsHash, rhsHash)
+	if err != nil {
+		logger.Error(functionName.String()+" failed to deserialize inputs", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	return ProcessOperation(functionName, subOp, utype, keys[0].SecurityZone, keys, tp, callback)
 }
 
 func Mul(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	functionName := types.Mul
 	mulOp := TwoOperationFunc((*fhe.FheEncrypted).Mul)
-	return ProcessOperation(functionName, mulOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
+
+	keys, err := SolidityInputsToCiphertextKeys(lhsHash, rhsHash)
+	if err != nil {
+		logger.Error(functionName.String()+" failed to deserialize inputs", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	return ProcessOperation(functionName, mulOp, utype, keys[0].SecurityZone, keys, tp, callback)
 }
 
 func Lt(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	//solgen: return ebool
 	functionName := types.Lt
 	ltOp := TwoOperationFunc((*fhe.FheEncrypted).Lt)
-	return ProcessOperation(functionName, ltOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
+
+	keys, err := SolidityInputsToCiphertextKeys(lhsHash, rhsHash)
+	if err != nil {
+		logger.Error(functionName.String()+" failed to deserialize inputs", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	return ProcessOperation(functionName, ltOp, utype, keys[0].SecurityZone, keys, tp, callback)
 }
 
 func Select(utype byte, controlHash []byte, ifTrueHash []byte, ifFalseHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
@@ -199,12 +251,19 @@ func Select(utype byte, controlHash []byte, ifTrueHash []byte, ifFalseHash []byt
 			// Only validate that ifTrue and ifFalse have matching types
 			if inputs[1].UintType != inputs[2].UintType {
 				return fmt.Errorf("operands type mismatch: ifTrue=%v, ifFalse=%v",
-					inputs[1].UintType, inputs[2].UintType)
+					inputs[1].UintType.ToString(), inputs[2].UintType.ToString())
 			}
 			return nil
 		},
 	}
-	return ProcessOperation(functionName, selectOp, utype, [][]byte{controlHash, ifTrueHash, ifFalseHash}, tp, callback)
+
+	keys, err := SolidityInputsToCiphertextKeys(controlHash, ifTrueHash, ifFalseHash)
+	if err != nil {
+		logger.Error(functionName.String()+" failed to deserialize inputs", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	return ProcessOperation(functionName, selectOp, utype, keys[0].SecurityZone, keys, tp, callback)
 }
 
 func Req(utype byte, input []byte, tp *TxParams, _ *CallbackFunc) ([]byte, uint64, error) {
@@ -239,7 +298,9 @@ func Req(utype byte, input []byte, tp *TxParams, _ *CallbackFunc) ([]byte, uint6
 	//    a. Trying to asynchronously evaluate the ct.
 	//    b. Required to have ParallelTxHooks.
 	//    c. Return default value while async evaluation is in progress.
-	ctHash := fhe.BytesToHash(input)
+	var inputSer [common.HashLength]byte
+	copy(inputSer[:], input)
+	ctHash := fhe.BytesToHash(inputSer)
 	key := types.PendingDecryption{
 		Hash: ctHash,
 		Type: functionName,
@@ -260,7 +321,7 @@ func Req(utype byte, input []byte, tp *TxParams, _ *CallbackFunc) ([]byte, uint6
 	} else if tp.GasEstimation {
 		return nil, gas, nil
 	} else {
-		ct := awaitCtResult(storage, input, tp)
+		ct := awaitCtResult(storage, inputSer, tp)
 		if ct == nil {
 			msg := functionName.String() + " unverified ciphertext handle"
 			logger.Error(msg, "input", hex.EncodeToString(input))
@@ -331,45 +392,53 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams, callback *Callbac
 	castToType := fhe.EncryptionType(toType)
 	gas := getGasForPrecompile(functionName, castToType)
 	if tp.GasEstimation {
-		randomHash := State.GetRandomForGasEstimation()
+		randomHash := State.GetEmptyKeyForGasEstimation()
 		return randomHash[:], gas, nil
 	}
 
-	placeholderCt, err := createPlaceholder(utype, functionName, input, []byte{toType})
+	keys, err := SolidityInputsToCiphertextKeys(input)
+	if err != nil {
+		logger.Error(functionName.String()+" failed to deserialize inputs", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	placeholderCt, err := createPlaceholder(toType, keys[0].SecurityZone, functionName, keys[0].Hash[:], ByteToUint256(toType))
 	if err != nil {
 		logger.Error(functionName.String()+" failed to create placeholder", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
 	if shouldPrintPrecompileInfo(tp) {
-		logger.Debug("fn", functionName.String(), "Storing async ciphertext", "placeholderKey", hex.EncodeToString(placeholderCt.Hash))
+		logger.Debug("fn", functionName.String(), "Storing async ciphertext", "placeholderKey", hex.EncodeToString(placeholderCt.Key.Hash[:]))
 	}
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
-	err = storeCipherText(storage, placeholderCt, tp.ContractAddress)
+	err = storeCiphertext(storage, placeholderCt)
 	if err != nil {
 		logger.Error(functionName.String()+" failed to store async ciphertext", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-
-	err = storage.SetAsyncCtStart(types.Hash(placeholderCt.Hash))
-	if err != nil {
-		logger.Error(functionName.String()+" failed to set async value start", "err", err)
-		return nil, 0, vm.ErrExecutionReverted
-	}
+	logger.Info(functionName.String(), "stored async ciphertext", "placeholderKey", hex.EncodeToString(placeholderCt.Key.Hash[:]))
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Debug("Starting new async precompiled contract function: " + functionName.String())
 	}
 
-	inputCopy := CopySlice(input)
-	placeholderKeyCopy := CopySlice(placeholderCt.Hash)
+	keyCopy := keys[0]
+	placeholderKeyCopy := placeholderCt.Key
 
-	go func(inputHash, placeholderKey []byte, toType byte) {
-		ct, err := blockUntilInputsAvailable(storage, tp, inputHash)
+	go func(inputKey, placeholderKey fhe.CiphertextKey, toType byte) {
+		ctReady := false
+		defer func() {
+			if !ctReady {
+				logger.Error(functionName.String() + ": failed, deleting placeholder ciphertext " + hex.EncodeToString(placeholderKey.Hash[:]))
+				deleteCiphertext(storage, placeholderKey.Hash)
+			}
+		}()
+		ct, err := blockUntilInputsAvailable(storage, tp, inputKey)
 		input := ct[0]
 		if err != nil {
-			logger.Error(functionName.String()+": input not verified, len: ", len(inputHash), " err: ", err)
+			logger.Error(functionName.String()+": input not verified, len: ", len(inputKey.Hash), " err: ", err)
 			return
 		}
 		result, err := input.Cast(castToType)
@@ -382,21 +451,22 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams, callback *Callbac
 			logger.Error(functionName.String()+" failed to decode result hash", "err", err)
 			return
 		}
-		result.Hash = placeholderKey
-		err = storeCipherText(storage, result, tp.ContractAddress)
+		result.Key = placeholderKey
+		err = storeCiphertext(storage, result)
 		if err != nil {
 			logger.Error(functionName.String()+" failed to store result", "err", err)
 			return
 		}
-		_ = storage.SetAsyncCtDone(types.Hash(realResultHash))
+		ctReady = true // Mark as ready
+
 		if callback != nil {
 			url := (*callback).CallbackUrl
-			(*callback).Callback(url, placeholderKeyCopy, realResultHash)
+			(*callback).Callback(url, placeholderKeyCopy.Hash[:], realResultHash)
 		}
-		logger.Info(functionName.String()+" success", "contractAddress", tp.ContractAddress, "input", hex.EncodeToString(inputHash), "result", hex.EncodeToString(realResultHash))
-	}(inputCopy, placeholderKeyCopy, toType)
+		logger.Info(functionName.String()+" success", "contractAddress", tp.ContractAddress, "input", hex.EncodeToString(inputKey.Hash[:]), "result", hex.EncodeToString(realResultHash))
+	}(keyCopy, placeholderKeyCopy, toType)
 
-	return placeholderCt.Hash[:], gas, nil
+	return fhe.SerializeCiphertextKey(placeholderCt.Key), gas, nil
 }
 
 // TrivialEncrypt takes a plaintext number and encrypts it to a _compact_ ciphertext
@@ -415,28 +485,15 @@ func TrivialEncrypt(input []byte, toType byte, securityZone int32, tp *TxParams,
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
-		randomHash := State.GetRandomForGasEstimation()
+		randomHash := State.GetEmptyKeyForGasEstimation()
 		return randomHash[:], gas, nil
 	}
 
-	if len(input) != 32 {
-		logger.Error(functionName.String()+" input len must be 32 bytes", " input ", hex.EncodeToString(input), " len ", len(input))
-		return nil, gas, vm.ErrExecutionReverted
-	}
-
-	placeholderCt, err := createPlaceholder(toType, functionName, input, []byte{toType}, []byte{byte(securityZone)})
-	hash := placeholderCt.Hash
-	hash[3] = 0xad
-	placeholderCt.Hash = hash
+	placeholderCt, err := createPlaceholder(toType, securityZone, functionName, input, ByteToUint256(toType), Int32ToUint256(securityZone))
+	placeholderCt.Key.IsTriviallyEncrypted = true
 
 	if err != nil {
 		logger.Error(functionName.String()+" failed to create placeholder", "err", err)
-		return nil, 0, vm.ErrExecutionReverted
-	}
-
-	err = storeCipherText(storage, placeholderCt, tp.ContractAddress)
-	if err != nil {
-		logger.Error(functionName.String()+" failed to store async ciphertext", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
 
@@ -455,19 +512,27 @@ func TrivialEncrypt(input []byte, toType byte, securityZone int32, tp *TxParams,
 		return nil, gas, vm.ErrExecutionReverted
 	}
 
-	err = storage.SetAsyncCtStart(types.Hash(placeholderCt.Hash))
-	if err != nil {
-		logger.Error(functionName.String()+" failed to set async value start", "err", err)
-		return nil, 0, vm.ErrExecutionReverted
-	}
-
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
-	placeholderKeyCopy := CopySlice(placeholderCt.Hash)
+	err = storeCiphertext(storage, placeholderCt)
+	if err != nil {
+		logger.Error(functionName.String()+" failed to store async ciphertext", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+	logger.Info(functionName.String()+" stored async ciphertext", "placeholderKey", hex.EncodeToString(placeholderCt.Key.Hash[:]))
 
-	go func(resultHash []byte, toType byte) {
+	placeholderKeyCopy := placeholderCt.Key
+
+	go func(resultKey fhe.CiphertextKey, toType byte) {
+		ctReady := false
+		defer func() {
+			if !ctReady {
+				logger.Error(functionName.String() + ": failed, deleting placeholder ciphertext " + hex.EncodeToString(resultKey.Hash[:]))
+				deleteCiphertext(storage, resultKey.Hash)
+			}
+		}()
 		// we encrypt this using the computation key not the public key. Also, compact to save space in case this gets saved directly
 		// to storage
 		result, err := fhe.EncryptPlainText(valueToEncrypt, uintType, securityZone)
@@ -481,70 +546,120 @@ func TrivialEncrypt(input []byte, toType byte, securityZone int32, tp *TxParams,
 			logger.Error(functionName.String()+" failed to decode result hash", "err", err)
 			return
 		}
-		result.Hash = resultHash
+		result.Key = resultKey
 
-		err = storeCipherText(storage, result, tp.ContractAddress)
+		err = storeCiphertext(storage, result)
 		if err != nil {
 			logger.Error(functionName.String()+" failed to store result", "err", err)
 			return
 		}
 
-		_ = storage.SetAsyncCtDone(types.Hash(resultHash))
+		ctReady = true // Mark as ready
+
 		if callback != nil {
 			url := (*callback).CallbackUrl
-			(*callback).Callback(url, resultHash, realResultHash)
+			(*callback).Callback(url, resultKey.Hash[:], realResultHash)
 		}
 		logger.Info(functionName.String()+" success", "contractAddress", tp.ContractAddress, "input", hex.EncodeToString(input), "result", hex.EncodeToString(realResultHash))
 	}(placeholderKeyCopy, toType)
 
-	return placeholderCt.Hash[:], gas, nil
+	return fhe.SerializeCiphertextKey(placeholderCt.Key), gas, nil
 }
 
 func Div(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	functionName := types.Div
 	divOp := TwoOperationFunc((*fhe.FheEncrypted).Div)
-	return ProcessOperation(functionName, divOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
+
+	keys, err := SolidityInputsToCiphertextKeys(lhsHash, rhsHash)
+	if err != nil {
+		logger.Error(functionName.String()+" failed to deserialize inputs", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	return ProcessOperation(functionName, divOp, utype, keys[0].SecurityZone, keys, tp, callback)
 }
 
 func Gt(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	//solgen: return ebool
 	functionName := types.Gt
 	gtOp := TwoOperationFunc((*fhe.FheEncrypted).Gt)
-	return ProcessOperation(functionName, gtOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
+
+	keys, err := SolidityInputsToCiphertextKeys(lhsHash, rhsHash)
+	if err != nil {
+		logger.Error(functionName.String()+" failed to deserialize inputs", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	return ProcessOperation(functionName, gtOp, utype, keys[0].SecurityZone, keys, tp, callback)
 }
 
 func Gte(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	//solgen: return ebool
 	functionName := types.Gte
 	gteOp := TwoOperationFunc((*fhe.FheEncrypted).Gte)
-	return ProcessOperation(functionName, gteOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
+
+	keys, err := SolidityInputsToCiphertextKeys(lhsHash, rhsHash)
+	if err != nil {
+		logger.Error(functionName.String()+" failed to deserialize inputs", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	return ProcessOperation(functionName, gteOp, utype, keys[0].SecurityZone, keys, tp, callback)
 }
 
 func Rem(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	functionName := types.Rem
 	remOp := TwoOperationFunc((*fhe.FheEncrypted).Rem)
-	return ProcessOperation(functionName, remOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
+
+	keys, err := SolidityInputsToCiphertextKeys(lhsHash, rhsHash)
+	if err != nil {
+		logger.Error(functionName.String()+" failed to deserialize inputs", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	return ProcessOperation(functionName, remOp, utype, keys[0].SecurityZone, keys, tp, callback)
 }
 
 func And(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	//solgen: bool math
 	functionName := types.And
 	andOp := TwoOperationFunc((*fhe.FheEncrypted).And)
-	return ProcessOperation(functionName, andOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
+
+	keys, err := SolidityInputsToCiphertextKeys(lhsHash, rhsHash)
+	if err != nil {
+		logger.Error(functionName.String()+" failed to deserialize inputs", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	return ProcessOperation(functionName, andOp, utype, keys[0].SecurityZone, keys, tp, callback)
 }
 
 func Or(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	//solgen: bool math
 	functionName := types.Or
 	orOp := TwoOperationFunc((*fhe.FheEncrypted).Or)
-	return ProcessOperation(functionName, orOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
+
+	keys, err := SolidityInputsToCiphertextKeys(lhsHash, rhsHash)
+	if err != nil {
+		logger.Error(functionName.String()+" failed to deserialize inputs", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	return ProcessOperation(functionName, orOp, utype, keys[0].SecurityZone, keys, tp, callback)
 }
 
 func Xor(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	//solgen: bool math
 	functionName := types.Xor
 	xorOp := TwoOperationFunc((*fhe.FheEncrypted).Xor)
-	return ProcessOperation(functionName, xorOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
+
+	keys, err := SolidityInputsToCiphertextKeys(lhsHash, rhsHash)
+	if err != nil {
+		logger.Error(functionName.String()+" failed to deserialize inputs", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	return ProcessOperation(functionName, xorOp, utype, keys[0].SecurityZone, keys, tp, callback)
 }
 
 func Eq(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
@@ -552,7 +667,14 @@ func Eq(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *Call
 	//solgen: return ebool
 	functionName := types.Eq
 	eqOp := TwoOperationFunc((*fhe.FheEncrypted).Eq)
-	return ProcessOperation(functionName, eqOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
+
+	keys, err := SolidityInputsToCiphertextKeys(lhsHash, rhsHash)
+	if err != nil {
+		logger.Error(functionName.String()+" failed to deserialize inputs", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	return ProcessOperation(functionName, eqOp, utype, keys[0].SecurityZone, keys, tp, callback)
 }
 
 func Ne(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
@@ -560,50 +682,105 @@ func Ne(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *Call
 	//solgen: return ebool
 	functionName := types.Ne
 	neOp := TwoOperationFunc((*fhe.FheEncrypted).Ne)
-	return ProcessOperation(functionName, neOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
+
+	keys, err := SolidityInputsToCiphertextKeys(lhsHash, rhsHash)
+	if err != nil {
+		logger.Error(functionName.String()+" failed to deserialize inputs", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	return ProcessOperation(functionName, neOp, utype, keys[0].SecurityZone, keys, tp, callback)
 }
 
 func Min(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	functionName := types.Min
 	minOp := TwoOperationFunc((*fhe.FheEncrypted).Min)
-	return ProcessOperation(functionName, minOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
+
+	keys, err := SolidityInputsToCiphertextKeys(lhsHash, rhsHash)
+	if err != nil {
+		logger.Error(functionName.String()+" failed to deserialize inputs", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	return ProcessOperation(functionName, minOp, utype, keys[0].SecurityZone, keys, tp, callback)
 }
 
 func Max(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	functionName := types.Max
 	maxOp := TwoOperationFunc((*fhe.FheEncrypted).Max)
-	return ProcessOperation(functionName, maxOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
+
+	keys, err := SolidityInputsToCiphertextKeys(lhsHash, rhsHash)
+	if err != nil {
+		logger.Error(functionName.String()+" failed to deserialize inputs", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	return ProcessOperation(functionName, maxOp, utype, keys[0].SecurityZone, keys, tp, callback)
 }
 
 func Shl(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	functionName := types.Shl
 	shlOp := TwoOperationFunc((*fhe.FheEncrypted).Shl)
-	return ProcessOperation(functionName, shlOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
+
+	keys, err := SolidityInputsToCiphertextKeys(lhsHash, rhsHash)
+	if err != nil {
+		logger.Error(functionName.String()+" failed to deserialize inputs", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	return ProcessOperation(functionName, shlOp, utype, keys[0].SecurityZone, keys, tp, callback)
 }
 
 func Shr(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	functionName := types.Shr
 	shrOp := TwoOperationFunc((*fhe.FheEncrypted).Shr)
-	return ProcessOperation(functionName, shrOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
+
+	keys, err := SolidityInputsToCiphertextKeys(lhsHash, rhsHash)
+	if err != nil {
+		logger.Error(functionName.String()+" failed to deserialize inputs", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	return ProcessOperation(functionName, shrOp, utype, keys[0].SecurityZone, keys, tp, callback)
 }
 
 func Rol(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	functionName := types.Rol
 	rolOp := TwoOperationFunc((*fhe.FheEncrypted).Rol)
-	return ProcessOperation(functionName, rolOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
+
+	keys, err := SolidityInputsToCiphertextKeys(lhsHash, rhsHash)
+	if err != nil {
+		logger.Error(functionName.String()+" failed to deserialize inputs", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	return ProcessOperation(functionName, rolOp, utype, keys[0].SecurityZone, keys, tp, callback)
 }
 
 func Ror(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	functionName := types.Ror
 	rorOp := TwoOperationFunc((*fhe.FheEncrypted).Ror)
-	return ProcessOperation(functionName, rorOp, utype, [][]byte{lhsHash, rhsHash}, tp, callback)
+
+	keys, err := SolidityInputsToCiphertextKeys(lhsHash, rhsHash)
+	if err != nil {
+		logger.Error(functionName.String()+" failed to deserialize inputs", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	return ProcessOperation(functionName, rorOp, utype, keys[0].SecurityZone, keys, tp, callback)
 }
 
 func Not(utype byte, value []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	functionName := types.Not
 	notOp := OneOperationFunc((*fhe.FheEncrypted).Not)
 
-	return ProcessOperation(functionName, notOp, utype, [][]byte{value}, tp, callback)
+	keys, err := SolidityInputsToCiphertextKeys(value)
+	if err != nil {
+		logger.Error(functionName.String()+" failed to deserialize inputs", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	return ProcessOperation(functionName, notOp, utype, keys[0].SecurityZone, keys, tp, callback)
 }
 
 func Random(utype byte, seed uint64, securityZone int32, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
@@ -617,7 +794,7 @@ func Random(utype byte, seed uint64, securityZone int32, tp *TxParams, callback 
 
 	gas := getGasForPrecompile(functionName, uintType)
 	if tp.GasEstimation {
-		randomHash := State.GetRandomForGasEstimation()
+		randomHash := State.GetEmptyKeyForGasEstimation()
 		return randomHash[:], gas, nil
 	}
 
@@ -724,4 +901,24 @@ func Square(utype byte, value []byte, tp *TxParams, callback *CallbackFunc) ([]b
 	return Mul(utype, value, value, tp, callback)
 	// Please don't delete the below comment, this is intentionally left here for code generation.
 	//ct := ProcessOperation1(storage, fhe.BytesToHash(value), tp.ContractAddress)
+}
+
+func GetCT(hash []byte, tp *TxParams) (*bridge_types.FheEncrypted, error) {
+	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
+	ctHash := fhe.Hash(hash)
+	ct, err := getCiphertext(storage, ctHash, true)
+	if err != nil {
+		return nil, err
+	}
+
+	if ct.IsPlaceholderValue() {
+		return nil, errors.New("ciphertext is a placeholder value")
+	}
+
+	bct, err := fhe.ExpandCompressedValue(ct)
+	if err != nil {
+		return nil, err
+	}
+
+	return bct, nil
 }
