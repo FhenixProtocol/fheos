@@ -632,11 +632,12 @@ func Random(utype byte, seed uint64, securityZone int32, tp *TxParams, callback 
 	}
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
-	err = storeCipherText(storage, placeholderCt, tp.ContractAddress)
-	if err != nil {
+	if err = storeCipherText(storage, placeholderCt, tp.ContractAddress); err != nil {
 		logger.Error(functionName.String()+" failed to store async ciphertext", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
+
+	// ====== eshel: verified up to here =======
 
 	err = storage.SetAsyncCtStart(types.Hash(placeholderCt.Hash))
 	if err != nil {
@@ -655,6 +656,7 @@ func Random(utype byte, seed uint64, securityZone int32, tp *TxParams, callback 
 		if seed != 0 {
 			finalSeed = seed
 		} else {
+			// Leaving this here for backwards compatibility, in practice the seed shoul always be provided
 			var randomCounter uint64
 			var hash common.Hash
 			if tp.Commit {
