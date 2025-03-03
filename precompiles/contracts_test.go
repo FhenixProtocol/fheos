@@ -154,6 +154,7 @@ func TestTrivialEncrypt(t *testing.T) {
 		expectPlaintext(t, ct, uintType, big.NewInt(1))
 	})
 }
+
 func TestAdd(t *testing.T) {
 	lhsVal := big.NewInt(120)
 	rhsVal := big.NewInt(2)
@@ -467,6 +468,7 @@ func TestRol(t *testing.T) {
 		}, Rol)
 	})
 }
+
 func TestRor(t *testing.T) {
 	lhsVal := big.NewInt(16)
 	rhsVal := big.NewInt(2)
@@ -485,6 +487,26 @@ func maxBigInt(bits int) *big.Int {
 	maxValue := new(big.Int).Sub(exp, big.NewInt(1))
 
 	return maxValue
+}
+
+func maxBigIntByType(uintType fhedriver.EncryptionType) *big.Int {
+	bits := 0
+	switch uintType {
+	case fhedriver.Uint8:
+		bits = 8
+	case fhedriver.Uint16:
+		bits = 16
+	case fhedriver.Uint32:
+		bits = 32
+	case fhedriver.Uint64:
+		bits = 64
+	case fhedriver.Uint128:
+		bits = 128
+	case fhedriver.Uint256:
+		bits = 256
+	}
+
+	return maxBigInt(bits)
 }
 
 func TestNot(t *testing.T) {
@@ -542,8 +564,10 @@ func TestRandom(t *testing.T) {
 		plaintext, _, err := Decrypt(uintType, ctResult, nil, &tp, nil)
 		assert.NoError(t, err)
 		assert.NotEqual(t, plaintext, nil)
-		println("Expecting max value for type %d: %d", uintType, maxBigInt(1<<(1+uintType)))
-		assert.LessOrEqual(t, maxBigInt(1<<(1+uintType)), plaintext)
+		// todo (eshel) the max value calculation assumes that UintTypes enum values start at 0 and are consecutive,
+		//  which may not be the case for the newest tfhe
+		assert.Equal(t, 1, maxBigIntByType(fhedriver.EncryptionType(uintType)).Cmp(plaintext))
+		println("Got result", plaintext.Uint64())
 
 		// test different seeds produce different results
 		seed = uint64(123123124) // another arbitrary seed
@@ -553,8 +577,8 @@ func TestRandom(t *testing.T) {
 		plaintext2, _, err := Decrypt(uintType, ctResult, nil, &tp, nil)
 		assert.NoError(t, err)
 		assert.NotEqual(t, plaintext, nil)
-		println("Expecting max value for type %d: %d", uintType, maxBigInt(1<<(1+uintType)))
-		assert.LessOrEqual(t, maxBigInt(1<<(1+uintType)), plaintext)
+		assert.Equal(t, 1, maxBigIntByType(fhedriver.EncryptionType(uintType)).Cmp(plaintext2))
 		assert.NotEqual(t, plaintext2, plaintext)
+		println("Got result", plaintext2.Uint64())
 	})
 }
