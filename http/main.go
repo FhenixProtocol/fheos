@@ -86,6 +86,14 @@ type CastRequest struct {
 	ToType       string                  `json:"toType"`
 	RequesterUrl string                  `json:"requesterUrl"`
 }
+
+type RandomRequest struct {
+	UType        byte   `json:"utype"`
+	Seed         string `json:"seed"`
+	SecurityZone string `json:"securityZone"`
+	RequesterUrl string `json:"requesterUrl"`
+}
+
 type HashResultUpdate struct {
 	TempKey    []byte `json:"tempKey"`
 	ActualHash []byte `json:"actualHash"`
@@ -797,6 +805,58 @@ func CastHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Started processing the request for tempkey %s\n", hex.EncodeToString(result))
 }
 
+func RandomHandler(w http.ResponseWriter, r *http.Request) {
+	// todo (eshel) go over this handler
+	fmt.Printf("Got a request from %s\n", r.RemoteAddr)
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var req RandomRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		fmt.Printf("Failed unmarsheling request: %+v body is %+v\n", err, string(body))
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	callback := precompiles.CallbackFunc{
+		CallbackUrl: req.RequesterUrl,
+		Callback:    handleResult,
+	}
+
+	// Convert the value strings to byte arrays
+	seed, err := strconv.ParseUint(req.Seed, 10, 64)
+	if err != nil {
+		e := fmt.Sprintf("Invalid seed: %s %+v", req.Seed, err)
+		fmt.Println(e)
+		http.Error(w, e, http.StatusBadRequest)
+		return
+	}
+
+	securityZoneInt, err := strconv.Atoi(req.SecurityZone)
+	if err != nil {
+		e := fmt.Sprintf("Invalid securityZone: %s %+v", req.SecurityZone, err)
+		fmt.Println(e)
+		http.Error(w, e, http.StatusBadRequest)
+		return
+	}
+
+	result, _, err := precompiles.Random(req.UType, seed, int32(securityZoneInt), &tp, &callback)
+	if err != nil {
+		e := fmt.Sprintf("Operation failed: %+v", err)
+		fmt.Println(e)
+		http.Error(w, e, http.StatusBadRequest)
+		return
+	}
+
+	// Respond with the result
+	res := []byte(hex.EncodeToString(result))
+	w.Write(res)
+	fmt.Printf("Started processing the request for tempkey %s\n", hex.EncodeToString(result))
+}
+
 func createVerifyResponse(ctHash []byte) ([]byte, error) {
 	verifyResult := VerifyResult{
 		CtHash:    hex.EncodeToString(ctHash),
@@ -1029,6 +1089,8 @@ func main() {
 	http.HandleFunc("/GetNetworkPublicKey", GetNetworkPublicKeyHandler)
 	http.HandleFunc("/Health", HealthHandler)
 	http.HandleFunc("/GetCT", GetCTHandler)
+	// todo (eshel) - go over this handler
+	http.HandleFunc("/Random", RandomHandler)
 
 	// Wrap the default mux in the CORS middleware
 	wrappedMux := corsMiddleware(http.DefaultServeMux)

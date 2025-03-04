@@ -304,6 +304,7 @@ func GenerateSeedFromEntropy(contractAddress common.Address, hash common.Hash, r
 	logger.Debug(fmt.Sprintf("generated seed for random: %d", result))
 	return result
 }
+
 func CopySlice(original []byte) []byte {
 	copied := make([]byte, len(original))
 	copy(copied, original)

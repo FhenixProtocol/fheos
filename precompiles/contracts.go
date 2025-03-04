@@ -137,7 +137,6 @@ func SealOutput(utype byte, inputBz []byte, pk []byte, tp *TxParams, onResultCal
 				return
 			}
 
-
 			logger.Info("SealOutput callback", "url", url, "ctHash", hex.EncodeToString(ctHash[:]), "pk", hex.EncodeToString(pk), "value", string(sealed), "transactionHash", transactionHash, "chainId", chainId)
 			(*onResultCallback).Callback(url, ctHash[:], pk, string(sealed), transactionHash, chainId)
 		}(input.Hash)
@@ -178,7 +177,6 @@ func Decrypt(utype byte, inputBz []byte, defaultValue *big.Int, tp *TxParams, on
 				logger.Error("failed decrypting ciphertext", "error", err)
 				return
 			}
-
 
 			(*onResultCallback).Callback(url, ctHash[:], plaintext, transactionHash, chainId)
 		}(input.Hash)
@@ -783,10 +781,9 @@ func Not(utype byte, value []byte, tp *TxParams, callback *CallbackFunc) ([]byte
 	return ProcessOperation(functionName, notOp, utype, keys[0].SecurityZone, keys, tp, callback)
 }
 
-func Random(utype byte, seed uint64, securityZone int32, tp *TxParams, _ *CallbackFunc) ([]byte, uint64, error) {
+func Random(utype byte, seed uint64, securityZone int32, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	functionName := types.Random
 
-	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 	uintType := fhe.EncryptionType(utype)
 	if !types.IsValidType(uintType) {
 		logger.Error("invalid random output type", "type", utype)
@@ -799,44 +796,92 @@ func Random(utype byte, seed uint64, securityZone int32, tp *TxParams, _ *Callba
 		return randomHash[:], gas, nil
 	}
 
-	if shouldPrintPrecompileInfo(tp) {
-		logger.Info("Starting new precompiled contract function: " + functionName.String())
+	// todo (eshel) verify that the task manager creates the same placeholder
+	placeholderCt, err := createPlaceholder(getUtypeForFunctionName(functionName, utype), securityZone, functionName, []byte{byte(uintType)}, []byte{byte(seed)}, []byte{byte(securityZone)})
+	if err != nil {
+		logger.Error(functionName.String()+" failed to create placeholder", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
 	}
 
-	var finalSeed uint64
-	if seed != 0 {
-		finalSeed = seed
-	} else {
-		var randomCounter uint64
-		var hash common.Hash
-		if tp.Commit {
-			// We're incrementing before the request for the random number, so that queries
-			// that came before this Tx would have received a different seed.
-			randomCounter = State.IncRandomCounter()
-			hash = tp.TxContext.Hash
+	if shouldPrintPrecompileInfo(tp) {
+		logger.Debug("fn", functionName.String(), "Storing async ciphertext", "placeholderKey", hex.EncodeToString(placeholderCt.Key.Hash[:]))
+	}
+
+	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
+	if err = storeCiphertext(storage, placeholderCt); err != nil {
+		logger.Error(functionName.String()+" failed to store async ciphertext", "err", err)
+		return nil, 0, vm.ErrExecutionReverted
+	}
+
+	// ====== eshel: verified up to here =======
+
+	if shouldPrintPrecompileInfo(tp) {
+		logger.Info("Starting new async precompiled contract function: " + functionName.String())
+	}
+
+	placeholderKeyCopy := placeholderCt.Key
+
+	go func(securityZone int32, uintType fhe.EncryptionType, seed uint64, resultKey fhe.CiphertextKey) {
+		ctReady := false
+		defer func() {
+			if !ctReady {
+				logger.Error(functionName.String() + ": failed, deleting placeholder ciphertext " + hex.EncodeToString(resultKey.Hash[:]))
+				deleteCiphertext(storage, resultKey.Hash)
+			}
+		}()
+
+		var finalSeed uint64
+		if seed != 0 {
+			finalSeed = seed
 		} else {
-			randomCounter = State.GetRandomCounter()
-			hash = tp.GetBlockHash(tp.BlockNumber.Uint64() - 1) // If no tx hash - use block hash
+			// Deprecated: Leaving this here for backwards compatibility,
+			// in practice the seed should always be provided
+			var randomCounter uint64
+			var hash common.Hash
+			if tp.Commit {
+				// We're incrementing before the request for the random number, so that queries
+				// that came before this Tx would have received a different seed.
+				randomCounter = State.IncRandomCounter()
+				hash = tp.TxContext.Hash
+			} else {
+				randomCounter = State.GetRandomCounter()
+				hash = tp.GetBlockHash(tp.BlockNumber.Uint64() - 1) // If no tx hash - use block hash
+			}
+
+			finalSeed = GenerateSeedFromEntropy(tp.ContractAddress, hash, randomCounter)
 		}
 
-		finalSeed = GenerateSeedFromEntropy(tp.ContractAddress, hash, randomCounter)
-	}
+		result, err := fhe.FheRandom(securityZone, uintType, finalSeed)
+		if err != nil {
+			logger.Error(functionName.String()+" failed to generate random value", "err", err)
+			return
+		}
 
-	result, err := fhe.FheRandom(securityZone, uintType, finalSeed)
-	if err != nil {
-		logger.Error(functionName.String()+" failed", "err", err)
-		return nil, 0, vm.ErrExecutionReverted
-	}
+		realResultHash, err := hex.DecodeString(result.GetHash().Hex())
+		if err != nil {
+			logger.Error(functionName.String()+" failed to decode result hash", "err", err)
+			return
+		}
 
-	err = storeCiphertext(storage, result)
-	if err != nil {
-		logger.Error(functionName.String()+" failed", "err", err)
-		return nil, 0, vm.ErrExecutionReverted
-	}
+		result.Key = resultKey
 
-	resultHash := result.GetHash()
-	logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "result", resultHash.Hex())
-	return resultHash[:], gas, nil
+		err = storeCiphertext(storage, result)
+		if err != nil {
+			logger.Error(functionName.String()+" failed to store result", "err", err)
+			return
+		}
+
+		ctReady = true // Mark as ready
+
+		if callback != nil {
+			url := (*callback).CallbackUrl
+			(*callback).Callback(url, placeholderKeyCopy.Hash[:], realResultHash)
+		}
+
+		logger.Info(functionName.String()+" success", "seed", finalSeed, "securityZone", securityZone, "result", hex.EncodeToString(realResultHash))
+	}(securityZone, uintType, seed, placeholderKeyCopy)
+
+	return types.SerializeCiphertextKey(placeholderCt.Key), gas, nil
 }
 
 func GetNetworkPublicKey(securityZone int32, tp *TxParams) ([]byte, error) {
