@@ -798,6 +798,7 @@ func StoreCtsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// This is a placeholder for the actual signature verification
 	if req.Signature != "toml" {
 		http.Error(w, "Invalid signature", http.StatusBadRequest)
 		return
