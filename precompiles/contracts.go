@@ -836,6 +836,7 @@ func Random(utype byte, seed uint64, securityZone int32, tp *TxParams, callback 
 		} else {
 			// Deprecated: Leaving this here for backwards compatibility,
 			// in practice the seed should always be provided
+
 			var randomCounter uint64
 			var hash common.Hash
 			if tp.Commit {
