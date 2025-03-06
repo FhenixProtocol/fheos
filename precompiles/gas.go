@@ -11,7 +11,7 @@ func getGasForPrecompile(precompileName types.PrecompileName, uintType fhe.Encry
 
 func getRawPrecompileGas(precompileName types.PrecompileName, uintType fhe.EncryptionType) uint64 {
 	switch precompileName {
-	case types.Verify:
+	case types.StoreCt:
 		switch uintType {
 		case fhe.Uint8, fhe.Uint16, fhe.Uint32:
 			return 65000

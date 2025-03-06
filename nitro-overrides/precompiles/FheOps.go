@@ -4,10 +4,11 @@ package precompiles
 
 import (
 	"fmt"
-	"github.com/ethereum/go-ethereum/metrics"
-	fheos "github.com/fhenixprotocol/fheos/precompiles"
 	"math/big"
 	"time"
+
+	"github.com/ethereum/go-ethereum/metrics"
+	fheos "github.com/fhenixprotocol/fheos/precompiles"
 )
 
 type FheOps struct {
@@ -1039,10 +1040,10 @@ func (con FheOps) TrivialEncrypt(c ctx, evm mech, input []byte, toType byte, sec
 	return ret, err
 }
 
-func (con FheOps) Verify(c ctx, evm mech, utype byte, input []byte, securityZone int32) ([]byte, error) {
+func (con FheOps) StoreCt(c ctx, evm mech, utype byte, input []byte, securityZone int32) ([]byte, error) {
 	tp := fheos.TxParamsFromEVM(evm, c.caller)
 	if metrics.Enabled {
-		h := fmt.Sprintf("%s/%s/%s", "fheos", "Verify", fheos.UtypeToString(utype))
+		h := fmt.Sprintf("%s/%s/%s", "fheos", "StoreCt", fheos.UtypeToString(utype))
 		defer func(start time.Time) {
 			sampler := func() metrics.Sample {
 				return metrics.NewBoundedHistogramSample()
@@ -1051,11 +1052,11 @@ func (con FheOps) Verify(c ctx, evm mech, utype byte, input []byte, securityZone
 		}(time.Now())
 	}
 
-	ret, gas, err := fheos.Verify(utype, input, securityZone, &tp, nil)
+	ret, gas, err := fheos.StoreCt(utype, input, securityZone, &tp, nil)
 
 	if err != nil {
 		if metrics.Enabled {
-			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Verify", fheos.UtypeToString(utype), "error/fhe_failure")
+			c := fmt.Sprintf("%s/%s/%s/%s", "fheos", "StoreCt", fheos.UtypeToString(utype), "error/fhe_failure")
 			metrics.GetOrRegisterCounter(c, nil).Inc(1)
 		}
 		return ret, err
@@ -1064,9 +1065,9 @@ func (con FheOps) Verify(c ctx, evm mech, utype byte, input []byte, securityZone
 	err = c.Burn(gas)
 
 	if metrics.Enabled {
-		metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "Verify", fheos.UtypeToString(utype), "success/total")
+		metricPath := fmt.Sprintf("%s/%s/%s/%s", "fheos", "StoreCt", fheos.UtypeToString(utype), "success/total")
 		if err != nil {
-			metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "Verify", fheos.UtypeToString(utype), "error/fhe_gas_failure")
+			metricPath = fmt.Sprintf("%s/%s/%s/%s", "fheos", "StoreCt", fheos.UtypeToString(utype), "error/fhe_gas_failure")
 		}
 
 		metrics.GetOrRegisterCounter(metricPath, nil).Inc(1)
