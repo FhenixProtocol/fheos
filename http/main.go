@@ -27,19 +27,19 @@ const (
 )
 
 type DecryptRequest struct {
-	UType        	byte                    `json:"utype"`
-	Key          	fhedriver.CiphertextKey `json:"key"`
-	RequesterUrl 	string                  `json:"requesterUrl"`
-	TransactionHash string                	`json:"transactionHash"`
+	UType           byte                    `json:"utype"`
+	Key             fhedriver.CiphertextKey `json:"key"`
+	RequesterUrl    string                  `json:"requesterUrl"`
+	TransactionHash string                  `json:"transactionHash"`
 	ChainId         uint64                  `json:"chainId"`
 }
 
 type SealOutputRequest struct {
-	UType        	byte                    `json:"utype"`
-	Key          	fhedriver.CiphertextKey `json:"key"`
-	PKey         	string                  `json:"pkey"`
-	RequesterUrl 	string                  `json:"requesterUrl"`
-	TransactionHash string                	`json:"transactionHash"`
+	UType           byte                    `json:"utype"`
+	Key             fhedriver.CiphertextKey `json:"key"`
+	PKey            string                  `json:"pkey"`
+	RequesterUrl    string                  `json:"requesterUrl"`
+	TransactionHash string                  `json:"transactionHash"`
 	ChainId         uint64                  `json:"chainId"`
 }
 
@@ -90,7 +90,7 @@ type CastRequest struct {
 type RandomRequest struct {
 	UType        byte   `json:"utype"`
 	Seed         string `json:"seed"`
-	SecurityZone string `json:"securityZone"`
+	SecurityZone int32  `json:"securityZone"`
 	RequesterUrl string `json:"requesterUrl"`
 }
 
@@ -100,15 +100,15 @@ type HashResultUpdate struct {
 }
 
 type DecryptResultUpdate struct {
-	CtHash    		[]byte `json:"ctHash"`
-	Plaintext 		string `json:"plaintext"`
+	CtHash          []byte `json:"ctHash"`
+	Plaintext       string `json:"plaintext"`
 	TransactionHash string `json:"transactionHash"`
 }
 
 type SealOutputResultUpdate struct {
-	CtHash 			[]byte `json:"ctHash"`
-	PK     			string `json:"pk"`
-	Value  			string `json:"value"`
+	CtHash          []byte `json:"ctHash"`
+	PK              string `json:"pk"`
+	Value           string `json:"value"`
 	TransactionHash string `json:"transactionHash"`
 }
 
@@ -117,11 +117,11 @@ type CTRequest struct {
 }
 
 type CTResponse struct {
-	Data 					string `json:"data"`
-	SecurityZone   			uint8  `json:"security_zone"`
-	UintType             	uint8  `json:"uint_type"`
-	Compact              	bool   `json:"compact"`
-	Gzipped           		bool   `json:"gzipped"`
+	Data         string `json:"data"`
+	SecurityZone uint8  `json:"security_zone"`
+	UintType     uint8  `json:"uint_type"`
+	Compact      bool   `json:"compact"`
+	Gzipped      bool   `json:"gzipped"`
 }
 
 var tp precompiles.TxParams
@@ -445,11 +445,11 @@ func initFheos() (*precompiles.TxParams, error) {
 
 func (d *DecryptRequest) UnmarshalJSON(data []byte) error {
 	var aux struct {
-		UType        	byte             	`json:"utype"`
-		Key          	CiphertextKeyAux 	`json:"key"`
-		RequesterUrl 	string           	`json:"requesterUrl"`
-		TransactionHash string				`json:"transactionHash"`
-		ChainId 		uint64				`json:"chainId"`
+		UType           byte             `json:"utype"`
+		Key             CiphertextKeyAux `json:"key"`
+		RequesterUrl    string           `json:"requesterUrl"`
+		TransactionHash string           `json:"transactionHash"`
+		ChainId         uint64           `json:"chainId"`
 	}
 
 	if err := json.Unmarshal(data, &aux); err != nil {
@@ -489,10 +489,10 @@ func DecryptHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Decrypt Request: %+v\n", req)
 	// Convert the hash strings to byte arrays
 	callback := precompiles.DecryptCallbackFunc{
-		CallbackUrl: req.RequesterUrl,
-		Callback:    handleDecryptResult,
+		CallbackUrl:     req.RequesterUrl,
+		Callback:        handleDecryptResult,
 		TransactionHash: req.TransactionHash,
-		ChainId: req.ChainId,
+		ChainId:         req.ChainId,
 	}
 
 	_, _, err = precompiles.Decrypt(req.UType, fhedriver.SerializeCiphertextKey(req.Key), nil, &tp, &callback)
@@ -595,12 +595,12 @@ func SealOutputHandlerMock(w http.ResponseWriter, r *http.Request) {
 
 func (s *SealOutputRequest) UnmarshalJSON(data []byte) error {
 	var aux struct {
-		UType        	byte             	`json:"utype"`
-		Key          	CiphertextKeyAux 	`json:"key"`
-		PKey         	string           	`json:"pkey"`
-		RequesterUrl 	string           	`json:"requesterUrl"`
-		TransactionHash string 				`json:"transactionHash"`
-		ChainId 		uint64  			`json:"chainId"`
+		UType           byte             `json:"utype"`
+		Key             CiphertextKeyAux `json:"key"`
+		PKey            string           `json:"pkey"`
+		RequesterUrl    string           `json:"requesterUrl"`
+		TransactionHash string           `json:"transactionHash"`
+		ChainId         uint64           `json:"chainId"`
 	}
 
 	if err := json.Unmarshal(data, &aux); err != nil {
@@ -639,10 +639,10 @@ func SealOutputHandler(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("SealOutput Request: %+v\n", req)
 	callback := precompiles.SealOutputCallbackFunc{
-		CallbackUrl: req.RequesterUrl,
-		Callback:    handleSealOutputResult,
+		CallbackUrl:     req.RequesterUrl,
+		Callback:        handleSealOutputResult,
 		TransactionHash: req.TransactionHash,
-		ChainId: req.ChainId,
+		ChainId:         req.ChainId,
 	}
 
 	pkey, err := hex.DecodeString(hexOnly(req.PKey))
@@ -826,24 +826,18 @@ func RandomHandler(w http.ResponseWriter, r *http.Request) {
 		Callback:    handleResult,
 	}
 
-	// Convert the value strings to byte arrays
-	seed, err := strconv.ParseUint(req.Seed, 10, 64)
-	if err != nil {
-		e := fmt.Sprintf("Invalid seed: %s %+v", req.Seed, err)
-		fmt.Println(e)
-		http.Error(w, e, http.StatusBadRequest)
+	// Convert hex string to big.Int
+	bigInt := new(big.Int)
+	_, success := bigInt.SetString(req.Seed, 16) // Base 16 for hex parsing
+	if !success {
+		fmt.Println("Invalid hex string")
 		return
 	}
 
-	securityZoneInt, err := strconv.Atoi(req.SecurityZone)
-	if err != nil {
-		e := fmt.Sprintf("Invalid securityZone: %s %+v", req.SecurityZone, err)
-		fmt.Println(e)
-		http.Error(w, e, http.StatusBadRequest)
-		return
-	}
+	// Extract the least significant 64 bits
+	seed := bigInt.Uint64() // Extracts the lower 64 bits
 
-	result, _, err := precompiles.Random(req.UType, seed, int32(securityZoneInt), &tp, &callback)
+	result, _, err := precompiles.Random(req.UType, seed, req.SecurityZone, &tp, &callback)
 	if err != nil {
 		e := fmt.Sprintf("Operation failed: %+v", err)
 		fmt.Println(e)
@@ -1044,13 +1038,12 @@ func GetCTHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
 	response := CTResponse{
-		Data: 				hex.EncodeToString(ct.Data),
-		SecurityZone:   	uint8(ct.SecurityZone),
-		UintType:           uint8(ct.Properties.EncryptionType),
-		Compact:            ct.Properties.Compact,
-		Gzipped:         	ct.Properties.Gzipped,
+		Data:         hex.EncodeToString(ct.Data),
+		SecurityZone: uint8(ct.SecurityZone),
+		UintType:     uint8(ct.Properties.EncryptionType),
+		Compact:      ct.Properties.Compact,
+		Gzipped:      ct.Properties.Gzipped,
 	}
 
 	responseData, err := json.Marshal(response)
