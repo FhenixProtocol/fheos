@@ -826,18 +826,24 @@ func RandomHandler(w http.ResponseWriter, r *http.Request) {
 		Callback:    handleResult,
 	}
 
+	hexStr := req.Seed
+	if len(hexStr) > 1 && hexStr[:2] == "0x" {
+		hexStr = hexStr[2:] // Strip the prefix
+	}
+
 	// Convert hex string to big.Int
-	bigInt := new(big.Int)
-	_, success := bigInt.SetString(req.Seed, 16) // Base 16 for hex parsing
+	fullSeed := new(big.Int)
+	_, success := fullSeed.SetString(hexStr, 16) // Base 16 for hex parsing
 	if !success {
-		fmt.Println("Invalid hex string")
+		fmt.Println("Invalid hex string", req.Seed, ".")
 		return
 	}
 
-	// Extract the least significant 64 bits
-	seed := bigInt.Uint64() // Extracts the lower 64 bits
+	// Extract the least significant 64 bits (although the seed created in solidity is 256 bits, we can use only 64
+	// of them because that's what the fhe library supports)
+	seed := fullSeed.Uint64() // Extracts the lower 64 bits
 
-	result, _, err := precompiles.Random(req.UType, seed, req.SecurityZone, &tp, &callback)
+	result, _, err := precompiles.Random(req.UType, seed, req.SecurityZone, &tp, &callback, fullSeed)
 	if err != nil {
 		e := fmt.Sprintf("Operation failed: %+v", err)
 		fmt.Println(e)

@@ -25,6 +25,7 @@ COPY warp-drive/fhe-bridge warp-drive/fhe-bridge
 COPY warp-drive/sealing warp-drive/sealing
 
 # Update rust version & install packages
+RUN rustup toolchain install nightly-2025-01-20-x86_64-unknown-linux-gnu
 RUN cd warp-drive/fhe-engine && cargo update
 #RUN cd warp-drive/renault-server && cargo update
 

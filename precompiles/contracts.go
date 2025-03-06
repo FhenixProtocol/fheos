@@ -781,7 +781,7 @@ func Not(utype byte, value []byte, tp *TxParams, callback *CallbackFunc) ([]byte
 	return ProcessOperation(functionName, notOp, utype, keys[0].SecurityZone, keys, tp, callback)
 }
 
-func Random(utype byte, seed uint64, securityZone int32, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
+func Random(utype byte, seed uint64, securityZone int32, tp *TxParams, callback *CallbackFunc, fullSeed *big.Int) ([]byte, uint64, error) {
 	functionName := types.Random
 
 	uintType := fhe.EncryptionType(utype)
@@ -797,7 +797,7 @@ func Random(utype byte, seed uint64, securityZone int32, tp *TxParams, callback 
 	}
 
 	// todo (eshel) verify that the task manager creates the same placeholder
-	placeholderCt, err := createPlaceholder(getUtypeForFunctionName(functionName, utype), securityZone, functionName, []byte{byte(uintType)}, []byte{byte(seed)}, []byte{byte(securityZone)})
+	placeholderCt, err := createPlaceholder(getUtypeForFunctionName(functionName, utype), securityZone, functionName, fullSeed.Bytes())
 	if err != nil {
 		logger.Error(functionName.String()+" failed to create placeholder", "err", err)
 		return nil, 0, vm.ErrExecutionReverted

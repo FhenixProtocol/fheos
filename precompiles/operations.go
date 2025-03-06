@@ -95,15 +95,15 @@ type CallbackFunc struct {
 }
 
 type DecryptCallbackFunc struct {
-	CallbackUrl string
-	Callback    func(url string, ctKey []byte, plaintext *big.Int, transactionHash string, chainId uint64)
+	CallbackUrl     string
+	Callback        func(url string, ctKey []byte, plaintext *big.Int, transactionHash string, chainId uint64)
 	TransactionHash string
-	ChainId        uint64
+	ChainId         uint64
 }
 
 type SealOutputCallbackFunc struct {
-	CallbackUrl string
-	Callback    func(url string, ctKey []byte, pk []byte, value string, transactionHash string, chainId uint64)
+	CallbackUrl     string
+	Callback        func(url string, ctKey []byte, pk []byte, value string, transactionHash string, chainId uint64)
 	TransactionHash string
 	ChainId         uint64
 }
@@ -166,7 +166,7 @@ func adjustHashForMetadata(hash []byte, uintType byte, securityZone int32, isTri
 	// Set byte[TrivialEncryptAndTypeByte]: lowest 7 bits for uintType, highest bit for isTriviallyEncrypted flag
 	hash[types.TrivialEncryptAndTypeByte] = byte(uintType & types.TypeMask)
 	if isTriviallyEncrypted {
-		hash[types.TrivialEncryptAndTypeByte] |= types.TrivialEncryptFlag  // Set MSB to 1 if trivially encrypted
+		hash[types.TrivialEncryptAndTypeByte] |= types.TrivialEncryptFlag // Set MSB to 1 if trivially encrypted
 	}
 	hash[types.SecurityZoneByte] = byte(securityZone)
 	return hash
@@ -176,7 +176,19 @@ func createPlaceholder(utype byte, securityZone int32, functionName types.Precom
 	placeholderCt := fhe.CreateFheEncryptedWithData(CreatePlaceHolderData(), fhe.EncryptionType(utype), true)
 
 	// Calculate placeholder based on number of inputs
-	placeholderKey := fhe.CalcPlaceholderValueHash(int(functionName), fhe.EncryptionType(utype), securityZone, inputKeys...)
+	var placeholderKey fhe.CiphertextKey
+	if functionName != types.Random {
+		placeholderKey = fhe.CalcPlaceholderValueHash(int(functionName), fhe.EncryptionType(utype), securityZone, inputKeys...)
+	} else {
+		// Random function's placeholder hash is just the seed
+		placeholderKey = fhe.CiphertextKey{
+			IsTriviallyEncrypted: false,
+			UintType:             fhe.EncryptionType(utype),
+			SecurityZone:         securityZone,
+			Hash:                 [32]byte{},
+		}
+		copy(placeholderKey.Hash[:], inputKeys[0])
+	}
 	hash := adjustHashForMetadata(placeholderKey.Hash[:], utype, securityZone, functionName == types.TrivialEncrypt)
 	if hash == nil {
 		return nil, vm.ErrExecutionReverted
