@@ -806,7 +806,6 @@ func CastHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func RandomHandler(w http.ResponseWriter, r *http.Request) {
-	// todo (eshel) go over this handler
 	fmt.Printf("Got a request from %s\n", r.RemoteAddr)
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -1088,7 +1087,6 @@ func main() {
 	http.HandleFunc("/GetNetworkPublicKey", GetNetworkPublicKeyHandler)
 	http.HandleFunc("/Health", HealthHandler)
 	http.HandleFunc("/GetCT", GetCTHandler)
-	// todo (eshel) - go over this handler
 	http.HandleFunc("/Random", RandomHandler)
 
 	// Wrap the default mux in the CORS middleware

@@ -558,20 +558,20 @@ func TestSelect(t *testing.T) {
 func TestRandom(t *testing.T) {
 	forEveryUintType(t, "Random", func(t *testing.T, uintType uint8) {
 		seed := uint64(123123123) // arbitrary seed
-		ctResult, _, err := Random(uintType, seed, 0, &tp, nil)
+		fullSeed := new(big.Int).SetUint64(seed)
+		ctResult, _, err := Random(uintType, seed, 0, &tp, nil, fullSeed)
 		assert.NoError(t, err)
 
 		plaintext, _, err := Decrypt(uintType, ctResult, nil, &tp, nil)
 		assert.NoError(t, err)
 		assert.NotEqual(t, plaintext, nil)
-		// todo (eshel) the max value calculation assumes that UintTypes enum values start at 0 and are consecutive,
-		//  which may not be the case for the newest tfhe
 		assert.Equal(t, 1, maxBigIntByType(fhedriver.EncryptionType(uintType)).Cmp(plaintext))
 		println("Got result", plaintext.Uint64())
 
 		// test different seeds produce different results
-		seed = uint64(123123124) // another arbitrary seed
-		ctResult, _, err = Random(uintType, seed, 0, &tp, nil)
+		seed = uint64(444444444) // another arbitrary seed
+		fullSeed = new(big.Int).SetUint64(seed)
+		ctResult, _, err = Random(uintType, seed, 0, &tp, nil, fullSeed)
 		assert.NoError(t, err)
 
 		plaintext2, _, err := Decrypt(uintType, ctResult, nil, &tp, nil)

@@ -796,7 +796,6 @@ func Random(utype byte, seed uint64, securityZone int32, tp *TxParams, callback 
 		return randomHash[:], gas, nil
 	}
 
-	// todo (eshel) verify that the task manager creates the same placeholder
 	placeholderCt, err := createPlaceholder(getUtypeForFunctionName(functionName, utype), securityZone, functionName, fullSeed.Bytes())
 	if err != nil {
 		logger.Error(functionName.String()+" failed to create placeholder", "err", err)
@@ -812,8 +811,6 @@ func Random(utype byte, seed uint64, securityZone int32, tp *TxParams, callback 
 		logger.Error(functionName.String()+" failed to store async ciphertext", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
 	}
-
-	// ====== eshel: verified up to here =======
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new async precompiled contract function: " + functionName.String())
