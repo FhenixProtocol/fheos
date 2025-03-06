@@ -6,6 +6,8 @@ import (
 	"math/big"
 	"strings"
 
+	"golang.org/x/crypto/sha3"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/log"
@@ -15,6 +17,14 @@ import (
 )
 
 var logger log.Logger
+
+func Keccak256(data ...[]byte) []byte {
+	d := sha3.NewLegacyKeccak256()
+	for _, datum := range data {
+		d.Write(datum)
+	}
+	return d.Sum(nil)
+}
 
 func init() {
 	InitLogger()
@@ -67,7 +77,12 @@ func StoreCt(utype byte, input []byte, securityZone int32, tp *TxParams, _ *Call
 		securityZone,
 		false,
 	)
-	hash := adjustHashForMetadata(ct.Key.Hash[:], utype, securityZone, false)
+
+	// The verifier calculates the hash of the input and sends it to cofhe.js
+	// We want to have the same algorithm here
+	// Note: Integration part with the verifier
+	inputHash := Keccak256(input)
+	hash := adjustHashForMetadata(inputHash[:], utype, securityZone, false)
 	if hash == nil {
 		return nil, 0, vm.ErrExecutionReverted
 	}
