@@ -29,7 +29,7 @@ require (
 	github.com/consensys/gnark-crypto v0.12.1 // indirect
 	github.com/crate-crypto/go-kzg-4844 v0.7.0 // indirect
 	github.com/ethereum/c-kzg-4844 v0.4.0 // indirect
-	github.com/fhenixprotocol/warp-drive/fhe-bridge v0.0.0-20231205134639-3c799c823a17 // indirect
+	github.com/fhenixprotocol/warp-drive/fhe-bridge v0.0.0-20231205134639-3c799c823a17
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gammazero/deque v0.2.1 // indirect
 	github.com/getsentry/sentry-go v0.18.0 // indirect
@@ -53,7 +53,7 @@ require (
 	github.com/prometheus/procfs v0.9.0 // indirect
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/supranational/blst v0.3.11 // indirect
-	golang.org/x/exp v0.0.0-20240416160154-fe59bbe5cc7f
+	golang.org/x/exp v0.0.0-20240416160154-fe59bbe5cc7f // indirect
 	golang.org/x/net v0.24.0 // indirect
 	golang.org/x/sync v0.7.0 // indirect
 	golang.org/x/text v0.14.0 // indirect

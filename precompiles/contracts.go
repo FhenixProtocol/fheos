@@ -144,7 +144,6 @@ func SealOutput(utype byte, inputBz []byte, pk []byte, tp *TxParams, onResultCal
 				return
 			}
 
-
 			logger.Info("SealOutput callback", "url", url, "ctHash", hex.EncodeToString(ctHash[:]), "pk", hex.EncodeToString(pk), "value", string(sealed), "transactionHash", transactionHash, "chainId", chainId)
 			(*onResultCallback).Callback(url, ctHash[:], pk, string(sealed), transactionHash, chainId)
 		}(input.Hash)
@@ -185,7 +184,6 @@ func Decrypt(utype byte, inputBz []byte, defaultValue *big.Int, tp *TxParams, on
 				logger.Error("failed decrypting ciphertext", "error", err)
 				return
 			}
-
 
 			(*onResultCallback).Callback(url, ctHash[:], plaintext, transactionHash, chainId)
 		}(input.Hash)
@@ -860,6 +858,22 @@ func GetNetworkPublicKey(securityZone int32, tp *TxParams) ([]byte, error) {
 	}
 
 	return pk, nil
+}
+
+func GetCrs(securityZone int32, tp *TxParams) ([]byte, error) {
+	functionName := types.GetNetworkKey
+
+	if shouldPrintPrecompileInfo(tp) {
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
+	}
+
+	crs, err := fhe.PublicKey(securityZone)
+	if err != nil {
+		logger.Error("could not get public key", "err", err, "securityZone", securityZone)
+		return nil, vm.ErrExecutionReverted
+	}
+
+	return crs, nil
 }
 
 func Square(utype byte, value []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {

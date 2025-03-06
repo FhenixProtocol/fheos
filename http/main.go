@@ -27,19 +27,19 @@ const (
 )
 
 type DecryptRequest struct {
-	UType        	byte                    `json:"utype"`
-	Key          	fhedriver.CiphertextKey `json:"key"`
-	RequesterUrl 	string                  `json:"requesterUrl"`
-	TransactionHash string                	`json:"transactionHash"`
+	UType           byte                    `json:"utype"`
+	Key             fhedriver.CiphertextKey `json:"key"`
+	RequesterUrl    string                  `json:"requesterUrl"`
+	TransactionHash string                  `json:"transactionHash"`
 	ChainId         uint64                  `json:"chainId"`
 }
 
 type SealOutputRequest struct {
-	UType        	byte                    `json:"utype"`
-	Key          	fhedriver.CiphertextKey `json:"key"`
-	PKey         	string                  `json:"pkey"`
-	RequesterUrl 	string                  `json:"requesterUrl"`
-	TransactionHash string                	`json:"transactionHash"`
+	UType           byte                    `json:"utype"`
+	Key             fhedriver.CiphertextKey `json:"key"`
+	PKey            string                  `json:"pkey"`
+	RequesterUrl    string                  `json:"requesterUrl"`
+	TransactionHash string                  `json:"transactionHash"`
 	ChainId         uint64                  `json:"chainId"`
 }
 
@@ -76,6 +76,14 @@ type GetNetworkPublicKeyResult struct {
 	PublicKey string `json:"publicKey"`
 }
 
+type GetCrsRequest struct {
+	SecurityZone byte `json:"securityZone"`
+}
+
+type GetCrsResult struct {
+	Crs string `json:"crs"`
+}
+
 type TrivialEncryptRequest struct {
 	Value        *big.Int `json:"value"`
 	ToType       byte     `json:"toType"`
@@ -95,15 +103,15 @@ type HashResultUpdate struct {
 }
 
 type DecryptResultUpdate struct {
-	CtHash    		[]byte `json:"ctHash"`
-	Plaintext 		string `json:"plaintext"`
+	CtHash          []byte `json:"ctHash"`
+	Plaintext       string `json:"plaintext"`
 	TransactionHash string `json:"transactionHash"`
 }
 
 type SealOutputResultUpdate struct {
-	CtHash 			[]byte `json:"ctHash"`
-	PK     			string `json:"pk"`
-	Value  			string `json:"value"`
+	CtHash          []byte `json:"ctHash"`
+	PK              string `json:"pk"`
+	Value           string `json:"value"`
 	TransactionHash string `json:"transactionHash"`
 }
 
@@ -112,11 +120,11 @@ type CTRequest struct {
 }
 
 type CTResponse struct {
-	Data 					string `json:"data"`
-	SecurityZone   			uint8  `json:"security_zone"`
-	UintType             	uint8  `json:"uint_type"`
-	Compact              	bool   `json:"compact"`
-	Gzipped           		bool   `json:"gzipped"`
+	Data         string `json:"data"`
+	SecurityZone uint8  `json:"security_zone"`
+	UintType     uint8  `json:"uint_type"`
+	Compact      bool   `json:"compact"`
+	Gzipped      bool   `json:"gzipped"`
 }
 
 var tp precompiles.TxParams
@@ -440,11 +448,11 @@ func initFheos() (*precompiles.TxParams, error) {
 
 func (d *DecryptRequest) UnmarshalJSON(data []byte) error {
 	var aux struct {
-		UType        	byte             	`json:"utype"`
-		Key          	CiphertextKeyAux 	`json:"key"`
-		RequesterUrl 	string           	`json:"requesterUrl"`
-		TransactionHash string				`json:"transactionHash"`
-		ChainId 		uint64				`json:"chainId"`
+		UType           byte             `json:"utype"`
+		Key             CiphertextKeyAux `json:"key"`
+		RequesterUrl    string           `json:"requesterUrl"`
+		TransactionHash string           `json:"transactionHash"`
+		ChainId         uint64           `json:"chainId"`
 	}
 
 	if err := json.Unmarshal(data, &aux); err != nil {
@@ -484,10 +492,10 @@ func DecryptHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Decrypt Request: %+v\n", req)
 	// Convert the hash strings to byte arrays
 	callback := precompiles.DecryptCallbackFunc{
-		CallbackUrl: req.RequesterUrl,
-		Callback:    handleDecryptResult,
+		CallbackUrl:     req.RequesterUrl,
+		Callback:        handleDecryptResult,
 		TransactionHash: req.TransactionHash,
-		ChainId: req.ChainId,
+		ChainId:         req.ChainId,
 	}
 
 	_, _, err = precompiles.Decrypt(req.UType, fhedriver.SerializeCiphertextKey(req.Key), nil, &tp, &callback)
@@ -590,12 +598,12 @@ func SealOutputHandlerMock(w http.ResponseWriter, r *http.Request) {
 
 func (s *SealOutputRequest) UnmarshalJSON(data []byte) error {
 	var aux struct {
-		UType        	byte             	`json:"utype"`
-		Key          	CiphertextKeyAux 	`json:"key"`
-		PKey         	string           	`json:"pkey"`
-		RequesterUrl 	string           	`json:"requesterUrl"`
-		TransactionHash string 				`json:"transactionHash"`
-		ChainId 		uint64  			`json:"chainId"`
+		UType           byte             `json:"utype"`
+		Key             CiphertextKeyAux `json:"key"`
+		PKey            string           `json:"pkey"`
+		RequesterUrl    string           `json:"requesterUrl"`
+		TransactionHash string           `json:"transactionHash"`
+		ChainId         uint64           `json:"chainId"`
 	}
 
 	if err := json.Unmarshal(data, &aux); err != nil {
@@ -634,10 +642,10 @@ func SealOutputHandler(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("SealOutput Request: %+v\n", req)
 	callback := precompiles.SealOutputCallbackFunc{
-		CallbackUrl: req.RequesterUrl,
-		Callback:    handleSealOutputResult,
+		CallbackUrl:     req.RequesterUrl,
+		Callback:        handleSealOutputResult,
 		TransactionHash: req.TransactionHash,
-		ChainId: req.ChainId,
+		ChainId:         req.ChainId,
 	}
 
 	pkey, err := hex.DecodeString(hexOnly(req.PKey))
@@ -812,6 +820,18 @@ func createNetworkPublicKeyResponse(PublicKey []byte) ([]byte, error) {
 	return responseData, nil
 }
 
+func createCrsResponse(Crs []byte) ([]byte, error) {
+	result := GetCrsResult{
+		Crs: hex.EncodeToString(Crs),
+	}
+
+	responseData, err := json.Marshal(result)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal response: %+v", err)
+	}
+	return responseData, nil
+}
+
 func hasHexPrefix(str string) bool {
 	return len(str) >= 2 && strings.HasPrefix(strings.ToLower(str), "0x")
 }
@@ -936,6 +956,39 @@ func GetNetworkPublicKeyHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(responseData)
 }
 
+func GetCrsHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("Got a getCrs request from %s\n", r.RemoteAddr)
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	var req GetCrsRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		fmt.Printf("Failed unmarshaling request: %+v body is %+v\n", err, string(body))
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	expectedCrs, err := precompiles.GetCrs(int32(req.SecurityZone), &tp)
+	if err != nil {
+		e := fmt.Sprintf("Operation failed: %+v", err)
+		fmt.Println(e)
+		http.Error(w, e, http.StatusBadRequest)
+		return
+	}
+
+	responseData, err := createCrsResponse(expectedCrs)
+	if err != nil {
+		fmt.Println(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(responseData)
+}
+
 func HealthHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Got a health request from %s\n", r.RemoteAddr)
 	response := map[string]bool{"success": true}
@@ -994,13 +1047,12 @@ func GetCTHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
 	response := CTResponse{
-		Data: 				hex.EncodeToString(ct.Data),
-		SecurityZone:   	uint8(ct.SecurityZone),
-		UintType:           uint8(ct.Properties.EncryptionType),
-		Compact:            ct.Properties.Compact,
-		Gzipped:         	ct.Properties.Gzipped,
+		Data:         hex.EncodeToString(ct.Data),
+		SecurityZone: uint8(ct.SecurityZone),
+		UintType:     uint8(ct.Properties.EncryptionType),
+		Compact:      ct.Properties.Compact,
+		Gzipped:      ct.Properties.Gzipped,
 	}
 
 	responseData, err := json.Marshal(response)
@@ -1037,6 +1089,7 @@ func main() {
 	http.HandleFunc("/TrivialEncrypt", TrivialEncryptHandler)
 	http.HandleFunc("/Cast", CastHandler)
 	http.HandleFunc("/GetNetworkPublicKey", GetNetworkPublicKeyHandler)
+	http.HandleFunc("/GetCrs", GetCrsHandler)
 	http.HandleFunc("/Health", HealthHandler)
 	http.HandleFunc("/GetCT", GetCTHandler)
 
