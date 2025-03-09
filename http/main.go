@@ -26,107 +26,6 @@ const (
 	maxRetriesForRepost = 3
 )
 
-type DecryptRequest struct {
-	UType           byte                    `json:"utype"`
-	Key             fhedriver.CiphertextKey `json:"key"`
-	RequesterUrl    string                  `json:"requesterUrl"`
-	TransactionHash string                  `json:"transactionHash"`
-	ChainId         uint64                  `json:"chainId"`
-}
-
-type SealOutputRequest struct {
-	UType           byte                    `json:"utype"`
-	Key             fhedriver.CiphertextKey `json:"key"`
-	PKey            string                  `json:"pkey"`
-	RequesterUrl    string                  `json:"requesterUrl"`
-	TransactionHash string                  `json:"transactionHash"`
-	ChainId         uint64                  `json:"chainId"`
-}
-
-type MockDecryptRequest struct {
-	CtHash string `json:"ctHash"`
-	Permit string `json:"permit"`
-}
-
-type MockSealOutputRequest struct {
-	CtHash    string `json:"ctHash"`
-	Permit    string `json:"permit"`
-	PublicKey string `json:"publicKey"`
-}
-
-type StoreCtsEntry struct {
-	UType        byte   `json:"utype"`
-	Value        string `json:"value"`
-	SecurityZone byte   `json:"securityZone"`
-}
-
-type StoreCtsRequest struct {
-	Cts       []StoreCtsEntry `json:"cts"`
-	Signature string          `json:"signature"`
-}
-
-type StoreCtsResult struct {
-	Hashes []string `json:"hashes"`
-}
-type GetNetworkPublicKeyRequest struct {
-	SecurityZone byte `json:"securityZone"`
-}
-
-type GetNetworkPublicKeyResult struct {
-	PublicKey string `json:"publicKey"`
-}
-
-type GetCrsRequest struct {
-	SecurityZone byte `json:"securityZone"`
-}
-
-type GetCrsResult struct {
-	Crs string `json:"crs"`
-}
-
-type TrivialEncryptRequest struct {
-	Value        *big.Int `json:"value"`
-	ToType       byte     `json:"toType"`
-	SecurityZone int32    `json:"securityZone"`
-	RequesterUrl string   `json:"requesterUrl"`
-}
-
-type CastRequest struct {
-	UType        byte                    `json:"utype"`
-	Input        fhedriver.CiphertextKey `json:"input"`
-	ToType       string                  `json:"toType"`
-	RequesterUrl string                  `json:"requesterUrl"`
-}
-type HashResultUpdate struct {
-	TempKey    []byte `json:"tempKey"`
-	ActualHash []byte `json:"actualHash"`
-}
-
-type DecryptResultUpdate struct {
-	CtHash          []byte `json:"ctHash"`
-	Plaintext       string `json:"plaintext"`
-	TransactionHash string `json:"transactionHash"`
-}
-
-type SealOutputResultUpdate struct {
-	CtHash          []byte `json:"ctHash"`
-	PK              string `json:"pk"`
-	Value           string `json:"value"`
-	TransactionHash string `json:"transactionHash"`
-}
-
-type CTRequest struct {
-	Hash string `json:"hash"`
-}
-
-type CTResponse struct {
-	Data         string `json:"data"`
-	SecurityZone uint8  `json:"security_zone"`
-	UintType     uint8  `json:"uint_type"`
-	Compact      bool   `json:"compact"`
-	Gzipped      bool   `json:"gzipped"`
-}
-
 var tp precompiles.TxParams
 
 func doWithRetry(operation func() error) error {
@@ -192,7 +91,7 @@ func responseToServer(url string, tempKey []byte, json []byte) {
 func handleResult(url string, tempKey []byte, actualHash []byte) {
 	fmt.Printf("Got hash result for %s : %s\n", hex.EncodeToString(tempKey), hex.EncodeToString(actualHash))
 	// JSON data to be sent in the request body
-	jsonData, err := json.Marshal(HashResultUpdate{TempKey: tempKey, ActualHash: actualHash})
+	jsonData, err := json.Marshal(FheOperationResponse{TempKey: tempKey, ActualHash: actualHash})
 	if err != nil {
 		log.Printf("Failed to marshal update for requester %s with the result of %+v: %v", url, tempKey, err)
 		return
@@ -204,20 +103,9 @@ func handleResult(url string, tempKey []byte, actualHash []byte) {
 func handleDecryptResult(url string, ctHash []byte, plaintext *big.Int, transactionHash string, chainId uint64) {
 	fmt.Printf("Got decrypt result for %s : %s\n", hex.EncodeToString(ctHash), plaintext)
 	plaintextString := plaintext.Text(16)
-	jsonData, err := json.Marshal(DecryptResultUpdate{CtHash: ctHash, Plaintext: plaintextString, TransactionHash: transactionHash})
+	jsonData, err := json.Marshal(DecryptResponse{CtHash: ctHash, Plaintext: plaintextString, TransactionHash: transactionHash})
 	if err != nil {
 		log.Printf("Failed to marshal decrypt result for requester %s with the result of %+v: %v", url, ctHash, err)
-		return
-	}
-
-	responseToServer(url, ctHash, jsonData)
-}
-
-func handleSealOutputResult(url string, ctHash []byte, pk []byte, value string, transactionHash string, chainId uint64) {
-	fmt.Printf("Got sealoutput result for %s : %s\n", hex.EncodeToString(ctHash), value)
-	jsonData, err := json.Marshal(SealOutputResultUpdate{CtHash: ctHash, PK: hex.EncodeToString(pk), Value: value, TransactionHash: transactionHash})
-	if err != nil {
-		log.Printf("Failed to marshal seal output result for requester %s with the result of %+v: %v", url, ctHash, err)
 		return
 	}
 
@@ -237,11 +125,6 @@ type CiphertextKeyAux struct {
 	UintType             int    `json:"UintType"` // Assuming EncryptionType is an int or compatible
 	SecurityZone         int32  `json:"SecurityZone"`
 	Hash                 string `json:"Hash"`
-}
-type GenericHashRequest struct {
-	UType        byte                      `json:"uType"`
-	Inputs       []fhedriver.CiphertextKey `json:"inputs"`
-	RequesterUrl string                    `json:"requesterUrl"`
 }
 
 func convertInput(input CiphertextKeyAux) (*fhedriver.CiphertextKey, error) {
@@ -276,7 +159,7 @@ func convertInputs(inputs []CiphertextKeyAux) ([]fhedriver.CiphertextKey, error)
 	return convertedInputs, nil
 }
 
-func (g *GenericHashRequest) UnmarshalJSON(data []byte) error {
+func (g *FheOperationRequest) UnmarshalJSON(data []byte) error {
 	var aux struct {
 		UType        byte               `json:"UType"`
 		Inputs       []CiphertextKeyAux `json:"Inputs"`
@@ -308,7 +191,7 @@ func handleRequest[T HandlerFunc](w http.ResponseWriter, r *http.Request, handle
 		return
 	}
 
-	var req GenericHashRequest
+	var req FheOperationRequest
 	if err := json.Unmarshal(body, &req); err != nil {
 		log.Printf("Failed to unmarshal GenericHashRequest: %v, %+v", err, req)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -510,164 +393,6 @@ func DecryptHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Received decrypt request for %+v and type %+v\n", hex.EncodeToString(req.Key.Hash[:]), req.UType)
 }
 
-func (d *MockDecryptRequest) UnmarshalJSON(data []byte) error {
-	var aux struct {
-		CtHash string `json:"ctHash"`
-		Permit string `json:"permit"`
-	}
-
-	if err := json.Unmarshal(data, &aux); err != nil {
-		log.Printf("Failed to unmarshal MockDecryptRequestAux: %v, %+v", err, aux)
-		return err
-	}
-
-	d.CtHash = aux.CtHash
-	d.Permit = aux.Permit
-
-	return nil
-}
-
-func DecryptHandlerMock(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("Got a decrypt request (currently mocked) from %s\n", r.RemoteAddr)
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	var req MockDecryptRequest
-	if err := json.Unmarshal(body, &req); err != nil {
-		fmt.Printf("Failed unmarshaling request: %+v body is %+v\n", err, string(body))
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	response := []byte("42")
-	_, err = w.Write(response)
-	if err != nil {
-		fmt.Printf("Failed to write response: %v\n", err)
-		return
-	}
-
-	fmt.Printf("Received mock decrypt request for %+v and permit %+v\n", req.CtHash, req.Permit)
-}
-
-func (d *MockSealOutputRequest) UnmarshalJSON(data []byte) error {
-	var aux struct {
-		CtHash    string `json:"ctHash"`
-		Permit    string `json:"permit"`
-		PublicKey string `json:"publicKey"`
-	}
-
-	if err := json.Unmarshal(data, &aux); err != nil {
-		log.Printf("Failed to unmarshal MockSealOutputRequestAux: %v, %+v", err, aux)
-		return err
-	}
-
-	d.CtHash = aux.CtHash
-	d.Permit = aux.Permit
-	d.PublicKey = aux.PublicKey
-
-	return nil
-}
-
-func SealOutputHandlerMock(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("Got a sealoutput request (currently mocked) from %s\n", r.RemoteAddr)
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	var req MockSealOutputRequest
-	if err := json.Unmarshal(body, &req); err != nil {
-		fmt.Printf("Failed unmarshaling request: %+v body is %+v\n", err, string(body))
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	response := []byte("")
-	_, err = w.Write(response)
-	if err != nil {
-		fmt.Printf("Failed to write response: %v\n", err)
-		return
-	}
-
-	fmt.Printf("Received mock seal output request for %+v and permit %+v and pubkey %+v\n", req.CtHash, req.Permit, req.PublicKey)
-}
-
-func (s *SealOutputRequest) UnmarshalJSON(data []byte) error {
-	var aux struct {
-		UType           byte             `json:"utype"`
-		Key             CiphertextKeyAux `json:"key"`
-		PKey            string           `json:"pkey"`
-		RequesterUrl    string           `json:"requesterUrl"`
-		TransactionHash string           `json:"transactionHash"`
-		ChainId         uint64           `json:"chainId"`
-	}
-
-	if err := json.Unmarshal(data, &aux); err != nil {
-		log.Printf("Failed to unmarshal SealOutputRequestAux: %v, %+v", err, aux)
-		return err
-	}
-
-	convertedInput, err := convertInput(aux.Key)
-	if err != nil {
-		return err
-	}
-
-	s.UType = aux.UType
-	s.Key = *convertedInput
-	s.PKey = aux.PKey
-	s.RequesterUrl = aux.RequesterUrl
-	s.TransactionHash = aux.TransactionHash
-	s.ChainId = uint64(aux.ChainId)
-
-	return nil
-}
-func SealOutputHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("Got a sealoutput request from %s\n", r.RemoteAddr)
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	var req SealOutputRequest
-	if err := json.Unmarshal(body, &req); err != nil {
-		fmt.Printf("Failed unmarshaling request: %+v body is %+v\n", err, string(body))
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	log.Printf("SealOutput Request: %+v\n", req)
-	callback := precompiles.SealOutputCallbackFunc{
-		CallbackUrl:     req.RequesterUrl,
-		Callback:        handleSealOutputResult,
-		TransactionHash: req.TransactionHash,
-		ChainId:         req.ChainId,
-	}
-
-	pkey, err := hex.DecodeString(hexOnly(req.PKey))
-	if err != nil {
-		e := fmt.Sprintf("Invalid pkey: %s %+v", req.PKey, err)
-		fmt.Println(e)
-		http.Error(w, e, http.StatusBadRequest)
-		return
-	}
-
-	_, _, err = precompiles.SealOutput(req.UType, fhedriver.SerializeCiphertextKey(req.Key), pkey, &tp, &callback)
-	if err != nil {
-		e := fmt.Sprintf("Operation failed: %+v", err)
-		fmt.Println(e)
-		http.Error(w, e, http.StatusBadRequest)
-		return
-	}
-	// Respond with the result
-	w.Write(req.Key.Hash[:])
-	fmt.Printf("Received seal output request for %+v and type %+v\n", hex.EncodeToString(req.Key.Hash[:]), req.UType)
-}
-
 func (t *TrivialEncryptRequest) UnmarshalJSON(data []byte) error {
 	var aux struct {
 		Value        string `json:"value"`
@@ -809,7 +534,7 @@ func CastHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func createNetworkPublicKeyResponse(PublicKey []byte) ([]byte, error) {
-	result := GetNetworkPublicKeyResult{
+	result := GetNetworkPublicKeyResponse{
 		PublicKey: hex.EncodeToString(PublicKey),
 	}
 
@@ -821,7 +546,7 @@ func createNetworkPublicKeyResponse(PublicKey []byte) ([]byte, error) {
 }
 
 func createCrsResponse(Crs []byte) ([]byte, error) {
-	result := GetCrsResult{
+	result := GetCrsResponse{
 		Crs: hex.EncodeToString(Crs),
 	}
 
@@ -887,7 +612,7 @@ func StoreCtsHandler(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Printf("Stored %d cts: %+v\n", len(hashes), hashes)
 
-	result := StoreCtsResult{
+	result := StoreCtsResponse{
 		Hashes: hashes,
 	}
 
@@ -895,9 +620,9 @@ func StoreCtsHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Printf("Failed to marshal response: %+v\n", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return;
+		return
 	}
-	
+
 	_, err = w.Write(responseData)
 	if err != nil {
 		fmt.Printf("Failed to write response: %v\n", err)
@@ -1011,7 +736,7 @@ func GetCTHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req CTRequest
+	var req GetCTRequest
 	if err := json.Unmarshal(body, &req); err != nil {
 		fmt.Printf("Failed unmarshaling request: %+v body is %+v\n", err, string(body))
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -1047,7 +772,7 @@ func GetCTHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := CTResponse{
+	response := GetCTResponse{
 		Data:         hex.EncodeToString(ct.Data),
 		SecurityZone: uint8(ct.SecurityZone),
 		UintType:     uint8(ct.Properties.EncryptionType),
@@ -1082,9 +807,6 @@ func main() {
 	}
 
 	http.HandleFunc("/Decrypt", DecryptHandler)
-	http.HandleFunc("/SealOutput", SealOutputHandler)
-	http.HandleFunc("/QueryDecrypt", DecryptHandlerMock)
-	http.HandleFunc("/QuerySealOutput", SealOutputHandlerMock)
 	http.HandleFunc("/StoreCts", StoreCtsHandler)
 	http.HandleFunc("/TrivialEncrypt", TrivialEncryptHandler)
 	http.HandleFunc("/Cast", CastHandler)
