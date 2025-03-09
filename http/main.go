@@ -54,12 +54,20 @@ type MockSealOutputRequest struct {
 	PublicKey string `json:"publicKey"`
 }
 
-type VerifyRequest struct {
+type StoreCtsEntry struct {
 	UType        byte   `json:"utype"`
 	Value        string `json:"value"`
 	SecurityZone byte   `json:"securityZone"`
 }
 
+type StoreCtsRequest struct {
+	Cts       []StoreCtsEntry `json:"cts"`
+	Signature string          `json:"signature"`
+}
+
+type StoreCtsResult struct {
+	Hashes []string `json:"hashes"`
+}
 type GetNetworkPublicKeyRequest struct {
 	SecurityZone byte `json:"securityZone"`
 }
@@ -68,9 +76,12 @@ type GetNetworkPublicKeyResult struct {
 	PublicKey string `json:"publicKey"`
 }
 
-type VerifyResult struct {
-	CtHash    string `json:"ctHash"`
-	Signature string `json:"signature"`
+type GetCrsRequest struct {
+	SecurityZone byte `json:"securityZone"`
+}
+
+type GetCrsResult struct {
+	Crs string `json:"crs"`
 }
 
 type TrivialEncryptRequest struct {
@@ -856,22 +867,21 @@ func RandomHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Started processing the request for tempkey %s\n", hex.EncodeToString(result))
 }
 
-func createVerifyResponse(ctHash []byte) ([]byte, error) {
-	verifyResult := VerifyResult{
-		CtHash:    hex.EncodeToString(ctHash),
-		Signature: "Haim",
+func createNetworkPublicKeyResponse(PublicKey []byte) ([]byte, error) {
+	result := GetNetworkPublicKeyResult{
+		PublicKey: hex.EncodeToString(PublicKey),
 	}
 
-	responseData, err := json.Marshal(verifyResult)
+	responseData, err := json.Marshal(result)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal response: %+v", err)
 	}
 	return responseData, nil
 }
 
-func createNetworkPublicKeyResponse(PublicKey []byte) ([]byte, error) {
-	result := GetNetworkPublicKeyResult{
-		PublicKey: hex.EncodeToString(PublicKey),
+func createCrsResponse(Crs []byte) ([]byte, error) {
+	result := GetCrsResult{
+		Crs: hex.EncodeToString(Crs),
 	}
 
 	responseData, err := json.Marshal(result)
@@ -892,47 +902,67 @@ func hexOnly(value string) string {
 	return value
 }
 
-func UpdateCTHandler(w http.ResponseWriter, r *http.Request) {
+func StoreCtsHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Got a verify request from %s\n", r.RemoteAddr)
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	var req VerifyRequest
+
+	var req StoreCtsRequest
 	if err := json.Unmarshal(body, &req); err != nil {
 		fmt.Printf("Failed unmarshaling request: %+v body is %+v\n", err, string(body))
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	// fmt.Printf("Verify Request Value: %s\n", req.Value)
-	value, err := hex.DecodeString(hexOnly(req.Value))
-	if err != nil {
-		e := fmt.Sprintf("Invalid Value: %s %+v", req.Value, err)
-		fmt.Println(e)
-		http.Error(w, e, http.StatusBadRequest)
+	// This is a placeholder for the actual signature verification
+	if req.Signature != "toml" {
+		http.Error(w, "Invalid signature", http.StatusBadRequest)
 		return
 	}
 
-	ctHash, _, err := precompiles.Verify(req.UType, value, int32(req.SecurityZone), &tp, nil)
-	if err != nil {
-		e := fmt.Sprintf("Operation failed: %+v", err)
-		fmt.Println(e)
-		http.Error(w, e, http.StatusBadRequest)
-		return
+	hashes := []string{}
+
+	for _, ct := range req.Cts {
+		value, err := hex.DecodeString(hexOnly(ct.Value))
+		if err != nil {
+			e := fmt.Sprintf("Invalid Value: %s %+v", ct.Value, err)
+			fmt.Println(e)
+			http.Error(w, e, http.StatusBadRequest)
+			return
+		}
+
+		hash, _, err := precompiles.StoreCt(ct.UType, value, int32(ct.SecurityZone), &tp, nil)
+		if err != nil {
+			e := fmt.Sprintf("Operation failed: %+v", err)
+			fmt.Println(e)
+			http.Error(w, e, http.StatusBadRequest)
+			return
+		}
+		hashes = append(hashes, hex.EncodeToString(hash))
 	}
 
-	responseData, err := createVerifyResponse(ctHash)
-	if err != nil {
-		e := fmt.Sprintf("Failed to marshal response: %+v", err)
-		fmt.Println(e)
-		http.Error(w, e, http.StatusInternalServerError)
-		return
+	fmt.Printf("Stored %d cts: %+v\n", len(hashes), hashes)
+
+	result := StoreCtsResult{
+		Hashes: hashes,
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(responseData)
+	responseData, err := json.Marshal(result)
+	if err != nil {
+		fmt.Printf("Failed to marshal response: %+v\n", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return;
+	}
+
+	_, err = w.Write(responseData)
+	if err != nil {
+		fmt.Printf("Failed to write response: %v\n", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 }
 
 func corsMiddleware(next http.Handler) http.Handler {
@@ -975,6 +1005,39 @@ func GetNetworkPublicKeyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	responseData, err := createNetworkPublicKeyResponse(expectedPk)
+	if err != nil {
+		fmt.Println(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(responseData)
+}
+
+func GetCrsHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("Got a getCrs request from %s\n", r.RemoteAddr)
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	var req GetCrsRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		fmt.Printf("Failed unmarshaling request: %+v body is %+v\n", err, string(body))
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	expectedCrs, err := precompiles.GetCrs(int32(req.SecurityZone), &tp)
+	if err != nil {
+		e := fmt.Sprintf("Operation failed: %+v", err)
+		fmt.Println(e)
+		http.Error(w, e, http.StatusBadRequest)
+		return
+	}
+
+	responseData, err := createCrsResponse(expectedCrs)
 	if err != nil {
 		fmt.Println(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -1081,10 +1144,11 @@ func main() {
 	http.HandleFunc("/SealOutput", SealOutputHandler)
 	http.HandleFunc("/QueryDecrypt", DecryptHandlerMock)
 	http.HandleFunc("/QuerySealOutput", SealOutputHandlerMock)
-	http.HandleFunc("/UpdateCT", UpdateCTHandler)
+	http.HandleFunc("/StoreCts", StoreCtsHandler)
 	http.HandleFunc("/TrivialEncrypt", TrivialEncryptHandler)
 	http.HandleFunc("/Cast", CastHandler)
 	http.HandleFunc("/GetNetworkPublicKey", GetNetworkPublicKeyHandler)
+	http.HandleFunc("/GetCrs", GetCrsHandler)
 	http.HandleFunc("/Health", HealthHandler)
 	http.HandleFunc("/GetCT", GetCTHandler)
 	http.HandleFunc("/Random", RandomHandler)

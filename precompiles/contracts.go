@@ -7,6 +7,8 @@ import (
 	"math/big"
 	"strings"
 
+	"golang.org/x/crypto/sha3"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/log"
@@ -17,6 +19,14 @@ import (
 )
 
 var logger log.Logger
+
+func Keccak256(data ...[]byte) []byte {
+	d := sha3.NewLegacyKeccak256()
+	for _, datum := range data {
+		d.Write(datum)
+	}
+	return d.Sum(nil)
+}
 
 func init() {
 	InitLogger()
@@ -46,10 +56,8 @@ func Add(utype byte, lhsHash []byte, rhsHash []byte, tp *TxParams, callback *Cal
 	return ProcessOperation(functionName, addOp, utype, keys[0].SecurityZone, keys, tp, callback)
 }
 
-// Verify takes inputs from the user and runs them through verification. Note that we will always get ciphertexts that
-// are public-key encrypted and compressed. Anything else will fail
-func Verify(utype byte, input []byte, securityZone int32, tp *TxParams, _ *CallbackFunc) ([]byte, uint64, error) {
-	functionName := types.Verify
+func StoreCt(utype byte, input []byte, securityZone int32, tp *TxParams, _ *CallbackFunc) ([]byte, uint64, error) {
+	functionName := types.StoreCt
 
 	uintType := fhe.EncryptionType(utype)
 	if !types.IsValidType(uintType) {
@@ -66,12 +74,17 @@ func Verify(utype byte, input []byte, securityZone int32, tp *TxParams, _ *Callb
 	ct := fhe.NewFheEncryptedFromBytes(
 		input,
 		uintType,
+		false,
 		true,
-		false, // TODO: not sure + shouldn't be hardcoded
 		securityZone,
 		false,
 	)
-	hash := adjustHashForMetadata(ct.Key.Hash[:], utype, securityZone, false)
+
+	// The verifier calculates the hash of the input and sends it to cofhe.js
+	// We want to have the same algorithm here
+	// Note: Integration part with the verifier
+	inputHash := Keccak256(input)
+	hash := adjustHashForMetadata(inputHash[:], utype, securityZone, false)
 	if hash == nil {
 		return nil, 0, vm.ErrExecutionReverted
 	}
@@ -83,13 +96,7 @@ func Verify(utype byte, input []byte, securityZone int32, tp *TxParams, _ *Callb
 
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 
-	err := ct.Verify()
-	if err != nil {
-		logger.Info(fmt.Sprintf("failed to verify ciphertext %s for type %d - was input corrupted?", ct.GetHash().Hex(), uintType))
-		return nil, 0, vm.ErrExecutionReverted
-	}
-
-	err = storeCiphertext(storage, &ct)
+	err := storeCiphertext(storage, &ct)
 	if err != nil {
 		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
@@ -896,6 +903,22 @@ func GetNetworkPublicKey(securityZone int32, tp *TxParams) ([]byte, error) {
 	}
 
 	return pk, nil
+}
+
+func GetCrs(securityZone int32, tp *TxParams) ([]byte, error) {
+	functionName := types.GetNetworkKey
+
+	if shouldPrintPrecompileInfo(tp) {
+		logger.Info("Starting new precompiled contract function: " + functionName.String())
+	}
+
+	crs, err := fhe.PublicKey(securityZone)
+	if err != nil {
+		logger.Error("could not get public key", "err", err, "securityZone", securityZone)
+		return nil, vm.ErrExecutionReverted
+	}
+
+	return crs, nil
 }
 
 func Square(utype byte, value []byte, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {

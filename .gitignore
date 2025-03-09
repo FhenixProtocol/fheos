@@ -6,3 +6,4 @@ build/
 solidity/types/*
 fheosdb/
 .idea/
+.DS_Store
