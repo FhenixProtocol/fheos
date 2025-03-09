@@ -620,7 +620,7 @@ func (con FheOps) Random(c ctx, evm mech, utype byte, seed uint64, securityZone 
 		}(time.Now())
 	}
 
-	ret, gas, err := fheos.Random(utype, seed, securityZone, &tp, nil)
+	ret, gas, err := fheos.Random(utype, seed, securityZone, &tp, nil, new(big.Int).SetUint64(seed))
 
 	if err != nil {
 		if metrics.Enabled {

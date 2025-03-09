@@ -97,6 +97,14 @@ type CastRequest struct {
 	ToType       string                  `json:"toType"`
 	RequesterUrl string                  `json:"requesterUrl"`
 }
+
+type RandomRequest struct {
+	UType        byte   `json:"utype"`
+	Seed         string `json:"seed"`
+	SecurityZone int32  `json:"securityZone"`
+	RequesterUrl string `json:"requesterUrl"`
+}
+
 type HashResultUpdate struct {
 	TempKey    []byte `json:"tempKey"`
 	ActualHash []byte `json:"actualHash"`
@@ -808,6 +816,57 @@ func CastHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Started processing the request for tempkey %s\n", hex.EncodeToString(result))
 }
 
+func RandomHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("Got a request from %s\n", r.RemoteAddr)
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var req RandomRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		fmt.Printf("Failed unmarsheling request: %+v body is %+v\n", err, string(body))
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	callback := precompiles.CallbackFunc{
+		CallbackUrl: req.RequesterUrl,
+		Callback:    handleResult,
+	}
+
+	hexStr := req.Seed
+	if len(hexStr) > 1 && hexStr[:2] == "0x" {
+		hexStr = hexStr[2:] // Strip the prefix
+	}
+
+	// Convert hex string to big.Int
+	fullSeed := new(big.Int)
+	_, success := fullSeed.SetString(hexStr, 16) // Base 16 for hex parsing
+	if !success {
+		fmt.Println("Invalid hex string", req.Seed, ".")
+		return
+	}
+
+	// Extract the least significant 64 bits (although the seed created in solidity is 256 bits, we can use only 64
+	// of them because that's what the fhe library supports)
+	seed := fullSeed.Uint64() // Extracts the lower 64 bits
+
+	result, _, err := precompiles.Random(req.UType, seed, req.SecurityZone, &tp, &callback, fullSeed)
+	if err != nil {
+		e := fmt.Sprintf("Operation failed: %+v", err)
+		fmt.Println(e)
+		http.Error(w, e, http.StatusBadRequest)
+		return
+	}
+
+	// Respond with the result
+	res := []byte(hex.EncodeToString(result))
+	w.Write(res)
+	fmt.Printf("Started processing the request for tempkey %s\n", hex.EncodeToString(result))
+}
+
 func createNetworkPublicKeyResponse(PublicKey []byte) ([]byte, error) {
 	result := GetNetworkPublicKeyResult{
 		PublicKey: hex.EncodeToString(PublicKey),
@@ -897,7 +956,7 @@ func StoreCtsHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return;
 	}
-	
+
 	_, err = w.Write(responseData)
 	if err != nil {
 		fmt.Printf("Failed to write response: %v\n", err)
@@ -1092,6 +1151,7 @@ func main() {
 	http.HandleFunc("/GetCrs", GetCrsHandler)
 	http.HandleFunc("/Health", HealthHandler)
 	http.HandleFunc("/GetCT", GetCTHandler)
+	http.HandleFunc("/Random", RandomHandler)
 
 	// Wrap the default mux in the CORS middleware
 	wrappedMux := corsMiddleware(http.DefaultServeMux)

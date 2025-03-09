@@ -124,13 +124,6 @@ contract AddCaller {
         // catches a bug we had a in the past on the sstore hook
         counterPublic = counterPublic + 1;
     }
-
-    function randomSanity() public {
-        counterPublic = counterPublic + 1;
-        uint32 a = FHE.decrypt(FHE.randomEuint32());
-        uint32 b = FHE.decrypt(FHE.randomEuint32());
-        emit RandomSanityEvent(a, b);
-    }
 }
 
 contract AddCallee {
