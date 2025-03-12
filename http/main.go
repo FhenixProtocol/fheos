@@ -637,7 +637,7 @@ func corsMiddleware(next http.Handler) http.Handler {
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
-		// If it’s a preflight OPTIONS request, respond OK
+		// If it's a preflight OPTIONS request, respond OK
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusOK)
 			return
@@ -799,28 +799,43 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Create two separate muxes for different ports
+	publicMux := http.NewServeMux()
+	privateMux := http.NewServeMux()
+
 	handlers := getHandlers()
 	log.Printf("Got %d handlers", len(handlers))
 	// iterate handlers
 	for _, handler := range handlers {
-		http.HandleFunc(handler.Name, handler.Handler)
+		privateMux.HandleFunc(handler.Name, handler.Handler)
 	}
 
-	http.HandleFunc("/Decrypt", DecryptHandler)
-	http.HandleFunc("/StoreCts", StoreCtsHandler)
-	http.HandleFunc("/TrivialEncrypt", TrivialEncryptHandler)
-	http.HandleFunc("/Cast", CastHandler)
-	http.HandleFunc("/GetNetworkPublicKey", GetNetworkPublicKeyHandler)
-	http.HandleFunc("/GetCrs", GetCrsHandler)
-	http.HandleFunc("/Health", HealthHandler)
-	http.HandleFunc("/GetCT", GetCTHandler)
+	// Private endpoints on port 8449
+	privateMux.HandleFunc("/Decrypt", DecryptHandler)
+	privateMux.HandleFunc("/StoreCts", StoreCtsHandler)
+	privateMux.HandleFunc("/TrivialEncrypt", TrivialEncryptHandler)
+	privateMux.HandleFunc("/Cast", CastHandler)
+	privateMux.HandleFunc("/Health", HealthHandler)
+	privateMux.HandleFunc("/GetCT", GetCTHandler)
 
-	// Wrap the default mux in the CORS middleware
-	wrappedMux := corsMiddleware(http.DefaultServeMux)
+	// Public endpoints on port 8448
+	publicMux.HandleFunc("/GetNetworkPublicKey", GetNetworkPublicKeyHandler)
+	publicMux.HandleFunc("/GetCrs", GetCrsHandler)
 
-	// Start the server
-	log.Println("Server listening on port 8448...")
-	if err := http.ListenAndServe(":8448", wrappedMux); err != nil {
-		log.Fatalf("Server stopped: %v", err)
+	// Wrap both muxes in the CORS middleware
+	wrappedPublicMux := corsMiddleware(publicMux)
+	wrappedPrivateMux := corsMiddleware(privateMux)
+
+	// Start both servers in separate goroutines
+	go func() {
+		log.Println("Public server listening on port 8448...")
+		if err := http.ListenAndServe(":8448", wrappedPublicMux); err != nil {
+			log.Fatalf("Public server stopped: %v", err)
+		}
+	}()
+
+	log.Println("Private server listening on port 8449...")
+	if err := http.ListenAndServe(":8449", wrappedPrivateMux); err != nil {
+		log.Fatalf("Private server stopped: %v", err)
 	}
 }
