@@ -32,8 +32,18 @@ COPY warp-drive/ warp-drive/
 
 WORKDIR /workspace/warp-drive/fhe-engine
 
-# Todo: fix arm support
-RUN RUSTFLAGS=$EXTRA_RUSTFLAGS cargo build --profile=release-lto
+# Accept build arguments for customizing the build
+ARG TARGET_NATIVE=false
+ARG TARGET_AVX_512=false
+
+RUN if [ "$TARGET_NATIVE" = "true" ]; then \
+        export RUSTFLAGS="-C target-cpu=native"; \
+    fi; \
+    if [ "$TARGET_AVX_512" = "true" ]; then \
+        cargo build --profile=release-lto --features=avx_512; \
+    else \
+        cargo build --profile=release-lto; \
+    fi
 
 FROM $DOCKER_NAME as winning
 
