@@ -815,12 +815,12 @@ func main() {
 	privateMux.HandleFunc("/StoreCts", StoreCtsHandler)
 	privateMux.HandleFunc("/TrivialEncrypt", TrivialEncryptHandler)
 	privateMux.HandleFunc("/Cast", CastHandler)
-	privateMux.HandleFunc("/Health", HealthHandler)
 	privateMux.HandleFunc("/GetCT", GetCTHandler)
 
 	// Public endpoints on port 8448
 	publicMux.HandleFunc("/GetNetworkPublicKey", GetNetworkPublicKeyHandler)
 	publicMux.HandleFunc("/GetCrs", GetCrsHandler)
+	publicMux.HandleFunc("/Health", HealthHandler)
 
 	// Wrap both muxes in the CORS middleware
 	wrappedPublicMux := corsMiddleware(publicMux)
