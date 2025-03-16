@@ -3,6 +3,9 @@ name: Build and Deploy Docker Image
 on:
   release:
     types: [created]
+  push:
+    branches:
+      - multi-arch
 
 env:
   REGISTRY: ghcr.io
@@ -41,9 +44,13 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
+            # For releases
             type=ref,event=tag
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
+            # For multi-arch branch
+            type=raw,value=latest-dev,enable=${{ github.ref == 'refs/heads/multi-arch' }}
+            type=sha,enable=${{ github.ref == 'refs/heads/multi-arch' }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
