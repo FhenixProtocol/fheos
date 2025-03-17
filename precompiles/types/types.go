@@ -44,9 +44,9 @@ type FheCipherTextStorage interface {
 
 type PrecompileName int
 
+// NOTE: If you add a type here you MUST to change ICofhe.sol!
 const (
 	GetNetworkKey PrecompileName = iota
-	GetCrs
 	StoreCt
 	Cast
 	SealOutput
@@ -77,6 +77,7 @@ const (
 	Rol
 	Ror
 	Square
+	GetCrs
 )
 
 var precompileNameToString = map[PrecompileName]string{
