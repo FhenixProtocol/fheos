@@ -32,7 +32,12 @@ fi
 
 # renault-server -c /home/user/fhenix/renault-server.toml &
 # Start the FHE engine server
-fhe-engine-server -c /home/user/fhenix/fhe_engine.toml &
+
+if [[ "${FHE_ENGINE_CONFIG_DIR}" != "" ]]; then
+    fhe-engine-server -c "${FHE_ENGINE_CONFIG_DIR}/fhe_engine.toml" &
+else
+    fhe-engine-server -c /home/user/fhenix/fhe_engine.toml &
+fi
 
 # Wait for the server to start
 sleep 2
