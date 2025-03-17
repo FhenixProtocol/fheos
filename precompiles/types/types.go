@@ -46,6 +46,7 @@ type PrecompileName int
 
 const (
 	GetNetworkKey PrecompileName = iota
+	GetCrs
 	StoreCt
 	Cast
 	SealOutput

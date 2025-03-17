@@ -861,15 +861,15 @@ func GetNetworkPublicKey(securityZone int32, tp *TxParams) ([]byte, error) {
 }
 
 func GetCrs(securityZone int32, tp *TxParams) ([]byte, error) {
-	functionName := types.GetNetworkKey
+	functionName := types.GetCrs
 
 	if shouldPrintPrecompileInfo(tp) {
 		logger.Info("Starting new precompiled contract function: " + functionName.String())
 	}
 
-	crs, err := fhe.PublicKey(securityZone)
+	crs, err := fhe.GetCrs(securityZone)
 	if err != nil {
-		logger.Error("could not get public key", "err", err, "securityZone", securityZone)
+		logger.Error("could not get crs", "err", err, "securityZone", securityZone)
 		return nil, vm.ErrExecutionReverted
 	}
 
