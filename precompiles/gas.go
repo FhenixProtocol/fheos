@@ -180,7 +180,7 @@ func getRawPrecompileGas(precompileName types.PrecompileName, uintType fhe.Encry
 		case fhe.Bool:
 			return 28000
 		}
-	case types.GetNetworkKey:
+	case types.GetNetworkKey, types.GetCrs:
 		// this is never meant to be called in the context of a tx, so we give a pretty high gas cost just to avoid DoS
 		return 200000
 	case types.TrivialEncrypt:
