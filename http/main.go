@@ -805,21 +805,21 @@ func main() {
 
 	handlers := getHandlers()
 	log.Printf("Got %d handlers", len(handlers))
-	// iterate handlers
+
+	// Private endpoints on port 8449
 	for _, handler := range handlers {
 		privateMux.HandleFunc(handler.Name, handler.Handler)
 	}
 
-	// Private endpoints on port 8449
 	privateMux.HandleFunc("/Decrypt", DecryptHandler)
 	privateMux.HandleFunc("/StoreCts", StoreCtsHandler)
 	privateMux.HandleFunc("/TrivialEncrypt", TrivialEncryptHandler)
 	privateMux.HandleFunc("/Cast", CastHandler)
-	privateMux.HandleFunc("/GetCT", GetCTHandler)
 
 	// Public endpoints on port 8448
 	publicMux.HandleFunc("/GetNetworkPublicKey", GetNetworkPublicKeyHandler)
 	publicMux.HandleFunc("/GetCrs", GetCrsHandler)
+	publicMux.HandleFunc("/GetCT", GetCTHandler)
 	publicMux.HandleFunc("/Health", HealthHandler)
 
 	// Wrap both muxes in the CORS middleware
