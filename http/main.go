@@ -806,7 +806,6 @@ func main() {
 	handlers := getHandlers()
 	log.Printf("Got %d handlers", len(handlers))
 
-	// iterate handlers
 	// Private endpoints on port 8449
 	for _, handler := range handlers {
 		privateMux.HandleFunc(handler.Name, handler.Handler)
