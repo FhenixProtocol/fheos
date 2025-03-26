@@ -32,15 +32,18 @@ fi
 
 # renault-server -c /home/user/fhenix/renault-server.toml &
 # Start the FHE engine server
-
 if [[ "${FHE_ENGINE_CONFIG_DIR}" != "" ]]; then
     fhe-engine-server -c "${FHE_ENGINE_CONFIG_DIR}/fhe_engine.toml" &
 else
     fhe-engine-server -c /home/user/fhenix/fhe_engine.toml &
 fi
 
-# Wait for the server to start
-sleep 2
+echo "Waiting for connection to 127.0.0.1:50051..."
+while ! nc -z -v 127.0.0.1 50051 2>/dev/null; do
+  echo "Connection failed to engine, retrying in 1 second..."
+  sleep 1
+done
+echo "connected to engine"
 
 if [[ "${DETACH_MODE}" -eq 1 ]]; then
   coprocessor &
