@@ -29,7 +29,12 @@ jobs:
       - name: Build Coprocessor Image
         uses: docker/build-push-action@v4
         with:
-          file: Dockerfile
+          file: coprocessor.Dockerfile
+          context: .
+      - name: Build Engine Image
+        uses: docker/build-push-action@v4
+        with:
+          file: engine.Dockerfile
           context: .
       - name: Start Engine
         run: |

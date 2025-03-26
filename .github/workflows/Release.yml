@@ -29,21 +29,40 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GH_PAT_LIOR }}
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
+      - name: Extract metadata (tags, labels) for Coprocessor Docker image
+        id: meta-coprocessor
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/coprocessor
           tags: |
             type=ref,event=tag
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
 
-      - name: Build and push Docker image
+      - name: Extract metadata (tags, labels) for Engine Docker image
+        id: meta-engine
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/engine
+          tags: |
+            type=ref,event=tag
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - name: Build and push Coprocessor Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: Dockerfile
+          file: coprocessor.Dockerfile
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta-coprocessor.outputs.tags }}
+          labels: ${{ steps.meta-coprocessor.outputs.labels }}
+
+      - name: Build and push Engine Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: engine.Dockerfile
+          push: true
+          tags: ${{ steps.meta-engine.outputs.tags }}
+          labels: ${{ steps.meta-engine.outputs.labels }}
