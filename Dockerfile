@@ -51,7 +51,7 @@ RUN echo $DOCKER_NAME
 
 RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
 RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
-RUN apt-get update -qq && apt-get install -y nodejs npm yarn
+RUN apt-get update -qq && apt-get install -y nodejs npm yarn netcat-openbsd
 
 RUN npm install -g pnpm
 
@@ -116,6 +116,8 @@ RUN sudo mkdir /go
 RUN sudo chown user:user /go
 
 RUN CGO_ENABLED=0 go install -ldflags "-s -w -extldflags '-static'" github.com/go-delve/delve/cmd/dlv@latest
+
+RUN sudo apt-get update -qq && sudo apt-get install -y netcat-openbsd
 
 # **************** setup fheos & warp drive
 
