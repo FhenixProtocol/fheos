@@ -807,8 +807,7 @@ func GetCTHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	configDir := flag.String("c", "", "Path to config directory")
-	flag.StringVar(configDir, "config", "", "Path to config directory")
+	configDir := flag.String("config-dir", "", "Path to config directory")
 	flag.Parse()
 
 	if *configDir != "" {
