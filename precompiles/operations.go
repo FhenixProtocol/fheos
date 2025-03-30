@@ -244,10 +244,10 @@ func getUtypeForFunctionName(functionName types.PrecompileName, currentType byte
 }
 
 // ProcessOperation handles operations with variable number of inputs
-func ProcessOperation(functionName types.PrecompileName, operation OperationFunc, utype byte, securtiyZone int32, inputKeys []fhe.CiphertextKey, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
+func ProcessOperation(functionName types.PrecompileName, operation OperationFunc, utype byte, securityZone int32, inputKeys []fhe.CiphertextKey, tp *TxParams, callback *CallbackFunc) ([]byte, uint64, error) {
 	storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 
-	placeholderCt, err := createPlaceholder(getUtypeForFunctionName(functionName, utype), securtiyZone, functionName, keysToHashes(inputKeys)...)
+	placeholderCt, err := createPlaceholder(getUtypeForFunctionName(functionName, utype), securityZone, functionName, keysToHashes(inputKeys)...)
 	if err != nil {
 		logger.Error(functionName.String()+" failed", "err", err)
 		return nil, 0, vm.ErrExecutionReverted
