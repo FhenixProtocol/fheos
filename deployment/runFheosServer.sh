@@ -39,11 +39,29 @@ else
 fi
 
 echo "Waiting for connection to 127.0.0.1:50051..."
-while ! nc -z -v 127.0.0.1 50051 2>/dev/null; do
-  echo "Connection failed to engine, retrying in 1 second..."
-  sleep 1
+timeout=120
+start_time=$(date +%s)
+while true; do
+    if nc -z 127.0.0.1 50051 2>/dev/null; then
+        echo "Connected to 127.0.0.1:50051"
+        echo "connected to engine"
+        break
+    fi
+    
+    current_time=$(date +%s)
+    elapsed_time=$((current_time - start_time))
+    
+    if [ $((elapsed_time % 20)) -eq 0 ]; then
+        echo "Elapsed time: $elapsed_time seconds"
+    fi
+    
+    if [ $elapsed_time -ge $timeout ]; then
+        echo "Timeout: Port 50051 is not available"
+        exit 1
+    fi
+    
+    sleep 1
 done
-echo "connected to engine"
 
 if [[ "${DETACH_MODE}" -eq 1 ]]; then
   coprocessor &
