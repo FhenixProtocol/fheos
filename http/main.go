@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -289,14 +290,27 @@ func getEnvOrDefault(key string, defaultValue string) string {
 	return str
 }
 
-func initFheos() (*precompiles.TxParams, error) {
+func initFheos(configDir string) (*precompiles.TxParams, error) {
 	if os.Getenv("FHEOS_DB_PATH") == "" {
 		if err := os.Setenv("FHEOS_DB_PATH", "./fheosdb"); err != nil {
 			return nil, fmt.Errorf("failed to set FHEOS_DB_PATH: %v", err)
 		}
 	}
 
-	config := fhedriver.ConfigDefault
+	var config fhedriver.Config
+	if configDir == "" {
+		config = fhedriver.ConfigDefault
+	} else {
+		configData, err := os.ReadFile(configDir + "/fheos_config.json")
+		if err != nil {
+			return nil, fmt.Errorf("failed to read config file: %v", err)
+		}
+
+		if err := json.Unmarshal(configData, &config); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal config: %v", err)
+		}
+	}
+
 	config.OracleType = getEnvOrDefault("FHEOS_ORACLE_TYPE", "local")
 	if err := precompiles.InitFheConfig(&config); err != nil {
 		return nil, fmt.Errorf("failed to init FHE config: %v", err)
@@ -793,7 +807,14 @@ func GetCTHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	_, err := initFheos()
+	configDir := flag.String("config-dir", "", "Path to config directory")
+	flag.Parse()
+
+	if *configDir != "" {
+		log.Printf("Using config directory: %s", *configDir)
+	}
+
+	_, err := initFheos(*configDir)
 	if err != nil {
 		log.Fatalf("Failed to initialize FHEOS: %v", err)
 		os.Exit(1)
