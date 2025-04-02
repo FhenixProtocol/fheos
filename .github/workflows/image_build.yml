@@ -1,0 +1,27 @@
+name: Build and Push Docker Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      registry:
+        required: true
+        type: string
+        default: "ghcr.io"
+      image_name:
+        required: true
+        type: string
+        default: "fhenixprotocol/cofhe/fheos"
+  release:
+    types: [created]
+
+jobs:
+  build-and-push:
+    permissions:
+      contents: read
+      packages: write
+    uses: FhenixProtocol/actions/.github/workflows/docker_build.yml@master
+    with:
+      registry: ${{ inputs.registry }}
+      image_name: ${{ inputs.image_name }}
+    secrets:
+      GCR_SERVICE_ACCOUNT_KEY: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
