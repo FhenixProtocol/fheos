@@ -85,7 +85,7 @@ func (tc *TelemetryCollector) AddTelemetry(telemetry interface{}) error {
 
 	tc.logger.Info("Adding telemetry", "telemetry", string(data))
 	entry := fmt.Sprintf("%s %s\n", time.Now().UTC().Format(time.RFC3339), string(data))
-	f, err := os.OpenFile(tc.telemetryPath, os.O_APPEND|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(tc.telemetryPath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return fmt.Errorf("failed to open telemetry file: %w", err)
 	}
