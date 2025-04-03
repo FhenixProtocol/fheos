@@ -17,6 +17,9 @@ on:
         default: '["linux/amd64", "linux/arm64"]'
   release:
     types: [created]
+  pull_request:
+    paths:
+      - '.github/workflows/image_build.yml'
 
 jobs:
   build-and-push:
