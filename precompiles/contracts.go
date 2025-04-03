@@ -173,7 +173,7 @@ func Decrypt(utype byte, inputBz []byte, defaultValue *big.Int, tp *TxParams, on
 	if !tp.GasEstimation {
 		storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 		if onResultCallback == nil {
-			plaintext, err := DecryptHelper(storage, input.Hash, tp, defaultValue, 0, "", onResultCallback.EventId, telemetryCollector)
+			plaintext, err := DecryptHelper(storage, input.Hash, tp, defaultValue, 0, "", "0", telemetryCollector)
 			return plaintext, gas, err
 		}
 		go func(ctHash [common.HashLength]byte) {
@@ -436,8 +436,13 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams, callback *Callbac
 
 	go func(inputKey, placeholderKey fhe.CiphertextKey, toType byte) {
 		updateEvent := telemetry.FheOperationUpdateTelemetry{
-			TelemetryType:  "fhe_operation_update",
-			ID:             callback.EventId,
+			TelemetryType: "fhe_operation_update",
+			ID: func() string {
+				if callback != nil {
+					return callback.EventId
+				}
+				return "0"
+			}(),
 			InternalHandle: hex.EncodeToString(placeholderKey.Hash[:]),
 			Status:         "",
 		}
@@ -545,8 +550,13 @@ func TrivialEncrypt(input []byte, toType byte, securityZone int32, tp *TxParams,
 
 	go func(resultKey fhe.CiphertextKey, toType byte) {
 		updateEvent := telemetry.FheOperationUpdateTelemetry{
-			TelemetryType:  "fhe_operation_update",
-			ID:             callback.EventId,
+			TelemetryType: "fhe_operation_update",
+			ID: func() string {
+				if callback != nil {
+					return callback.EventId
+				}
+				return "0"
+			}(),
 			InternalHandle: hex.EncodeToString(resultKey.Hash[:]),
 			Status:         "",
 		}

@@ -299,8 +299,13 @@ func ProcessOperation(functionName types.PrecompileName, operation OperationFunc
 
 	go func(inputs []fhe.CiphertextKey, resultKey fhe.CiphertextKey) {
 		updateEvent := telemetry.FheOperationUpdateTelemetry{
-			TelemetryType:  "fhe_operation_update",
-			ID:             callback.EventId,
+			TelemetryType: "fhe_operation_update",
+			ID: func() string {
+				if callback != nil {
+					return callback.EventId
+				}
+				return "0"
+			}(),
 			InternalHandle: hex.EncodeToString(resultKey.Hash[:]),
 			Status:         "",
 		}

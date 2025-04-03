@@ -193,6 +193,14 @@ func (g *FheOperationRequest) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func inputsToTelemetry(inputs []fhedriver.CiphertextKey) string {
+	var inputStrings []string
+	for _, input := range inputs {
+		inputStrings = append(inputStrings, hex.EncodeToString(input.Hash[:]))
+	}
+	return strings.Join(inputStrings, ", ")
+}
+
 func handleRequest[T HandlerFunc](w http.ResponseWriter, r *http.Request, handler T) {
 	fmt.Printf("Got a FHE operation request from %s\n", r.RemoteAddr)
 	body, err := ioutil.ReadAll(r.Body)
@@ -213,10 +221,10 @@ func handleRequest[T HandlerFunc](w http.ResponseWriter, r *http.Request, handle
 	eventId := getEventId(req.RequesterUrl)
 	telemetryCollector.AddTelemetry(telemetry.FheOperationRequestTelemetry{
 		TelemetryType: "fhe_operation_request",
-		OperationType: handlerType.String(),
+		OperationType: "generic_fhe_operation",
 		ID:            eventId,
 		Handle:        "",
-		Inputs:        fmt.Sprintf("inputs: %+v", req.Inputs),
+		Inputs:        inputsToTelemetry(req.Inputs),
 	})
 
 	log.Printf("Request: %+v\n", req)
