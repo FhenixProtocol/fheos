@@ -111,7 +111,9 @@ func InitFheConfig(fheConfig *fhe.Config, telemetryCollectorInstance *telemetry.
 
 	logger = log.NewLogger(glogger).New("module", "fheos")
 	telemetryCollector = telemetryCollectorInstance
-	telemetryCollector.SetLogger(logger)
+	if telemetryCollector != nil {
+		telemetryCollector.SetLogger(logger)
+	}
 	fhe.SetLogger(log.NewLogger(glogger).New("module", "warp-drive"))
 
 	logger.Info("Initializing telemetry collector")

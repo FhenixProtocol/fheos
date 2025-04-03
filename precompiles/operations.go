@@ -356,6 +356,7 @@ func ProcessOperation(functionName types.PrecompileName, operation OperationFunc
 			logger.Error(functionName.String()+" failed", "err", err)
 			return
 		}
+		telemetryCollector.AddTelemetry(updateEvent.SetStatus("result_stored"))
 		ctReady = true // Mark as ready
 
 		if callback != nil {
