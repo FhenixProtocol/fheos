@@ -626,13 +626,6 @@ func CastHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	result, _, err := precompiles.Cast(req.UType, fhedriver.SerializeCiphertextKey(req.Input), byte(toTypeInt), &tp, &callback)
-	telemetryCollector.AddTelemetry(telemetry.FheOperationUpdateTelemetry{
-		TelemetryType:  "fhe_operation_update",
-		ID:             eventId,
-		InternalHandle: hex.EncodeToString(result),
-		Status:         "sync_part_done",
-	})
-
 	if err != nil {
 		telemetryCollector.AddTelemetry(telemetry.FheOperationUpdateTelemetry{
 			TelemetryType:  "fhe_operation_update",
@@ -645,6 +638,13 @@ func CastHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, e, http.StatusBadRequest)
 		return
 	}
+
+	telemetryCollector.AddTelemetry(telemetry.FheOperationUpdateTelemetry{
+		TelemetryType:  "fhe_operation_update",
+		ID:             eventId,
+		InternalHandle: hex.EncodeToString(result),
+		Status:         "sync_part_done",
+	})
 
 	// Respond with the result
 	res := []byte(hex.EncodeToString(result))
