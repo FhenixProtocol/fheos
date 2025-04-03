@@ -80,7 +80,7 @@ func initFheos() (*precompiles.TxParams, error) {
 		}
 	}
 
-	err := precompiles.InitFheConfig(&fhedriver.ConfigDefault)
+	err := precompiles.InitFheConfig(&fhedriver.ConfigDefault, nil)
 	if err != nil {
 		return nil, err
 	}

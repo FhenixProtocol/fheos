@@ -56,7 +56,7 @@ func init() {
 		}
 	}
 
-	if err := InitFheConfig(&fhedriver.ConfigDefault); err != nil {
+	if err := InitFheConfig(&fhedriver.ConfigDefault, nil); err != nil {
 		panic(err)
 	}
 

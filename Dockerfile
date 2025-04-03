@@ -64,6 +64,7 @@ COPY go-ethereum fheos/go-ethereum
 COPY chains fheos/chains
 COPY cmd fheos/cmd
 COPY precompiles fheos/precompiles
+COPY telemetry fheos/telemetry
 COPY storage fheos/storage
 COPY hooks fheos/hooks
 COPY nitro-overrides/precompiles/FheOps.go ./precompiles/FheOps.go

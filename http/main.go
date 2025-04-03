@@ -20,6 +20,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/ethdb/memorydb"
 	"github.com/fhenixprotocol/fheos/precompiles"
+	"github.com/fhenixprotocol/fheos/telemetry"
 	fhedriver "github.com/fhenixprotocol/warp-drive/fhe-driver"
 )
 
@@ -28,6 +29,15 @@ const (
 )
 
 var tp precompiles.TxParams
+var telemetryCollector *telemetry.TelemetryCollector
+
+func getEventId(url string) string {
+	parts := strings.Split(url, "_")
+	if len(parts) == 0 {
+		return ""
+	}
+	return parts[len(parts)-1]
+}
 
 func doWithRetry(operation func() error) error {
 	var lastErr error
@@ -183,6 +193,14 @@ func (g *FheOperationRequest) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func inputsToTelemetry(inputs []fhedriver.CiphertextKey) string {
+	var inputStrings []string
+	for _, input := range inputs {
+		inputStrings = append(inputStrings, hex.EncodeToString(input.Hash[:]))
+	}
+	return strings.Join(inputStrings, ", ")
+}
+
 func handleRequest[T HandlerFunc](w http.ResponseWriter, r *http.Request, handler T) {
 	fmt.Printf("Got a FHE operation request from %s\n", r.RemoteAddr)
 	body, err := ioutil.ReadAll(r.Body)
@@ -199,10 +217,19 @@ func handleRequest[T HandlerFunc](w http.ResponseWriter, r *http.Request, handle
 		return
 	}
 
+	handlerType := reflect.TypeOf(handler)
+	eventId := getEventId(req.RequesterUrl)
+	telemetryCollector.AddTelemetry(telemetry.FheOperationRequestTelemetry{
+		TelemetryType: "fhe_operation_request",
+		OperationType: "generic_fhe_operation",
+		ID:            eventId,
+		Handle:        "",
+		Inputs:        inputsToTelemetry(req.Inputs),
+	})
+
 	log.Printf("Request: %+v\n", req)
 
 	// Get the number of expected inputs based on handler type
-	handlerType := reflect.TypeOf(handler)
 	expectedInputs := handlerType.NumIn() - 3 // subtract utype, txParams, and callback
 
 	// Convert all hex strings to byte arrays
@@ -220,6 +247,7 @@ func handleRequest[T HandlerFunc](w http.ResponseWriter, r *http.Request, handle
 	callback := precompiles.CallbackFunc{
 		CallbackUrl: req.RequesterUrl,
 		Callback:    handleResult,
+		EventId:     eventId,
 	}
 
 	// Prepare the arguments for the handler call
@@ -238,11 +266,24 @@ func handleRequest[T HandlerFunc](w http.ResponseWriter, r *http.Request, handle
 	result, _, errInterface := results[0].Interface().([]byte), results[1].Interface().(uint64), results[2].Interface()
 	if errInterface != nil {
 		err = errInterface.(error)
+		telemetryCollector.AddTelemetry(telemetry.FheOperationUpdateTelemetry{
+			TelemetryType:  "fhe_operation_update",
+			ID:             eventId,
+			InternalHandle: hex.EncodeToString(result),
+			Status:         fmt.Sprintf("failed err: %+v", err),
+		})
 		e := fmt.Sprintf("Operation failed: %+v", err)
 		fmt.Println(e)
 		http.Error(w, e, http.StatusInternalServerError)
 		return
 	}
+
+	telemetryCollector.AddTelemetry(telemetry.FheOperationUpdateTelemetry{
+		TelemetryType:  "fhe_operation_update",
+		ID:             eventId,
+		InternalHandle: hex.EncodeToString(result),
+		Status:         "sync_part_done",
+	})
 
 	res := []byte(hex.EncodeToString(result))
 	w.Write(res)
@@ -297,6 +338,8 @@ func initFheos(configDir string) (*precompiles.TxParams, error) {
 		}
 	}
 
+	telemetryCollector = telemetry.NewTelemetryCollector(os.Getenv("FHEOS_TELEMETRY_PATH"))
+
 	var config fhedriver.Config
 	if configDir == "" {
 		config = fhedriver.ConfigDefault
@@ -312,7 +355,7 @@ func initFheos(configDir string) (*precompiles.TxParams, error) {
 	}
 
 	config.OracleType = getEnvOrDefault("FHEOS_ORACLE_TYPE", "local")
-	if err := precompiles.InitFheConfig(&config); err != nil {
+	if err := precompiles.InitFheConfig(&config, telemetryCollector); err != nil {
 		return nil, fmt.Errorf("failed to init FHE config: %v", err)
 	}
 
@@ -386,6 +429,15 @@ func DecryptHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	eventId := getEventId(req.RequesterUrl)
+	telemetryCollector.AddTelemetry(telemetry.FheOperationRequestTelemetry{
+		TelemetryType: "fhe_operation_request",
+		OperationType: "decrypt",
+		ID:            eventId,
+		Handle:        hex.EncodeToString(req.Key.Hash[:]),
+		Inputs:        fmt.Sprintf("chain_id: %d", req.ChainId),
+	})
+
 	log.Printf("Decrypt Request: %+v\n", req)
 	// Convert the hash strings to byte arrays
 	callback := precompiles.DecryptCallbackFunc{
@@ -393,15 +445,29 @@ func DecryptHandler(w http.ResponseWriter, r *http.Request) {
 		Callback:        handleDecryptResult,
 		TransactionHash: req.TransactionHash,
 		ChainId:         req.ChainId,
+		EventId:         eventId,
 	}
 
 	_, _, err = precompiles.Decrypt(req.UType, fhedriver.SerializeCiphertextKey(req.Key), nil, &tp, &callback)
 	if err != nil {
+		telemetryCollector.AddTelemetry(telemetry.FheOperationUpdateTelemetry{
+			TelemetryType:  "fhe_operation_update",
+			ID:             eventId,
+			InternalHandle: hex.EncodeToString(req.Key.Hash[:]),
+			Status:         fmt.Sprintf("failed err: %+v", err),
+		})
 		e := fmt.Sprintf("Operation failed: %+v", err)
 		fmt.Println(e)
 		http.Error(w, e, http.StatusBadRequest)
 		return
 	}
+	telemetryCollector.AddTelemetry(telemetry.FheOperationUpdateTelemetry{
+		TelemetryType:  "fhe_operation_update",
+		ID:             eventId,
+		InternalHandle: hex.EncodeToString(req.Key.Hash[:]),
+		Status:         "sync_part_done",
+	})
+
 	// Respond with the result
 	w.Write(req.Key.Hash[:])
 	fmt.Printf("Received decrypt request for %+v and type %+v\n", hex.EncodeToString(req.Key.Hash[:]), req.UType)
@@ -448,9 +514,19 @@ func TrivialEncryptHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("TrivialEncrypt Request: %+v\n", req)
+	eventId := getEventId(req.RequesterUrl)
+	telemetryCollector.AddTelemetry(telemetry.FheOperationRequestTelemetry{
+		TelemetryType: "fhe_operation_request",
+		OperationType: "trivial_encrypt",
+		ID:            eventId,
+		Handle:        "",
+		Inputs:        fmt.Sprintf("security_zone: %d, utype: %d", req.SecurityZone, req.ToType),
+	})
+
 	callback := precompiles.CallbackFunc{
 		CallbackUrl: req.RequesterUrl,
 		Callback:    handleResult,
+		EventId:     eventId,
 	}
 
 	// Convert the value strings to byte arrays
@@ -465,11 +541,24 @@ func TrivialEncryptHandler(w http.ResponseWriter, r *http.Request) {
 
 	result, _, err := precompiles.TrivialEncrypt(value, req.ToType, req.SecurityZone, &tp, &callback)
 	if err != nil {
+		telemetryCollector.AddTelemetry(telemetry.FheOperationUpdateTelemetry{
+			TelemetryType:  "fhe_operation_update",
+			ID:             eventId,
+			InternalHandle: hex.EncodeToString(result),
+			Status:         fmt.Sprintf("failed err: %+v", err),
+		})
 		e := fmt.Sprintf("Operation failed: %+v", err)
 		fmt.Println(e)
 		http.Error(w, e, http.StatusBadRequest)
 		return
 	}
+
+	telemetryCollector.AddTelemetry(telemetry.FheOperationUpdateTelemetry{
+		TelemetryType:  "fhe_operation_update",
+		ID:             eventId,
+		InternalHandle: hex.EncodeToString(result),
+		Status:         "sync_part_done",
+	})
 
 	// Respond with the result
 	res := []byte(hex.EncodeToString(result))
@@ -519,9 +608,20 @@ func CastHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("Cast Request: %+v\n", req)
+	eventId := getEventId(req.RequesterUrl)
+
+	telemetryCollector.AddTelemetry(telemetry.FheOperationRequestTelemetry{
+		TelemetryType: "fhe_operation_request",
+		OperationType: "cast",
+		ID:            eventId,
+		Handle:        hex.EncodeToString(req.Input.Hash[:]),
+		Inputs:        fmt.Sprintf("security_zone: %d, utype: %d", req.Input.SecurityZone, req.UType),
+	})
+
 	callback := precompiles.CallbackFunc{
 		CallbackUrl: req.RequesterUrl,
 		Callback:    handleResult,
+		EventId:     eventId,
 	}
 
 	// Convert the value strings to byte arrays
@@ -535,11 +635,24 @@ func CastHandler(w http.ResponseWriter, r *http.Request) {
 
 	result, _, err := precompiles.Cast(req.UType, fhedriver.SerializeCiphertextKey(req.Input), byte(toTypeInt), &tp, &callback)
 	if err != nil {
+		telemetryCollector.AddTelemetry(telemetry.FheOperationUpdateTelemetry{
+			TelemetryType:  "fhe_operation_update",
+			ID:             eventId,
+			InternalHandle: hex.EncodeToString(result),
+			Status:         fmt.Sprintf("failed err: %+v", err),
+		})
 		e := fmt.Sprintf("Operation failed: %+v", err)
 		fmt.Println(e)
 		http.Error(w, e, http.StatusBadRequest)
 		return
 	}
+
+	telemetryCollector.AddTelemetry(telemetry.FheOperationUpdateTelemetry{
+		TelemetryType:  "fhe_operation_update",
+		ID:             eventId,
+		InternalHandle: hex.EncodeToString(result),
+		Status:         "sync_part_done",
+	})
 
 	// Respond with the result
 	res := []byte(hex.EncodeToString(result))

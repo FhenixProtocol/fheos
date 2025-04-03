@@ -14,11 +14,13 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
+	"github.com/fhenixprotocol/fheos/telemetry"
 	bridge_types "github.com/fhenixprotocol/warp-drive/fhe-bridge/go/bridgetypes"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 )
 
 var logger log.Logger
+var telemetryCollector *telemetry.TelemetryCollector
 
 func Keccak256(data ...[]byte) []byte {
 	d := sha3.NewLegacyKeccak256()
@@ -171,7 +173,7 @@ func Decrypt(utype byte, inputBz []byte, defaultValue *big.Int, tp *TxParams, on
 	if !tp.GasEstimation {
 		storage := storage2.NewMultiStore(tp.CiphertextDb, &State.Storage)
 		if onResultCallback == nil {
-			plaintext, err := DecryptHelper(storage, input.Hash, tp, defaultValue, 0, "")
+			plaintext, err := DecryptHelper(storage, input.Hash, tp, defaultValue, 0, "", "0", telemetryCollector)
 			return plaintext, gas, err
 		}
 		go func(ctHash [common.HashLength]byte) {
@@ -179,7 +181,7 @@ func Decrypt(utype byte, inputBz []byte, defaultValue *big.Int, tp *TxParams, on
 			transactionHash := (*onResultCallback).TransactionHash
 			chainId := (*onResultCallback).ChainId
 
-			plaintext, err := DecryptHelper(storage, ctHash, tp, defaultValue, chainId, transactionHash)
+			plaintext, err := DecryptHelper(storage, ctHash, tp, defaultValue, chainId, transactionHash, onResultCallback.EventId, telemetryCollector)
 			if err != nil {
 				logger.Error("failed decrypting ciphertext", "error", err)
 				return
@@ -433,6 +435,18 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams, callback *Callbac
 	placeholderKeyCopy := placeholderCt.Key
 
 	go func(inputKey, placeholderKey fhe.CiphertextKey, toType byte) {
+		updateEvent := telemetry.FheOperationUpdateTelemetry{
+			TelemetryType: "fhe_operation_update",
+			ID: func() string {
+				if callback != nil {
+					return callback.EventId
+				}
+				return "0"
+			}(),
+			InternalHandle: hex.EncodeToString(placeholderKey.Hash[:]),
+			Status:         "",
+		}
+
 		ctReady := false
 		defer func() {
 			if !ctReady {
@@ -440,13 +454,16 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams, callback *Callbac
 				deleteCiphertext(storage, placeholderKey.Hash)
 			}
 		}()
+		telemetryCollector.AddTelemetry(updateEvent.SetStatus("waiting_for_inputs_to_be_available"))
 		ct, err := blockUntilInputsAvailable(storage, tp, inputKey)
+		telemetryCollector.AddTelemetry(updateEvent.SetStatus("inputs_are_ready"))
 		input := ct[0]
 		if err != nil {
 			logger.Error(functionName.String()+": input not verified, len: ", len(inputKey.Hash), " err: ", err)
 			return
 		}
 		result, err := input.Cast(castToType)
+		telemetryCollector.AddTelemetry(updateEvent.SetStatus("operation_done"))
 		if err != nil {
 			logger.Error("failed to cast to type "+UtypeToString(toType), " err ", err)
 			return
@@ -458,6 +475,7 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams, callback *Callbac
 		}
 		result.Key = placeholderKey
 		err = storeCiphertext(storage, result)
+		telemetryCollector.AddTelemetry(updateEvent.SetStatus("result_stored"))
 		if err != nil {
 			logger.Error(functionName.String()+" failed to store result", "err", err)
 			return
@@ -531,6 +549,18 @@ func TrivialEncrypt(input []byte, toType byte, securityZone int32, tp *TxParams,
 	placeholderKeyCopy := placeholderCt.Key
 
 	go func(resultKey fhe.CiphertextKey, toType byte) {
+		updateEvent := telemetry.FheOperationUpdateTelemetry{
+			TelemetryType: "fhe_operation_update",
+			ID: func() string {
+				if callback != nil {
+					return callback.EventId
+				}
+				return "0"
+			}(),
+			InternalHandle: hex.EncodeToString(resultKey.Hash[:]),
+			Status:         "",
+		}
+
 		ctReady := false
 		defer func() {
 			if !ctReady {
@@ -545,6 +575,7 @@ func TrivialEncrypt(input []byte, toType byte, securityZone int32, tp *TxParams,
 			logger.Error("failed to create trivial encrypted value")
 			return
 		}
+		telemetryCollector.AddTelemetry(updateEvent.SetStatus("trivial_encryption_done"))
 
 		realResultHash, err := hex.DecodeString(result.GetHash().Hex())
 		if err != nil {
@@ -559,6 +590,7 @@ func TrivialEncrypt(input []byte, toType byte, securityZone int32, tp *TxParams,
 			return
 		}
 
+		telemetryCollector.AddTelemetry(updateEvent.SetStatus("result_stored"))
 		ctReady = true // Mark as ready
 
 		if callback != nil {
