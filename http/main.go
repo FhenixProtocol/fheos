@@ -330,13 +330,6 @@ func initFheos(configDir string) (*precompiles.TxParams, error) {
 		}
 	}
 
-	if os.Getenv("FHEOS_TELEMETRY_PATH") == "" {
-		err := os.Setenv("FHEOS_TELEMETRY_PATH", "./telemetry.log")
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	telemetryCollector = telemetry.NewTelemetryCollector(os.Getenv("FHEOS_TELEMETRY_PATH"))
 
 	var config fhedriver.Config
