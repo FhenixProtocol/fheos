@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	storage2 "github.com/fhenixprotocol/fheos/storage"
+	"github.com/fhenixprotocol/fheos/telemetry"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 )
 
@@ -92,18 +93,20 @@ func validateAllSameType(inputs []*fhe.FheEncrypted, utype byte) error {
 type CallbackFunc struct {
 	CallbackUrl string
 	Callback    func(url string, ctKey []byte, newCtKey []byte)
+	EventId     string
 }
 
 type DecryptCallbackFunc struct {
-	CallbackUrl string
-	Callback    func(url string, ctKey []byte, plaintext *big.Int, transactionHash string, chainId uint64)
+	CallbackUrl     string
+	Callback        func(url string, ctKey []byte, plaintext *big.Int, transactionHash string, chainId uint64)
 	TransactionHash string
-	ChainId        uint64
+	ChainId         uint64
+	EventId         string
 }
 
 type SealOutputCallbackFunc struct {
-	CallbackUrl string
-	Callback    func(url string, ctKey []byte, pk []byte, value string, transactionHash string, chainId uint64)
+	CallbackUrl     string
+	Callback        func(url string, ctKey []byte, pk []byte, value string, transactionHash string, chainId uint64)
 	TransactionHash string
 	ChainId         uint64
 }
@@ -116,14 +119,24 @@ func inputsToString(inputKeys []fhe.CiphertextKey) string {
 	return concatenated
 }
 
-func DecryptHelper(storage *storage2.MultiStore, ctHash fhe.Hash, tp *TxParams, defaultValue *big.Int, chainId uint64, transactionHash string) (*big.Int, error) {
+func DecryptHelper(storage *storage2.MultiStore, ctHash fhe.Hash, tp *TxParams, defaultValue *big.Int, chainId uint64, transactionHash string, eventId string, telemetryCollector *telemetry.TelemetryCollector) (*big.Int, error) {
+	updateEvent := telemetry.FheOperationUpdateTelemetry{
+		TelemetryType:  "fhe_operation_update",
+		ID:             eventId,
+		InternalHandle: "",
+		Status:         "",
+	}
+
+	telemetryCollector.AddTelemetry(updateEvent.SetStatus("waiting_for_inputs_to_be_available"))
 	ct := awaitCtResult(storage, ctHash, tp)
+	telemetryCollector.AddTelemetry(updateEvent.SetStatus("inputs_are_available"))
 	if ct == nil {
 		msg := "decrypt unverified ciphertext handle"
 		logger.Error(msg, " ctHash ", ctHash.Hex())
 		return defaultValue, vm.ErrExecutionReverted
 	}
 	plaintext, err := fhe.Decrypt(*ct, chainId, transactionHash)
+	telemetryCollector.AddTelemetry(updateEvent.SetStatus(fmt.Sprintf("decrypted_ciphertext_plaintext_%s", plaintext.String())))
 	if err != nil {
 		logger.Error("decrypt failed for ciphertext", "error", err)
 		return defaultValue, vm.ErrExecutionReverted
@@ -166,7 +179,7 @@ func adjustHashForMetadata(hash []byte, uintType byte, securityZone int32, isTri
 	// Set byte[TrivialEncryptAndTypeByte]: lowest 7 bits for uintType, highest bit for isTriviallyEncrypted flag
 	hash[types.TrivialEncryptAndTypeByte] = byte(uintType & types.TypeMask)
 	if isTriviallyEncrypted {
-		hash[types.TrivialEncryptAndTypeByte] |= types.TrivialEncryptFlag  // Set MSB to 1 if trivially encrypted
+		hash[types.TrivialEncryptAndTypeByte] |= types.TrivialEncryptFlag // Set MSB to 1 if trivially encrypted
 	}
 	hash[types.SecurityZoneByte] = byte(securityZone)
 	return hash
@@ -285,6 +298,13 @@ func ProcessOperation(functionName types.PrecompileName, operation OperationFunc
 	placeholderKeyCopy := placeholderCt.Key
 
 	go func(inputs []fhe.CiphertextKey, resultKey fhe.CiphertextKey) {
+		updateEvent := telemetry.FheOperationUpdateTelemetry{
+			TelemetryType:  "fhe_operation_update",
+			ID:             callback.EventId,
+			InternalHandle: hex.EncodeToString(resultKey.Hash[:]),
+			Status:         "",
+		}
+
 		ctReady := false
 		defer func() {
 			if !ctReady {
@@ -292,11 +312,15 @@ func ProcessOperation(functionName types.PrecompileName, operation OperationFunc
 				deleteCiphertext(storage, resultKey.Hash)
 			}
 		}()
+
+		telemetryCollector.AddTelemetry(updateEvent.SetStatus("waiting_for_inputs_to_be_available"))
 		cts, err := blockUntilInputsAvailable(storage, tp, inputs...)
 		if err != nil || len(cts) != len(inputs) {
 			logger.Error(functionName.String() + ": inputs not verified")
 			return
 		}
+
+		telemetryCollector.AddTelemetry(updateEvent.SetStatus("inputs_are_available"))
 
 		for i, ct := range cts {
 			if ct == nil {
@@ -316,6 +340,8 @@ func ProcessOperation(functionName types.PrecompileName, operation OperationFunc
 			logger.Error(functionName.String()+" failed", "err", err)
 			return
 		}
+
+		telemetryCollector.AddTelemetry(updateEvent.SetStatus("operation_done"))
 
 		realResultHash, err := hex.DecodeString(result.GetHash().Hex())
 		if err != nil {

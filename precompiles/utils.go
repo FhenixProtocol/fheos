@@ -18,6 +18,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/fhenixprotocol/fheos/precompiles/types"
 	"github.com/fhenixprotocol/fheos/storage"
+	"github.com/fhenixprotocol/fheos/telemetry"
 	"github.com/fhenixprotocol/warp-drive/fhe-driver"
 )
 
@@ -102,15 +103,18 @@ func InitLogger() {
 	fhe.SetLogger(log.NewLogger(glogger).New("module", "warp-drive"))
 }
 
-func InitFheConfig(fheConfig *fhe.Config) error {
+func InitFheConfig(fheConfig *fhe.Config, telemetryCollectorInstance *telemetry.TelemetryCollector) error {
 	// Itzik: I'm not sure if this is the right way to initialize the logger
 	handler := log.NewTerminalHandlerWithLevel(os.Stderr, log.FromLegacyLevel(fheConfig.LogLevel), true)
 	glogger := log.NewGlogHandler(handler)
 	glogger.Verbosity(log.FromLegacyLevel(fheConfig.LogLevel))
 
 	logger = log.NewLogger(glogger).New("module", "fheos")
+	telemetryCollector = telemetryCollectorInstance
+	telemetryCollector.SetLogger(logger)
 	fhe.SetLogger(log.NewLogger(glogger).New("module", "warp-drive"))
 
+	logger.Info("Initializing telemetry collector")
 	err := fhe.Init(fheConfig)
 
 	if err != nil {
@@ -124,7 +128,7 @@ func InitFheConfig(fheConfig *fhe.Config) error {
 }
 
 func InitFheos(tfheConfig *fhe.Config) error {
-	err := InitFheConfig(tfheConfig)
+	err := InitFheConfig(tfheConfig, nil)
 	if err != nil {
 		return err
 	}
