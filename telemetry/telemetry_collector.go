@@ -85,7 +85,7 @@ func (tc *TelemetryCollector) AddTelemetry(telemetry interface{}) error {
 		return fmt.Errorf("failed to marshal telemetry: %w", err)
 	}
 
-	tc.logger.Info("Adding telemetry", "telemetry", string(data))
+	tc.logger.Debug("Adding telemetry", "telemetry", string(data))
 	entry := fmt.Sprintf("%s %s\n", time.Now().UTC().Format(time.RFC3339), string(data))
 
 	tc.mutex.Lock()
@@ -95,7 +95,7 @@ func (tc *TelemetryCollector) AddTelemetry(telemetry interface{}) error {
 	if err != nil {
 		return fmt.Errorf("failed to open telemetry file: %w", err)
 	}
-	
+
 	defer f.Close()
 
 	if _, err := f.WriteString(entry); err != nil {
