@@ -33,8 +33,8 @@ COPY warp-drive/ warp-drive/
 WORKDIR /workspace/warp-drive/fhe-engine
 
 # Accept build arguments for customizing the build
-ARG TARGET_NATIVE=false
-ARG TARGET_AVX_512=false
+ARG TARGET_NATIVE=true
+ARG TARGET_AVX_512=true
 
 RUN if [ "$TARGET_NATIVE" = "true" ]; then \
         export RUSTFLAGS="-C target-cpu=native"; \
