@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum/log"
@@ -13,6 +14,7 @@ type TelemetryCollector struct {
 	isOn          bool
 	telemetryPath string
 	logger        log.Logger
+	mutex         sync.Mutex
 }
 
 type FheOperationRequestTelemetry struct {
@@ -85,14 +87,20 @@ func (tc *TelemetryCollector) AddTelemetry(telemetry interface{}) error {
 
 	tc.logger.Info("Adding telemetry", "telemetry", string(data))
 	entry := fmt.Sprintf("%s %s\n", time.Now().UTC().Format(time.RFC3339), string(data))
+
+	tc.mutex.Lock()
+	defer tc.mutex.Unlock()
+
 	f, err := os.OpenFile(tc.telemetryPath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return fmt.Errorf("failed to open telemetry file: %w", err)
 	}
+	
 	defer f.Close()
 
 	if _, err := f.WriteString(entry); err != nil {
 		return fmt.Errorf("failed to append telemetry: %w", err)
 	}
+
 	return nil
 }
