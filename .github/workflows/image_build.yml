@@ -11,6 +11,10 @@ on:
         required: true
         type: string
         default: "fhenixprotocol/cofhe/fheos"
+      platforms:
+        required: false
+        type: string
+        default: '["linux/amd64", "linux/arm64"]'
   release:
     types: [created]
 
@@ -21,7 +25,8 @@ jobs:
       packages: write
     uses: FhenixProtocol/actions/.github/workflows/docker_build.yml@master
     with:
-      registry: ${{ inputs.registry }}
-      image_name: ${{ inputs.image_name }}
+      registry: ${{ inputs.registry || 'ghcr.io' }}
+      image_name: ${{ inputs.image_name || 'fhenixprotocol/actions-testing' }}
+      platforms: ${{ inputs.platforms || '["linux/amd64", "linux/arm64"]' }}
     secrets:
       GCR_SERVICE_ACCOUNT_KEY: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
