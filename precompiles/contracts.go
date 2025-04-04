@@ -181,13 +181,28 @@ func Decrypt(utype byte, inputBz []byte, defaultValue *big.Int, tp *TxParams, on
 			transactionHash := (*onResultCallback).TransactionHash
 			chainId := (*onResultCallback).ChainId
 
+			defer func() {
+				if r := recover(); r != nil {
+					logger.Error("Recovered from panic in DecryptHelper", "panic", r)
+					telemetryCollector.AddTelemetry(telemetry.FheOperationUpdateTelemetry{
+						TelemetryType:  "fhe_operation_update",
+						ID:             onResultCallback.EventId,
+						InternalHandle: hex.EncodeToString(ctHash[:]),
+						Status:         "panic",
+					})
+
+					(*onResultCallback).Callback(url, true, nil, nil, transactionHash, chainId)
+				}
+			}()
+
 			plaintext, err := DecryptHelper(storage, ctHash, tp, defaultValue, chainId, transactionHash, onResultCallback.EventId, telemetryCollector)
 			if err != nil {
 				logger.Error("failed decrypting ciphertext", "error", err)
+				(*onResultCallback).Callback(url, true, nil, nil, transactionHash, chainId)
 				return
 			}
 
-			(*onResultCallback).Callback(url, ctHash[:], plaintext, transactionHash, chainId)
+			(*onResultCallback).Callback(url, false, ctHash[:], plaintext, transactionHash, chainId)
 		}(input.Hash)
 		logger.Debug(functionName.String()+" success", "contractAddress", tp.ContractAddress, "input", hex.EncodeToString(input.Hash[:]))
 	}
@@ -450,8 +465,12 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams, callback *Callbac
 		ctReady := false
 		defer func() {
 			if !ctReady {
-				logger.Error(functionName.String() + ": failed, deleting placeholder ciphertext " + hex.EncodeToString(placeholderKey.Hash[:]))
-				deleteCiphertext(storage, placeholderKey.Hash)
+				// logger.Error(functionName.String() + ": failed, deleting placeholder ciphertext " + hex.EncodeToString(placeholderKey.Hash[:]))
+				// deleteCiphertext(storage, placeholderKey.Hash)
+				telemetryCollector.AddTelemetry(updateEvent.SetStatus("errored"))
+				if callback != nil {
+					(*callback).Callback(callback.CallbackUrl, true, nil, nil)
+				}
 			}
 		}()
 		telemetryCollector.AddTelemetry(updateEvent.SetStatus("waiting_for_inputs_to_be_available"))
@@ -484,7 +503,7 @@ func Cast(utype byte, input []byte, toType byte, tp *TxParams, callback *Callbac
 
 		if callback != nil {
 			url := (*callback).CallbackUrl
-			(*callback).Callback(url, placeholderKeyCopy.Hash[:], realResultHash)
+			(*callback).Callback(url, false, placeholderKeyCopy.Hash[:], realResultHash)
 		}
 		logger.Info(functionName.String()+" success", "contractAddress", tp.ContractAddress, "input", hex.EncodeToString(inputKey.Hash[:]), "result", hex.EncodeToString(realResultHash))
 	}(keyCopy, placeholderKeyCopy, toType)
@@ -564,8 +583,10 @@ func TrivialEncrypt(input []byte, toType byte, securityZone int32, tp *TxParams,
 		ctReady := false
 		defer func() {
 			if !ctReady {
-				logger.Error(functionName.String() + ": failed, deleting placeholder ciphertext " + hex.EncodeToString(resultKey.Hash[:]))
-				deleteCiphertext(storage, resultKey.Hash)
+				telemetryCollector.AddTelemetry(updateEvent.SetStatus("errored"))
+				if callback != nil {
+					(*callback).Callback(callback.CallbackUrl, true, nil, nil)
+				}
 			}
 		}()
 		// we encrypt this using the computation key not the public key. Also, compact to save space in case this gets saved directly
@@ -595,7 +616,7 @@ func TrivialEncrypt(input []byte, toType byte, securityZone int32, tp *TxParams,
 
 		if callback != nil {
 			url := (*callback).CallbackUrl
-			(*callback).Callback(url, resultKey.Hash[:], realResultHash)
+			(*callback).Callback(url, false, resultKey.Hash[:], realResultHash)
 		}
 		logger.Info(functionName.String()+" success", "contractAddress", tp.ContractAddress, "input", hex.EncodeToString(input), "result", hex.EncodeToString(realResultHash))
 	}(placeholderKeyCopy, toType)

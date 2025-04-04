@@ -1,11 +1,13 @@
 package main
 
 type FheOperationResponse struct {
+	HadError   bool   `json:"hadError"`
 	TempKey    []byte `json:"tempKey"`
 	ActualHash []byte `json:"actualHash"`
 }
 
 type DecryptResponse struct {
+	HadError        bool   `json:"hadError"`
 	CtHash          []byte `json:"ctHash"`
 	Plaintext       string `json:"plaintext"`
 	TransactionHash string `json:"transactionHash"`

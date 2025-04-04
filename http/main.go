@@ -99,10 +99,10 @@ func responseToServer(url string, tempKey []byte, json []byte) {
 	fmt.Printf("Update requester %s with the result of %+v\n", url, hex.EncodeToString(tempKey))
 }
 
-func handleResult(url string, tempKey []byte, actualHash []byte) {
+func handleResult(url string, hadError bool, tempKey []byte, actualHash []byte) {
 	fmt.Printf("Got hash result for %s : %s\n", hex.EncodeToString(tempKey), hex.EncodeToString(actualHash))
 	// JSON data to be sent in the request body
-	jsonData, err := json.Marshal(FheOperationResponse{TempKey: tempKey, ActualHash: actualHash})
+	jsonData, err := json.Marshal(FheOperationResponse{HadError: hadError, TempKey: tempKey, ActualHash: actualHash})
 	if err != nil {
 		log.Printf("Failed to marshal update for requester %s with the result of %+v: %v", url, tempKey, err)
 		return
@@ -111,10 +111,10 @@ func handleResult(url string, tempKey []byte, actualHash []byte) {
 	responseToServer(url, tempKey, jsonData)
 }
 
-func handleDecryptResult(url string, ctHash []byte, plaintext *big.Int, transactionHash string, chainId uint64) {
+func handleDecryptResult(url string, hadError bool, ctHash []byte, plaintext *big.Int, transactionHash string, chainId uint64) {
 	fmt.Printf("Got decrypt result for %s : %s\n", hex.EncodeToString(ctHash), plaintext)
 	plaintextString := plaintext.Text(16)
-	jsonData, err := json.Marshal(DecryptResponse{CtHash: ctHash, Plaintext: plaintextString, TransactionHash: transactionHash})
+	jsonData, err := json.Marshal(DecryptResponse{HadError: hadError, CtHash: ctHash, Plaintext: plaintextString, TransactionHash: transactionHash})
 	if err != nil {
 		log.Printf("Failed to marshal decrypt result for requester %s with the result of %+v: %v", url, ctHash, err)
 		return
@@ -258,7 +258,7 @@ func handleRequest[T HandlerFunc](w http.ResponseWriter, r *http.Request, handle
 	}
 	args[len(args)-2] = reflect.ValueOf(&tp)
 	args[len(args)-1] = reflect.ValueOf(&callback)
-
+``
 	// Call the handler with the appropriate number of inputs
 	results := reflect.ValueOf(handler).Call(args)
 
@@ -520,7 +520,7 @@ func TrivialEncryptHandler(w http.ResponseWriter, r *http.Request) {
 		OperationType: "trivial_encrypt",
 		ID:            eventId,
 		Handle:        "",
-		Inputs:        fmt.Sprintf("security_zone: %d, utype: %d", req.SecurityZone, req.ToType),
+		Inputs:        fmt.Sprintf("security_zone: %d, utype: %d, value: %s", req.SecurityZone, req.ToType, req.Value),
 	})
 
 	callback := precompiles.CallbackFunc{

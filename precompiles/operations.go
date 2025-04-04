@@ -92,13 +92,13 @@ func validateAllSameType(inputs []*fhe.FheEncrypted, utype byte) error {
 
 type CallbackFunc struct {
 	CallbackUrl string
-	Callback    func(url string, ctKey []byte, newCtKey []byte)
+	Callback    func(url string, hadError bool, tempKey []byte, actualHash []byte)
 	EventId     string
 }
 
 type DecryptCallbackFunc struct {
 	CallbackUrl     string
-	Callback        func(url string, ctKey []byte, plaintext *big.Int, transactionHash string, chainId uint64)
+	Callback        func(url string, hadError bool, ctKey []byte, plaintext *big.Int, transactionHash string, chainId uint64)
 	TransactionHash string
 	ChainId         uint64
 	EventId         string
@@ -313,8 +313,10 @@ func ProcessOperation(functionName types.PrecompileName, operation OperationFunc
 		ctReady := false
 		defer func() {
 			if !ctReady {
-				logger.Error(functionName.String() + ": failed, deleting placeholder ciphertext " + hex.EncodeToString(resultKey.Hash[:]))
-				deleteCiphertext(storage, resultKey.Hash)
+				telemetryCollector.AddTelemetry(updateEvent.SetStatus("errored"))
+				if callback != nil {
+					(*callback).Callback(callback.CallbackUrl, true, nil, nil)
+				}
 			}
 		}()
 
@@ -366,7 +368,7 @@ func ProcessOperation(functionName types.PrecompileName, operation OperationFunc
 
 		if callback != nil {
 			url := (*callback).CallbackUrl
-			(*callback).Callback(url, placeholderKeyCopy.Hash[:], realResultHash)
+			(*callback).Callback(url, false, placeholderKeyCopy.Hash[:], realResultHash)
 		}
 
 		// Log success with all input hashes and result
