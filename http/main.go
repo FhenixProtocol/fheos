@@ -111,10 +111,10 @@ func handleResult(url string, hadError bool, tempKey []byte, actualHash []byte) 
 	responseToServer(url, tempKey, jsonData)
 }
 
-func handleDecryptResult(url string, ctHash []byte, plaintext *big.Int, transactionHash string, chainId uint64) {
+func handleDecryptResult(url string, hadError bool, ctHash []byte, plaintext *big.Int, transactionHash string, chainId uint64) {
 	fmt.Printf("Got decrypt result for %s : %s\n", hex.EncodeToString(ctHash), plaintext)
 	plaintextString := plaintext.Text(16)
-	jsonData, err := json.Marshal(DecryptResponse{CtHash: ctHash, Plaintext: plaintextString, TransactionHash: transactionHash})
+	jsonData, err := json.Marshal(DecryptResponse{HadError: hadError, CtHash: ctHash, Plaintext: plaintextString, TransactionHash: transactionHash})
 	if err != nil {
 		log.Printf("Failed to marshal decrypt result for requester %s with the result of %+v: %v", url, ctHash, err)
 		return
